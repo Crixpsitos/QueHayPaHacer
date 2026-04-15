@@ -1,53 +1,52 @@
 import type { Firestore } from "firebase-admin/firestore";
-import { User } from "@/domain/entities/user/User";
-import { IUserRepository } from "@/domain/repository/IUserRepository";
+import type { FirebaseUserDto } from "@/infraestructure/firebase/dto/FirebaseUserDto";
 import { FirebaseBaseRepository } from "@/infraestructure/repository/FirebaseBaseRepository";
+import type { IUserDAO } from "@/infraestructure/repository/IUserDAO";
 
-
-export class FirebaseUserRepository extends FirebaseBaseRepository implements IUserRepository {
+export class FirebaseUserRepository extends FirebaseBaseRepository implements IUserDAO {
     protected readonly collectionName = "users";
 
     constructor(db: Firestore) {
         super(db);
     }
 
-    findByEmail(email: string): Promise<User | null> {
-        void email;
-        void this.collection;
-        throw new Error("Method not implemented.");
+    async findById(id: string): Promise<FirebaseUserDto | null> {
+        const doc = await this.collection.doc(id).get();
+        if (!doc.exists) return null;
+        return { uid: doc.id, ...doc.data() } as FirebaseUserDto;
     }
-    findByUsername(username: string): Promise<User | null> {
-        void username;
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    findById(id: string): Promise<User | null> {
-        void id;
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    findAll(): Promise<User[]> {
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    create(item: User): Promise<User> {
-        void item;
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    update(id: string, item: User): Promise<User> {
-        void id;
-        void item;
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    delete(id: string): Promise<void> {
-        void id;
-        void this.collection;
-        throw new Error("Method not implemented.");
-    }
-    
 
-    
+    async findAll(): Promise<FirebaseUserDto[]> {
+        const snapshot = await this.collection.get();
+        return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as FirebaseUserDto));
+    }
 
+    async findByEmail(email: string): Promise<FirebaseUserDto | null> {
+        const snapshot = await this.collection.where("email", "==", email).limit(1).get();
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return { uid: doc.id, ...doc.data() } as FirebaseUserDto;
+    }
+
+    async findByUsername(username: string): Promise<FirebaseUserDto | null> {
+        const snapshot = await this.collection.where("displayName", "==", username).limit(1).get();
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return { uid: doc.id, ...doc.data() } as FirebaseUserDto;
+    }
+
+    async create(dto: FirebaseUserDto): Promise<FirebaseUserDto> {
+        await this.collection.doc(dto.uid).set(dto);
+        return dto;
+    }
+
+    async update(id: string, dto: Partial<FirebaseUserDto>): Promise<FirebaseUserDto> {
+        await this.collection.doc(id).update(dto as { [key: string]: unknown });
+        const updated = await this.findById(id);
+        return updated!;
+    }
+
+    async delete(id: string): Promise<void> {
+        await this.collection.doc(id).delete();
+    }
 }
