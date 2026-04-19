@@ -1,6 +1,7 @@
 import { IAuthRepository } from "@/domain/repository/Auth/IAuthRepository";
 import type { Auth, UserCredential } from "firebase/auth";
-import { onAuthStateChanged, signInWithEmailAndPassword , signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword , signOut } from "firebase/auth";
+import { sendPasswordResetEmail } from "firebase/auth";
 
 export class FirebaseClientAuthRepository implements IAuthRepository {
 
@@ -16,10 +17,14 @@ export class FirebaseClientAuthRepository implements IAuthRepository {
     logout(): Promise<void> {
         return signOut(this.auth);
     }
-    sendPasswordResetEmail(email: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    public sendPasswordResetEmail(email: string): Promise<void> {
+        return sendPasswordResetEmail(this.auth, email);
     }
     async loginWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {
         return signInWithEmailAndPassword(this.auth, email, password);
+    }
+
+    async registerWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {
+        return createUserWithEmailAndPassword(this.auth, email, password);  
     }
 }
