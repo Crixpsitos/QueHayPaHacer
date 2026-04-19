@@ -1,7 +1,7 @@
 import type { User } from "@/domain/entities/user/User";
-import type { IUserRepository } from "@/domain/repository/IUserRepository";
+import type { IUserRepository } from "@/domain/repository/user/IUserRepository";
 import { UserFirebaseMapper } from "@/infraestructure/firebase/mappers/UserFirebaseMapper";
-import type { IUserDAO } from "@/infraestructure/repository/IUserDAO";
+import type { IUserDAO } from "@/infraestructure/repository/user/IUserDAO";
 
 export class UserAdapter implements IUserRepository {
     constructor(private readonly repository: IUserDAO) {}

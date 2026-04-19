@@ -1,7 +1,7 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { FirebaseUserDto } from "@/infraestructure/firebase/dto/FirebaseUserDto";
 import { FirebaseBaseRepository } from "@/infraestructure/repository/FirebaseBaseRepository";
-import type { IUserDAO } from "@/infraestructure/repository/IUserDAO";
+import type { IUserDAO } from "@/infraestructure/repository/user/IUserDAO";
 
 export class FirebaseUserRepository extends FirebaseBaseRepository implements IUserDAO {
     protected readonly collectionName = "users";

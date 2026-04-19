@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import type { User } from "@/domain/entities/user/User";
-import type { IUserRepository } from "@/domain/repository/IUserRepository";
-import { CreateUserSchema, UpdateUserSchema, type CreateUserDto, type UpdateUserDto } from "@/application/dto/UserDto";
+import type { IUserRepository } from "@/domain/repository/user/IUserRepository";
+import { CreateUserSchema, UpdateUserSchema, type CreateUserDto, type UpdateUserDto } from "@/application/dto/user/UserDto";
 
 export class UserService {
     constructor(private readonly userRepository: IUserRepository) {}
