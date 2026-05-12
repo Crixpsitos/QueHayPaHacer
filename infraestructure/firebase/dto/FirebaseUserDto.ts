@@ -9,7 +9,7 @@ export interface FirebaseUserDto {
     lastName: string;
     phoneNumber: string;
     acceptedTerms: boolean;
-    accountType: UserAccountType;
+    accountType?: UserAccountType;
     acceptedTermsAt: Timestamp;
     createdAt: Timestamp;
     updatedAt: Timestamp;

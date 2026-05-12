@@ -1,10 +1,10 @@
 import type { User } from "@/domain/entities/user/User";
 import type { IUserRepository } from "@/domain/repository/user/IUserRepository";
 import { UserFirebaseMapper } from "@/infraestructure/firebase/mappers/UserFirebaseMapper";
-import type { IUserDAO } from "@/infraestructure/repository/user/IUserDAO";
+import type { IUserFirebaseRepository } from "@/infraestructure/firebase/repositories/user/IUserFirebaseRepository";
 
 export class UserAdapter implements IUserRepository {
-    constructor(private readonly repository: IUserDAO) {}
+    constructor(private readonly repository: IUserFirebaseRepository) {}
 
     async findById(id: string): Promise<User | null> {
         const dto = await this.repository.findById(id);

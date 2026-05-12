@@ -9,7 +9,7 @@ export const CreateUserSchema = v.object({
     lastName: v.pipe(v.string(), v.nonEmpty("lastName is required")),
     phoneNumber: v.pipe(v.string(), v.nonEmpty("phoneNumber is required")),
     acceptedTerms: v.literal(true, "User must accept terms"),
-    accountType: v.enum(UserAccountType, "Invalid account type"),
+    accountType: v.optional(v.enum(UserAccountType, "Invalid account type")),
 });
 
 export const UpdateUserSchema = v.partial(

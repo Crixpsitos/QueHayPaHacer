@@ -1,8 +1,5 @@
 export enum UserAccountType {
-    USER,
-    ADMIN,
-    INFLUENCER,
-    MODERATOR,
-    COMPANY,
-    
+    PERSONAL = "PERSONAL",
+    GOVERNMENT = "GOVERNMENT",
+    COMPANY = "COMPANY",
 }

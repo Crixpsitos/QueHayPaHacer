@@ -8,7 +8,7 @@ export interface User {
     lastName: string;
     phoneNumber: string;
     acceptedTerms: boolean;
-    accountType: UserAccountType;
+    accountType?: UserAccountType;
     acceptedTermsAt: Date;
     createdAt: Date;
     updatedAt: Date;
