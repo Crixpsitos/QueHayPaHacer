@@ -1,4 +1,3 @@
-import service_account from "@/quehaypahacerAccountService.json";
 import { firebaseConfig } from "../client/firebase";
 import { TokenSet } from "next-firebase-auth-edge/auth";
 import { getFirestore } from "firebase-admin/firestore";
@@ -9,9 +8,9 @@ export const serverConfig = {
     useSecureCookies: process.env.NODE_ENV === 'production',
     firebaseApiKey: process.env.FIREBASE_API_KEY!,
     serviceAccount: {
-        projectId: service_account.project_id,
-        privateKey: service_account.private_key,
-        clientEmail: service_account.client_email,
+        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID!,
+        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
     },
 }
 

@@ -6,7 +6,6 @@ import {
   CarouselItem,
 } from "@/app/components/ui/carousel";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import type { Campaign } from "@/domain/entities/campaign/Campaign";
 import { ResponsivePicture } from "@/app/components/ui/ResponsivePicture";
 import { Button } from "@/app/components/ui/button/button";
 import { ChevronDown, ChevronUp, Hand, Sparkles } from "lucide-react";
@@ -14,9 +13,10 @@ import { cn } from "@/app/lib/utils/cn";
 import { ctaRegistry } from "@/application/cta/cta-registry";
 import { CTA } from "@/application/cta/types";
 import { useRouter } from "next/navigation";
+import { CampaignViewModel } from "@/presentation/campaing/view-models/CampaingViewModel";
 
 interface CampaignCarouselContainerProps {
-  campaings: Campaign[];
+  campaings: CampaignViewModel[];
 }
 
 const CampaignCarouselComponent = ({
@@ -25,7 +25,6 @@ const CampaignCarouselComponent = ({
   const carouselData = campaings;
   const DOTS_GROUP_SIZE = 4;
 
-  console.log("esto esta cacheado?")
 
   const router = useRouter();
 

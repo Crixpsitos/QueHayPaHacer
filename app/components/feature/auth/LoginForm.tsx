@@ -55,7 +55,6 @@ export const LoginForm = ({ loginAction }: LoginFormProps) => {
 
     startTransition(async () => {
       const result = await loginAction(data.email, data.password);
-      console.log("Login action result:", result);
       if (result?.error) {
         setSubmitError(result.error);
       }

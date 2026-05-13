@@ -21,8 +21,8 @@ export interface FirebaseCampaignDto {
     slug: string;
   };
   schedule?: {
-    startAt: Timestamp | string;
-    endAt: Timestamp | string;
+    startAt: Timestamp;
+    endAt: Timestamp;
   };
   analytics?: {
     views: number;
