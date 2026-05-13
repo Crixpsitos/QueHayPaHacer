@@ -1,0 +1,93 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+env:
+  - variable: FIREBASE_ADMIN_PROJECT_ID
+    value: quehaypahacer-develop
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_ADMIN_CLIENT_EMAIL
+    secret: firebaseAdminClientEmail
+    availability:
+      - RUNTIME
+
+  - variable: FIREBASE_ADMIN_PRIVATE_KEY
+    secret: firebaseAdminPrivateKey
+    availability:
+      - RUNTIME
+
+  - variable: FIREBASE_API_KEY
+    secret: firebaseApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Firebase client SDK public variables
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: firebaseApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: quehaypahacer-develop.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: quehaypahacer-develop
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: quehaypahacer-develop.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: firebaseMessagingSenderId
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: firebaseAppId
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    secret: firebaseMeasurementId
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Optional: Multi-tenancy tenant ID
+  # - variable: NEXT_PUBLIC_FIREBASE_AUTH_TENANT_ID
+  #   value: your-tenant-id
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
+
+  # Cookie secrets for next-firebase-auth-edge
+  - variable: COOKIE_SECRET_CURRENT
+    secret: cookieSecretCurrent
+    availability:
+      - RUNTIME
+
+  - variable: COOKIE_SECRET_PREVIOUS
+    secret: cookieSecretPrevious
+    availability:
+      - RUNTIME
