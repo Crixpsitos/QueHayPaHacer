@@ -1,9 +1,9 @@
 import { CTA } from "@/application/cta/types";
-import type { CampaignEntityType } from "./CampaignEntityType";
-import type { CampaignStatus } from "./CampaignStatus";
-import type { ImageVariants } from "@/domain/shared/ImageVariants";
+import { CampaignEntityType } from "@/domain/entities/campaign/CampaignEntityType";
+import { CampaignStatus } from "@/domain/entities/campaign/CampaignStatus";
+import { ImageVariants } from "@/domain/shared/ImageVariants";
 
-export interface Campaign {
+export interface CampaignViewModel {
   id: string;
   title: string;
   description?: string;
@@ -18,13 +18,13 @@ export interface Campaign {
     slug: string;
   };
   schedule?: {
-    startAt: Date;
-    endAt: Date;
+    startAt: string;
+    endAt: string;
   };
   analytics?: {
     views: number;
     clicks: number;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
