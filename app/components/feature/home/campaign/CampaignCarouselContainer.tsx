@@ -2,18 +2,25 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { CampaignCarousel } from "./CampaignCarousel";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
+import { CampaignViewModelMapper } from "@/presentation/campaing/mapper/CampaignViewModelMapper";
 
 const fetchActiveCampaigns = async () => {
   "use cache";
   cacheLife({
-    expire: 120,
+    stale: 120,
     revalidate: 60,
-  });
+    expire: 120,
+  }); 
   cacheTag("active-campaigns");
 
   const { campaignService } = createServerContainer();
 
-  return await campaignService.getActiveCampaigns();
+  const campaignsDomain = await campaignService.getActiveCampaigns();
+
+  const campaigns = CampaignViewModelMapper.toViewModels(campaignsDomain);
+
+
+  return campaigns;
 };
 
 export const CampaignCarouselContainer = async () => {

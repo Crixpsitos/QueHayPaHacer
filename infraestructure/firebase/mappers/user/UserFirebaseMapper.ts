@@ -1,0 +1,38 @@
+import { Timestamp } from "firebase-admin/firestore";
+import type { User } from "@/domain/entities/user/User";
+import type { FirebaseUserDto } from "@/infraestructure/firebase/dto/FirebaseUserDto";
+import { IUserMapper } from "./IUserMapper";
+
+export class UserFirebaseMapper implements IUserMapper {
+  toDomain(dto: FirebaseUserDto): User {
+    return {
+      uid: dto.uid,
+      email: dto.email,
+      displayName: dto.displayName.trim(),
+      firstName: dto.firstName.trim(),
+      lastName: dto.lastName.trim(),
+      phoneNumber: dto.phoneNumber,
+      acceptedTerms: dto.acceptedTerms,
+      ...(dto.accountType !== undefined && { accountType: dto.accountType }),
+      acceptedTermsAt: dto.acceptedTermsAt.toDate(),
+      createdAt: dto.createdAt.toDate(),
+      updatedAt: dto.updatedAt.toDate(),
+    };
+  }
+
+  toDto(domain: User): FirebaseUserDto {
+    return {
+      uid: domain.uid,
+      email: domain.email,
+      displayName: domain.displayName,
+      firstName: domain.firstName,
+      lastName: domain.lastName,
+      phoneNumber: domain.phoneNumber,
+      acceptedTerms: domain.acceptedTerms,
+      ...(domain.accountType !== undefined && { accountType: domain.accountType }),
+      acceptedTermsAt: Timestamp.fromDate(domain.acceptedTermsAt),
+      createdAt: Timestamp.fromDate(domain.createdAt),
+      updatedAt: Timestamp.fromDate(domain.updatedAt),
+    };
+  }
+}
