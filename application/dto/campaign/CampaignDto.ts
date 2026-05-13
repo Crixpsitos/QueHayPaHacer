@@ -12,7 +12,7 @@ const ImageSchema = v.object({
 const ImageVariantsSchema = v.object({
   desktop: ImageSchema,
   mobile: ImageSchema,
-  thumbnail: ImageSchema,
+  tablet: ImageSchema,
 });
 
 export const CampaignSchema = v.object({
