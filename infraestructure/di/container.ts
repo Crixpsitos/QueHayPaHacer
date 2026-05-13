@@ -9,10 +9,11 @@ import { CampaignService } from "@/application/services/campaign/CampaignService
 import { AuthService } from "@/application/services/auth/AuthService";
 import { getFirebaseFirestore } from "../firebase/config/admin/firebase";
 import { CampaignFirebaseMapper } from "../firebase/mappers/campaing/CampaignFirebaseMapper";
+import { UserFirebaseMapper } from "../firebase/mappers/user/UserFirebaseMapper";
 
 export const createServerContainer = () => {
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
-  const userRepository = new UserAdapter(userFirebaseRepository);
+  const userRepository = new UserAdapter(userFirebaseRepository, new UserFirebaseMapper());
   const userService = new UserService(userRepository);
 
   const campaignFirebaseRepository = new CampaignFirebaseRepository(getFirebaseFirestore());
