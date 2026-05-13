@@ -25,7 +25,6 @@ const CampaignCarouselComponent = ({
   const carouselData = campaings;
   const DOTS_GROUP_SIZE = 4;
 
-  console.log("esto esta cacheado?")
 
   const router = useRouter();
 

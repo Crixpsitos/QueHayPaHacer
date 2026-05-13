@@ -10,6 +10,10 @@ import { AuthService } from "@/application/services/auth/AuthService";
 import { getFirebaseFirestore } from "../firebase/config/admin/firebase";
 import { CampaignFirebaseMapper } from "../firebase/mappers/campaing/CampaignFirebaseMapper";
 import { UserFirebaseMapper } from "../firebase/mappers/user/UserFirebaseMapper";
+import { CategoriesFirebaseRepository } from "../firebase/repositories/categories/CategoriesFirebaseRepository";
+import { CategoriesAdapter } from "../adapters/categories/CategoriesAdapter";
+import { CategoriesFirebaseMapper } from "../firebase/mappers/categories/CategoriesFirebaseMapper";
+import { CategoriesService } from "@/application/services/categories/CategoriesService";
 
 export const createServerContainer = () => {
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
@@ -20,9 +24,15 @@ export const createServerContainer = () => {
   const campaignRepository = new CampaignAdapter(campaignFirebaseRepository, new CampaignFirebaseMapper());
   const campaignService = new CampaignService(campaignRepository);
 
+  // categories
+  const categoriesFirebaseRepository = new CategoriesFirebaseRepository(getFirebaseFirestore());
+  const categoriesRepository = new CategoriesAdapter(categoriesFirebaseRepository, new CategoriesFirebaseMapper());
+  const categoriesService = new CategoriesService(categoriesRepository);
+
   return {
     userService,
     campaignService,
+    categoriesService,
   };
 };
 
