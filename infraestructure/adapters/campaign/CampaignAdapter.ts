@@ -1,6 +1,5 @@
 import type { Campaign } from "@/domain/entities/campaign/Campaign";
 import type { ICampaignRepository } from "@/domain/repository/campaign/ICampaignRepository";
-import { CampaignFirebaseMapper } from "@/infraestructure/firebase/mappers/campaing/CampaignFirebaseMapper";
 import { ICampaignMapper } from "@/infraestructure/firebase/mappers/campaing/ICampaingMapper";
 import type { ICampaignFirebaseRepository } from "@/infraestructure/firebase/repositories/campaign/ICampaignFirebaseRepository";
 

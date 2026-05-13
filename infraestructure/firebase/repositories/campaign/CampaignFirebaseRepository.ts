@@ -20,7 +20,6 @@ export class CampaignFirebaseRepository extends FirebaseBaseRepository implement
       .where("schedule.endAt", ">=", now)
       .orderBy("priority", "desc")
       .get();
-    console.log("Fetched active campaigns from Firebase:", snapshot.size);
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirebaseCampaignDto));
   }
 

@@ -1,9 +1,10 @@
 import { Timestamp } from "firebase-admin/firestore";
 import type { Categories } from "@/domain/entities/categories/Categories";
 import type { FirebaseCategoriesDto } from "@/infraestructure/firebase/dto/categories/FirebaseCategoriesDto";
+import { ICategoriesMapper } from "./ICategoriesMapper";
 
-export class CategoriesFirebaseMapper {
-    static toDomain(dto: FirebaseCategoriesDto): Categories {
+export class CategoriesFirebaseMapper implements ICategoriesMapper {
+    toDomain(dto: FirebaseCategoriesDto): Categories {
         return {
             id: dto.id,
             title: dto.title,
@@ -15,8 +16,7 @@ export class CategoriesFirebaseMapper {
             updatedAt: dto.updatedAt.toDate(),
         };
     }
-
-    static toDto(domain: Categories): FirebaseCategoriesDto {
+    toDto(domain: Categories): FirebaseCategoriesDto {
         return {
             id: domain.id,
             title: domain.title,
@@ -28,4 +28,5 @@ export class CategoriesFirebaseMapper {
             updatedAt: Timestamp.fromDate(domain.updatedAt),
         };
     }
+    
 }
