@@ -18,11 +18,13 @@ env:
   - variable: FIREBASE_ADMIN_CLIENT_EMAIL
     secret: firebaseAdminClientEmail
     availability:
+      - BUILD
       - RUNTIME
 
   - variable: FIREBASE_ADMIN_PRIVATE_KEY
     secret: firebaseAdminPrivateKey
     availability:
+      - BUILD
       - RUNTIME
 
   - variable: FIREBASE_API_KEY
