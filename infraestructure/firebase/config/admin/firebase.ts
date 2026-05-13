@@ -7,12 +7,16 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 export const serverConfig = {
     useSecureCookies: process.env.NODE_ENV === 'production',
     firebaseApiKey: process.env.FIREBASE_API_KEY!,
-    serviceAccount: {
-        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID!,
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-    },
 }
+
+const getServiceAccount = () => {
+  const json = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON!);
+  return {
+    projectId: json.project_id as string,
+    privateKey: json.private_key as string,
+    clientEmail: json.client_email as string,
+  };
+};
 
 export const authConfig = {
   apiKey: serverConfig.firebaseApiKey,
@@ -28,7 +32,7 @@ export const authConfig = {
     sameSite: 'lax' as const,
     maxAge: 12 * 60 * 60 * 24 // twelve days
   },
-  serviceAccount: serverConfig.serviceAccount,
+  serviceAccount: getServiceAccount(),
   // Set to false in Firebase Hosting environment due to https://stackoverflow.com/questions/44929653/firebase-cloud-function-wont-store-cookie-named-other-than-session
   enableMultipleCookies: true,
   // Set to false if you're not planning to use `signInWithCustomToken` Firebase Client SDK method
@@ -47,12 +51,13 @@ const ADMIN_APP_NAME = "firebase-admin-server";
 const getAdminApp = () => {
   const existing = getApps().find((app) => app.name === ADMIN_APP_NAME);
   if (existing) return existing;
+  const serviceAccount = getServiceAccount();
   return initializeApp(
     {
       credential: cert({
-        projectId: serverConfig.serviceAccount.projectId,
-        privateKey: serverConfig.serviceAccount.privateKey,
-        clientEmail: serverConfig.serviceAccount.clientEmail,
+        projectId: serviceAccount.projectId,
+        privateKey: serviceAccount.privateKey,
+        clientEmail: serviceAccount.clientEmail,
       }),
     },
     ADMIN_APP_NAME

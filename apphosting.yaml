@@ -9,20 +9,8 @@ runConfig:
 
 # Environment variables and secrets.
 env:
-  - variable: FIREBASE_ADMIN_PROJECT_ID
-    value: quehaypahacer-develop
-    availability:
-      - BUILD
-      - RUNTIME
-
-  - variable: FIREBASE_ADMIN_CLIENT_EMAIL
-    secret: firebaseAdminClientEmail
-    availability:
-      - BUILD
-      - RUNTIME
-
-  - variable: FIREBASE_ADMIN_PRIVATE_KEY
-    secret: firebaseAdminPrivateKey
+  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
+    secret: firebaseServiceAccountJson
     availability:
       - BUILD
       - RUNTIME
