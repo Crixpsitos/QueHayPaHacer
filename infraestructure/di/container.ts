@@ -14,6 +14,20 @@ import { CategoriesFirebaseRepository } from "../firebase/repositories/categorie
 import { CategoriesAdapter } from "../adapters/categories/CategoriesAdapter";
 import { CategoriesFirebaseMapper } from "../firebase/mappers/categories/CategoriesFirebaseMapper";
 import { CategoriesService } from "@/application/services/categories/CategoriesService";
+import { EventsFirebaseRepository } from "../firebase/repositories/events/EventsFirebaseRepository";
+import { EventsAdapter } from "../adapters/events/EventsAdapter";
+import { EventsFirebaseMapper } from "../firebase/mappers/events/EventsFirebaseMapper";
+import { EventsService } from "@/application/services/events/EventsService";
+import { EventInteractionsFirebaseRepository } from "../firebase/repositories/EventInteraction/EventInteractionsFirebaseRepository";
+import { EventInteractionsAdapter } from "../adapters/EventInteraction/EventInteractionsAdapter";
+import { EventInteractionsFirebaseMapper } from "../firebase/mappers/EventInteraction/EventInteractionsFirebaseMapper";
+import { EventInteractionsService } from "@/application/services/events/EventInteractionsService";
+import { UserEventInteractionsProjectionFirebaseRepository } from "../firebase/repositories/EventInteraction/UserEventInteractionsProjectionFirebaseRepository";
+import { EventRegistrationFirebaseRepository } from "../firebase/repositories/EventRegistration/EventRegistrationFirebaseRepository";
+import { EventRegistrationAdapter } from "../adapters/EventRegistration/EventRegistrationAdapter";
+import { EventRegistrationFirebaseMapper } from "../firebase/mappers/EventRegistration/EventRegistrationFirebaseMapper";
+import { EventRegistrationService } from "@/application/services/events/EventRegistrationService";
+import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
 
 export const createServerContainer = () => {
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
@@ -29,10 +43,46 @@ export const createServerContainer = () => {
   const categoriesRepository = new CategoriesAdapter(categoriesFirebaseRepository, new CategoriesFirebaseMapper());
   const categoriesService = new CategoriesService(categoriesRepository);
 
+  // events
+  const eventsFirebaseRepository = new EventsFirebaseRepository(getFirebaseFirestore());
+  const eventsRepository = new EventsAdapter(eventsFirebaseRepository, new EventsFirebaseMapper());
+  const eventsService = new EventsService(eventsRepository);
+
+  // event interactions
+  const eventInteractionsFirebaseRepository = new EventInteractionsFirebaseRepository(getFirebaseFirestore());
+  const eventInteractionsRepository = new EventInteractionsAdapter(
+    eventInteractionsFirebaseRepository,
+    new EventInteractionsFirebaseMapper(),
+  );
+  const userEventInteractionsProjectionRepository =
+    new UserEventInteractionsProjectionFirebaseRepository(getFirebaseFirestore());
+  const eventInteractionsService = new EventInteractionsService(
+    eventInteractionsRepository,
+    userEventInteractionsProjectionRepository,
+    eventsRepository,
+  );
+
+  // event registrations
+  const eventRegistrationFirebaseRepository = new EventRegistrationFirebaseRepository(getFirebaseFirestore());
+  const eventRegistrationRepository = new EventRegistrationAdapter(
+    eventRegistrationFirebaseRepository,
+    new EventRegistrationFirebaseMapper(),
+  );
+  const eventRegistrationService = new EventRegistrationService(eventRegistrationRepository);
+
+  const eventFeed = new EventFeed(
+    eventsService,
+    eventInteractionsService,
+  );
+
   return {
     userService,
     campaignService,
     categoriesService,
+    eventsService,
+    eventInteractionsService,
+    eventRegistrationService,
+    eventFeed,
   };
 };
 

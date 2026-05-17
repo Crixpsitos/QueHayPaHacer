@@ -43,8 +43,17 @@ export const ResponsivePicture = ({
       })
     : null;
 
+  const {
+    width: intrinsicWidth,
+    height: intrinsicHeight,
+    ...desktopImageProps
+  } = desktopImage.props;
+
   return (
-    <picture className={`block w-full h-full overflow-hidden ${pictureClassName || ""}`}>
+    <picture
+      className={`block w-full h-full overflow-hidden ${pictureClassName || ""}`}
+      style={{ aspectRatio: `${intrinsicWidth} / ${intrinsicHeight}` }}
+    >
       {desktopImage.props.srcSet && (
         <source
           media="(min-width: 1024px)"
@@ -67,8 +76,8 @@ export const ResponsivePicture = ({
       )}
 
       <img
-        {...desktopImage.props}
-        alt={desktopImage.props.alt ?? ""}
+        {...desktopImageProps}
+        alt={desktopImageProps.alt ?? ""}
         className={`w-full h-full object-cover ${imageClassName || ""}`}
       />
     </picture>
