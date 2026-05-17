@@ -23,7 +23,6 @@ import {
   ArrowRight,
   Calendar,
   ExternalLink,
-  Heart,
   MapPin,
   Share2,
   Sparkles,
@@ -33,6 +32,7 @@ import {
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { EventViewModel } from "../../view-models/EventViewModel";
+import { HeartLikeButton } from "./HeartLikeButton";
 
 interface EventCardProps {
   event: EventViewModel;
@@ -82,21 +82,7 @@ export const EventCard = ({
   onShare,
   className,
 }: EventCardProps) => {
-  const [liked, setLiked] = useState(initialLiked ?? false);
-  const [likes, setLikes] = useState(initialLikes ?? 0);
   const [shared, setShared] = useState(false);
-
-  const handleLike = useCallback(async () => {
-    const next = !liked;
-    setLiked(next);
-    setLikes((l) => (next ? l + 1 : l - 1));
-    const accepted = await onLike?.(event.id, next);
-
-    if (accepted === false) {
-      setLiked(!next);
-      setLikes((l) => (next ? l - 1 : l + 1));
-    }
-  }, [liked, event.id, onLike]);
 
   const handleShare = useCallback(async () => {
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug}`;
@@ -455,32 +441,13 @@ export const EventCard = ({
 
             <div className="flex items-center gap-1.5 w-full">
               {/* Botón Like */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "h-8 px-2.5 gap-1.5 text-xs font-normal transition-colors",
-                      liked
-                        ? "text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onClick={handleLike}
-                    aria-label={`${liked ? "Quitar like" : "Dar like"} — ${likes.toLocaleString("es-CO")} likes`}
-                    aria-pressed={liked}
-                  >
-                    <Heart
-                      className={cn("size-4", liked && "fill-current")}
-                      aria-hidden="true"
-                    />
-                    <span>{likes.toLocaleString("es-CO")}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  {liked ? "Quitar me gusta" : "Me gusta"}
-                </TooltipContent>
-              </Tooltip>
+              <HeartLikeButton
+                key={`${event.id}:${initialLiked ? "1" : "0"}:${initialLikes ?? 0}`}
+                eventId={event.id}
+                initialLiked={initialLiked}
+                initialLikes={initialLikes}
+                onLike={onLike}
+              />
 
               {/* Botón Compartir */}
               <Tooltip>
