@@ -36,27 +36,14 @@ const fetchFeaturedEvents = async (userId?: string) => {
   return await eventFeed.getFeatured(userId);
 };
 
-const fetchAllEvents = async (userId?: string) => {
-  "use cache";
-  cacheLife({
-    expire: 120,
-    stale: 60,
-    revalidate: 60,
-  });
-  cacheTag("all-events");
-  const { eventFeed } = createServerContainer();
-  return await eventFeed.getAll(userId);
-};
-
 export const HomeEventsRecomendationContainer = async () => {
   const tokens = await getTokens(await cookies(), authConfig);
   const userId = tokens?.decodedToken?.uid;
 
-  // Ejecutar todos los fetches en paralelo
-  const [weekendEvents, featuredEvents, allEvents] = await Promise.all([
+  // Ejecutar ambos fetches en paralelo
+  const [weekendEvents, featuredEvents] = await Promise.all([
     fetchWeekendEvents(userId),
     fetchFeaturedEvents(userId),
-    fetchAllEvents(userId),
   ]);
 
   return (
@@ -85,9 +72,6 @@ export const HomeEventsRecomendationContainer = async () => {
           <WeekendEventsContainer weekendEvents={weekendEvents} />
         </Suspense>
       </ContentSection>
-      <Suspense fallback={<EventsCardSkeleton />}>
-        <PreferenceEventsContainer userId={userId} />
-      </Suspense>
 
       <ContentSection title="Todos los eventos">
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
@@ -97,9 +81,13 @@ export const HomeEventsRecomendationContainer = async () => {
 
         <Separator className="my-6" />
         <Suspense fallback={<EventsCardSkeleton />}>
-          <AllEventsContainer allEvents={allEvents} />
+          <AllEventsContainer userId={userId} />
         </Suspense>
       </ContentSection>
+
+      <Suspense fallback={<EventsCardSkeleton />}>
+        <PreferenceEventsContainer userId={userId} />
+      </Suspense>
     </>
   );
 };

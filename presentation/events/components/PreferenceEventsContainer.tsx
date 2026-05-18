@@ -57,12 +57,10 @@ async function getPreferenceEvents(preferences: UserPreferencesViewModel, userId
 export const PreferenceEventsContainer = async ({ userId }: PreferenceEventsContainerProps) => {
       const preferences = await getUserPreferences(userId);
 
-      console.log(preferences);
 
       if(!preferences) return <></>;
 
       const events = await getPreferenceEvents(preferences, userId);
-      console.log(events);
 
       const preferenceEventsViewModels = events.map((event) =>
         EventViewModelMapper.toViewModel(event.event),

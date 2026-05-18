@@ -1,12 +1,27 @@
 import { EventCardInteractive } from "./card/EventCardInteractive";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
-import { EventFeedItem } from "@/application/aggregations/EventFeed/EventFeed";
+import { createServerContainer } from "@/infraestructure/di/container";
+import { cacheLife, cacheTag } from "next/cache";
 
-interface AllEventsContainerProps {
-  allEvents: EventFeedItem[];
+const fetchAllEvents = async (userId?: string) => {
+  "use cache"
+  cacheLife({
+    expire: 120,
+    stale: 60,
+    revalidate: 60
+  })
+  cacheTag("all-events")
+  const {eventFeed} = createServerContainer();
+  return await eventFeed.getAll(userId);
 }
 
-export const AllEventsContainer = async ({ allEvents }: AllEventsContainerProps) => {
+interface AllEventsContainerProps {
+  userId?: string;
+}
+
+export const AllEventsContainer = async ({ userId }: AllEventsContainerProps) => {
+  const allEvents = await fetchAllEvents(userId);
+
   const allEventsViewModels = allEvents.map((event) =>
     EventViewModelMapper.toViewModel(event.event),
   );
