@@ -12,4 +12,13 @@ export abstract class FirebaseBaseRepository {
   protected get collection(): CollectionReference<DocumentData> {
     return this.db.collection(this.collectionName);
   }
+
+  protected subCollection(
+    documentId: string,
+    subCollectionName: string
+  ): CollectionReference<DocumentData> {
+    return this.collection
+      .doc(documentId)
+      .collection(subCollectionName);
+  }
 }

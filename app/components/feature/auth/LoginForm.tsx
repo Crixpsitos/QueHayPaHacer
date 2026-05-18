@@ -26,14 +26,17 @@ const loginSchema = v.object({
 type LoginFormValues = v.InferInput<typeof loginSchema>;
 
 interface LoginActionResult {
+  success?: boolean;
   error?: string;
 }
 
 interface LoginFormProps {
   loginAction: (email: string, password: string) => Promise<LoginActionResult | void>;
+  onSuccess?: () => void;
+  onError?: (message: string) => void;
 }
 
-export const LoginForm = ({ loginAction }: LoginFormProps) => {
+export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) => {
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -57,7 +60,11 @@ export const LoginForm = ({ loginAction }: LoginFormProps) => {
       const result = await loginAction(data.email, data.password);
       if (result?.error) {
         setSubmitError(result.error);
+        onError?.(result.error);
+        return;
       }
+
+      onSuccess?.();
     });
   });
 

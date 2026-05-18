@@ -1,9 +1,14 @@
 import { HomeLayout } from "@/app/components/layout/home/HomeLayout";
+import { TooltipProvider } from "../components/ui/tooltip";
 
 export default function HomeRouteLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode;
 }) {
-    return <HomeLayout>{children}</HomeLayout>
+  return (
+    <HomeLayout>
+      <TooltipProvider>{children}</TooltipProvider>
+    </HomeLayout>
+  );
 }

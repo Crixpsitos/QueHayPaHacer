@@ -4,6 +4,8 @@ import { CampaignCarouselSkeleton } from "@/app/components/feature/home/campaign
 import { Suspense } from "react";
 import { CategoriesContainer } from "@/presentation/categories/components/CategoriesContainer";
 import { CategoriesSkeleton } from "@/presentation/categories/components/CategoriesSkeleton";
+import { HomeEventsRecomendationContainer } from "@/presentation/events/components/HomeEventsRecomendationContainer";
+import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
 
 export const metadata: Metadata  = {
   title: "Que Hay Pa Hacer?",
@@ -19,6 +21,9 @@ export default function HomePage() {
       </Suspense>
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
+      </Suspense>
+      <Suspense fallback={<EventsSectionsSkeleton />}>
+        <HomeEventsRecomendationContainer />
       </Suspense>
      
     </>
