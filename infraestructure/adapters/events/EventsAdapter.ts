@@ -20,12 +20,23 @@ export class EventsAdapter implements IEventsRepository {
   async incrementLikes(eventId: string, delta: number): Promise<void> {
     await this.repository.incrementLikes(eventId, delta);
   }
-  findById(id: string): Promise<Events | null> {
-    void id;
-    throw new Error("Method not implemented.");
+
+  async incrementShares(eventId: string, delta: number): Promise<void> {
+    await this.repository.incrementShares(eventId, delta);
   }
-  findAll(): Promise<Events[]> {
-    throw new Error("Method not implemented.");
+
+  findById(id: string): Promise<Events | null> {
+    return this.repository.findById(id).then(dto => dto ? this.mapper.toDomain(dto) : null);
+  }
+
+  async findByTopCategory(categoryIds: string[]): Promise<Events[]> {
+    const dtos = await this.repository.findByTopCategory(categoryIds);
+    return dtos.map(dto => this.mapper.toDomain(dto));
+  }
+
+  async findAll(): Promise<Events[]> {
+    const dtos = await this.repository.findAllEvents();
+    return dtos.map(dto => this.mapper.toDomain(dto));
   }
   create(item: Events): Promise<Events> {
     void item;

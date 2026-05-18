@@ -22,18 +22,24 @@ export class EventInteractionsAdapter implements IEventInteractionsRepository {
     eventId: string,
     userId: string,
     liked: boolean,
+    eventData: any,
   ): Promise<void> {
-    await this.repository.createLikeInteraction(eventId, userId, liked);
+    await this.repository.createLikeInteraction(eventId, userId, liked, eventData);
   }
 
-  async createClickInteraction(eventId: string, userId: string): Promise<void> {
-    await this.repository.createClickInteraction(eventId, userId);
+  async createClickInteraction(eventId: string, userId: string, eventData: any): Promise<void> {
+    await this.repository.createClickInteraction(eventId, userId, eventData);
   }
 
   async createRegistrationInteraction(
     eventId: string,
     userId: string,
+    eventData: any,
   ): Promise<void> {
-    await this.repository.createRegistrationInteraction(eventId, userId);
+    await this.repository.createRegistrationInteraction(eventId, userId, eventData);
+  }
+
+  async createShareInteraction(eventId: string, userId: string, eventData: any): Promise<void> {
+    await this.repository.createShareInteraction(eventId, userId, eventData);
   }
 }

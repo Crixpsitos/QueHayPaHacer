@@ -64,4 +64,52 @@ export class EventsFirebaseRepository
       updatedAt: FieldValue.serverTimestamp(),
     });
   }
+
+  async incrementShares(eventId: string, delta: number): Promise<void> {
+    await this.collection.doc(eventId).update({
+      "analytics.shares": FieldValue.increment(delta),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  async findById(id: string): Promise<FirebaseEventsDto | null> {
+    const doc = await this.collection.doc(id).get();
+    if (!doc.exists) {
+      return null;
+    }
+    return { id: doc.id, ...doc.data() } as FirebaseEventsDto;
+  }
+
+  async findByTopCategory(categoryIds: string[]): Promise<FirebaseEventsDto[]> {
+    if (categoryIds.length === 0) {
+      return [];
+    }
+
+    const now = new Date();
+    const snapshot = await this.collection
+      .where("status", "==", "published")
+      .where("categoryInfo.id", "in", categoryIds)
+      .where("startDate", ">=", now)
+      .orderBy("startDate", "asc")
+      .limit(20)
+      .get();
+
+    return snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
+    );
+  }
+
+  async findAllEvents(): Promise<FirebaseEventsDto[]> {
+    const now = new Date();
+    const snapshot = await this.collection
+      .where("status", "==", "published")
+      .where("endDate", ">=", now)
+      .orderBy("startDate", "asc")
+      .limit(30)
+      .get();
+
+    return snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
+    );
+  }
 }

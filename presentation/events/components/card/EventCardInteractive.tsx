@@ -10,6 +10,7 @@ import { RotateCcw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { EventCard } from "./EventCard";
+import { shareEventAction } from "@/app/actions/events/share-event.action";
 
 const FEATURED_EVENTS_TAG = "featured-events";
 
@@ -17,6 +18,8 @@ interface EventCardInteractiveProps {
   events: EventViewModel[];
   attendeeCount?: number;
   likedByEventId?: Record<string, boolean>;
+  info: {title: string, description: string}
+  variant?: "horizontal" | "vertical";
 }
 
 interface PendingLikeState {
@@ -33,6 +36,8 @@ export function EventCardInteractive({
   events,
   attendeeCount = 0,
   likedByEventId = {},
+  info,
+  variant = "horizontal"
 }: EventCardInteractiveProps) {
   const router = useRouter();
   const { refreshUser } = useAuth();
@@ -124,16 +129,16 @@ export function EventCardInteractive({
     }
   };
 
+
+
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
         <h3 className="text-xl font-semibold text-foreground mb-2">
-          Lamentablemente no hay eventos destacados :C
+          {info.title}
         </h3>
         <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
-          Por el momento no contamos con eventos disponibles. Estamos trabajando
-          constantemente para traerte las mejores experiencias. ¡Vuelve pronto para
-          descubrir lo que tenemos preparado para ti!
+          {info.description}
         </p>
         <Button
           onClick={handleReload}
@@ -155,12 +160,12 @@ export function EventCardInteractive({
           <EventCard
             key={event.id}
             event={event}
-            variant="horizontal"
+            variant={variant}
             attendeeCount={attendeeCount}
             initialLikes={event.analytics?.likes ?? 0}
             initialLiked={likedByEventId[event.id] ?? false}
             onLike={handleLike}
-            onShare={(ev) => console.log("share", ev.slug)}
+            onShare={(ev) => shareEventAction(ev.id)}
           />
         ))}
       </div>

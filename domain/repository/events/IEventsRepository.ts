@@ -4,6 +4,7 @@ import { IBaseRepository } from "../IBaseRepository";
 export interface IEventsRepository extends IBaseRepository<Events>{ 
     findFeaturedEvents(): Promise<Events[]>;
     findWeekendEvents(): Promise<Events[]>;
-    incrementLikes(eventId: string, delta: number): Promise<void>;
-    
+    findByTopCategory(categoryIds: string[]): Promise<Events[]>;
+    incrementLikes(eventId: string, delta: number): Promise<void>;    
+    incrementShares(eventId: string, delta: number): Promise<void>;    
 }

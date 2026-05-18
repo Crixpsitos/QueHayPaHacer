@@ -4,13 +4,16 @@ export interface EventInteractions {
   id: string;
   eventId: string;
 
-  liked: boolean;
-  likedAt: Date;
+  liked?: boolean;
+  likedAt?: Date;
 
-  viewedAt: Date;
-  clickCount: number;
+  viewedAt?: Date;
+  clickCount?: number;
 
-  registeredAt: Date;
+  registeredAt?: Date;
+
+  share?: number;
+  sharedAt?: Date;
 
   event: Events;
 

@@ -36,6 +36,7 @@ export interface EventViewModel {
     likes?: number;
     clicks?: number;
     registrations?: number;
+    shares?: number;
     score?: number;
   };
   // Fechas como strings ISO 8601

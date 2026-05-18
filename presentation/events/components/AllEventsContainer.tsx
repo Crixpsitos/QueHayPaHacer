@@ -2,21 +2,21 @@ import { EventCardInteractive } from "./card/EventCardInteractive";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { EventFeedItem } from "@/application/aggregations/EventFeed/EventFeed";
 
-interface FeaturedEventsContainerProps {
-  featuredEvents: EventFeedItem[];
+interface AllEventsContainerProps {
+  allEvents: EventFeedItem[];
 }
 
-export const FeaturedEventsContainer = async ({ featuredEvents }: FeaturedEventsContainerProps) => {
-  const featuredEventsViewModels = featuredEvents.map((event) =>
+export const AllEventsContainer = async ({ allEvents }: AllEventsContainerProps) => {
+  const allEventsViewModels = allEvents.map((event) =>
     EventViewModelMapper.toViewModel(event.event),
   );
 
-  const featuredEventsInteractions = featuredEvents.map(
+  const allEventsInteractions = allEvents.map(
     (event) => event.interaction,
   );
 
   const likedByEventId = Object.fromEntries(
-    featuredEventsInteractions
+    allEventsInteractions
       .filter(
         (interaction): interaction is NonNullable<typeof interaction> =>
           interaction !== null && interaction !== undefined,
@@ -26,13 +26,13 @@ export const FeaturedEventsContainer = async ({ featuredEvents }: FeaturedEvents
 
   return (
     <EventCardInteractive
-      events={featuredEventsViewModels}
-      attendeeCount={featuredEventsViewModels.reduce(
+      events={allEventsViewModels}
+      attendeeCount={allEventsViewModels.reduce(
         (total, event) => total + (event.analytics?.registrations || 0),
         0,
       )}
       likedByEventId={likedByEventId}
-      info={{ title: "Lamentablemente no hay eventos destacados :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
+      info={{ title: "Lamentablemente no hay eventos disponibles :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
       variant="vertical"
     />
   );

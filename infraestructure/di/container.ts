@@ -28,6 +28,8 @@ import { EventRegistrationAdapter } from "../adapters/EventRegistration/EventReg
 import { EventRegistrationFirebaseMapper } from "../firebase/mappers/EventRegistration/EventRegistrationFirebaseMapper";
 import { EventRegistrationService } from "@/application/services/events/EventRegistrationService";
 import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
+import { UserPreferencesAdapter } from "../adapters/UserPreferences/UserPreferencesAdapter";
+import { UserPreferencesService } from "@/application/services/user/UserPreferencesService";
 
 export const createServerContainer = () => {
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
@@ -75,6 +77,10 @@ export const createServerContainer = () => {
     eventInteractionsService,
   );
 
+  // user preferences
+  const userPreferencesRepository = new UserPreferencesAdapter();
+  const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
+
   return {
     userService,
     campaignService,
@@ -83,6 +89,7 @@ export const createServerContainer = () => {
     eventInteractionsService,
     eventRegistrationService,
     eventFeed,
+    userPreferencesService,
   };
 };
 

@@ -25,4 +25,8 @@ export class EventsService {
     await this.eventsRepository.incrementLikes(eventId, delta);
   }
 
+  async getEventsByUserPreferences(topCategory: string[]): Promise<Events[]> {
+    return this.eventsRepository.findByTopCategory(topCategory);
+  }
+
 }

@@ -2,7 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 import type { EventInteractions } from "@/domain/entities/EventInteractions/EventInteractions";
 import type { Events } from "@/domain/entities/events/Events";
-import type { FirebaseEventInteractionDto } from "@/infraestructure/firebase/dto/EventInteraction/FirebaseEventInteractionDto";
+import type { FirebaseEventInteractionDto, DenormalizedEventFirebaseData } from "@/infraestructure/firebase/dto/EventInteraction/FirebaseEventInteractionDto";
 
 import type { IEventInteractionsMapper } from "./IEventInteractionsMapper";
 
@@ -22,7 +22,9 @@ export class EventInteractionsFirebaseMapper
       viewedAt: dto.viewedAt?.toDate() ?? likedAt,
       clickCount: dto.clickCount ?? 0,
       registeredAt: dto.registeredAt?.toDate() ?? likedAt,
-      event: (dto.event ?? {}) as unknown as Events,
+      share: dto.share,
+      sharedAt: dto.sharedAt?.toDate(),
+      event: (dto.event as unknown as Events) ?? ({} as Events),
       createdAt,
       updatedAt,
     };
@@ -33,13 +35,13 @@ export class EventInteractionsFirebaseMapper
       id: domain.id,
       eventId: domain.eventId,
       liked: domain.liked,
-      likedAt: Timestamp.fromDate(domain.likedAt),
-      viewedAt: Timestamp.fromDate(domain.viewedAt),
+      likedAt: domain.likedAt ? Timestamp.fromDate(domain.likedAt) : undefined,
+      viewedAt: domain.viewedAt ? Timestamp.fromDate(domain.viewedAt) : undefined,
       clickCount: domain.clickCount,
-      registeredAt: Timestamp.fromDate(domain.registeredAt),
-      event: domain.event as unknown as Partial<
-        import("@/infraestructure/firebase/dto/events/FirebaseEventsDto").FirebaseEventsDto
-      >,
+      registeredAt: domain.registeredAt ? Timestamp.fromDate(domain.registeredAt) : undefined,
+      share: domain.share,
+      sharedAt: domain.sharedAt ? Timestamp.fromDate(domain.sharedAt) : undefined,
+      event: domain.event as unknown as DenormalizedEventFirebaseData,
       createdAt: Timestamp.fromDate(domain.createdAt),
       updatedAt: Timestamp.fromDate(domain.updatedAt),
     };
