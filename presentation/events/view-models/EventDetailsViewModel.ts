@@ -5,10 +5,10 @@ export interface EventDetailsViewModel {
   interaction?: {
     id: string;
     eventId: string;
-    liked: boolean;
-    likedAt: string;
-    viewedAt: string;
-    clickCount: number;
+    liked?: boolean;
+    likedAt?: string;
+    viewedAt?: string;
+    clickCount?: number;
     createdAt: string;
     updatedAt: string;
   };
