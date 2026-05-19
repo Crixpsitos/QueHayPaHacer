@@ -33,7 +33,7 @@ export const FeaturedEventsContainer = async ({ featuredEvents }: FeaturedEvents
       )}
       likedByEventId={likedByEventId}
       info={{ title: "Lamentablemente no hay eventos destacados :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
-      variant="vertical"
+      variant="horizontal"
     />
   );
 };
