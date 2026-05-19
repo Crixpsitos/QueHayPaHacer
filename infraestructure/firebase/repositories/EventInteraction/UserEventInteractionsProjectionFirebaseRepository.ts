@@ -67,4 +67,29 @@ export class UserEventInteractionsProjectionFirebaseRepository
         { merge: true },
       );
   }
+
+  async upsertShareProjection(
+    eventId: string,
+    userId: string,
+    eventData: DenormalizedEventData,
+  ): Promise<void> {
+    await this.db
+      .collection("users")
+      .doc(userId)
+      .collection("eventInteractions")
+      .doc(eventId)
+      .set(
+        {
+          id: userId,
+          eventId,
+          userId,
+          event: cleanUndefined(eventData as unknown as DenormalizedEventFirebaseData),
+          share: FieldValue.increment(1),
+          sharedAt: FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+  }
 }

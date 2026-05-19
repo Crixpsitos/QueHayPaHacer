@@ -7,4 +7,10 @@ export interface IUserEventInteractionsProjectionRepository {
     liked: boolean,
     eventData: DenormalizedEventData,
   ): Promise<void>;
+
+  upsertShareProjection(
+    eventId: string,
+    userId: string,
+    eventData: DenormalizedEventData,
+  ): Promise<void>;
 }

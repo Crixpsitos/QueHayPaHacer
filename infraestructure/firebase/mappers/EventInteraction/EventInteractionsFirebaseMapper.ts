@@ -22,7 +22,7 @@ export class EventInteractionsFirebaseMapper
       viewedAt: dto.viewedAt?.toDate() ?? likedAt,
       clickCount: dto.clickCount ?? 0,
       registeredAt: dto.registeredAt?.toDate() ?? likedAt,
-      share: dto.share,
+      share: dto.share ?? 0,
       sharedAt: dto.sharedAt?.toDate(),
       event: (dto.event as unknown as Events) ?? ({} as Events),
       createdAt,

@@ -90,6 +90,12 @@ export class EventInteractionsService {
       eventData,
     );
 
+    await this.userEventInteractionsProjectionRepository.upsertShareProjection(
+      eventId,
+      userId,
+      eventData,
+    );
+
     await this.eventsRepository.incrementShares(eventId, 1);
   }
 }
