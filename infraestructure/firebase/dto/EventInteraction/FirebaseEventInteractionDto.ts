@@ -1,5 +1,4 @@
 import type { Timestamp } from "firebase-admin/firestore";
-import { FirebaseEventsDto } from "../events/FirebaseEventsDto";
 
 export interface DenormalizedEventFirebaseData {
   id: string;

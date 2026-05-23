@@ -6,7 +6,7 @@ export interface Categories {
   description: string;
   icon: string;
   isActive: boolean;
-
+  slug: string;
   navigation: Navigation;
   createdAt: Date;
   updatedAt: Date;
