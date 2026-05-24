@@ -7,6 +7,7 @@ import {
   FieldGroup,
   FieldDescription,
   FieldLabel,
+  FieldError,
 } from "@/app/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
@@ -32,49 +33,34 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
           Registro y capacidad de tu evento
         </h2>
         <p className="text-sm text-gray-500">
-          ¿Como se podran registrar los asistentes a tu evento? ¿Habrá un límite
-          de capacidad?
+          ¿Cómo se podrán registrar los asistentes a tu evento? ¿Habrá un límite de capacidad?
         </p>
       </div>
       <FieldGroup>
-
-          <Controller
-            name="registrationType"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid.toString()}>
-                <FieldLabel>Tipo de registro</FieldLabel>
-                <FieldDescription>
-                  ¿Cómo se registrarán los asistentes a tu evento?
-                </FieldDescription>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="grid gap-3 sm:grid-cols-2"
-                >
-                  {[
-                    {
-                      value: "none",
-                      label: "Ninguno",
-                      desc: "Evento abierto",
-                    },
-                    {
-                      value: "internal",
-                      label: "Registro interno",
-                      desc: "Registro básico en la plataforma",
-                    },
-                    {
-                      value: "external",
-                      label: "Registro externo",
-                      desc: "Toma el control del registro en un sitio externo",
-                    },
-                    {
-                      value: "form",
-                      label: "Formulario personalizado",
-                      desc: "Crea un formulario de registro personalizado",
-                    },
-                  ].map((option) => (
-                    <Label
+        <Controller
+          name="registrationType"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid.toString()}>
+              <FieldLabel>Tipo de registro</FieldLabel>
+              <FieldDescription>
+                ¿Cómo se registrarán los asistentes a tu evento?
+              </FieldDescription>
+              <RadioGroup
+                onValueChange={(val) => {
+                  field.onChange(val);
+                  if (val !== "external") form.setValue("externalUrl", "");
+                }}
+                value={field.value}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                {[
+                  { value: "none", label: "Ninguno", desc: "Evento abierto" },
+                  { value: "internal", label: "Registro interno", desc: "Registro básico en la plataforma" },
+                  { value: "external", label: "Registro externo", desc: "Toma el control del registro en un sitio externo" },
+                  { value: "form", label: "Formulario personalizado", desc: "Crea un formulario de registro personalizado" },
+                ].map((option) => (
+                  <Label
                     key={option.value}
                     htmlFor={option.value}
                     className={`flex cursor-pointer items-start gap-3 rounded border p-4 transition-colors ${
@@ -93,80 +79,74 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                       <p className="text-sm text-gray-500">{option.desc}</p>
                     </div>
                   </Label>
-                  ))}
-                </RadioGroup>
+                ))}
+              </RadioGroup>
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
+            </Field>
+          )}
+        />
+
+        {registrationType === "external" && (
+          <Controller
+            name="externalUrl"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid.toString()}>
+                <FieldLabel>URL de registro externo</FieldLabel>
+                <FieldDescription>
+                  Ingresa el enlace donde los usuarios realizarán la inscripción.
+                </FieldDescription>
+                <Input
+                  type="text"
+                  placeholder="https://ejemplo.com/registro"
+                  aria-label="URL de registro externo"
+                  {...field}
+                />
+                {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
               </Field>
             )}
           />
+        )}
 
-            {registrationType === "external" && (
-              <Controller
-                name="externalUrl"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid.toString()}>
-                    <FieldLabel>URL de registro externo</FieldLabel>
-                    <FieldDescription>
-                      ¿Cómo se registrarán los asistentes a tu evento?
-                    </FieldDescription>
-                    <Input
-                      type="text"
-                      placeholder="Ingresa la URL"
-                      aria-label="URL de registro externo"
-                      {...field}
-                    />
-                    {fieldState.invalid && (
-                      <FieldLabel className="text-destructive">{fieldState?.error?.message}</FieldLabel>
-                    )}
-                  </Field>
-                )}
-              />
-            )}
+        {registrationType === "form" && (
+          <div className="space-y-2">
+            <FieldLabel>Constructor de formulario de registro</FieldLabel>
+            <RegistrationFormBuilder
+              value={form.watch("registrationEventForm")}
+              onChange={(value) => form.setValue("registrationEventForm", value, { shouldValidate: true })}
+            /> 
+          </div>
+        )}
 
-            {registrationType === "form" && (
-              <div>
-                <FieldLabel className="mb-3">Constructor de formulario de registro</FieldLabel>
-                <RegistrationFormBuilder
-                  value={form.watch("registrationEventForm")}
-                  onChange={(value) => form.setValue("registrationEventForm", value)}
-                /> 
-              </div>
-            )}
-
-          <Controller
+        <Controller
           name="capacity"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
               <FieldLabel>Capacidad (opcional)</FieldLabel>
               <FieldDescription>
-                ¿Cuántas personas pueden asistir a tu evento?
+                ¿Cuántas personas pueden asistir a tu evento? Deja en 0 o vacío si es ilimitado.
               </FieldDescription>
               <Input
                 type="number"
-                placeholder="Ingresa la capacidad"
+                placeholder="Ej: 100"
                 aria-label="Capacidad"
                 min={0}
-                {...field}
+                value={field.value || ""}
                 onChange={(e) => {
-                  const value = e.target.value;
-                    if (value === "") {
-                        return;
-                    }
-                    const numericValue = parseInt(value, 10);
-                    if (isNaN(numericValue)) {
-                        return;
-                    }
-                    field.onChange(numericValue);
+                  const val = e.target.value;
+                  if (val === "") {
+                    field.onChange(0);
+                    return;
+                  }
+                  const numericValue = parseInt(val, 10);
+                  field.onChange(isNaN(numericValue) ? 0 : numericValue);
                 }} 
               />
-              {fieldState.invalid && (
-                <FieldLabel className="text-destructive">{fieldState?.error?.message}</FieldLabel>
-              )}
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
           )}
-          />
-        
+        />
       </FieldGroup>
     </div>
   );

@@ -247,7 +247,7 @@ export const RegistrationFormBuilder = ({
 
       <div className="min-h-[450px] p-6 bg-gray-50/30">
         {showPreview ? (
-          <RenderRegistrationForm schema={schema} />
+          <RenderRegistrationForm schema={schema} isPreview />
         ) : schema.fields.length === 0 ? (
           <div className="flex min-h-[350px] items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
             <div className="max-w-sm">

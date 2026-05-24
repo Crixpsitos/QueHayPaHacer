@@ -135,24 +135,33 @@ export const step6Schema = v.pipe(
     registrationType: v.picklist(["none", "internal", "external", "form"]),
     externalUrl: v.optional(v.string()),
     capacity: v.optional(v.number()),
-    registrationEventForm: v.object({
-    fields: v.array(
+    registrationEventForm: v.optional(
       v.object({
-        id: v.string(),
-        type: v.string(),
-        label: v.string(),
-        placeholder: v.optional(v.string()),
-        required: v.boolean(),
-        options: v.optional(v.array(v.string())),
-      })
+        fields: v.array(
+          v.object({
+            id: v.string(),
+            type: v.string(),
+            label: v.string(),
+            placeholder: v.optional(v.string()),
+            required: v.boolean(),
+            options: v.optional(v.array(v.string())),
+          })
+        ),
+      }),
+      { fields: [] }
     ),
-  }),
   }),
   v.check(
     (data) =>
       data.registrationType !== "external" ||
       (!!data.externalUrl && data.externalUrl.trim().length > 0),
     "La URL externa es obligatoria cuando el tipo de registro es externo."
+  ),
+  v.check(
+    (data) =>
+      data.registrationType !== "form" ||
+      (!!data.registrationEventForm && data.registrationEventForm.fields.length > 0),
+    "Debes agregar al menos un campo si seleccionas formulario personalizado."
   )
 );
 
@@ -160,13 +169,26 @@ export const step7Schema = v.pipe(
   v.object({
     price: v.object({
       isFree: v.boolean(),
-      amount: v.pipe(v.number(), v.minValue(0, "amount must be non-negative")),
-      currency: v.string(),
+      amount: v.pipe(
+        v.unknown(),
+        v.transform((val) => {
+          if (typeof val === "number") return val;
+          if (typeof val === "string" && val.trim() === "") return 0;
+          const parsed = parseFloat(String(val));
+          return isNaN(parsed) ? 0 : parsed;
+        }),
+        v.number("El precio debe ser un número válido"),
+        v.minValue(0, "El monto no puede ser negativo")
+      ),
+      currency: v.pipe(v.string(), v.nonEmpty("Debes seleccionar una divisa")),
     }),
   }),
-  v.check(
-    (data) => data.price.isFree || data.price.amount > 0,
-    "El monto debe ser mayor a 0 si el evento no es gratuito."
+  v.forward(
+    v.check(
+      (data) => data.price.isFree || data.price.amount > 0,
+      "El monto debe ser mayor a 0 si el evento no es gratuito."
+    ),
+    ["price", "amount"]
   )
 );
 

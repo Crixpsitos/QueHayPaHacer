@@ -37,6 +37,7 @@ import { Step3Clasification } from "../steps/Step3Clasification";
 import { Step4Location } from "../steps/Step4Location";
 import { Step5Dates } from "../steps/Step5Dates";
 import { Step6Registration } from "../steps/Step6Registration";
+import { Step7Pricing } from "../steps/Step7Pricing";
 
 const stepSchema: StepSchema[] = [
   step1Schema,
@@ -53,17 +54,12 @@ export const EventCreationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  //memos
-
   const progressPercentage = useMemo(
     () => (currentStep / STEPS.length) * 100,
     [currentStep],
   );
 
-  //ref
   const formRef = useRef<HTMLFormElement>(null);
-
-  //form
 
   const form = useForm<CreateEventDto>({
     resolver: valibotResolver(
@@ -104,6 +100,9 @@ export const EventCreationForm = () => {
       status: "draft",
       registrationType: "none",
       externalUrl: "",
+      registrationEventForm: {
+        fields: [],
+      },
       capacity: 0,
       price: {
         isFree: true,
@@ -118,7 +117,6 @@ export const EventCreationForm = () => {
     } as unknown as CreateEventDto,
     mode: "onChange",
   });
-  //functions
 
   const canAccessStep = useCallback(
     (stepNumber: number) => {
@@ -135,6 +133,10 @@ export const EventCreationForm = () => {
     const isValid = await form.trigger();
 
     if (!isValid) {
+      console.log(
+        "❌ Errores activos en el paso actual:",
+        form.formState.errors,
+      );
       const firstError = formRef.current?.querySelector(
         '[aria-invalid="true"]',
       );
@@ -180,18 +182,16 @@ export const EventCreationForm = () => {
         );
       case 2:
         return <Step2Media form={form} />;
-      
       case 3:
         return <Step3Clasification form={form} />;
-      
       case 4:
         return <Step4Location form={form} />;
-      
       case 5:
         return <Step5Dates form={form} />;
       case 6:
         return <Step6Registration form={form} />;
-      
+      case 7:
+        return <Step7Pricing form={form} />;
       default:
         return null;
     }
@@ -227,16 +227,16 @@ export const EventCreationForm = () => {
           </Button>
 
           <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => console.log("Save as draft")}
+              className="border-black text-black hover:bg-gray-50"
+            >
+              Guardar Como Borrador
+            </Button>
             {currentStep === 8 ? (
               <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => console.log("Save as draft")}
-                  className="border-black text-black hover:bg-gray-50"
-                >
-                  Guardar Como Borrador
-                </Button>
                 <Button
                   type="button"
                   onClick={() => console.log("Publish event")}
