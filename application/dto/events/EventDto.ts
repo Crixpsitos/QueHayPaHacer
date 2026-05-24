@@ -108,32 +108,45 @@ export const step4Schema = v.object({
     city: v.pipe(v.string(), v.nonEmpty("La ciudad es requerida")),
     venue: v.pipe(v.string(), v.nonEmpty("El espacio es requerido")),
     address: v.pipe(v.string(), v.nonEmpty("La dirección es requerida")),
+    moreInfo: v.optional(v.string()),
     coordinates: v.object({
       lat: v.number("La latitud es requerida"),
       lng: v.number("La longitud es requerida"),
     }),
   }),
 });
-
 export const step5Schema = v.pipe(
   v.object({
     startDate: v.string(),
     endDate: v.string(),
     status: v.picklist(["draft", "published", "cancelled", "ended"]),
   }),
-  v.check(
-    (data) => new Date(data.endDate) >= new Date(data.startDate),
-    "La fecha de fin no puede ser anterior a la fecha de inicio."
+  v.forward(
+    v.check(
+      (data) => new Date(data.endDate) >= new Date(data.startDate),
+      "La fecha de fin no puede ser anterior a la fecha de inicio."
+    ),
+    ["endDate"]
   )
 );
-
 
 export const step6Schema = v.pipe(
   v.object({
     registrationType: v.picklist(["none", "internal", "external", "form"]),
     externalUrl: v.optional(v.string()),
     capacity: v.optional(v.number()),
-    registrationEventForm: v.optional(v.record(v.string(), v.any())),
+    registrationEventForm: v.object({
+    fields: v.array(
+      v.object({
+        id: v.string(),
+        type: v.string(),
+        label: v.string(),
+        placeholder: v.optional(v.string()),
+        required: v.boolean(),
+        options: v.optional(v.array(v.string())),
+      })
+    ),
+  }),
   }),
   v.check(
     (data) =>
@@ -192,7 +205,6 @@ export const CreateEventSchema = v.omit(EventSchema, [
   "id",
   "createdAt",
   "updatedAt",
-  "publishedAt",
 ]);
 
 export type EventDto = v.InferOutput<typeof EventSchema>;

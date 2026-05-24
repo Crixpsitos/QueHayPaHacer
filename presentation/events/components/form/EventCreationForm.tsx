@@ -35,6 +35,8 @@ import { STEPS } from "../../constants/steps";
 import { Step2Media } from "../steps/Step2Media";
 import { Step3Clasification } from "../steps/Step3Clasification";
 import { Step4Location } from "../steps/Step4Location";
+import { Step5Dates } from "../steps/Step5Dates";
+import { Step6Registration } from "../steps/Step6Registration";
 
 const stepSchema: StepSchema[] = [
   step1Schema,
@@ -91,6 +93,7 @@ export const EventCreationForm = () => {
         city: "",
         venue: "",
         address: "",
+        moreInfo: "",
         coordinates: {
           lat: 0,
           lng: 0,
@@ -183,6 +186,11 @@ export const EventCreationForm = () => {
       
       case 4:
         return <Step4Location form={form} />;
+      
+      case 5:
+        return <Step5Dates form={form} />;
+      case 6:
+        return <Step6Registration form={form} />;
       
       default:
         return null;

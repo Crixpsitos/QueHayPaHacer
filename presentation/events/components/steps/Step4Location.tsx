@@ -22,12 +22,16 @@ import {
 import { useEffect, useMemo, useRef } from "react";
 import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
+import { SearchLocationInput } from "../ui/SearchLocationInput";
 
 interface Step4Props {
   form: UseFormReturn<CreateEventDto>;
 }
 
-const MapZone = dynamic(() => import("../mapzone/MapZone").then((mod) => mod.MapZone), { ssr: false })
+const MapZone = dynamic(
+  () => import("../mapzone/MapZone").then((mod) => mod.MapZone),
+  { ssr: false },
+);
 
 export const Step4Location = ({ form }: Step4Props) => {
   const { location } = useLocationInfo();
@@ -41,6 +45,16 @@ export const Step4Location = ({ form }: Step4Props) => {
   const watchedDepartment = useWatch({
     control: form.control,
     name: "location.department",
+  });
+
+  const watchedCity = useWatch({
+    control: form.control,
+    name: "location.city",
+  });
+
+  const watchedCoordinates = useWatch({
+    control: form.control,
+    name: "location.coordinates",
   });
 
   const countriesList = useMemo(() => {
@@ -63,6 +77,34 @@ export const Step4Location = ({ form }: Step4Props) => {
     }
     return [];
   }, [watchedCountry, watchedDepartment]);
+
+  const currentCity = useMemo(() => {
+    if (watchedCity) {
+      return citiesList.find(
+        (c) => c.name.toLowerCase() === watchedCity.toLowerCase(),
+      );
+    }
+    return null;
+  }, [citiesList, watchedCity]);
+
+  const currentCityCoords = useMemo(() => {
+    if (currentCity) {
+      const latitude = currentCity.latitude
+        ? parseFloat(currentCity.latitude)
+        : 0;
+      const longitude = currentCity.longitude
+        ? parseFloat(currentCity.longitude)
+        : 0;
+
+      console.log("Coordenadas calculadas para MapZone:", latitude, longitude);
+
+      return {
+        latitude,
+        longitude,
+      };
+    }
+    return null;
+  }, [currentCity]);
 
   useEffect(() => {
     if (!location || hasInitializedGeoIp.current) return;
@@ -159,6 +201,12 @@ export const Step4Location = ({ form }: Step4Props) => {
                     name: "",
                   });
                   form.setValue("location.city", "");
+                  form.setValue("location.venue", "");
+                  form.setValue("location.address", "");
+                  form.setValue("location.coordinates", {
+                    lat: 0,
+                    lng: 0,
+                  });
                 }}
                 disabled={field.disabled}
                 onBlur={field.onBlur}
@@ -194,6 +242,12 @@ export const Step4Location = ({ form }: Step4Props) => {
                   }
 
                   form.setValue("location.city", "");
+                  form.setValue("location.venue", "");
+                  form.setValue("location.address", "");
+                  form.setValue("location.coordinates", {
+                    lat: 0,
+                    lng: 0,
+                  });
                 }}
                 disabled={departmentsList.length === 0 || field.disabled}
                 onBlur={field.onBlur}
@@ -234,6 +288,66 @@ export const Step4Location = ({ form }: Step4Props) => {
                   Especifica el nombre del espacio donde se llevará a cabo el
                   evento, como un parque, un bar, un teatro, etc.
                 </FieldDescription>
+                <SearchLocationInput
+                  {...field}
+                  cityCoords={currentCityCoords}
+                  value={field.value}
+                  disabled={!currentCity || field.disabled}
+                  cityName={currentCity?.name}
+                  countryIsoCode={
+                    typeof currentCity?.countryCode === "string"
+                      ? currentCity.countryCode
+                      : ""
+                  }
+                  onChange={(value, coords, address) => {
+                    field.onChange(value);
+
+                    form.setValue("location.address", address, {
+                      shouldValidate: true,
+                    });
+                    form.setValue(
+                      "location.coordinates",
+                      {
+                        lat: coords[1],
+                        lng: coords[0],
+                      },
+                      { shouldValidate: true },
+                    );
+                  }}
+                />
+                {fieldState.invalid && (
+                  <FieldError>{fieldState.error?.message}</FieldError>
+                )}
+              </Field>
+            )}
+          />
+            <Controller
+              name="location.address"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid.toString()}>
+                  <FieldLabel>Dirección</FieldLabel>
+                  <FieldDescription>
+                    Especifica la dirección exacta donde se llevará a cabo el
+                    evento.
+                  </FieldDescription>
+                  <Input {...field} />
+                  {fieldState.invalid && (
+                    <FieldError>{fieldState.error?.message}</FieldError>
+                  )}
+                </Field>
+              )}
+            />
+          <Controller
+            name="location.moreInfo"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid.toString()}>
+                <FieldLabel>Más información (Opcional)</FieldLabel>
+                <FieldDescription>
+                  Especifica más información sobre el lugar donde se llevará a
+                  cabo el evento.
+                </FieldDescription>
                 <Input {...field} />
                 {fieldState.invalid && (
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -243,30 +357,24 @@ export const Step4Location = ({ form }: Step4Props) => {
           />
         </div>
         <Controller
-          name="location.address"
+          name="location.coordinates"
           control={form.control}
-          render={({ field, fieldState }) => (
+          render={({ fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>Dirección</FieldLabel>
+              <FieldLabel>Ubicación</FieldLabel>
               <FieldDescription>
-                Especifica la dirección exacta donde se llevará a cabo el
-                evento.
+                ¿Dónde se llevará a cabo el evento? ¿En una ciudad o en un lugar
+                más remoto?
               </FieldDescription>
-              <Input {...field} />
-              {fieldState.invalid && (
-                <FieldError>{fieldState.error?.message}</FieldError>
-              )}
+              <MapZone cityCoords={currentCityCoords} pointCoords={watchedCoordinates} onMarkerDrag={(lat, lng) => {
+                form.setValue("location.coordinates", {
+                  lat,
+                  lng,
+                });
+              }}/>
             </Field>
           )}
         />
-        <Field>
-          <FieldLabel>Ubicación</FieldLabel>
-          <FieldDescription>
-            ¿Dónde se llevará a cabo el evento? ¿En una ciudad o en un lugar
-            más remoto?
-          </FieldDescription>
-          <MapZone />
-        </Field>
       </FieldGroup>
     </div>
   );
