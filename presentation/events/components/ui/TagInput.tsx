@@ -3,19 +3,17 @@
 import { Badge } from "@/app/components/ui/badge";
 import {
   Field,
-  FieldError,
-  FieldGroup,
   FieldLabel,
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
-import { type CreateEventDto } from "@/application/dto/events/EventDto";
+import { type FormEventDto } from "@/application/dto/events/EventDto";
 import { X } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { type UseFormSetValue } from "react-hook-form";
 
 interface TagInputProps {
   tags: string[];
-  setValue: UseFormSetValue<CreateEventDto>;
+  setValue: UseFormSetValue<FormEventDto>;
 }
 
 export const TagInput = ({ tags, setValue }: TagInputProps) => {

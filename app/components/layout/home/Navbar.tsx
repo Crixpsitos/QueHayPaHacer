@@ -18,8 +18,8 @@ import { useModalStore } from "@/app/store/modal/modal.store";
 import { LoginForm } from "../../feature/auth/LoginForm";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginAction } from "@/app/actions/auth/login.action";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
+import { Skeleton } from "../../ui/skeleton";
 
 interface ToastState {
   message: string;
@@ -27,7 +27,7 @@ interface ToastState {
 }
 
 export const Navbar = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isHydrating } = useAuth();
   const { closeModal, openModal } = useModalStore();
   const router = useRouter();
 
@@ -53,9 +53,7 @@ export const Navbar = () => {
   const handleLoginSuccess = async () => {
     try {
       await refreshUser();
-
       closeModal();
-
       startTransition(() => {
         router.push("/events/create");
       });
@@ -68,42 +66,37 @@ export const Navbar = () => {
     showToast(message, "error");
   };
 
-
   const openLoginModal = () => {
     openModal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="relative w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="absolute right-3 top-3 inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
-              aria-label="Cerrar modal"
-            >
-              <X className="size-4" />
-            </button>
+        <div className="relative w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="absolute right-3 top-3 inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+            aria-label="Cerrar modal"
+          >
+            <X className="size-4" />
+          </button>
 
-            <h3 className="mb-1 text-xl font-semibold">Inicia sesion para dar like</h3>
-            <p className="mb-5 text-sm text-muted-foreground">
-              Necesitamos autenticar tu cuenta para guardar tu interaccion.
-            </p>
+          <h3 className="mb-1 text-xl font-semibold">Inicia sesion para dar like</h3>
+          <p className="mb-5 text-sm text-muted-foreground">
+            Necesitamos autenticar tu cuenta para guardar tu interaccion.
+          </p>
 
-            <LoginForm
-              loginAction={loginModalAction}
-              onSuccess={handleLoginSuccess}
-              onError={handleLoginError}
-            />
-          </div>
+          <LoginForm
+            loginAction={loginModalAction}
+            onSuccess={handleLoginSuccess}
+            onError={handleLoginError}
+          />
         </div>
+      </div>
     );
   };
 
   return (
     <header className="border-b border-zinc-200 bg-background/95 text-foreground backdrop-blur dark:border-zinc-800">
-      <Container
-        as="nav"
-        aria-label="Principal"
-        className="text-sm font-medium"
-      >
+      <Container as="nav" aria-label="Principal" className="text-sm font-medium">
         <div className="flex h-16 items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr]">
           <div className="justify-self-start">
             <Link
@@ -115,10 +108,7 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          <ul
-            className="hidden items-center justify-self-center gap-1 md:flex"
-            role="list"
-          >
+          <ul className="hidden items-center justify-self-center gap-1 md:flex" role="list">
             {routes.map((route) => (
               <li key={route.name}>
                 <NavLink
@@ -144,11 +134,7 @@ export const Navbar = () => {
                   <Menu className="size-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={10}
-                className="w-56 md:hidden"
-              >
+              <DropdownMenuContent align="end" sideOffset={10} className="w-56 md:hidden">
                 {routes.map((route) => (
                   <DropdownMenuItem asChild key={route.name}>
                     <Link href={route.href}>{route.name}</Link>
@@ -166,16 +152,15 @@ export const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {user ? (
+            {isHydrating ? (
+              <Skeleton className="hidden h-10 w-36 bg-zinc-200 dark:bg-zinc-800 md:inline-flex rounded-lg" />
+            ) : user ? (
               <Button
                 asChild
                 variant="outline"
                 className="hidden! border-transparent bg-zinc-900 text-white shadow-sm hover:bg-zinc-700 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 md:inline-flex!"
               >
-                <Link
-                  href="/events/create"
-                  className="inline-flex items-center gap-2"
-                >
+                <Link href="/events/create" className="inline-flex items-center gap-2">
                   <Plus className="size-4" aria-hidden="true" />
                   Crear tu evento
                 </Link>

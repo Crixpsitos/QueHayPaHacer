@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { IpLocationProvider } from "./store/Location/IpLocationProvider";
 import { ServerLocationHydration } from "@/presentation/events/components/hydrator/ServerLocationHydration";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -49,6 +50,7 @@ export default async function RootLayout({
             {children}
           </IpLocationProvider>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

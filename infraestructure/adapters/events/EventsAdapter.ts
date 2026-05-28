@@ -1,6 +1,7 @@
 import { Events } from "@/domain/entities/events/Events";
 import { IEventsRepository } from "@/domain/repository/events/IEventsRepository";
 import { IEventsMapper } from "@/infraestructure/firebase/mappers/events/IEventsMapper";
+import { removeUndefinedProperties } from "@/infraestructure/firebase/mappers/shared/removeUndefinedProperties";
 import { IEventsFirebaseRepository } from "@/infraestructure/firebase/repositories/events/IEventsFirebaseRepository";
 
 export class EventsAdapter implements IEventsRepository {
@@ -8,6 +9,27 @@ export class EventsAdapter implements IEventsRepository {
     private readonly repository: IEventsFirebaseRepository,
     private readonly mapper: IEventsMapper,
   ) {}
+  async updateEvent(event: Events): Promise<void> {
+    const dto = this.mapper.toDto(event);
+    const cleanDto = removeUndefinedProperties(dto);
+
+    await this.repository.updateEvent(cleanDto); 
+  }
+  async findLastDraftEventToUser(userId: string): Promise<Events | null> {
+    const dto = await this.repository.findLastDraftEventToUser(userId);
+    return dto ? this.mapper.toDomain(dto) : null
+  }
+  async findDraftEventByIdAndUser(id: string, userId: string): Promise<Events | null> {
+    const dto = await this.repository.findDraftEventByIdAndUser(id, userId);
+    return dto ? this.mapper.toDomain(dto) : null;
+  }
+  async createDraftEvent(event: Events): Promise<Events> {
+    const dto = this.mapper.toDto(event);
+    const cleanDto = removeUndefinedProperties(dto);
+
+    const firebaseDto = await this.repository.createDraftEvent(cleanDto);
+    return this.mapper.toDomain(firebaseDto);
+  }
 
   async findFeaturedEvents(): Promise<Events[]> {
     const dtos = await this.repository.findFeaturedEvents();

@@ -62,7 +62,7 @@ export const SelectCategories = ({
 
   return (
     <Field data-invalid={fieldState.invalid}>
-      <FieldLabel>Estado</FieldLabel>
+      <FieldLabel>Categoria principal</FieldLabel>
       <Select value={currentSelectId} onValueChange={handleValueChange} disabled={disabled}>
         <SelectTrigger onBlur={onBlur} ref={ref}>
           <SelectValue placeholder="Selecciona un estado" />
@@ -77,7 +77,7 @@ export const SelectCategories = ({
           </SelectGroup>
         </SelectContent>
       </Select>
-        {fieldState.invalid && <FieldLabel className="text-destructive">{fieldState?.error?.message}</FieldLabel>}
+        {fieldState.invalid && <FieldLabel className="text-destructive">Por favor selecciona una categoría</FieldLabel>}
     </Field>
   );
 };

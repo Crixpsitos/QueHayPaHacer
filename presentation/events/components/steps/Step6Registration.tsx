@@ -1,7 +1,7 @@
 "use client";
 
 import { Controller, type UseFormReturn } from "react-hook-form";
-import { CreateEventDto } from "@/application/dto/events/EventDto";
+import { FormEventDto } from "@/application/dto/events/EventDto";
 import {
   Field,
   FieldGroup,
@@ -15,7 +15,7 @@ import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
 
 interface Step6RegistrationProps {
-  form: UseFormReturn<CreateEventDto>;
+  form: UseFormReturn<FormEventDto>;
 }
 
 const RegistrationFormBuilder = dynamic(
@@ -112,7 +112,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
           <div className="space-y-2">
             <FieldLabel>Constructor de formulario de registro</FieldLabel>
             <RegistrationFormBuilder
-              value={form.watch("registrationEventForm")}
+              value={form.watch("registrationEventForm") ?? {}}
               onChange={(value) => form.setValue("registrationEventForm", value, { shouldValidate: true })}
             /> 
           </div>

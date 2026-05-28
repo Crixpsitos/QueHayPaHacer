@@ -12,11 +12,11 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
-import { CreateEventDto } from "@/application/dto/events/EventDto";
+import { FormEventDto } from "@/application/dto/events/EventDto";
 import { SelectCurrency } from "@/presentation/events/components/ui/SelectCurrency";
 
 interface Step7PricingProps {
-  form: UseFormReturn<CreateEventDto>;
+  form: UseFormReturn<FormEventDto>;
 }
 
 interface CurrencyOption {

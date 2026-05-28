@@ -30,8 +30,15 @@ import { EventRegistrationService } from "@/application/services/events/EventReg
 import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
 import { UserPreferencesAdapter } from "../adapters/UserPreferences/UserPreferencesAdapter";
 import { UserPreferencesService } from "@/application/services/user/UserPreferencesService";
+import { StorageService } from "../storage/firebase/FirebaseStorageService";
+
+
 
 export const createServerContainer = () => {
+
+  //storage service
+  const storageService = new StorageService();
+  
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
   const userRepository = new UserAdapter(userFirebaseRepository, new UserFirebaseMapper());
   const userService = new UserService(userRepository);
@@ -48,7 +55,7 @@ export const createServerContainer = () => {
   // events
   const eventsFirebaseRepository = new EventsFirebaseRepository(getFirebaseFirestore());
   const eventsRepository = new EventsAdapter(eventsFirebaseRepository, new EventsFirebaseMapper());
-  const eventsService = new EventsService(eventsRepository);
+  const eventsService = new EventsService(eventsRepository, storageService);
 
   // event interactions
   const eventInteractionsFirebaseRepository = new EventInteractionsFirebaseRepository(getFirebaseFirestore());
@@ -90,6 +97,7 @@ export const createServerContainer = () => {
     eventRegistrationService,
     eventFeed,
     userPreferencesService,
+    storageService,
   };
 };
 

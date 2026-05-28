@@ -4,14 +4,31 @@ import { Dates } from "./value-objects/Dates";
 import { Price } from "./value-objects/Price";
 import { Promotion } from "./value-objects/Promotion";
 import { CategoryInfo } from "./value-objects/CategoryInfo";
+import { MediaItem } from "./value-objects/Media";
 
 export interface Events extends Dates {
   id: string;
   slug: string;
   title: string;
   shortDescription: string;
-  description: string;
-  images: ImageVariants;
+  description: {
+    type: "doc";
+    content?: {
+      type: string;
+      content?: {
+        type: string;
+        text?: string;
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content?: any[];
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attrs?: Record<string, any>;
+      }[];
+    };
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    attrs: Record<string, any>;
+  };
+  mainImage: ImageVariants;
+  media: MediaItem[];
   categoryInfo: CategoryInfo
   author: {
     id: string;
@@ -21,6 +38,10 @@ export interface Events extends Dates {
   location: Location;
   status: "draft" | "published" | "cancelled" | "ended";
   registrationType: "none" | "internal" | "external" | "form";
+  registrationEventForm?: {
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fields: any[];
+  };
   externalUrl?: string;
   capacity?: number;
   price: Price;

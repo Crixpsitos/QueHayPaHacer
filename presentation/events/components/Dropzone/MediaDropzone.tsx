@@ -6,15 +6,16 @@ import {
   domAnimation,
   AnimatePresence,
 } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/app/lib/utils/cn";
+import { MediaItem } from "@/application/dto/events/EventDto";
 
 interface MediaDropzoneProps {
-  value: File[] | null;
-  onChange: (files: File[] | null) => void;
+  value: MediaItem[] | null;
+  onChange: (files: File[]) => void;
   error?: string;
-  removeMediaFile: (name: string) => void;
+  removeMediaFile: (id: string) => void;
 }
 
 export const MediaDropzone = ({
@@ -23,17 +24,8 @@ export const MediaDropzone = ({
   error,
   removeMediaFile,
 }: MediaDropzoneProps) => {
-  const currentFiles = useMemo(() => value ?? [], [value]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const fileUrls = useMemo(() => {
-    const map = new Map<string, string>();
-    currentFiles.forEach((file) => {
-      map.set(file.name, URL.createObjectURL(file));
-    });
-    return map;
-  }, [currentFiles]);
-
+  const currentFiles = value ?? [];
+  const [selectedFile, setSelectedFile] = useState<MediaItem | null>(null);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -44,7 +36,7 @@ export const MediaDropzone = ({
     multiple: true,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
-        onChange([...currentFiles, ...acceptedFiles]);
+        onChange(acceptedFiles);
       }
     },
   });
@@ -52,7 +44,6 @@ export const MediaDropzone = ({
   return (
     <LazyMotion features={domAnimation}>
       <div className="flex w-full max-w-4xl mx-auto flex-col gap-3">
-        {/* Encabezado de sección */}
         <div>
           <h4 className="text-sm font-semibold text-gray-900">
             Galería del evento{" "}
@@ -66,7 +57,6 @@ export const MediaDropzone = ({
           </p>
         </div>
 
-        {/* Zona de drop */}
         <div
           {...getRootProps()}
           role="button"
@@ -113,52 +103,61 @@ export const MediaDropzone = ({
           </div>
         </div>
 
-        {/* Mensaje de error */}
         {error && (
           <p role="alert" className="text-xs text-red-500">
             {error}
           </p>
         )}
 
-        {/* Grid de archivos */}
         {currentFiles.length > 0 && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {currentFiles.map((file) => {
-              const isVideo = file.type.startsWith("video/");
-              const fileUrl = fileUrls.get(file.name) ?? "";
+              const isVideo = file.type === "video";
+              const thumbUrl = isVideo
+                ? file.data.thumbnail?.url
+                : file.data.url;
+              const thumbAlt = isVideo
+                ? file.data.thumbnail?.alt
+                : file.data.alt;
 
               return (
                 <motion.div
-                  layoutId={`media-${file.name}`}
-                  key={file.name}
+                  layoutId={`media-${file.id}`}
+                  key={file.id}
                   onClick={() => setSelectedFile(file)}
-                  style={{ zIndex: selectedFile?.name === file.name ? 50 : 1 }}
+                  style={{ zIndex: selectedFile?.id === file.id ? 50 : 1 }}
                   className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-900"
                 >
-                  <div className="relative h-full w-full">
-                    {isVideo ? (
-                      <video
-                        src={fileUrl}
-                        className="h-full w-full object-cover opacity-80"
-                        muted
-                      />
-                    ) : (
-                      <Image
-                        src={fileUrl}
-                        alt={file.name}
-                        fill
-                        className="object-cover"
-                      />
-                    )}
-                  </div>
+                  {thumbUrl &&  thumbAlt && (
+                    <Image
+                      src={thumbUrl}
+                      alt={thumbAlt}
+                      fill
+                      className="object-cover opacity-80"
+                    />
+                  )}
+
+                  {isVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="rounded-full bg-black/50 p-2">
+                        <svg
+                          className="h-4 w-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeMediaFile(file.name);
+                      removeMediaFile(file.id);
                     }}
-                    aria-label={`Eliminar ${file.name}`}
+                    aria-label="Eliminar archivo"
                     className="absolute right-2 top-2 z-10 rounded-full border border-gray-200 bg-white p-1 shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
@@ -169,7 +168,6 @@ export const MediaDropzone = ({
           </div>
         )}
 
-        {/* Vista previa en overlay */}
         <AnimatePresence>
           {selectedFile && (
             <>
@@ -182,20 +180,20 @@ export const MediaDropzone = ({
               />
 
               <motion.div
-                layoutId={`media-${selectedFile.name}`}
+                layoutId={`media-${selectedFile.id}`}
                 className="fixed inset-0 z-50 m-auto aspect-square w-full max-w-2xl overflow-hidden rounded-2xl bg-black"
               >
-                {selectedFile.type.startsWith("video/") ? (
+                {selectedFile.type === "video" ? (
                   <video
-                    src={fileUrls.get(selectedFile.name) ?? ""}
+                    src={selectedFile.data.url}
                     className="h-full w-full object-contain"
                     controls
                     autoPlay
                   />
                 ) : (
                   <Image
-                    src={fileUrls.get(selectedFile.name) ?? ""}
-                    alt="Vista previa"
+                    src={selectedFile.data.url}
+                    alt={selectedFile.data.alt}
                     fill
                     className="object-cover"
                   />

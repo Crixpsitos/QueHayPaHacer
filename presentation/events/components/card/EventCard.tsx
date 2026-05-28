@@ -136,7 +136,7 @@ export const EventCard = ({
       "@type": "Person",
       name: event.author.displayName,
     },
-    image: event.images?.desktop.url,
+    image: event.mainImage?.desktop.url,
     offers: {
       "@type": "Offer",
       price: isFree ? "0" : event.price.amount.toString(),
@@ -173,9 +173,9 @@ export const EventCard = ({
         {/* ── Imagen ── */}
         <div className={cn("relative shrink-0 overflow-hidden")}>
           <ResponsivePicture
-            desktop={event.images.desktop}
-            tablet={event.images.tablet}
-            mobile={event.images.mobile}
+            desktop={event.mainImage.desktop}
+            tablet={event.mainImage.tablet}
+            mobile={event.mainImage.mobile}
             loading="eager"
           />
 

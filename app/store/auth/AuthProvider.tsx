@@ -14,7 +14,7 @@ export const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({
   children
 }) => {
   const [user, setUser] = React.useState<User | null>(initialUser);
-  const [isHydrating, setIsHydrating] = React.useState(false);
+  const [isHydrating, setIsHydrating] = React.useState(true);
   const hasHydratedOnceRef = React.useRef(false);
 
   const refreshUser = React.useCallback(async () => {

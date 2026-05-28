@@ -1,5 +1,6 @@
 import { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
+import { MediaItem } from "@/domain/entities/events/value-objects/Media";
 import type { Price } from "@/domain/entities/events/value-objects/Price";
 import type { ImageVariants } from "@/domain/shared/ImageVariants";
 import type { Timestamp } from "firebase-admin/firestore";
@@ -15,8 +16,24 @@ export interface FirebaseEventsDto {
     slug: string;
     title: string;
     shortDescription: string;
-    description: string;
-    images: ImageVariants;
+    description: {
+        type: "doc";
+        content?: {
+            type: string;
+            content?: {
+                type: string;
+                text?: string;
+                //eslint-disable-next-line @typescript-eslint/no-explicit-any
+                content?: any[];
+                //eslint-disable-next-line @typescript-eslint/no-explicit-any
+                attrs?: Record<string, any>;
+            }[];
+        };
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attrs: Record<string, any>;
+    };
+    mainImage: ImageVariants;
+    media: MediaItem[];
     categoryInfo: CategoryInfo;
     author: {
         id: string;

@@ -8,7 +8,7 @@ import {
   FieldLabel,
 } from "@/app/components/ui/field";
 import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
-import { CreateEventDto } from "@/application/dto/events/EventDto";
+import { FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { SelectLocation } from "../ui/SelectLocation";
 import {
@@ -25,7 +25,7 @@ import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
 
 interface Step4Props {
-  form: UseFormReturn<CreateEventDto>;
+  form: UseFormReturn<FormEventDto>;
 }
 
 const MapZone = dynamic(
@@ -71,8 +71,8 @@ export const Step4Location = ({ form }: Step4Props) => {
   const citiesList: ICity[] = useMemo(() => {
     if (watchedDepartment) {
       return City.getCitiesOfState(
-        watchedCountry?.isoCode,
-        watchedDepartment?.isoCode,
+        watchedCountry?.isoCode ?? '',
+        watchedDepartment?.isoCode ?? '',
       );
     }
     return [];
@@ -96,7 +96,6 @@ export const Step4Location = ({ form }: Step4Props) => {
         ? parseFloat(currentCity.longitude)
         : 0;
 
-      console.log("Coordenadas calculadas para MapZone:", latitude, longitude);
 
       return {
         latitude,
@@ -180,7 +179,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={countriesList}
                 getValue={(option) => option.isoCode}
                 getLabel={(option) => option.name}
-                value={field.value?.isoCode}
+                value={field.value?.isoCode ?? ''}
                 invalid={fieldState.invalid}
                 onChange={(selectedIsoCode) => {
                   const fullCountry = countriesList.find(
@@ -225,7 +224,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={departmentsList}
                 getValue={(option) => option.isoCode}
                 getLabel={(option) => option.name}
-                value={field.value?.isoCode}
+                value={field.value?.isoCode ?? ''}
                 invalid={fieldState.invalid}
                 onChange={(selectedIsoCode) => {
                   const fullDepartment = departmentsList.find(
@@ -266,7 +265,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={citiesList}
                 getValue={(option) => option.name}
                 getLabel={(option) => option.name}
-                value={field.value}
+                value={field.value ?? ''}
                 invalid={fieldState.invalid}
                 onChange={field.onChange}
                 disabled={citiesList.length === 0 || field.disabled}

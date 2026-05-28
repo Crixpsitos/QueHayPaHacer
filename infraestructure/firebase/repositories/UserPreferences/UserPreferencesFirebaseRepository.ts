@@ -1,17 +1,39 @@
-import { getFirebaseFirestore } from '@/infraestructure/firebase/config/admin/firebase';
-import { IUserPreferencesRepository } from '@/domain/repository/UserPreferences/IUserPreferencesRepository';
-import { FirebaseUserPreferencesDto } from '@/infraestructure/firebase/dto/UserPreferences/FirebaseUserPreferencesDto';
-import { IUserPreferencesFirebaseRepository } from './IUserPreferencesFirebaseRepository';
+import { FirebaseUserPreferencesDto } from "@/infraestructure/firebase/dto/UserPreferences/FirebaseUserPreferencesDto";
+import { IUserPreferencesFirebaseRepository } from "./IUserPreferencesFirebaseRepository";
+import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
+import { Firestore } from "firebase-admin/firestore";
 
-export class UserPreferencesFirebaseRepository implements IUserPreferencesFirebaseRepository {
-  async findByUserId(userId: string): Promise<FirebaseUserPreferencesDto | null> {
+export class UserPreferencesFirebaseRepository
+  extends FirebaseBaseRepository
+  implements IUserPreferencesFirebaseRepository
+{
+  protected readonly collectionName = "users";
+  constructor(db: Firestore) {
+    super(db);
+  }
+
+  async createOrUpdate(
+    userId: string,
+    preferences: FirebaseUserPreferencesDto,
+  ): Promise<void> {
     try {
-      const db = getFirebaseFirestore();
-      const preferencesRef = db
-        .collection('users')
-        .doc(userId)
-        .collection('preferences')
-        .doc('categories');
+      const preferencesRef = this.subCollection(userId, "preferences").doc(
+        "categories",
+      );
+
+      await preferencesRef.set(preferences, { merge: true });
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      throw error;
+    }
+  }
+  async findByUserId(
+    userId: string,
+  ): Promise<FirebaseUserPreferencesDto | null> {
+    try {
+      const preferencesRef = this.subCollection(userId, "preferences").doc(
+        "categories",
+      );
 
       const snapshot = await preferencesRef.get();
 
@@ -22,7 +44,7 @@ export class UserPreferencesFirebaseRepository implements IUserPreferencesFireba
       const data = snapshot.data() as FirebaseUserPreferencesDto;
       return data;
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
+      console.error("Error fetching user preferences:", error);
       throw error;
     }
   }

@@ -11,6 +11,7 @@ import CharacterCount from "@tiptap/extension-character-count";
 import Placeholder from "@tiptap/extension-placeholder";
 import { cn } from "@/app/lib/utils/cn";
 import { Toolbar } from "./Toolbar";
+import { useRef } from "react";
 
 const CHARACTERS_LIMIT = 1000;
 
@@ -19,6 +20,7 @@ interface RichTextEditorProps {
   onChange: (value: JSONContent) => void;
   onBlur?: () => void;
   readonly?: boolean;
+  id?: string;
 }
 
 export const RichTextEditor = ({
@@ -26,7 +28,12 @@ export const RichTextEditor = ({
   onChange,
   onBlur,
   readonly,
+  id,
 }: RichTextEditorProps) => {
+
+  const firstRender = useRef(true);
+
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -50,6 +57,10 @@ export const RichTextEditor = ({
       }),
     ],
     onUpdate: ({ editor }) => {
+      if (firstRender.current) {
+        firstRender.current = false;
+        return;
+      }
       onChange(editor.getJSON());
     },
     onBlur: () => onBlur?.(),
@@ -101,7 +112,7 @@ export const RichTextEditor = ({
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-400 transition-shadow">
       {editor && !readonly && <Toolbar editor={editor} state={state} />}
-      <EditorContent editor={editor} />
+      <EditorContent id={id} editor={editor} />
       {editor && (
         <div className="flex justify-end border-t border-gray-100 px-3 py-1.5">
           <span

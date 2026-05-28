@@ -8,7 +8,7 @@ import {
   FieldLabel,
   FieldError,
 } from "@/app/components/ui/field";
-import { CreateEventDto } from "@/application/dto/events/EventDto";
+import { FormEventDto } from "@/application/dto/events/EventDto";
 import {
   Popover,
   PopoverContent,
@@ -21,7 +21,7 @@ import { Calendar } from "@/app/components/ui/calendar";
 import { Input } from "@/app/components/ui/input";
 
 interface Step5DatesProps {
-  form: UseFormReturn<CreateEventDto>;
+  form: UseFormReturn<FormEventDto>;
 }
 
 export const Step5Dates = ({ form }: Step5DatesProps) => {

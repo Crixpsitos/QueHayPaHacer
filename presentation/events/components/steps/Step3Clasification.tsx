@@ -1,6 +1,7 @@
 "use client";
+
 import { FieldGroup } from "@/app/components/ui/field";
-import { type CreateEventDto } from "@/application/dto/events/EventDto";
+import { type FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { SelectCategories } from "../ui/SelectCategories";
 import { Suspense, useState } from "react";
@@ -9,7 +10,7 @@ import { TagInput } from "../ui/TagInput";
 import { SelectCategoriesSkeleton } from "../ui/SelectCategoriesSkeleton";
 
 interface Step3Props {
-  form: UseFormReturn<CreateEventDto>;
+  form: UseFormReturn<FormEventDto>;
 }
 
 const getCategories = async () => {
@@ -26,26 +27,33 @@ export const Step3Clasification = ({ form }: Step3Props) => {
   const [categoriesPromise] = useState<Promise<Categories[]>>(() =>
     getCategories(),
   );
-  const tags = form.watch("categoryInfo.tags");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-medium text-black">Clasificación</h2>
+    <div className=" space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight text-gray-900">
+          Clasificación
+        </h2>
         <p className="text-sm text-gray-500">
           Empecemos a categorizar tu evento para que sea más fácil de encontrar
           por los usuarios. No te preocupes, siempre podrás cambiarlo después.
         </p>
       </div>
+
       <FieldGroup>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Controller
             name="categoryInfo"
             control={form.control}
             render={({ field, fieldState }) => (
               <Suspense fallback={<SelectCategoriesSkeleton />}>
                 <SelectCategories
-                  fieldValue={field.value}
+                  fieldValue={{
+                    id: field.value?.id ?? "",
+                    title: field.value?.title ?? "",
+                    slug: field.value?.slug ?? "",
+                    tags: field.value?.tags,
+                  }}
                   fieldState={fieldState}
                   getCategoriesPromise={categoriesPromise}
                   onChange={field.onChange}
@@ -56,11 +64,12 @@ export const Step3Clasification = ({ form }: Step3Props) => {
               </Suspense>
             )}
           />
+
           <Controller
             name="categoryInfo.tags"
             control={form.control}
-            render={() => (
-              <TagInput tags={tags ?? []} setValue={form.setValue} />
+            render={({ field }) => (
+              <TagInput tags={field.value ?? []} setValue={form.setValue} />
             )}
           />
         </div>
