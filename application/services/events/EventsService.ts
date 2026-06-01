@@ -11,6 +11,16 @@ export class EventsService {
     return newEvent;
   }
 
+  async publishEvent(event: Partial<Events>): Promise<Events> {
+    if(!event.id) {
+      const newEvent = await this.eventsRepository.createEvent(event as Events);
+      return newEvent;
+    } 
+
+    await this.eventsRepository.updateEvent(event as Events);
+    return event as Events;
+  }
+
   async updateEvent(event: Partial<Events>): Promise<void> {
     await this.eventsRepository.updateEvent(event as Events);
   }

@@ -176,7 +176,7 @@ export const MediaDropzone = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setSelectedFile(null)}
-                className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+                className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
               />
 
               <motion.div
@@ -194,6 +194,7 @@ export const MediaDropzone = ({
                   <Image
                     src={selectedFile.data.url}
                     alt={selectedFile.data.alt}
+                    sizes="(max-width: 768px) 100vw, 768px"
                     fill
                     className="object-cover"
                   />

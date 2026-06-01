@@ -26,6 +26,7 @@ interface Step5DatesProps {
 
 export const Step5Dates = ({ form }: Step5DatesProps) => {
   const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
 
   return (
     <div className="space-y-6">
@@ -88,6 +89,9 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                             );
                           }
                           field.onChange(newDate?.toISOString());
+                          if (endDate) {
+                            form.trigger("endDate");
+                          }
                         }}
                         disabled={(date) =>
                           date <= new Date(new Date().setHours(0, 0, 0, 0))
@@ -113,6 +117,9 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                         parseInt(minute, 10),
                       );
                       field.onChange(newDate.toISOString());
+                      if (endDate) {
+                        form.trigger("endDate");
+                      }
                     }}
                     value={timeInputValue}
                     aria-label="Hora de inicio"

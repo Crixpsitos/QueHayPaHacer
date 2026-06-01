@@ -9,6 +9,13 @@ export class EventsAdapter implements IEventsRepository {
     private readonly repository: IEventsFirebaseRepository,
     private readonly mapper: IEventsMapper,
   ) {}
+  async createEvent(event: Events): Promise<Events> {
+    const dto = this.mapper.toDto(event);
+    const cleanDto = removeUndefinedProperties(dto);
+
+    const firebaseDto = await this.repository.createEvent(cleanDto);
+    return this.mapper.toDomain(firebaseDto);
+  }
   async updateEvent(event: Events): Promise<void> {
     const dto = this.mapper.toDto(event);
     const cleanDto = removeUndefinedProperties(dto);

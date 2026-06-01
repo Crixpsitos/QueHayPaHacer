@@ -76,12 +76,12 @@ export class EventViewModelMapper {
       price: viewModel.price,
       promotion: viewModel.promotion ? {
         isPromoted: viewModel.promotion.isPromoted ?? false,
-        promotedAt: viewModel.promotion.promotedAt ? new Date(viewModel.promotion.promotedAt) : undefined,
-        promotedUntil: viewModel.promotion.promotedUntil ? new Date(viewModel.promotion.promotedUntil) : undefined,
+        promotedAt: viewModel.promotion.promotedAt ? new Date(viewModel.promotion.promotedAt) : null,
+        promotedUntil: viewModel.promotion.promotedUntil ? new Date(viewModel.promotion.promotedUntil) : null,
       } : {
         isPromoted: false,
-        promotedAt: undefined,
-        promotedUntil: undefined,
+        promotedAt: null,
+        promotedUntil: null,
       },
       analytics: viewModel.analytics
         ? {

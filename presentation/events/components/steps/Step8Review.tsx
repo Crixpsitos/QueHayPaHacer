@@ -168,8 +168,8 @@ export const Step8Review = ({ form, onGoToStep }: Step8ReviewProps) => {
                       form.setValue("promotion.promotedUntil", initialDate);
                     } else {
                       setPromotionPaid(false);
-                      form.setValue("promotion.promotedAt", "");
-                      form.setValue("promotion.promotedUntil", "");
+                      form.setValue("promotion.promotedAt", null);
+                      form.setValue("promotion.promotedUntil", null);
                     }
                   }}
                   className="data-[state=checked]:bg-black"

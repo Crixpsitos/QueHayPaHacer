@@ -31,6 +31,7 @@ interface SelectLocationProps<T> {
   onChange: (value: string) => void;
   getValue: (option: T) => string;
   getLabel: (option: T) => string;
+  getDisabled?: (option: T) => boolean;
   disabled?: boolean;
   onBlur: () => void;
   error?: string;
@@ -49,11 +50,12 @@ export const SelectLocation = <T,>({
   error,
   getValue,
   getLabel,
+  getDisabled,
   ref,
 }: SelectLocationProps<T>) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
 
   const selectedItem = options.find((item) => getValue(item) === value);
 
@@ -141,25 +143,24 @@ const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
                 }}
               >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-           
-
                   const option = filteredOptions[virtualItem.index];
                  
-                  
-                  // Si por alguna razón el índice es indefinido en renderizados veloces, prevenimos crasheo
                   if (!option) return null;
 
                   const itemValue = getValue(option);
                   const itemLabel = getLabel(option);
+                  const isItemDisabled = getDisabled ? getDisabled(option) : false;
 
                   return (
                     <CommandItem
                       key={itemValue}
                       value={itemValue}
+                      disabled={isItemDisabled}
                       onSelect={() => {
+                        if (isItemDisabled) return;
                         onChange(itemValue);
                         setOpen(false);
-                        setSearch(""); // Limpiamos buscador al elegir
+                        setSearch("");
                       }}
                       style={{
                         position: "absolute",
@@ -169,6 +170,9 @@ const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
                         height: `${virtualItem.size}px`,
                         transform: `translateY(${virtualItem.start}px)`,
                       }}
+                      className={cn(
+                        isItemDisabled && "cursor-not-allowed opacity-40 hover:bg-transparent text-gray-400 select-none pointer-events-auto"
+                      )}
                     >
                       <Check
                         className={cn(

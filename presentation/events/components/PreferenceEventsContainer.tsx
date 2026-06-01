@@ -32,12 +32,12 @@ async function getUserPreferences(userId?: string): Promise<UserPreferencesViewM
 
 async function getPreferenceEvents(preferences: UserPreferencesViewModel, userId?: string) {
     "use cache"
+    cacheTag(`preference-events-${preferences.userId}`)
     cacheLife({
       expire: 120,
       stale: 60,
       revalidate: 60
     })
-    cacheTag(`preference-events-${preferences.userId}`)
 
       const topCategoryIds = Object.entries(preferences.categories)
     .sort(([, a], [, b]) => b.score - a.score)

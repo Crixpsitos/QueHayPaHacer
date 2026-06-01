@@ -31,6 +31,8 @@ import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
 import { UserPreferencesAdapter } from "../adapters/UserPreferences/UserPreferencesAdapter";
 import { UserPreferencesService } from "@/application/services/user/UserPreferencesService";
 import { StorageService } from "../storage/firebase/FirebaseStorageService";
+import { UserPreferencesFirebaseRepository } from "../firebase/repositories/UserPreferences/UserPreferencesFirebaseRepository";
+import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
 
 
 
@@ -85,7 +87,8 @@ export const createServerContainer = () => {
   );
 
   // user preferences
-  const userPreferencesRepository = new UserPreferencesAdapter();
+  const userPreferencesFirebaseRepository = new UserPreferencesFirebaseRepository(getFirebaseFirestore());
+  const userPreferencesRepository = new UserPreferencesAdapter(userPreferencesFirebaseRepository, new UserPreferencesFirebaseMapper());
   const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
 
   return {

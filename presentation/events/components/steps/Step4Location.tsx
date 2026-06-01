@@ -58,7 +58,10 @@ export const Step4Location = ({ form }: Step4Props) => {
   });
 
   const countriesList = useMemo(() => {
-    return Country.getAllCountries();
+    return Country.getAllCountries().map((country) => ({
+      ...country,
+      disabled: country.isoCode !== "CO",
+    }));
   }, []);
 
   const departmentsList: IState[] = useMemo(() => {
@@ -71,8 +74,8 @@ export const Step4Location = ({ form }: Step4Props) => {
   const citiesList: ICity[] = useMemo(() => {
     if (watchedDepartment) {
       return City.getCitiesOfState(
-        watchedCountry?.isoCode ?? '',
-        watchedDepartment?.isoCode ?? '',
+        watchedCountry?.isoCode ?? "",
+        watchedDepartment?.isoCode ?? "",
       );
     }
     return [];
@@ -95,7 +98,6 @@ export const Step4Location = ({ form }: Step4Props) => {
       const longitude = currentCity.longitude
         ? parseFloat(currentCity.longitude)
         : 0;
-
 
       return {
         latitude,
@@ -178,9 +180,17 @@ export const Step4Location = ({ form }: Step4Props) => {
                 description="¿En qué país se llevará a cabo el evento?"
                 options={countriesList}
                 getValue={(option) => option.isoCode}
-                getLabel={(option) => option.name}
-                value={field.value?.isoCode ?? ''}
+                getLabel={(option) =>
+                  option.isoCode === "CO"
+                    ? option.name
+                    : `${option.name} — Próximamente`
+                }
+                getDisabled={(option) => option.isoCode !== "CO"}
+                value={field.value?.isoCode ?? ""}
                 invalid={fieldState.invalid}
+                error={fieldState.error?.message}
+                onBlur={field.onBlur}
+                ref={field.ref}
                 onChange={(selectedIsoCode) => {
                   const fullCountry = countriesList.find(
                     (c) => c.isoCode === selectedIsoCode,
@@ -208,9 +218,6 @@ export const Step4Location = ({ form }: Step4Props) => {
                   });
                 }}
                 disabled={field.disabled}
-                onBlur={field.onBlur}
-                error={fieldState.error?.message}
-                ref={field.ref}
               />
             )}
           />
@@ -224,7 +231,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={departmentsList}
                 getValue={(option) => option.isoCode}
                 getLabel={(option) => option.name}
-                value={field.value?.isoCode ?? ''}
+                value={field.value?.isoCode ?? ""}
                 invalid={fieldState.invalid}
                 onChange={(selectedIsoCode) => {
                   const fullDepartment = departmentsList.find(
@@ -265,7 +272,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={citiesList}
                 getValue={(option) => option.name}
                 getLabel={(option) => option.name}
-                value={field.value ?? ''}
+                value={field.value ?? ""}
                 invalid={fieldState.invalid}
                 onChange={field.onChange}
                 disabled={citiesList.length === 0 || field.disabled}
@@ -320,23 +327,23 @@ export const Step4Location = ({ form }: Step4Props) => {
               </Field>
             )}
           />
-            <Controller
-              name="location.address"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid.toString()}>
-                  <FieldLabel>Dirección</FieldLabel>
-                  <FieldDescription>
-                    Especifica la dirección exacta donde se llevará a cabo el
-                    evento.
-                  </FieldDescription>
-                  <Input {...field} />
-                  {fieldState.invalid && (
-                    <FieldError>{fieldState.error?.message}</FieldError>
-                  )}
-                </Field>
-              )}
-            />
+          <Controller
+            name="location.address"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid.toString()}>
+                <FieldLabel>Dirección</FieldLabel>
+                <FieldDescription>
+                  Especifica la dirección exacta donde se llevará a cabo el
+                  evento.
+                </FieldDescription>
+                <Input className="bg-transparent border border-gray-200" {...field} />
+                {fieldState.invalid && (
+                  <FieldError>{fieldState.error?.message}</FieldError>
+                )}
+              </Field>
+            )}
+          />
           <Controller
             name="location.moreInfo"
             control={form.control}
@@ -347,7 +354,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                   Especifica más información sobre el lugar donde se llevará a
                   cabo el evento.
                 </FieldDescription>
-                <Input {...field} />
+                <Input className="bg-transparent border border-gray-200" {...field} />
                 {fieldState.invalid && (
                   <FieldError>{fieldState.error?.message}</FieldError>
                 )}
@@ -365,12 +372,16 @@ export const Step4Location = ({ form }: Step4Props) => {
                 ¿Dónde se llevará a cabo el evento? ¿En una ciudad o en un lugar
                 más remoto?
               </FieldDescription>
-              <MapZone cityCoords={currentCityCoords} pointCoords={watchedCoordinates} onMarkerDrag={(lat, lng) => {
-                form.setValue("location.coordinates", {
-                  lat,
-                  lng,
-                });
-              }}/>
+              <MapZone
+                cityCoords={currentCityCoords}
+                pointCoords={watchedCoordinates}
+                onMarkerDrag={(lat, lng) => {
+                  form.setValue("location.coordinates", {
+                    lat,
+                    lng,
+                  });
+                }}
+              />
             </Field>
           )}
         />

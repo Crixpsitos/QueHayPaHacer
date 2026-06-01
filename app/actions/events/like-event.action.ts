@@ -3,7 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
-import { updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 interface LikeEventActionResult {
@@ -21,6 +21,7 @@ export async function likeEventAction(
   }
 
   const tokens = await getTokens(await cookies(), authConfig);
+  const userId = tokens?.decodedToken?.uid;
   if (!tokens?.decodedToken?.uid) {
     return { authRequired: true, error: "Debes iniciar sesion para dar like." };
   }
@@ -33,7 +34,9 @@ export async function likeEventAction(
       liked,
     );
 
-    updateTag("featured-events");
+    revalidateTag(`preference-events-${userId}`, "max");
+
+    revalidatePath("/", "page");
 
     return { success: true };
   } catch (error) {

@@ -2,9 +2,9 @@
 
 import {
   FormEventDto,
-  FormEventSchema,
+  publishEventSchema,
 } from "@/application/dto/events/EventDto";
-import { Events } from "@/domain/entities/events/Events";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
@@ -14,15 +14,20 @@ import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { safeParse } from "valibot";
 
-interface CreateDraftEventActionResult {
-  success?: boolean;
-  eventInfo?: EventViewModel;
-  error?: string;
-}
+type PublishEventActionResult =
+  | {
+      success: true;
+      eventId: string;
+      error?: never;
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
-export async function createDraftEventAction(
+export async function publishEventAction(
   event: FormEventDto,
-): Promise<CreateDraftEventActionResult> {
+): Promise<PublishEventActionResult> {
   const tokens = await getTokens(await cookies(), authConfig);
   if (!tokens?.decodedToken?.uid) {
     return {
@@ -30,52 +35,55 @@ export async function createDraftEventAction(
       error: "Debes iniciar sesion para crear un evento.",
     };
   }
-  const resultParse = safeParse(FormEventSchema, {
+
+  const resultParse = safeParse(publishEventSchema, {
     ...event,
+    id: event.id,
+    status: "published",
+    publishedAt: new Date().toISOString(),
     author: {
       id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name ?? "pruebas evento",
-      photoURL: tokens.decodedToken.picture || undefined,
+      displayName: tokens.decodedToken.name || "pruebas evento",
+      photoURL: tokens.decodedToken.picture,
     },
   });
 
   if (!resultParse.success) {
     console.error(
-      "Validation issues:",
-      resultParse.issues.map((i) => ({
-        path: i.path?.map((p) => p.key).join("."),
-        message: i.message,
-        received: i.input,
-      })),
+      "Error updating event:",
+      JSON.stringify(resultParse.issues, null, 3),
     );
-
+    console.log(
+      "esto fue lo que recibi",
+      JSON.stringify(resultParse.output, null, 3),
+    );
     return {
       success: false,
-      error: resultParse.issues.map((issue) => issue.message).join(", "),
+      error: "No se pudo publicar el evento. Por favor verifica los datos.",
     };
   }
 
   const parsedData = EventViewModelMapper.toDomain(
     resultParse.output as unknown as EventViewModel,
   );
+  const userId = tokens.decodedToken.uid;
 
   try {
     const { eventsService } = createServerContainer();
-    const event = await eventsService.createDraftEvent(
-      parsedData as unknown as Partial<Events>,
-    );
+    const publishedEvent = await eventsService.publishEvent(parsedData);
 
-    const eventViewModel = EventViewModelMapper.toViewModel(event);
-    const userId = tokens.decodedToken.uid;
-
+    updateTag("event-list");
     updateTag(`user-events-${userId}`);
+    
+    revalidatePath("/", "page");
+    revalidatePath("/events", "layout");
     revalidatePath("/profile/events", "layout");
-    return { success: true, eventInfo: eventViewModel };
+    return { success: true, eventId: publishedEvent.id || parsedData.id };
   } catch (error) {
-    console.error("Error creating draft event:", error);
+    console.error("Error updating event:", error);
     return {
       success: false,
-      error: "No se pudo crear el evento. Intenta nuevamente.",
+      error: "No se pudo actualizar el evento. Intenta nuevamente.",
     };
   }
 }

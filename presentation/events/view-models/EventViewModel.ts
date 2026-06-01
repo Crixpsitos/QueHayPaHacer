@@ -45,8 +45,8 @@ export interface EventViewModel {
   price: Price;
   promotion: {
     isPromoted: boolean;
-    promotedAt: string;
-    promotedUntil: string;
+    promotedAt?: string;
+    promotedUntil?: string;
   };
   analytics?: {
     views?: number;

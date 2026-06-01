@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEventModalStore } from "@/presentation/events/store/useEventModalStore";
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,10 @@ interface EventDraftModalProps {
 
 export const EventDraftModal = ({ draftId }: EventDraftModalProps) => {
   const router = useRouter();
-  const [open, setOpen] = useState(true);
+  const { isOpen, setIsOpen } = useEventModalStore();
 
   const handleClose = () => {
-    setOpen(false);
+    setIsOpen(false);
   };
 
   const handleContinue = () => {
@@ -36,7 +36,7 @@ export const EventDraftModal = ({ draftId }: EventDraftModalProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Tienes un borrador pendiente</DialogTitle>

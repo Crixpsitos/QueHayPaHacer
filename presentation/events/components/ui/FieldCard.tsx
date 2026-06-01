@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { FieldCardProps } from "./SortableFieldCard";
@@ -16,7 +16,16 @@ export function FieldCard({
   dragHandleProps,
 }: FieldCardProps & { dragHandleProps?: Record<string, unknown> }) {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
+  
+  // 1. Creamos el estado local y un rastreador de la prop anterior
   const [labelValue, setLabelValue] = useState(field.label);
+  const [prevLabel, setPrevLabel] = useState(field.label);
+
+  // 2. Sincronización limpia durante el render (Recomendado por el equipo de React)
+  if (field.label !== prevLabel) {
+    setLabelValue(field.label);
+    setPrevLabel(field.label);
+  }
 
   const isLabelInvalid = field.label.length < 2;
   const hasOptions = ["select", "radio", "checkbox"].includes(field.type);
@@ -55,9 +64,7 @@ export function FieldCard({
           : "border-gray-200"
       }`}
     >
-      {/* Header - Fixed alignment */}
       <div className="flex items-center gap-3">
-        {/* Drag handle */}
         <button
           type="button"
           className="flex-shrink-0 cursor-grab touch-none text-gray-400 hover:text-gray-600"
@@ -66,12 +73,10 @@ export function FieldCard({
           <GripVertical className="h-5 w-5" />
         </button>
 
-        {/* Type badge */}
         <span className="flex-shrink-0 rounded border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
           {field.type}
         </span>
 
-        {/* Label - with proper spacing from required indicator */}
         <div className="min-w-0 flex-1">
           {isEditingLabel ? (
             <input
@@ -97,7 +102,6 @@ export function FieldCard({
           )}
         </div>
 
-        {/* Required toggle - with proper spacing */}
         <div className="flex flex-shrink-0 items-center gap-3">
           <label className="flex items-center gap-2 text-xs text-gray-500">
             <Switch
@@ -108,7 +112,6 @@ export function FieldCard({
             <span>Requerido</span>
           </label>
 
-          {/* Delete button - separate click handler, prevent propagation */}
           <Button
             type="button"
             variant="ghost"
@@ -126,12 +129,10 @@ export function FieldCard({
         </div>
       </div>
 
-      {/* Field Preview */}
       <div className="mt-4">
         <FieldPreview field={field} />
       </div>
 
-      {/* Placeholder input */}
       {hasPlaceholder && (
         <div className="mt-3">
           <Input
@@ -143,7 +144,6 @@ export function FieldCard({
         </div>
       )}
 
-      {/* Options editor */}
       {hasOptions && (
         <div className="mt-4 space-y-2">
           {(field.options || []).map((option, index) => (

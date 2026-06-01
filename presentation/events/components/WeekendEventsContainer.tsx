@@ -6,7 +6,7 @@ interface WeekendEventsContainerProps {
   weekendEvents: EventFeedItem[];
 }
 
-export const WeekendEventsContainer = async ({ weekendEvents }: WeekendEventsContainerProps) => {
+export const WeekendEventsContainer = ({ weekendEvents }: WeekendEventsContainerProps) => {
   const weekendEventsViewModels = weekendEvents.map((event) =>
     EventViewModelMapper.toViewModel(event.event),
   );

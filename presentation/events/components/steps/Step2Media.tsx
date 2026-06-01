@@ -6,18 +6,21 @@ import { FieldGroup } from "@/app/components/ui/field";
 import { MediaDropzone } from "../Dropzone/MediaDropzone";
 import { ImageMainDropzone } from "../Dropzone/ImageMainDropzone";
 import { notify } from "@/presentation/shared/lib/notify";
-import { saveEventMediaToStorage } from "@/app/actions/events/save-event-media-to-storage.action";
 import { getVideoData } from "../../lib/video/getVideoData";
 import { getImageData } from "../../lib/image/getImageData";
 import { uploadToGoogleStorage } from "../../lib/upload/uploadToGoogleStorage";
-
+import { useEventModalStore } from "@/presentation/events/store/useEventModalStore";
 interface Step2Props {
   form: UseFormReturn<FormEventDto>;
-  saveDraftEvent: (notifyMessage: string) => Promise<void>;
+  saveDraftEvent: () => Promise<void>;
 }
 
 export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
   const eventId = form.watch("id") as string;
+const setIsOpen = useEventModalStore((state) => state.setIsOpen);
+
+
+  
 
   const removeMainImage = () => {
     form.setValue("mainImage", {}, { shouldValidate: true });
@@ -32,135 +35,134 @@ export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
     );
   };
 
-const saveMainImage = async (file: File | null) => {
-  if (!file) return;
+  const saveMainImage = async (file: File | null) => {
+    if (!file) return;
+    setIsOpen(false);
 
-  const processFile = async () => {
-    if (!eventId) {
-      await saveDraftEvent("Hemos guardado tu evento para que puedas editarlo después.");
-    }
+    const processFile = async () => {
 
-    const [imageData, result] = await Promise.all([
-      getImageData(file),
-      uploadToGoogleStorage(file, "events", eventId),
-    ]);
+      if (!eventId) {
+        await saveDraftEvent();
+      }
+      
+      const currentEventId = form.getValues("id") as string;
 
-      form.clearErrors("mainImage")
+      const [imageData, result] = await Promise.all([
+        getImageData(file),
+        uploadToGoogleStorage(file, "events", currentEventId),
+      ]);
+      
+      form.clearErrors("mainImage");
 
-    form.setValue("mainImage", {
-      desktop: {
-        url: result.publicUrl,
-        path: result.path,
-        width: imageData.width,
-        height: imageData.height,
-        alt: `Imagen principal de ${form.getValues("title")}`,
-      },
-    }, { shouldValidate: true }) 
 
-    await new Promise(resolve => setTimeout(resolve, 0))
+      form.setValue(
+        "mainImage",
+        {
+          desktop: {
+            url: result.publicUrl,
+            path: result.path,
+            width: imageData.width,
+            height: imageData.height,
+            alt: `Imagen principal de ${form.getValues("title")}`,
+          },
+          tablet: null,
+          mobile: null,
+        },
+        { shouldValidate: true },
+      );
 
-    await saveDraftEvent("Hemos guardado tu evento para que puedas editarlo después.");
+      // await new Promise((resolve) => setTimeout(resolve, 0));
+      await saveDraftEvent();
 
-    return result;
-  };
+      return result;
+    };
 
-  await notify.promise(
-    processFile(),
-    {
-      loading: "Subiendo y guardando imagen...",
+    await notify.promise(processFile(), {
+      loading: "Subiendo y guardando imagen, por favor espera...",
       success: () => "Imagen guardada exitosamente.",
       error: (error) => {
         console.error("Error:", error);
         return "Error al subir la imagen principal.";
       },
-    },
-    { description: "Por favor espera..." },
-  );
-};
+    });
+  };
 
   const saveMediaFiles = async (files: File[]) => {
+     setIsOpen(false);
+
     const processFiles = async () => {
+
+
       if (!eventId) {
-        await saveDraftEvent(
-          "Hemos guardado tu evento para que puedas editarlo después.",
-        );
+        await saveDraftEvent();
       }
 
-      const formData = new FormData();
-      formData.append("eventId", form.getValues("id") as string);
+      const currentEventId = form.getValues("id") as string;
 
-      files.forEach((file) => {
-        formData.append("media[]", file);
-      });
+      const uploadResults = await Promise.all(
+        files.map((file) => uploadToGoogleStorage(file, "events", currentEventId))
+      );
 
-      const result = await saveEventMediaToStorage(formData);
+      const processedMedia: MediaItem[] = [];
 
-      if (result.success) {
-        const processedMedia: MediaItem[] = [];
-        let index = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const result = uploadResults[i];
+        const isVideo = file.type.startsWith("video/");
 
-        for (const item of result.media) {
-          const file = files[index];
-          const type = file.type;
+        if (isVideo) {
+          const videoData = await getVideoData(file);
 
-          if (type.startsWith("video/")) {
-            const videoData = await getVideoData(file);
+          processedMedia.push({
+            id: crypto.randomUUID(),
+            type: "video",
+            data: {
+              url: result.publicUrl,
+              width: videoData.width,
+              height: videoData.height,
+              duration: videoData.duration,
+              mimeType: file.type as "video/mp4" | "video/webm" | "video/ogg",
+            },
+          });
+        } else if (file.type.startsWith("image/")) {
+          const imageData = await getImageData(file);
 
-            processedMedia.push({
-              id: item.id,
-              type: "video" as const,
-              data: {
-                url: item.url,
-                width: videoData.width,
-                height: videoData.height,
-                duration: videoData.duration,
-                mimeType: videoData.mimeType as
-                  | "video/mp4"
-                  | "video/webm"
-                  | "video/ogg",
-              },
-            });
-          } else if (type.startsWith("image/")) {
-            const imageData = await getImageData(file);
-
-            processedMedia.push({
-              id: item.id,
-              type: "image" as const,
-              data: {
-                url: item.url,
-                path: item.path || "",
-                width: imageData.width,
-                height: imageData.height,
-                alt: file.name,
-              },
-            });
-          }
-
-          index++;
+          processedMedia.push({
+            id: crypto.randomUUID(),
+            type: "image",
+            data: {
+              url: result.publicUrl,
+              path: result.path,
+              width: imageData.width,
+              height: imageData.height,
+              alt: file.name,
+            },
+          });
         }
-
-        form.setValue("media", processedMedia, { shouldValidate: true });
-
-        return result;
-      } else {
-        throw new Error(result.error ?? "Error al subir los archivos.");
       }
+
+      const existing = form.getValues("media") ?? [];
+      form.clearErrors("media");
+      form.setValue("media", [...existing, ...processedMedia], { shouldValidate: true });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await saveDraftEvent();
+
+      return processedMedia;
     };
 
-    notify.promise(
-      processFiles(),
-      {
-        loading: "Subiendo archivos y optimizando multimedia...",
-        success: () => `Archivos subidos exitosamente.`,
-        error: "Error al subir los archivos.",
+    notify.promise(processFiles(), {
+      loading: "Subiendo archivos multimedia...",
+      success: () => "Archivos subidos exitosamente.",
+      error: (error) => {
+        console.error("Error subiendo media:", error);
+        return "Error al subir los archivos.";
       },
-      { description: "Por favor espera..." },
-    );
+    });
   };
 
   return (
     <div className="space-y-6">
-      {/* Cabecera optimizada con mejor jerarquía tipográfica */}
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Medios de tu evento

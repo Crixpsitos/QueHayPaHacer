@@ -15,6 +15,12 @@ export class EventsFirebaseRepository
   async updateEvent(event: FirebaseEventsDto): Promise<void> {
     await this.collection.doc(event.id).set(event, { merge: true });
   }
+  async createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto> {
+    const documentReference = await this.collection.add(event);
+    const id = documentReference.id
+    return { ...event, id };
+    
+  }
   async findDraftEventByIdAndUser(id: string, userId: string): Promise<FirebaseEventsDto | null> {
     const snapshot = await this.collection
       .where("status", "==", "draft")

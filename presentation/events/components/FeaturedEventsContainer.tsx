@@ -6,7 +6,7 @@ interface FeaturedEventsContainerProps {
   featuredEvents: EventFeedItem[];
 }
 
-export const FeaturedEventsContainer = async ({ featuredEvents }: FeaturedEventsContainerProps) => {
+export const FeaturedEventsContainer = ({ featuredEvents }: FeaturedEventsContainerProps) => {
   const featuredEventsViewModels = featuredEvents.map((event) =>
     EventViewModelMapper.toViewModel(event.event),
   );

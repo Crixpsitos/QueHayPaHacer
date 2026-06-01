@@ -84,6 +84,7 @@ export const EventCard = ({
 }: EventCardProps) => {
   const [shared, setShared] = useState(false);
 
+
   const handleShare = useCallback(async () => {
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug}`;
     if (navigator.share) {
@@ -136,7 +137,7 @@ export const EventCard = ({
       "@type": "Person",
       name: event.author.displayName,
     },
-    image: event.mainImage?.desktop.url,
+    image: event.mainImage?.desktop?.url,
     offers: {
       "@type": "Offer",
       price: isFree ? "0" : event.price.amount.toString(),
@@ -173,9 +174,10 @@ export const EventCard = ({
         {/* ── Imagen ── */}
         <div className={cn("relative shrink-0 overflow-hidden")}>
           <ResponsivePicture
-            desktop={event.mainImage.desktop}
-            tablet={event.mainImage.tablet}
-            mobile={event.mainImage.mobile}
+            desktop={event.mainImage?.desktop}
+            tablet={event.mainImage?.tablet}
+            mobile={event.mainImage?.mobile}
+            aspectRatio="1/1"
             loading="eager"
           />
 
@@ -384,8 +386,8 @@ export const EventCard = ({
                     {event.location.address}
                   </div>
                   <div className="text-xs text-foreground/55 truncate">
-                    {event.location.city}, {event.location.department} ·{" "}
-                    {event.location.country}
+                    {event.location.city}, {event.location.department.name} ·{" "}
+                    {event.location.country.name}
                   </div>
                 </div>
               </address>

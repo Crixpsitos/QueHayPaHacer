@@ -134,10 +134,14 @@ export const RegistrationFormBuilder = ({
         toast.error(`Máximo de ${MAX_FIELDS} campos alcanzado`);
         return;
       }
+
+      const fieldInfo = FIELD_TYPES.find((f) => f.type === type);
+      const cleanLabel = fieldInfo ? fieldInfo.label : type;
+
       const newField: FormField = {
         id: crypto.randomUUID(),
         type,
-        label: `Nuevo campo de ${type}`,
+        label: `Nuevo campo de ${cleanLabel.toLowerCase()}`,
         required: false,
         ...(["text", "textarea", "number", "email", "phone"].includes(type) && {
           placeholder: "",

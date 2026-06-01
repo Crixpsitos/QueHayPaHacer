@@ -10,7 +10,7 @@ const fetchAllEvents = async (userId?: string) => {
     stale: 60,
     revalidate: 60
   })
-  cacheTag("all-events")
+  cacheTag("event-list", "all-events")
   const {eventFeed} = createServerContainer();
   return await eventFeed.getAll(userId);
 }

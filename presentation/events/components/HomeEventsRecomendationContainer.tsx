@@ -9,8 +9,6 @@ import { WeekendEventsContainer } from "./WeekendEventsContainer";
 import { AllEventsContainer } from "./AllEventsContainer";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
-import { Suspense } from "react";
-import { EventsCardSkeleton } from "./EventsCardSkeleton";
 
 const fetchWeekendEvents = async (userId?: string) => {
   "use cache";
@@ -19,7 +17,7 @@ const fetchWeekendEvents = async (userId?: string) => {
     stale: 60,
     revalidate: 60,
   });
-  cacheTag("weekend-events");
+  cacheTag("event-list", "weekend-events");
   const { eventFeed } = createServerContainer();
   return await eventFeed.getWeekend(userId);
 };
@@ -31,7 +29,7 @@ const fetchFeaturedEvents = async (userId?: string) => {
     stale: 60,
     revalidate: 60,
   });
-  cacheTag("featured-events");
+  cacheTag("event-list", "featured-events");
   const { eventFeed } = createServerContainer();
   return await eventFeed.getFeatured(userId);
 };
@@ -56,9 +54,7 @@ export const HomeEventsRecomendationContainer = async () => {
 
         <Separator className="my-6" />
 
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <FeaturedEventsContainer featuredEvents={featuredEvents} />
-        </Suspense>
+        <FeaturedEventsContainer featuredEvents={featuredEvents} />
       </ContentSection>
 
       <ContentSection title="Eventos para esta semana">
@@ -68,9 +64,7 @@ export const HomeEventsRecomendationContainer = async () => {
         </p>
 
         <Separator className="my-6" />
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <WeekendEventsContainer weekendEvents={weekendEvents} />
-        </Suspense>
+        <WeekendEventsContainer weekendEvents={weekendEvents} />
       </ContentSection>
 
       <ContentSection title="Todos los eventos">
@@ -80,14 +74,11 @@ export const HomeEventsRecomendationContainer = async () => {
         </p>
 
         <Separator className="my-6" />
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <AllEventsContainer userId={userId} />
-        </Suspense>
-      </ContentSection>
 
-      <Suspense fallback={<EventsCardSkeleton />}>
-        <PreferenceEventsContainer userId={userId} />
-      </Suspense>
+        <AllEventsContainer userId={userId} />
+      </ContentSection>
+      <Separator className="my-6" />
+      <PreferenceEventsContainer userId={userId} />
     </>
   );
 };

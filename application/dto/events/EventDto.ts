@@ -100,8 +100,8 @@ export const step1Schema = v.object({
 export const step2Schema = v.object({
   mainImage: v.object({
     desktop: ImageSchema,
-    mobile: ImageSchema,
-    tablet: ImageSchema,
+     mobile:  v.nullish(ImageSchema), 
+      tablet:  v.nullish(ImageSchema), 
   }),
   media: v.optional(v.array(MediaSchema)),
 });
@@ -223,17 +223,19 @@ export const step7Schema = v.pipe(
 );
 
 export const step8Schema = v.object({
-  promotion: v.object({
-    isPromoted: v.boolean(),
-    promotedAt: v.string(),
-    promotedUntil: v.string(),
-  }),
+   promotion: v.optional(
+    v.object({
+      isPromoted: v.optional(v.boolean()),
+      promotedAt: v.nullish(v.string()),
+      promotedUntil: v.nullish(v.string()),
+    }),
+  ),
 });
 
 const AuthorSchema = v.object({
   id: v.pipe(v.string(), v.nonEmpty("El id es requerido")),
   displayName: v.pipe(v.string(), v.nonEmpty("El nombre es requerido")),
-  photoURL: v.pipe(v.string(), v.url("Foto inválida")),
+  photoURL: v.nullish(v.pipe(v.string(), v.url("Foto de perfil inválida"))),
 });
 
 const AuthorDraftSchema = v.object({
@@ -266,19 +268,37 @@ export const CreateEventSchema = v.omit(EventSchema, [
 ]);
 
 
+export const publishEventSchema = v.object({
+  id: v.optional(v.string()),
+  ...step1Schema.entries,
+  ...step2Schema.entries,
+  author: AuthorSchema,
+  ...step3Schema.entries,
+  ...step4Schema.entries,
+  ...step5Object.entries,
+  ...step6Object.entries,
+  ...step7Object.entries,
+  ...step8Schema.entries,
+  startDate: v.string(),
+  endDate: v.string(),
+  createdAt: v.optional(v.string()),
+  updatedAt: v.optional(v.string()),
+  publishedAt: v.string(),
+})
+
 
 export const FormEventSchema = v.object({
-  id: v.optional(v.string()),
-  title: v.optional(v.string()),
-  shortDescription: v.optional(v.string()),
-  description: v.optional(RichTextWithLengthSchema),
+    id: v.optional(v.string()),
+    title: v.optional(v.string()),
+    shortDescription: v.optional(v.string()),
+    description: v.optional(RichTextWithLengthSchema),
 
-  mainImage: v.optional(
+    mainImage: v.optional(
     v.object({
       desktop: v.optional(ImageSchema),
-      mobile: v.optional(ImageSchema),
-      tablet: v.optional(ImageSchema),
-    }),
+      mobile:  v.nullish(ImageSchema), 
+      tablet:  v.nullish(ImageSchema), 
+    })
   ),
   media: v.optional(v.array(MediaSchema)),
 
@@ -307,8 +327,8 @@ export const FormEventSchema = v.object({
   promotion: v.optional(
     v.object({
       isPromoted: v.optional(v.boolean()),
-      promotedAt: v.optional(v.string()),
-      promotedUntil: v.optional(v.string()),
+      promotedAt: v.nullish(v.string()),
+      promotedUntil: v.nullish(v.string()),
     }),
   ),
 
