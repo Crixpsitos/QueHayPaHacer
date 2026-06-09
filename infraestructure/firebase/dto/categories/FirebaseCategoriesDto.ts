@@ -2,6 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export interface FirebaseCategoriesDto {
     id: string;
+    slug?: string;
     title: string;
     description: string;
     icon: string;

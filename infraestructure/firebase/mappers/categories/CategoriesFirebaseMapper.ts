@@ -7,6 +7,7 @@ export class CategoriesFirebaseMapper implements ICategoriesMapper {
     toDomain(dto: FirebaseCategoriesDto): Categories {
         return {
             id: dto.id,
+            slug: dto.slug ?? dto.id,
             title: dto.title,
             description: dto.description,
             icon: dto.icon,
@@ -19,6 +20,7 @@ export class CategoriesFirebaseMapper implements ICategoriesMapper {
     toDto(domain: Categories): FirebaseCategoriesDto {
         return {
             id: domain.id,
+            slug: domain.slug,
             title: domain.title,
             description: domain.description,
             icon: domain.icon,

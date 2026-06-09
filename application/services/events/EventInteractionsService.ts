@@ -8,7 +8,6 @@ const extractEventData = (event: Events): DenormalizedEventData => ({
   id: event.id,
   title: event.title,
   slug: event.slug,
-  images: event.images ? event.images : undefined,
   categoryInfo: event.categoryInfo ? { 
     id: event.categoryInfo.id, 
     title: event.categoryInfo.title,

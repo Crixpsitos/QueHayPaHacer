@@ -38,8 +38,8 @@ export function parseEventDates(vm: EventViewModel): EventParsedDates {
     updatedAt: parseISODate(vm.updatedAt),
     publishedAt: vm.publishedAt ? parseISODate(vm.publishedAt) : undefined,
     promotion: {
-      promotedAt: parseISODate(vm.promotion.promotedAt),
-      promotedUntil: parseISODate(vm.promotion.promotedUntil),
+      promotedAt: vm.promotion.promotedAt ? parseISODate(vm.promotion.promotedAt) : new Date(0),
+      promotedUntil: vm.promotion.promotedUntil ? parseISODate(vm.promotion.promotedUntil) : new Date(0),
     },
   };
 }
