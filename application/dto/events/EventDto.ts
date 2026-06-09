@@ -292,7 +292,6 @@ export const CreateEventSchema = v.omit(EventSchema, [
 export const publishEventSchema = v.object({
   id: v.optional(v.string()),
   ...step1Schema.entries,
-  mainImage: MainImageObjectSchema,
   ...step2Schema.entries,
   author: AuthorSchema,
   ...step3Schema.entries,
