@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "quehaypahacer-develop"
-  }
+    "default": "quehaypahacer-develop",
+    "prod": "quehaypahacer-prod",
+    "dev": "quehaypahacer-develop"
+  },
+  "targets": {},
+  "etags": {}
 }

@@ -3,6 +3,7 @@ import { TokenSet } from "next-firebase-auth-edge/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getStorage } from 'firebase-admin/storage';
 
 export const serverConfig = {
     useSecureCookies: process.env.NODE_ENV === 'production',
@@ -59,12 +60,16 @@ const getAdminApp = () => {
         privateKey: serviceAccount.privateKey,
         clientEmail: serviceAccount.clientEmail,
       }),
+      storageBucket: firebaseConfig.storageBucket,
+
     },
     ADMIN_APP_NAME
   );
 };
 
-export const getFirebaseFirestore = () => getFirestore(getAdminApp());
+export const getFirebaseFirestore = () => getFirestore(getAdminApp(), 'quehaypahacer-db');
 
 export const getFirebaseAdminAuth = () => getAuth(getAdminApp());
+
+export const getFirebaseStorage = () => getStorage(getAdminApp());
 

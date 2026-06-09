@@ -9,42 +9,77 @@ import { WeekendEventsContainer } from "./WeekendEventsContainer";
 import { AllEventsContainer } from "./AllEventsContainer";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
-import { Suspense } from "react";
-import { EventsCardSkeleton } from "./EventsCardSkeleton";
+import type { Events } from "@/domain/entities/events/Events";
 
-const fetchWeekendEvents = async (userId?: string) => {
+const fetchWeekendEventIds = async () => {
   "use cache";
   cacheLife({
     expire: 120,
     stale: 60,
     revalidate: 60,
   });
-  cacheTag("weekend-events");
+  cacheTag("event-list", "weekend-events");
   const { eventFeed } = createServerContainer();
-  return await eventFeed.getWeekend(userId);
+  return await eventFeed.getWeekend();
 };
 
-const fetchFeaturedEvents = async (userId?: string) => {
+const fetchFeaturedEventIds = async () => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("event-list", "featured-events");
+  const { eventFeed } = createServerContainer();
+  return await eventFeed.getFeatured();
+};
+
+const fetchEventDetail = async (id: string): Promise<Events | null> => {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`event-${id}`);
+  const { eventsService } = createServerContainer();
+  return await eventsService.getEventById(id);
+};
+
+const fetchUserEventInteraction = async (eventId: string, userId: string): Promise<boolean> => {
   "use cache";
   cacheLife({
-    expire: 120,
+    expire: 300,
     stale: 60,
     revalidate: 60,
   });
-  cacheTag("featured-events");
-  const { eventFeed } = createServerContainer();
-  return await eventFeed.getFeatured(userId);
+  cacheTag(`event-interaction-${userId}-${eventId}`);
+  const { eventInteractionsService } = createServerContainer();
+  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
+  return !!interaction?.liked;
 };
 
 export const HomeEventsRecomendationContainer = async () => {
   const tokens = await getTokens(await cookies(), authConfig);
   const userId = tokens?.decodedToken?.uid;
 
-  // Ejecutar ambos fetches en paralelo
-  const [weekendEvents, featuredEvents] = await Promise.all([
-    fetchWeekendEvents(userId),
-    fetchFeaturedEvents(userId),
+  const [weekendIds, featuredIds] = await Promise.all([
+    fetchWeekendEventIds(),
+    fetchFeaturedEventIds(),
   ]);
+
+  const [weekendEventsData, featuredEventsData] = await Promise.all([
+    Promise.all(weekendIds.map(fetchEventDetail)),
+    Promise.all(featuredIds.map(fetchEventDetail)),
+  ]);
+
+  const weekendEvents = weekendEventsData.filter(Boolean) as Events[];
+  const featuredEvents = featuredEventsData.filter(Boolean) as Events[];
+
+  const allIds = [...new Set([...weekendIds, ...featuredIds])];
+  const likedByEventId: Record<string, boolean> = {};
+
+  if (userId) {
+    const likedResults = await Promise.all(
+      allIds.map(async (id) => ({ id, liked: await fetchUserEventInteraction(id, userId) }))
+    );
+    for (const { id, liked } of likedResults) {
+      likedByEventId[id] = liked;
+    }
+  }
 
   return (
     <>
@@ -56,9 +91,7 @@ export const HomeEventsRecomendationContainer = async () => {
 
         <Separator className="my-6" />
 
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <FeaturedEventsContainer featuredEvents={featuredEvents} />
-        </Suspense>
+        <FeaturedEventsContainer featuredEvents={featuredEvents} likedByEventId={likedByEventId} />
       </ContentSection>
 
       <ContentSection title="Eventos para esta semana">
@@ -68,9 +101,7 @@ export const HomeEventsRecomendationContainer = async () => {
         </p>
 
         <Separator className="my-6" />
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <WeekendEventsContainer weekendEvents={weekendEvents} />
-        </Suspense>
+        <WeekendEventsContainer weekendEvents={weekendEvents} likedByEventId={likedByEventId} />
       </ContentSection>
 
       <ContentSection title="Todos los eventos">
@@ -80,14 +111,11 @@ export const HomeEventsRecomendationContainer = async () => {
         </p>
 
         <Separator className="my-6" />
-        <Suspense fallback={<EventsCardSkeleton />}>
-          <AllEventsContainer userId={userId} />
-        </Suspense>
-      </ContentSection>
 
-      <Suspense fallback={<EventsCardSkeleton />}>
-        <PreferenceEventsContainer userId={userId} />
-      </Suspense>
+        <AllEventsContainer userId={userId} />
+      </ContentSection>
+      <Separator className="my-6" />
+      <PreferenceEventsContainer userId={userId} />
     </>
   );
 };

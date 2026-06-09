@@ -3,7 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
-import { updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 interface ShareEventActionResult {
@@ -20,19 +20,24 @@ export async function shareEventAction(
   }
 
   const tokens = await getTokens(await cookies(), authConfig);
+  const userId = tokens?.decodedToken?.uid;
   if (!tokens?.decodedToken?.uid) {
-    return { authRequired: true, error: "Debes iniciar sesion para compartir." };
+    return {
+      authRequired: true,
+      error: "Debes iniciar sesion para compartir.",
+    };
   }
 
   try {
     const { eventInteractionsService } = createServerContainer();
-    
+
     await eventInteractionsService.registerShare(
       eventId.trim(),
       tokens.decodedToken.uid,
     );
+    revalidateTag(`preference-events-${userId}`, "max");
 
-    updateTag("featured-events");
+    revalidatePath("/", "page");
 
     return { success: true };
   } catch (error) {

@@ -1,12 +1,11 @@
-import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
-import { AuthFirebaseRepository } from "@/infraestructure/firebase/repositories/auth/AuthFirebaseRepository";
+
 import { UserAdapter } from "@/infraestructure/adapters/user/UserAdapter";
 import { UserFirebaseRepository } from "@/infraestructure/firebase/repositories/user/UserFirebaseRepository";
 import { CampaignFirebaseRepository } from "@/infraestructure/firebase/repositories/campaign/CampaignFirebaseRepository";
 import { CampaignAdapter } from "@/infraestructure/adapters/campaign/CampaignAdapter";
 import { UserService } from "@/application/services/user/UserService";
 import { CampaignService } from "@/application/services/campaign/CampaignService";
-import { AuthService } from "@/application/services/auth/AuthService";
+
 import { getFirebaseFirestore } from "../firebase/config/admin/firebase";
 import { CampaignFirebaseMapper } from "../firebase/mappers/campaing/CampaignFirebaseMapper";
 import { UserFirebaseMapper } from "../firebase/mappers/user/UserFirebaseMapper";
@@ -30,8 +29,18 @@ import { EventRegistrationService } from "@/application/services/events/EventReg
 import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
 import { UserPreferencesAdapter } from "../adapters/UserPreferences/UserPreferencesAdapter";
 import { UserPreferencesService } from "@/application/services/user/UserPreferencesService";
+import { StorageService } from "../storage/firebase/FirebaseStorageService";
+import { UserPreferencesFirebaseRepository } from "../firebase/repositories/UserPreferences/UserPreferencesFirebaseRepository";
+import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
+
+
+
 
 export const createServerContainer = () => {
+
+  //storage service
+  const storageService = new StorageService();
+  
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
   const userRepository = new UserAdapter(userFirebaseRepository, new UserFirebaseMapper());
   const userService = new UserService(userRepository);
@@ -48,7 +57,7 @@ export const createServerContainer = () => {
   // events
   const eventsFirebaseRepository = new EventsFirebaseRepository(getFirebaseFirestore());
   const eventsRepository = new EventsAdapter(eventsFirebaseRepository, new EventsFirebaseMapper());
-  const eventsService = new EventsService(eventsRepository);
+  const eventsService = new EventsService(eventsRepository, storageService);
 
   // event interactions
   const eventInteractionsFirebaseRepository = new EventInteractionsFirebaseRepository(getFirebaseFirestore());
@@ -78,7 +87,8 @@ export const createServerContainer = () => {
   );
 
   // user preferences
-  const userPreferencesRepository = new UserPreferencesAdapter();
+  const userPreferencesFirebaseRepository = new UserPreferencesFirebaseRepository(getFirebaseFirestore());
+  const userPreferencesRepository = new UserPreferencesAdapter(userPreferencesFirebaseRepository, new UserPreferencesFirebaseMapper());
   const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
 
   return {
@@ -90,19 +100,11 @@ export const createServerContainer = () => {
     eventRegistrationService,
     eventFeed,
     userPreferencesService,
-  };
-};
-
-export const createClientContainer = () => {
-  const authRepository = new AuthFirebaseRepository(getFirebaseAuth());
-  const authService = new AuthService(authRepository);
-
-  return {
-    authService,
+    storageService,
   };
 };
 
 export const createContainer = createServerContainer;
 
 export type AppContainer = ReturnType<typeof createContainer>;
-export type ClientContainer = ReturnType<typeof createClientContainer>;
+

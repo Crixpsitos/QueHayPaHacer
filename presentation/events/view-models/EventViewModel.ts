@@ -1,5 +1,6 @@
 import type { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
+import { MediaItem } from "@/domain/entities/events/value-objects/Media";
 import type { Price } from "@/domain/entities/events/value-objects/Price";
 import type { ImageVariants } from "@/domain/shared/ImageVariants";
 
@@ -12,8 +13,25 @@ export interface EventViewModel {
   slug: string;
   title: string;
   shortDescription: string;
-  description: string;
-  images: ImageVariants;
+  description: {
+    type: "doc";
+    content?: {
+      type: string;
+      content?: {
+        type: string;
+        text?: string;
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content?: any[];
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attrs?: Record<string, any>;
+      }[];
+    };
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    attrs: Record<string, any>;
+  }
+  mainImage?: { url: string; path?: string; status?: "processing" | "ready" | "error"; temporaryUrl?: string };
+
+  media: MediaItem[];
   categoryInfo: CategoryInfo;
   author: {
     id: string;
@@ -23,13 +41,23 @@ export interface EventViewModel {
   location: Location;
   status: "draft" | "published" | "cancelled" | "ended";
   registrationType: "none" | "internal" | "external" | "form";
+  registrationEventForm?: {
+    fields: {
+      id: string;
+      type: string;
+      label: string;
+      placeholder?: string;
+      required: boolean;
+      options?: string[];
+    }[];
+  };
   externalUrl?: string;
   capacity?: number;
   price: Price;
   promotion: {
     isPromoted: boolean;
-    promotedAt: string;
-    promotedUntil: string;
+    promotedAt?: string;
+    promotedUntil?: string;
   };
   analytics?: {
     views?: number;

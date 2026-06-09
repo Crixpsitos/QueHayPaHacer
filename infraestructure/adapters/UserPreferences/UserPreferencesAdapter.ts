@@ -4,17 +4,11 @@ import { UserPreferencesFirebaseRepository } from '@/infraestructure/firebase/re
 import { UserPreferencesFirebaseMapper } from '@/infraestructure/firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper';
 
 export class UserPreferencesAdapter implements IUserPreferencesRepository {
-  private firebaseRepository: UserPreferencesFirebaseRepository;
-  private mapper: UserPreferencesFirebaseMapper;
 
-
-  constructor() {
-    this.firebaseRepository = new UserPreferencesFirebaseRepository();
-    this.mapper = new UserPreferencesFirebaseMapper();
-  }
+  constructor(private readonly repository: UserPreferencesFirebaseRepository, private readonly mapper: UserPreferencesFirebaseMapper) {}
 
   async findByUserId(userId: string): Promise<UserPreferences | null> {
-    const dto = await this.firebaseRepository.findByUserId(userId);
+    const dto = await this.repository.findByUserId(userId);
 
     if (!dto) {
       return null;

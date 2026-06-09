@@ -12,5 +12,6 @@ export function Container<T extends ElementType = "div">({
 }: ContainerProps<T>) {
   const Comp = as ?? "div";
 
-  return <Comp className={cn("w-full px-2 sm:px-3", className)} {...props} />;
+  return <Comp className={cn("mx-auto w-full max-w-[1920px] px-4 sm:px-6 md:px-8 lg:px-12", 
+        className)} {...props} />;
 }

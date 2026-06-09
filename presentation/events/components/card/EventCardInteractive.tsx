@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { EventCard } from "./EventCard";
 import { shareEventAction } from "@/app/actions/events/share-event.action";
+import { cn } from "@/app/lib/utils/cn";
 
 const FEATURED_EVENTS_TAG = "featured-events";
 
@@ -155,7 +156,11 @@ export function EventCardInteractive({
 
   return (
     <>
-      <div className="flex flex-wrap gap-6">
+      <div className={cn(
+        variant === "vertical"
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          : "flex flex-wrap gap-6"
+      )}>
         {events.map((event) => (
           <EventCard
             key={event.id}
