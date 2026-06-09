@@ -19,6 +19,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       status: dto.status,
       registrationType: dto.registrationType,
       externalUrl: dto.externalUrl,
+      registrationEventForm: dto.registrationEventForm,
       capacity: dto.capacity,
       price: dto.price,
       promotion: dto.promotion ? {
@@ -54,6 +55,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       status: domain.status,
       registrationType: domain.registrationType,
       externalUrl: domain.externalUrl,
+      registrationEventForm: domain.registrationEventForm,
       capacity: domain.capacity,
       price: domain.price,
       promotion: domain.promotion ? {

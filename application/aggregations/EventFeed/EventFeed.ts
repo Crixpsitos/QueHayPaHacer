@@ -14,69 +14,20 @@ export class EventFeed {
     private readonly interactionsService: EventInteractionsService,
   ) {}
 
-  async getFeatured(userId?: string): Promise<EventFeedItem[]> {
-    const events = await this.eventsService.getFeaturedEvents();
-
-    const items = await Promise.all(
-      events.map(async (event) => {
-        const interaction = userId
-          ? await this.interactionsService.getByEventAndUser(event.id, userId)
-          : null;
-
-        return { event, interaction };
-      }),
-    );
-
-    return items;
+  async getFeatured(): Promise<string[]> {
+    return await this.eventsService.getFeaturedEvents();
   }
 
-
-  async getWeekend(userId?: string): Promise<EventFeedItem[]> {
-    const events = await this.eventsService.getWeekendEvents();
-
-    const items = await Promise.all(
-      events.map(async (event) => {
-        const interaction = userId
-          ? await this.interactionsService.getByEventAndUser(event.id, userId)
-          : null;
-
-        return { event, interaction };
-      }),
-    );
-
-    return items;
+  async getWeekend(): Promise<string[]> {
+    return await this.eventsService.getWeekendEvents();
   }
 
-  async getByUserPreferences(topCategoryIds: string[], userId?: string): Promise<EventFeedItem[]> {
-    const events = await this.eventsService.getEventsByUserPreferences(topCategoryIds);
-
-    const items = await Promise.all(
-      events.map(async (event) => {
-        const interaction = userId
-          ? await this.interactionsService.getByEventAndUser(event.id, userId)
-          : null;
-
-        return { event, interaction };
-      }),
-    );
-
-    return items;
+  async getByUserPreferences(topCategoryIds: string[]): Promise<string[]> {
+    return await this.eventsService.getEventsByUserPreferences(topCategoryIds);
   }
 
-  async getAll(userId?: string): Promise<EventFeedItem[]> {
-    const events = await this.eventsService.getAllEvents();
-
-    const items = await Promise.all(
-      events.map(async (event) => {
-        const interaction = userId
-          ? await this.interactionsService.getByEventAndUser(event.id, userId)
-          : null;
-
-        return { event, interaction };
-      }),
-    );
-
-    return items;
+  async getAll(): Promise<string[]> {
+    return await this.eventsService.getAllEvents();
   }
 
   async getEventDetailsById(

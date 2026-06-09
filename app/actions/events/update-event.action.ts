@@ -77,6 +77,7 @@ export async function updateEventAction(
       revalidatePath("/events", "page");
       revalidatePath(`/events/${eventId}`, "page");
     }
+    updateTag(`event-${eventId}`);
     updateTag(`user-events-${userId}`);
     revalidatePath("/profile/events", "page");
 

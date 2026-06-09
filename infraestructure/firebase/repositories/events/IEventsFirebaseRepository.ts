@@ -1,10 +1,10 @@
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
 
 export interface IEventsFirebaseRepository {
-    findFeaturedEvents(): Promise<FirebaseEventsDto[]>;
-    findWeekendEvents(): Promise<FirebaseEventsDto[]>;
-    findAllEvents(): Promise<FirebaseEventsDto[]>;
-    findByTopCategory(categoryIds: string[]): Promise<FirebaseEventsDto[]>;
+    findFeaturedEvents(): Promise<string[]>;
+    findWeekendEvents(): Promise<string[]>;
+    findAllEvents(): Promise<string[]>;
+    findByTopCategory(categoryIds: string[]): Promise<string[]>;
     findLastDraftEventToUser(userId: string): Promise<FirebaseEventsDto | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<FirebaseEventsDto | null>;
     createDraftEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;

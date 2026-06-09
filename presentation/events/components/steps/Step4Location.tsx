@@ -19,7 +19,7 @@ import {
   IState,
   ICity,
 } from "country-state-city";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
@@ -33,9 +33,18 @@ const MapZone = dynamic(
   { ssr: false },
 );
 
+const UnavailableCountryModal = dynamic(
+  () =>
+    import("../ui/UnavailableCountryModal").then(
+      (mod) => mod.UnavailableCountryModal,
+    ),
+  { ssr: false },
+);
+
 export const Step4Location = ({ form }: Step4Props) => {
   const { location } = useLocationInfo();
-  const hasInitializedGeoIp = useRef(false); // para evitar que se dispare el useEffect cuando ya se asigno todos los geo campos al formulario
+  const hasInitializedGeoIp = useRef(false);
+  const [unavailableCountry, setUnavailableCountry] = useState<string | undefined>(undefined);
 
   const watchedCountry = useWatch({
     control: form.control,
@@ -111,6 +120,12 @@ export const Step4Location = ({ form }: Step4Props) => {
     if (!location || hasInitializedGeoIp.current) return;
 
     if (!watchedCountry && location?.country) {
+      // Si el país detectado no es Colombia, mostrar modal
+      if (location.country.isoCode !== "CO") {
+        setUnavailableCountry(location.country.name);
+        return;
+      }
+
       const matchedCountry = countriesList.find(
         (c) =>
           c.isoCode === location.country.isoCode ||
@@ -161,7 +176,12 @@ export const Step4Location = ({ form }: Step4Props) => {
   ]);
 
   return (
-    <div className="space-y-6">
+    <>
+      <UnavailableCountryModal
+        open={!!unavailableCountry}
+        countryName={unavailableCountry}
+      />
+      <div className="space-y-6">
       <div>
         <h2 className="text-xl font-medium text-black">Ubicación</h2>
         <p className="text-sm text-gray-500">
@@ -387,5 +407,6 @@ export const Step4Location = ({ form }: Step4Props) => {
         />
       </FieldGroup>
     </div>
+    </>
   );
 };

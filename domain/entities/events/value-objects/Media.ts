@@ -13,11 +13,18 @@ export interface MediaVideoItem {
     type: "video";
     data: {
         url: string;
+        path?: string;
+        originalPath?: string;
         width: number;
         height: number;
         duration: number;
         mimeType: VideoMimeType;
-        thumbnail: Image;
+        status?: "processing" | "ready" | "error";
+        temporaryUrl?: string;
+        thumbnail?: Image;
+        // Flat fields set by the backend Cloud Function after processing
+        thumbnailUrl?: string;
+        thumbnailPath?: string;
     };
 }
 

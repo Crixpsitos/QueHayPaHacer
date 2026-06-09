@@ -64,7 +64,7 @@ export class EventsFirebaseRepository
     });
     return {...event, id: idRef.id, createdAt: now, updatedAt: now, };
   }
-  async findFeaturedEvents(): Promise<FirebaseEventsDto[]> {
+  async findFeaturedEvents(): Promise<string[]> {
     const now = new Date();
     const snapshot = await this.collection
       .where("status", "==", "published")
@@ -78,15 +78,14 @@ export class EventsFirebaseRepository
           Filter.where("analytics.score", ">=", 55),
         ),
       )
+      .select()
       .limit(10)
       .get();
 
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
-    );
+    return snapshot.docs.map((doc) => doc.id);
   }
 
-  async findWeekendEvents(): Promise<FirebaseEventsDto[]> {
+  async findWeekendEvents(): Promise<string[]> {
     const now = new Date();
 
     const endOfWeek = new Date(now);
@@ -103,11 +102,10 @@ export class EventsFirebaseRepository
       .where("startDate", "<=", endOfWeek)
       .orderBy("startDate", "asc")
       .limit(20)
+      .select()
       .get();
 
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
-    );
+    return snapshot.docs.map((doc) => doc.id);
   }
 
   async incrementLikes(eventId: string, delta: number): Promise<void> {
@@ -132,7 +130,7 @@ export class EventsFirebaseRepository
     return { id: doc.id, ...doc.data() } as FirebaseEventsDto;
   }
 
-  async findByTopCategory(categoryIds: string[]): Promise<FirebaseEventsDto[]> {
+  async findByTopCategory(categoryIds: string[]): Promise<string[]> {
     if (categoryIds.length === 0) {
       return [];
     }
@@ -144,24 +142,22 @@ export class EventsFirebaseRepository
       .where("startDate", ">=", now)
       .orderBy("startDate", "asc")
       .limit(20)
+      .select()
       .get();
 
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
-    );
+    return snapshot.docs.map((doc) => doc.id);
   }
 
-  async findAllEvents(): Promise<FirebaseEventsDto[]> {
+  async findAllEvents(): Promise<string[]> {
     const now = new Date();
     const snapshot = await this.collection
       .where("status", "==", "published")
       .where("endDate", ">=", now)
       .orderBy("startDate", "asc")
       .limit(30)
+      .select()
       .get();
 
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventsDto,
-    );
+    return snapshot.docs.map((doc) => doc.id);
   }
 }

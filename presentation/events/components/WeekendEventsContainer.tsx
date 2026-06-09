@@ -1,27 +1,15 @@
 import { EventCardInteractive } from "./card/EventCardInteractive";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
-import { EventFeedItem } from "@/application/aggregations/EventFeed/EventFeed";
+import type { Events } from "@/domain/entities/events/Events";
 
 interface WeekendEventsContainerProps {
-  weekendEvents: EventFeedItem[];
+  weekendEvents: Events[];
+  likedByEventId?: Record<string, boolean>;
 }
 
-export const WeekendEventsContainer = ({ weekendEvents }: WeekendEventsContainerProps) => {
+export const WeekendEventsContainer = ({ weekendEvents, likedByEventId = {} }: WeekendEventsContainerProps) => {
   const weekendEventsViewModels = weekendEvents.map((event) =>
-    EventViewModelMapper.toViewModel(event.event),
-  );
-
-  const weekendEventsInteractions = weekendEvents.map(
-    (event) => event.interaction,
-  );
-
-  const likedByEventId = Object.fromEntries(
-    weekendEventsInteractions
-      .filter(
-        (interaction): interaction is NonNullable<typeof interaction> =>
-          interaction !== null && interaction !== undefined,
-      )
-      .map((interaction) => [interaction.eventId, !!interaction.liked]),
+    EventViewModelMapper.toViewModel(event),
   );
 
   return (

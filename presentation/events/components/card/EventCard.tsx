@@ -10,7 +10,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button/button";
 import { CardContent, CardFooter, CardHeader } from "@/app/components/ui/card";
 import { MagicCard } from "@/app/components/ui/magic-card";
-import { ResponsivePicture } from "@/app/components/ui/ResponsivePicture";
+import Image from "next/image";
 import { Separator } from "@/app/components/ui/separator";
 import { ShimmerButton } from "@/app/components/ui/shimmer-button";
 import {
@@ -137,7 +137,7 @@ export const EventCard = ({
       "@type": "Person",
       name: event.author.displayName,
     },
-    image: event.mainImage?.desktop?.url,
+    image: event.mainImage?.url,
     offers: {
       "@type": "Offer",
       price: isFree ? "0" : event.price.amount.toString(),
@@ -161,25 +161,28 @@ export const EventCard = ({
 
       <MagicCard
         className={cn(
-          "group overflow-hidden transition-all duration-300",
+          "group overflow-hidden transition-all duration-300 h-full",
           "hover:shadow-lg hover:-translate-y-0.5",
           "focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
           variant === "horizontal"
             ? "flex flex-row max-w-lg"
-            : "flex flex-col max-w-sm w-full",
+            : "flex flex-col w-full",
           className,
         )}
         aria-label={`Evento: ${event.title}`}
       >
         {/* ── Imagen ── */}
         <div className={cn("relative shrink-0 overflow-hidden")}>
-          <ResponsivePicture
-            desktop={event.mainImage?.desktop}
-            tablet={event.mainImage?.tablet}
-            mobile={event.mainImage?.mobile}
-            aspectRatio="1/1"
-            loading="eager"
-          />
+          <div className="relative aspect-square w-full">
+            <Image
+              src={event.mainImage?.url ?? ""}
+              alt={`Imagen principal de ${event.title}`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={false}
+            />
+          </div>
 
           {/* Overlay para legibilidad de badges */}
           <div
@@ -306,12 +309,12 @@ export const EventCard = ({
 
           <CardContent
             className={cn(
-              "pb-2 flex-1 space-y-3",
+              "pb-2 space-y-3",
               variant === "horizontal" ? "px-5" : "px-4",
             )}
           >
             {/* Descripción corta */}
-            <p className="text-sm text-foreground/70 leading-relaxed line-clamp-3">
+            <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
               {event.shortDescription}
             </p>
 
@@ -438,7 +441,7 @@ export const EventCard = ({
             )}
           </CardContent>
 
-          <CardFooter className="px-4 pt-0 pb-3 flex flex-col gap-2">
+          <CardFooter className="px-4 pt-0 pb-3 flex flex-col gap-2 mt-auto">
             <Separator className="mb-1" />
 
             <div className="flex items-center gap-1.5 w-full">

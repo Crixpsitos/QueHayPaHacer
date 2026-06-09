@@ -66,11 +66,11 @@ export class EventsService {
   }
 
 
-  async getFeaturedEvents(): Promise<Events[]> {
+  async getFeaturedEvents(): Promise<string[]> {
     return this.eventsRepository.findFeaturedEvents();
   }
 
-  async getWeekendEvents(): Promise<Events[]> {
+  async getWeekendEvents(): Promise<string[]> {
     return this.eventsRepository.findWeekendEvents();
   }
 
@@ -78,15 +78,15 @@ export class EventsService {
     return this.eventsRepository.findById(id);
   }
 
-  async getAllEvents(): Promise<Events[]> {
-    return this.eventsRepository.findAll();
+  async getAllEvents(): Promise<string[]> {
+    return this.eventsRepository.findAllPublished();
   }
 
   async incrementLikes(eventId: string, delta: number): Promise<void> {
     await this.eventsRepository.incrementLikes(eventId, delta);
   }
 
-  async getEventsByUserPreferences(topCategory: string[]): Promise<Events[]> {
+  async getEventsByUserPreferences(topCategory: string[]): Promise<string[]> {
     return this.eventsRepository.findByTopCategory(topCategory);
   }
 

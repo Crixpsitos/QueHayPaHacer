@@ -13,5 +13,10 @@ export interface IStorageService {
 
     delete(path: string): Promise<void>;
 
-    generateSignedUrl(path: string): Promise<string>;
+    generateSignedUrl(
+        path: string,
+        isPublic: boolean,
+        contentType?: string,
+        customMetadata?: Record<string, string>,
+    ): Promise<string>;
 }

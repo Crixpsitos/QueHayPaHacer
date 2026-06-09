@@ -36,6 +36,14 @@ export async function publishEventAction(
     };
   }
 
+  // Ensure mainImage is present server-side (safety net beyond schema)
+  if (!event?.mainImage || !event.mainImage?.url) {
+    return {
+      success: false,
+      error: "La imagen principal es obligatoria para publicar.",
+    };
+  }
+
   const resultParse = safeParse(publishEventSchema, {
     ...event,
     id: event.id,

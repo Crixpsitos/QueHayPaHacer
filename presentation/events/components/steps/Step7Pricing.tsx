@@ -55,11 +55,27 @@ const loadCurrenciesValues = async (): Promise<CurrencyOption[]> => {
   );
 };
 
+const formatWithDots = (value: number | string): string => {
+  const raw = String(value).replace(/\D/g, "");
+  if (!raw) return "";
+  return parseInt(raw, 10).toLocaleString("es-CO").replace(/,/g, ".");
+};
+
+const parseDots = (formatted: string): number => {
+  const raw = formatted.replace(/\./g, "");
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 0 : n;
+};
+
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
   const { location } = useLocationInfo();
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
   const [, startTransition] = useTransition();
+  const [displayAmount, setDisplayAmount] = useState<string>(() => {
+    const initial = form.getValues("price.amount");
+    return initial ? formatWithDots(initial) : "";
+  });
 
   useEffect(() => {
     loadCurrenciesValues().then((data) => {
@@ -111,6 +127,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                   field.onChange(checked);
                   if (checked) {
                     form.setValue("price.amount", 0, { shouldValidate: true });
+                    setDisplayAmount("");
                   }
                 }}
                 className="data-[state=checked]:bg-black shrink-0"
@@ -122,7 +139,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
         {!isFree && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 items-start animate-in fade-in duration-200">
             
-            {/* Campo de Precio */}
+            {/* Campo de Precio con formato de puntos */}
             <Controller
               name="price.amount"
               control={form.control}
@@ -139,18 +156,30 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                       Establece el valor unitario por registro.
                     </FieldDescription>
                   </div>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00"
-                    className="h-10 text-sm bg-background border-gray-300 focus:border-black focus:ring-1 focus:ring-black rounded-lg shadow-sm w-full"
-                    value={field.value === 0 ? "" : field.value}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      field.onChange(val === "" ? "" : parseFloat(val));
-                    }}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none select-none">
+                      $
+                    </span>
+                    <Input
+                      inputMode="numeric"
+                      placeholder="0"
+                      className="h-10 pl-6 text-sm bg-background border-gray-300 focus:border-black focus:ring-1 focus:ring-black rounded-lg shadow-sm w-full tabular-nums"
+                      value={displayAmount}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\./g, "").replace(/\D/g, "");
+                        const formatted = raw ? formatWithDots(raw) : "";
+                        setDisplayAmount(formatted);
+                        field.onChange(raw ? parseDots(formatted) : 0);
+                      }}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </div>
+                  {displayAmount && (
+                    <p className="text-xs text-gray-400 font-mono">
+                      = {parseDots(displayAmount).toLocaleString("es-CO", { style: "currency", currency: form.watch("price.currency") || "COP", maximumFractionDigits: 0 })}
+                    </p>
+                  )}
                   {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
                 </Field>
               )}

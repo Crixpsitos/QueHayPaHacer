@@ -30,6 +30,10 @@ export async function createDraftEventAction(
       error: "Debes iniciar sesion para crear un evento.",
     };
   }
+
+
+  console.log("probandooooo", event)
+
   const resultParse = safeParse(FormEventSchema, {
     ...event,
     author: {
@@ -48,6 +52,8 @@ export async function createDraftEventAction(
         received: i.input,
       })),
     );
+
+    console.log("probandooooo")
 
     return {
       success: false,

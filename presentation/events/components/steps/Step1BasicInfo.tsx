@@ -24,6 +24,7 @@ interface Step1Props {
 
 export const Step1BasicInfo = ({ form }: Step1Props) => {
   // Observamos el campo en tiempo real para el contador de caracteres UX
+  const titleValue = form.watch("title") || "";
   const shortDescriptionValue = form.watch("shortDescription") || "";
 
   return (
@@ -45,12 +46,18 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
           control={form.control}
           render={({ field, fieldState }) => (
             <Field  data-invalid={fieldState.invalid.toString()} className="w-full">
-              <FieldLabel htmlFor="title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Título del evento
-              </FieldLabel>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Título del evento
+                </FieldLabel>
+                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
+                  {titleValue.length}/60
+                </span>
+              </div>
               <Input 
                 {...field} 
                 id="title"
+                maxLength={60}
                 placeholder="Ej: Gran Concierto de Rock Local o Noche de Techno"
                 className="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-sm transition-all"
               />

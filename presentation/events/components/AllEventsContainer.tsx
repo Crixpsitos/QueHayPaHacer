@@ -2,41 +2,58 @@ import { EventCardInteractive } from "./card/EventCardInteractive";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
+import type { Events } from "@/domain/entities/events/Events";
 
-const fetchAllEvents = async (userId?: string) => {
+const fetchAllEventIds = async () => {
   "use cache"
-  cacheLife({
-    expire: 120,
-    stale: 60,
-    revalidate: 60
-  })
+  cacheLife("hours")
   cacheTag("event-list", "all-events")
-  const {eventFeed} = createServerContainer();
-  return await eventFeed.getAll(userId);
+  const { eventFeed } = createServerContainer();
+  return await eventFeed.getAll();
 }
+
+const fetchEventDetail = async (id: string): Promise<Events | null> => {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`event-${id}`);
+  const { eventsService } = createServerContainer();
+  return await eventsService.getEventById(id);
+};
+
+const fetchUserEventInteraction = async (eventId: string, userId: string): Promise<boolean> => {
+  "use cache";
+  cacheLife({
+    expire: 300,
+    stale: 60,
+    revalidate: 60,
+  });
+  cacheTag(`event-interaction-${userId}-${eventId}`);
+  const { eventInteractionsService } = createServerContainer();
+  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
+  return !!interaction?.liked;
+};
 
 interface AllEventsContainerProps {
   userId?: string;
 }
 
 export const AllEventsContainer = async ({ userId }: AllEventsContainerProps) => {
-  const allEvents = await fetchAllEvents(userId);
+  const ids = await fetchAllEventIds();
+  const eventsData = await Promise.all(ids.map(fetchEventDetail));
+  const allEvents = eventsData.filter(Boolean) as Events[];
+
+  const likedByEventId: Record<string, boolean> = {};
+  if (userId) {
+    const likedResults = await Promise.all(
+      ids.map(async (id) => ({ id, liked: await fetchUserEventInteraction(id, userId) }))
+    );
+    for (const { id, liked } of likedResults) {
+      likedByEventId[id] = liked;
+    }
+  }
 
   const allEventsViewModels = allEvents.map((event) =>
-    EventViewModelMapper.toViewModel(event.event),
-  );
-
-  const allEventsInteractions = allEvents.map(
-    (event) => event.interaction,
-  );
-
-  const likedByEventId = Object.fromEntries(
-    allEventsInteractions
-      .filter(
-        (interaction): interaction is NonNullable<typeof interaction> =>
-          interaction !== null && interaction !== undefined,
-      )
-      .map((interaction) => [interaction.eventId, !!interaction.liked]),
+    EventViewModelMapper.toViewModel(event),
   );
 
   return (

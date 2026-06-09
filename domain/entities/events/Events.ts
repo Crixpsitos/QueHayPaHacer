@@ -27,7 +27,8 @@ export interface Events extends Dates {
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     attrs: Record<string, any>;
   };
-  mainImage: ImageVariants;
+  mainImage?: { url: string; path?: string; status?: "processing" | "ready" | "error"; temporaryUrl?: string };
+
   media: MediaItem[];
   categoryInfo: CategoryInfo
   author: {

@@ -375,7 +375,7 @@ export const Step8Review = ({ form, onGoToStep }: Step8ReviewProps) => {
         <SummarySection title="Medios" onEdit={() => onGoToStep(2)}>
           <SummaryItem
             label="Imagen principal"
-            value={formData.mainImage ? "Subida" : "No subida"}
+            value={formData.mainImage?.url ? "Subida" : "No subida"}
           />
           <SummaryItem
             label="Medios adicionales"

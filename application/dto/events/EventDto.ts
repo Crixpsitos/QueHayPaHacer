@@ -1,31 +1,57 @@
 import * as v from "valibot";
 
 const ImageSchema = v.object({
-  url: v.pipe(v.string(), v.url("Url de imagen inválida")),
-  path: v.string(),
-  width: v.pipe(v.number(), v.minValue(0, "El ancho debe ser no negativo")),
-  height: v.pipe(v.number(), v.minValue(0, "La altura debe ser no negativa")),
-  alt: v.string(),
+  url: v.optional(v.pipe(v.string(), v.url("Url de imagen inválida"))),
+  path: v.optional(v.string()),
+  width: v.optional(v.pipe(v.number(), v.minValue(0))),
+  height: v.optional(v.pipe(v.number(), v.minValue(0))),
+  alt: v.optional(v.string()),
 });
+
+// New simplified mainImage object schema: contains final url + storage path
+const MainImageObjectSchema = v.object({
+  url: v.pipe(v.string(), v.url("Url de imagen inválida")),
+  path: v.optional(v.string()),
+  status: v.optional(v.picklist(["processing", "ready", "error"] as const)),
+  temporaryUrl: v.optional(v.string()),
+});
+
 
 const ImageVariantsSchema = v.object({
   type: v.literal("image"),
-  data: ImageSchema,
+  data: v.object({
+    status: v.optional(v.picklist(["processing", "ready", "error"] as const)),
+    temporaryUrl: v.optional(v.string()),
+    ...ImageSchema.entries,
+  }),
 });
 
 const VideoSchema = v.object({
   type: v.literal("video"),
   data: v.object({
+    status: v.optional(v.picklist(["processing", "ready", "error"] as const)),
+    temporaryUrl: v.optional(v.string()),
+    path: v.string(),
     url: v.pipe(v.string(), v.url("Url de video inválida")),
     width: v.pipe(v.number(), v.minValue(0, "El ancho debe ser no negativo")),
     height: v.pipe(v.number(), v.minValue(0, "La altura debe ser no negativa")),
-    duration: v.pipe(v.number(), v.minValue(0, "La duración debe ser no negativa")),
+    duration: v.pipe(
+      v.number(),
+      v.minValue(0, "La duración debe ser no negativa"),
+    ),
     mimeType: v.picklist(["video/mp4", "video/webm", "video/ogg"]),
     thumbnail: v.optional(ImageSchema),
+    // Fields set by the backend Cloud Function after processing
+    thumbnailUrl: v.optional(v.string()),
+    thumbnailPath: v.optional(v.string()),
+    originalPath: v.optional(v.string()),
   }),
 });
 
-const MediaSchema = v.intersect([v.object({id: v.string()}), v.variant("type", [ImageVariantsSchema, VideoSchema])]);
+const MediaSchema = v.intersect([
+  v.object({ id: v.string() }),
+  v.variant("type", [ImageVariantsSchema, VideoSchema]),
+]);
 
 export type MediaItem = v.InferOutput<typeof MediaSchema>;
 
@@ -98,11 +124,7 @@ export const step1Schema = v.object({
 });
 
 export const step2Schema = v.object({
-  mainImage: v.object({
-    desktop: ImageSchema,
-     mobile:  v.nullish(ImageSchema), 
-      tablet:  v.nullish(ImageSchema), 
-  }),
+  mainImage: v.optional(MainImageObjectSchema),
   media: v.optional(v.array(MediaSchema)),
 });
 
@@ -223,7 +245,7 @@ export const step7Schema = v.pipe(
 );
 
 export const step8Schema = v.object({
-   promotion: v.optional(
+  promotion: v.optional(
     v.object({
       isPromoted: v.optional(v.boolean()),
       promotedAt: v.nullish(v.string()),
@@ -267,10 +289,10 @@ export const CreateEventSchema = v.omit(EventSchema, [
   "updatedAt",
 ]);
 
-
 export const publishEventSchema = v.object({
   id: v.optional(v.string()),
   ...step1Schema.entries,
+  mainImage: MainImageObjectSchema,
   ...step2Schema.entries,
   author: AuthorSchema,
   ...step3Schema.entries,
@@ -284,22 +306,16 @@ export const publishEventSchema = v.object({
   createdAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   publishedAt: v.string(),
-})
-
+});
 
 export const FormEventSchema = v.object({
-    id: v.optional(v.string()),
-    title: v.optional(v.string()),
-    shortDescription: v.optional(v.string()),
-    description: v.optional(RichTextWithLengthSchema),
+  id: v.optional(v.string()),
+  title: v.optional(v.string()),
+  shortDescription: v.optional(v.string()),
+  description: v.optional(RichTextWithLengthSchema),
 
-    mainImage: v.optional(
-    v.object({
-      desktop: v.optional(ImageSchema),
-      mobile:  v.nullish(ImageSchema), 
-      tablet:  v.nullish(ImageSchema), 
-    })
-  ),
+  // mainImage stored as object (url + path + optional status/temporaryUrl)
+  mainImage: v.optional(MainImageObjectSchema),
   media: v.optional(v.array(MediaSchema)),
 
   categoryInfo: v.optional(
@@ -359,4 +375,3 @@ export const FormEventSchema = v.object({
 export type EventDto = v.InferOutput<typeof EventSchema>;
 export type CreateEventDto = v.InferOutput<typeof CreateEventSchema>;
 export type FormEventDto = v.InferOutput<typeof FormEventSchema>;
-

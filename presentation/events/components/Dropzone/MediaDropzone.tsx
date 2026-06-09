@@ -1,4 +1,7 @@
-import { ImageUp, X } from "lucide-react";
+"use client";
+
+import { Button } from "@/app/components/ui/button";
+import { ImageUp, X, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import {
   LazyMotion,
@@ -113,31 +116,60 @@ export const MediaDropzone = ({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {currentFiles.map((file) => {
               const isVideo = file.type === "video";
+              const isProcessing = file.data.status === "processing";
+              const hasError = file.data.status === "error";
+
               const thumbUrl = isVideo
-                ? file.data.thumbnail?.url
-                : file.data.url;
-              const thumbAlt = isVideo
-                ? file.data.thumbnail?.alt
-                : file.data.alt;
+                ? (file.data.thumbnailUrl || file.data.thumbnail?.url || null)
+                : (file.data.temporaryUrl || file.data.url || null);
+              const thumbAlt = (isVideo ? file.data.thumbnail?.alt : file.data.alt) || "Media preview";
 
               return (
                 <motion.div
                   layoutId={`media-${file.id}`}
                   key={file.id}
-                  onClick={() => setSelectedFile(file)}
+                  onClick={() => {
+                    if (isProcessing || hasError) return;
+                    setSelectedFile(file);
+                  }}
                   style={{ zIndex: selectedFile?.id === file.id ? 50 : 1 }}
-                  className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-900"
+                  className={cn(
+                    "group relative aspect-square overflow-hidden rounded-xl bg-gray-900",
+                    (isProcessing || hasError) ? "cursor-not-allowed" : "cursor-pointer"
+                  )}
                 >
-                  {thumbUrl &&  thumbAlt && (
+                  {thumbUrl && (
                     <Image
                       src={thumbUrl}
                       alt={thumbAlt}
                       fill
-                      className="object-cover opacity-80"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                      className={cn(
+                        "object-cover transition-opacity",
+                        isProcessing ? "opacity-40" : hasError ? "opacity-20" : "opacity-80"
+                      )}
                     />
                   )}
 
-                  {isVideo && (
+                  {isProcessing && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/10 backdrop-blur-[1px]">
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                      <span className="text-[9px] font-medium text-white tracking-wider uppercase animate-pulse">
+                        Procesando
+                      </span>
+                    </div>
+                  )}
+
+                  {hasError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-red-950/40 backdrop-blur-[1px] p-2 text-center">
+                      <AlertCircle className="h-5 w-5 text-red-400" />
+                      <span className="text-[9px] font-bold text-red-200 tracking-wider uppercase">
+                        Error
+                      </span>
+                    </div>
+                  )}
+
+                  {isVideo && !isProcessing && !hasError && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="rounded-full bg-black/50 p-2">
                         <svg
@@ -153,12 +185,16 @@ export const MediaDropzone = ({
 
                   <button
                     type="button"
+                    disabled={isProcessing}
                     onClick={(e) => {
                       e.stopPropagation();
                       removeMediaFile(file.id);
                     }}
                     aria-label="Eliminar archivo"
-                    className="absolute right-2 top-2 z-10 rounded-full border border-gray-200 bg-white p-1 shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
+                    className={cn(
+                      "absolute right-2 top-2 z-10 rounded-full border border-gray-200 bg-white p-1 shadow-sm transition-opacity group-hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed",
+                      hasError ? "opacity-100" : "opacity-0"
+                    )}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -185,15 +221,15 @@ export const MediaDropzone = ({
               >
                 {selectedFile.type === "video" ? (
                   <video
-                    src={selectedFile.data.url}
+                    src={selectedFile.data.url || selectedFile.data.temporaryUrl || undefined}
                     className="h-full w-full object-contain"
                     controls
                     autoPlay
                   />
                 ) : (
                   <Image
-                    src={selectedFile.data.url}
-                    alt={selectedFile.data.alt}
+                    src={selectedFile.data.url || selectedFile.data.temporaryUrl || ""}
+                    alt={selectedFile.data.alt || "Preview"}
                     sizes="(max-width: 768px) 100vw, 768px"
                     fill
                     className="object-cover"

@@ -29,7 +29,8 @@ export interface EventViewModel {
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     attrs: Record<string, any>;
   }
-  mainImage: ImageVariants;
+  mainImage?: { url: string; path?: string; status?: "processing" | "ready" | "error"; temporaryUrl?: string };
+
   media: MediaItem[];
   categoryInfo: CategoryInfo;
   author: {
@@ -40,6 +41,16 @@ export interface EventViewModel {
   location: Location;
   status: "draft" | "published" | "cancelled" | "ended";
   registrationType: "none" | "internal" | "external" | "form";
+  registrationEventForm?: {
+    fields: {
+      id: string;
+      type: string;
+      label: string;
+      placeholder?: string;
+      required: boolean;
+      options?: string[];
+    }[];
+  };
   externalUrl?: string;
   capacity?: number;
   price: Price;

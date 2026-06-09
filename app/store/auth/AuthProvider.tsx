@@ -1,17 +1,19 @@
-'use client';
- 
-import * as React from 'react';
-import { usePathname } from 'next/navigation';
-import {AuthContext, useAuth, User} from './AuthContext';
- 
+"use client";
+
+import * as React from "react";
+import { usePathname } from "next/navigation";
+import { AuthContext, useAuth, User } from "./AuthContext";
+import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
+import { signInWithCustomToken } from "firebase/auth";
+
 export interface AuthProviderProps {
   user: User | null;
   children: React.ReactNode;
 }
- 
+
 export const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({
   user: initialUser,
-  children
+  children,
 }) => {
   const [user, setUser] = React.useState<User | null>(initialUser);
   const [isHydrating, setIsHydrating] = React.useState(true);
@@ -25,11 +27,16 @@ export const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({
     }
 
     try {
-      const response = await fetch('/api/auth/me', { cache: 'no-store' });
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
       if (!response.ok) return;
 
-      const data: { user: User | null } = await response.json();
+      const data: { user: User | null; customToken?: string } =
+        await response.json();
       setUser(data.user ?? null);
+
+      if (data.customToken) {
+        await signInWithCustomToken(getFirebaseAuth(), data.customToken);
+      }
     } catch {
       // Swallow network errors to avoid breaking UI hydration.
     } finally {

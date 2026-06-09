@@ -1,5 +1,5 @@
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens, Tokens } from "next-firebase-auth-edge";
 import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { cacheLife, cacheTag } from "next/cache";
@@ -46,8 +46,14 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
+  const auth = getFirebaseAdminAuth();
+
   const baseUser = toAuthUser(tokens);
-  const dbUser = await fetchUserProfile(baseUser.uid);
+
+  const [dbUser, customToken] = await Promise.all([
+    fetchUserProfile(baseUser.uid),
+    auth.createCustomToken(baseUser.uid), 
+  ]);
 
   const user = {
     ...baseUser,
@@ -62,5 +68,5 @@ export async function GET() {
       : null,
   };
 
-  return NextResponse.json({ user }, { status: 200 });
+  return NextResponse.json({ user, customToken }, { status: 200 });
 }

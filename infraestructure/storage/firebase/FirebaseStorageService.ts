@@ -147,23 +147,41 @@ export class StorageService implements IStorageService {
     }
   };
 
-  async generateSignedUrl(path: string, contentType?: string): Promise<string> {
+  async generateSignedUrl(
+  path: string,
+  isPublic: boolean,
+  contentType?: string,
+  customMetadata?: Record<string, string>,
+): Promise<string> {
+  try {
+    const fileRef = this.bucket.file(path);
+    const metadataHeaders = customMetadata
+      ? Object.fromEntries(
+          Object.entries(customMetadata).map(([key, value]) => [
+            `x-goog-meta-${key}`,
+            value,
+          ]),
+        )
+      : {};
 
-    try {
-        const fileRef = this.bucket.file(path);
-        const [signedUrl] = await fileRef.getSignedUrl({
-          version: "v4",
-          action: "write",
-          expires: Date.now() + 15 * 60 * 1000,
-          ...(contentType && { contentType }),
-        });
-    
-        return signedUrl;
-    } catch (error: any) {
-        throw error;
-    }
-   
+    const extensionHeaders = {
+      ...(isPublic && { "x-goog-acl": "public-read" }),
+      ...metadataHeaders,
+    };
+
+    const [signedUrl] = await fileRef.getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires: Date.now() + 15 * 60 * 1000,
+      ...(contentType && {contentType}),
+      ...(Object.keys(extensionHeaders).length > 0 && { extensionHeaders }),
+    });
+
+    return signedUrl;
+  } catch (error: any) {
+    throw error;
   }
+}
 
   async delete(path: string): Promise<void> {
     try {

@@ -38,6 +38,8 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { FormRemoteDataSyncer } from "./FormRemoteDataSyncer";
+import { createClientContainer } from "@/infraestructure/di/container.client";
 
 type StepSchema =
   | typeof step1Schema
@@ -60,6 +62,8 @@ const stepSchema: StepSchema[] = [
   step8Schema
 ];
 
+const { eventsRepository } = createClientContainer();
+
 interface EventFormProps {
   mode: "create" | "edit";
   initialData?: Partial<FormEventDto>;
@@ -75,8 +79,19 @@ export const EventForm = ({
 }: EventFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+
+  // helper to log unexpected step changes during debugging
+  const goToStep = (stepNumber: number) => {
+    // eslint-disable-next-line no-console
+    console.log("[EventForm] goToStep ->", stepNumber);
+    // eslint-disable-next-line no-console
+    console.trace();
+    setCurrentStep(stepNumber);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  // mountedRef prevents subsequent prop updates (saveDraft) from auto-advancing steps
+  const mountedRef = useRef(false);
 
   const progressPercentage = useMemo(
     () => (currentStep / STEPS.length) * 100,
@@ -96,7 +111,7 @@ export const EventForm = ({
         content: [],
         attrs: {},
       },
-      mainImage: {},
+      mainImage: initialData?.mainImage ?? undefined,
       media: [],
       categoryInfo: {
         id: "",
@@ -159,7 +174,8 @@ export const EventForm = ({
   });
 
   useEffect(() => {
-    if (mode === "edit" && initialData) {
+    // Run only once on mount for edit mode to avoid auto-advancing after draft saves.
+    if (mode === "edit" && initialData && !mountedRef.current) {
       const validSteps: number[] = [];
       let firstIncomplete = 1;
       let hasIncomplete = false;
@@ -177,7 +193,8 @@ export const EventForm = ({
       }
 
       setCompletedSteps(validSteps);
-      setCurrentStep(hasIncomplete ? firstIncomplete : 1);
+      goToStep(hasIncomplete ? firstIncomplete : 1);
+      mountedRef.current = true;
     }
   }, [mode, initialData, defaultFormValues]);
 
@@ -214,7 +231,7 @@ export const EventForm = ({
     }
 
     if (currentStep < 8) {
-      setCurrentStep((prev) => prev + 1);
+      goToStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [currentStep, completedSteps, form]);
@@ -223,16 +240,15 @@ export const EventForm = ({
     if (!canAccessStep(stepNumber)) return;
 
 
-    setCurrentStep(stepNumber);
+    goToStep(stepNumber);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
+      goToStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+    }  };
 
   const handleDraftSubmit = useCallback(async () => {
     try {
@@ -275,6 +291,19 @@ export const EventForm = ({
 
 
   const handlePublishSubmit = async () => {
+    // Ensure mainImage is present before publishing
+    const values = form.getValues();
+    if (!values.mainImage || !values.mainImage?.url) {
+      form.setError("mainImage", {
+        type: "required",
+        message: "La imagen principal es obligatoria para publicar",
+      });
+      setCurrentStep(2);
+      const firstError = formRef.current?.querySelector('[aria-invalid="true"]');
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     const isValid = await form.trigger();
     if (!isValid) {
       console.log(
@@ -322,6 +351,19 @@ export const EventForm = ({
   };
 
   const isEditingExisting = mode === "edit";
+  const eventId = form.watch("id");
+  const mainImage = form.watch("mainImage");
+  const mediaItems = form.watch("media") ?? [];
+  const mainImageStatus = mainImage?.status;
+  const hasMainImageError = Boolean(form.formState.errors.mainImage);
+  const isImageProcessing = mainImageStatus === "processing";
+  const isMediaProcessing = mediaItems.some(item => item.data.status === "processing");
+  const isMainImageReady = Boolean(mainImage?.url);
+  const isNextDisabled =
+    isSubmitting ||
+    (currentStep === 2 && (!isMainImageReady || isImageProcessing || isMediaProcessing || hasMainImageError));
+
+  
 
   return (
     <div className="flex flex-col min-h-dvh">
@@ -337,6 +379,11 @@ export const EventForm = ({
       />
       <Section spacing="sm" className="flex-1">
         <FormProvider {...form}>
+          <FormRemoteDataSyncer 
+            recordId={eventId}
+            subscribeToChanges={(id, callback) => eventsRepository.findByIdOnSnapshot(id, callback)}
+          />
+
           <form ref={formRef} onSubmit={(e) => e.preventDefault()}>
             {renderStep()}
           </form>
@@ -388,7 +435,7 @@ export const EventForm = ({
             ) : (
               <Button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isNextDisabled}
                 onClick={handleNext}
                 className="bg-black text-white hover:bg-gray-800 cursor-pointer disabled:cursor-not-allowed"
               >

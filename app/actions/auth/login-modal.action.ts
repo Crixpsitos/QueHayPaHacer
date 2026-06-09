@@ -1,6 +1,6 @@
 "use server";
 
-import { createClientContainer } from "@/infraestructure/di/container";
+import { createClientContainer } from "@/infraestructure/di/container.client";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies";
 import { cookies, headers } from "next/headers";

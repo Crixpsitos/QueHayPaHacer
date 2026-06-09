@@ -61,12 +61,13 @@ const getAdminApp = () => {
         clientEmail: serviceAccount.clientEmail,
       }),
       storageBucket: firebaseConfig.storageBucket,
+
     },
     ADMIN_APP_NAME
   );
 };
 
-export const getFirebaseFirestore = () => getFirestore(getAdminApp());
+export const getFirebaseFirestore = () => getFirestore(getAdminApp(), 'quehaypahacer-db');
 
 export const getFirebaseAdminAuth = () => getAuth(getAdminApp());
 

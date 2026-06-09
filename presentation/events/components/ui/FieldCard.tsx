@@ -17,11 +17,9 @@ export function FieldCard({
 }: FieldCardProps & { dragHandleProps?: Record<string, unknown> }) {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   
-  // 1. Creamos el estado local y un rastreador de la prop anterior
   const [labelValue, setLabelValue] = useState(field.label);
   const [prevLabel, setPrevLabel] = useState(field.label);
 
-  // 2. Sincronización limpia durante el render (Recomendado por el equipo de React)
   if (field.label !== prevLabel) {
     setLabelValue(field.label);
     setPrevLabel(field.label);
