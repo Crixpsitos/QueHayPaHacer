@@ -1,7 +1,11 @@
 import { IpLocationSycn } from "@/app/store/Location/IpLocationProvider"
 import { headers } from "next/headers";
+import { connection } from "next/server";
 
 export const ServerLocationHydration = async () => {
+    // Opt-out del prerenderizado estático — este componente requiere headers de request
+    await connection();
+
     try {
         const geoReader = globalThis.cachedGeoReader;
         if(!geoReader) {
