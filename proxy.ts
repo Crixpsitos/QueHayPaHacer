@@ -10,7 +10,18 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 const PRIVATE_PATHS = ["/profile"];
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
 
+function extractClientIp(request: NextRequest): string | null {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0].trim();
+    if (firstIp) return firstIp;
+  }
+  return request.headers.get("x-real-ip");
+}
+
 export async function proxy(request: NextRequest) {
+  const clientIp = extractClientIp(request);
+
   return authMiddleware(request, {
     loginPath: "/api/login",
     logoutPath: "/api/logout",
@@ -32,10 +43,11 @@ export async function proxy(request: NextRequest) {
     tenantId: authConfig.tenantId,
     dynamicCustomClaimsKeys: authConfig.dynamicCustomClaimsKeys,
     handleValidToken: async (_tokens, headers) => {
-      // Authenticated user should not be able to access /login, /register and /reset-password routes
       if (PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
         return redirectToHome(request);
       }
+
+      if (clientIp) headers.set("x-client-ip", clientIp);
 
       return NextResponse.next({
         request: {
