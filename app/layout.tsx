@@ -3,7 +3,6 @@ import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
 import "./globals.css";
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
-import { headers } from "next/headers";
 import { IpLocationProvider } from "./store/Location/IpLocationProvider";
 import { ServerLocationHydration } from "@/presentation/events/components/hydrator/ServerLocationHydration";
 import { Toaster } from "sonner";
@@ -20,7 +19,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -40,11 +39,11 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <AuthProvider user={null}>
           <IpLocationProvider>
-            <Suspense>
+            <Suspense fallback={null}>
               <ServerLocationHydration />
             </Suspense>
 
-            <Suspense>
+            <Suspense fallback={null}>
               <AuthPathWatcher />
             </Suspense>
             {children}
