@@ -6,8 +6,9 @@ export const CreateUserSchema = v.object({
     email: v.pipe(v.string(), v.email("Invalid email format")),
     displayName: v.pipe(v.string(), v.nonEmpty("displayName is required")),
     firstName: v.pipe(v.string(), v.nonEmpty("firstName is required")),
-    lastName: v.pipe(v.string(), v.nonEmpty("lastName is required")),
-    phoneNumber: v.pipe(v.string(), v.nonEmpty("phoneNumber is required")),
+    lastName: v.string(),
+    phoneNumber: v.string(),
+    photoURL: v.optional(v.string()),
     acceptedTerms: v.literal(true, "User must accept terms"),
     accountType: v.optional(v.enum(UserAccountType, "Invalid account type")),
 });
@@ -18,6 +19,7 @@ export const UpdateUserSchema = v.partial(
         firstName: v.pipe(v.string(), v.nonEmpty("firstName cannot be empty")),
         lastName: v.pipe(v.string(), v.nonEmpty("lastName cannot be empty")),
         phoneNumber: v.pipe(v.string(), v.nonEmpty("phoneNumber cannot be empty")),
+        photoURL: v.string(),
         accountType: v.enum(UserAccountType, "Invalid account type"),
     })
 );

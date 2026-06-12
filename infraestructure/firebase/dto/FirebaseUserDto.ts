@@ -8,6 +8,7 @@ export interface FirebaseUserDto {
     firstName: string;
     lastName: string;
     phoneNumber: string;
+    photoURL?: string;
     acceptedTerms: boolean;
     accountType?: UserAccountType;
     acceptedTermsAt: Timestamp;
