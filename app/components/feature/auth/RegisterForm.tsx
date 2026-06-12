@@ -36,7 +36,7 @@ const registerSchema = v.pipe(
     phoneNumber: v.pipe(
       v.string(),
       v.nonEmpty("El numero de telefono es obligatorio"),
-      v.minLength(7, "El numero de telefono no es valido"),
+      v.regex(/^\d{7,10}$/, "Solo digitos, sin prefijo +57"),
     ),
     password: v.pipe(
       v.string(),

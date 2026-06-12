@@ -12,6 +12,10 @@ export class AuthService {
     return this.authRepository.registerWithEmailAndPassword(email, password);
   }
 
+  async signInWithGoogle(): Promise<UserCredential> {
+    return this.authRepository.signInWithGoogle();
+  }
+
   async logout(): Promise<void> {
     return this.authRepository.logout();
   }

@@ -7,6 +7,7 @@ export interface User {
     firstName: string;
     lastName: string;
     phoneNumber: string;
+    photoURL?: string;
     acceptedTerms: boolean;
     accountType?: UserAccountType;
     acceptedTermsAt: Date;

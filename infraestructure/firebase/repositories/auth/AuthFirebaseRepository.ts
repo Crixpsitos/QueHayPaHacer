@@ -2,9 +2,11 @@ import type { IAuthRepository } from "@/domain/repository/auth/IAuthRepository";
 import type { Auth, UserCredential } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
 } from "firebase/auth";
 
@@ -31,5 +33,10 @@ export class AuthFirebaseRepository implements IAuthRepository {
 
   async registerWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {
     return createUserWithEmailAndPassword(this.auth, email, password);
+  }
+
+  async signInWithGoogle(): Promise<UserCredential> {
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(this.auth, provider);
   }
 }
