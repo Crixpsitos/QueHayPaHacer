@@ -219,7 +219,7 @@ export function MagicCard(props: MagicCardProps) {
           }}
         />
       )}
-      <div className="relative z-40">{children}</div>
+      <div className="relative z-40 flex flex-col h-full">{children}</div>
     </motion.div>
   )
 }

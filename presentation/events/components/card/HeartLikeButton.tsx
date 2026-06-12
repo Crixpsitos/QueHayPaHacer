@@ -14,6 +14,7 @@ interface HeartLikeButtonProps {
   eventId: string;
   initialLiked?: boolean;
   initialLikes?: number;
+  className?: string;
   onLike?: (eventId: string, liked: boolean) => boolean | Promise<boolean>;
 }
 
@@ -21,6 +22,7 @@ export const HeartLikeButton = memo(function HeartLikeButton({
   eventId,
   initialLiked = false,
   initialLikes = 0,
+  className,
   onLike,
 }: HeartLikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
@@ -57,6 +59,7 @@ export const HeartLikeButton = memo(function HeartLikeButton({
             liked
               ? "text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
               : "text-muted-foreground hover:text-foreground",
+            className,
           )}
           onClick={handleLike}
           disabled={isSubmitting}

@@ -14,6 +14,8 @@ import { Switch } from "@/app/components/ui/switch";
 import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { SelectCurrency } from "@/presentation/events/components/ui/SelectCurrency";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/app/components/ui/button/button";
 
 interface Step7PricingProps {
   form: UseFormReturn<FormEventDto>;
@@ -69,13 +71,22 @@ const parseDots = (formatted: string): number => {
 
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
+  const registrationType = form.watch("registrationType");
   const { location } = useLocationInfo();
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+
+  const registrationTypeLabel: Record<string, string> = {
+    none: "Sin registro",
+    internal: "Registro en plataforma",
+    external: "Registro externo",
+    form: "Formulario personalizado",
+  };
   const [, startTransition] = useTransition();
   const [displayAmount, setDisplayAmount] = useState<string>(() => {
     const initial = form.getValues("price.amount");
     return initial ? formatWithDots(initial) : "";
   });
+  const [showPaymentWarning, setShowPaymentWarning] = useState(false);
 
   useEffect(() => {
     loadCurrenciesValues().then((data) => {
@@ -96,6 +107,52 @@ export function Step7Pricing({ form }: Step7PricingProps) {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
+      {/* Payment gateway warning modal */}
+      {showPaymentWarning && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => {
+            setShowPaymentWarning(false);
+            form.setValue("price.isFree", true, { shouldValidate: true });
+            form.setValue("price.amount", 0, { shouldValidate: true });
+            setDisplayAmount("");
+          }}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-start gap-3">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <AlertTriangle className="size-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Pasarela de pago no disponible</p>
+                <p className="mt-0.5 text-xs text-amber-700 leading-relaxed">
+                  Hemos detectado que tu evento tiene un precio, pero el tipo de registro
+                  seleccionado es <strong>"{registrationType ? (registrationTypeLabel[registrationType] ?? registrationType) : "desconocido"}"</strong>. Actualmente no contamos con
+                  pasarela de pago integrada para este método. Si deseas cobrar por el evento,
+                  debes usar el tipo de registro <strong>Externo</strong> y gestionar los pagos desde tu
+                  propia plataforma.
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-5">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setShowPaymentWarning(false);
+                  form.setValue("price.isFree", true, { shouldValidate: true });
+                  form.setValue("price.amount", 0, { shouldValidate: true });
+                  setDisplayAmount("");
+                }}
+              >
+                De acuerdo
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="border-b border-gray-100 pb-4">
         <h2 className="text-xl font-semibold text-gray-950">Precio del evento</h2>
         <p className="text-sm text-gray-500 mt-1">
@@ -128,6 +185,9 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                   if (checked) {
                     form.setValue("price.amount", 0, { shouldValidate: true });
                     setDisplayAmount("");
+                  } else if (registrationType !== "external") {
+                    // Paid event with non-external registration → warn
+                    setShowPaymentWarning(true);
                   }
                 }}
                 className="data-[state=checked]:bg-black shrink-0"

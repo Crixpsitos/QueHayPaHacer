@@ -130,6 +130,17 @@ export class EventsFirebaseRepository
     return { id: doc.id, ...doc.data() } as FirebaseEventsDto;
   }
 
+  async findBySlug(slug: string): Promise<FirebaseEventsDto | null> {
+    const snapshot = await this.collection
+      .where("slug", "==", slug)
+      .where("status", "==", "published")
+      .limit(1)
+      .get();
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as FirebaseEventsDto;
+  }
+
   async findByTopCategory(categoryIds: string[]): Promise<string[]> {
     if (categoryIds.length === 0) {
       return [];

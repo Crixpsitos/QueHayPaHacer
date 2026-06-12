@@ -22,7 +22,6 @@ import { cn } from "@/app/lib/utils/cn";
 import {
   ArrowRight,
   Calendar,
-  ExternalLink,
   MapPin,
   Share2,
   Sparkles,
@@ -86,7 +85,7 @@ export const EventCard = ({
 
 
   const handleShare = useCallback(async () => {
-    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug}`;
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/events/${event.slug || event.id}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: event.title, url });
@@ -102,7 +101,7 @@ export const EventCard = ({
   }, [event, onShare]);
 
   const isFree = event.price.isFree ?? event.price.amount === 0;
-  const detailUrl = `/events/${event.slug}`;
+  const detailUrl = `/events/${event.slug || event.id}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -397,7 +396,7 @@ export const EventCard = ({
             </div>
 
             {/* Barra de capacidad */}
-            {event.capacity !== undefined && attendeeCount > 0 && (
+            {event.capacity !== undefined && event.capacity > 0 && attendeeCount > 0 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-foreground/70">
                   <span
@@ -477,40 +476,21 @@ export const EventCard = ({
                 </TooltipContent>
               </Tooltip>
 
-              {/* CTA — Ver detalles */}
-              {event.registrationType === "external" && event.externalUrl ? (
-                <a
-                  href={event.externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-auto"
-                  aria-label={`Ver detalles del evento: ${event.title}`}
+              {/* CTA — Ver detalles: siempre navega a la página interna del evento */}
+              <Link
+                href={detailUrl}
+                className="ml-auto"
+                aria-label={`Ver detalles del evento: ${event.title}`}
+              >
+                <ShimmerButton
+                  shimmerColor="#ffffff"
+                  background="black"
+                  className="h-8 px-3 gap-1.5 text-xs font-medium"
                 >
-                  <ShimmerButton
-                    shimmerColor="#ffffff"
-                    background="black"
-                    className="h-8 px-3 gap-1.5 text-xs font-medium"
-                  >
-                    Ver detalles
-                    <ExternalLink className="size-3.5" aria-hidden="true" />
-                  </ShimmerButton>
-                </a>
-              ) : (
-                <Link
-                  href={detailUrl}
-                  className="ml-auto"
-                  aria-label={`Ver detalles del evento: ${event.title}`}
-                >
-                  <ShimmerButton
-                    shimmerColor="#ffffff"
-                    background="black"
-                    className="h-8 px-3 gap-1.5 text-xs font-medium"
-                  >
-                    Ver detalles
-                    <ArrowRight className="size-3.5" aria-hidden="true" />
-                  </ShimmerButton>
-                </Link>
-              )}
+                  Ver detalles
+                  <ArrowRight className="size-3.5" aria-hidden="true" />
+                </ShimmerButton>
+              </Link>
             </div>
           </CardFooter>
         </div>

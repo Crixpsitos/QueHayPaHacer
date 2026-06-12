@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  
   cacheLife: {
     campaigns: {
       stale: 120,
@@ -10,6 +11,7 @@ const nextConfig: NextConfig = {
       expire: 120,
     }
   },
+
   images: {
     remotePatterns: [
       {

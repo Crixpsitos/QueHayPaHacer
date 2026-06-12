@@ -12,12 +12,14 @@ import { EventViewModel } from "@/presentation/events/view-models/EventViewModel
 import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 
 type PublishEventActionResult =
   | {
       success: true;
       eventId: string;
+      slug: string;
       error?: never;
     }
   | {
@@ -47,6 +49,10 @@ export async function publishEventAction(
   const resultParse = safeParse(publishEventSchema, {
     ...event,
     id: event.id,
+    slug: event.slug ||
+      (event.title
+        ? `${toSlug(event.title)}-${Date.now().toString(36)}`
+        : undefined),
     status: "published",
     publishedAt: new Date().toISOString(),
     author: {
@@ -86,7 +92,7 @@ export async function publishEventAction(
     revalidatePath("/", "page");
     revalidatePath("/events", "layout");
     revalidatePath("/profile/events", "layout");
-    return { success: true, eventId: publishedEvent.id || parsedData.id };
+    return { success: true, eventId: publishedEvent.id || parsedData.id, slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id };
   } catch (error) {
     console.error("Error updating event:", error);
     return {

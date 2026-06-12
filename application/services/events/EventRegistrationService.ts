@@ -1,5 +1,5 @@
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
-import type { IEventRegistrationRepository } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { IEventRegistrationRepository, RegisterEventInput } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 export class EventRegistrationService {
   constructor(
@@ -14,5 +14,13 @@ export class EventRegistrationService {
       eventId,
       userId,
     );
+  }
+
+  async isUserRegistered(eventId: string, userId: string): Promise<boolean> {
+    return this.eventRegistrationRepository.isUserRegistered(eventId, userId);
+  }
+
+  async registerUserToEvent(input: RegisterEventInput): Promise<void> {
+    return this.eventRegistrationRepository.registerUserToEvent(input);
   }
 }

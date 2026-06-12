@@ -10,6 +10,7 @@ export interface IEventsFirebaseRepository {
     createDraftEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
     updateEvent(event: FirebaseEventsDto): Promise<void>;
     findById(id: string): Promise<FirebaseEventsDto | null>;
+    findBySlug(slug: string): Promise<FirebaseEventsDto | null>;
     incrementLikes(eventId: string, delta: number): Promise<void>;
     incrementShares(eventId: string, delta: number): Promise<void>;
     createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;

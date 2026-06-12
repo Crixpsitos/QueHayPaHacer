@@ -35,7 +35,9 @@ const handleDraftSubmit = useCallback(async (eventDraft: FormEventDto): Promise<
     window.history.replaceState(null, "", newUrl);
   }
 
-  const { id, ...draftData } = eventDraft;
+  // Serialize to strip any client references from dnd-kit or other client libs
+  const cleanDraft: FormEventDto = JSON.parse(JSON.stringify(eventDraft));
+  const { id, ...draftData } = cleanDraft;
 
   const result: { success?: boolean; error?: string; eventInfo?: Events } = id 
     ? await updateEventAction(id, draftData)
@@ -52,11 +54,13 @@ const handleDraftSubmit = useCallback(async (eventDraft: FormEventDto): Promise<
 
   const handlePublishSubmit = useCallback(async (eventDraft: FormEventDto): Promise<void> => {
     try {
-      const result = await publishEventAction(eventDraft);
+      // Serialize to strip any client references from dnd-kit or other client libs
+      const cleanDraft: FormEventDto = JSON.parse(JSON.stringify(eventDraft));
+      const result = await publishEventAction(cleanDraft);
 
       if (result.success) {
         notify.success("Evento publicado exitosamente.");
-        startTransition(() => router.push(`/`));
+        startTransition(() => router.push(`/events/${result.slug}`));
       } else {
         notify.error(result.error ?? "Error al publicar evento.");
         return;
