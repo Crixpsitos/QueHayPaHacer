@@ -3,7 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 interface LikeEventActionResult {
@@ -34,9 +34,10 @@ export async function likeEventAction(
       liked,
     );
 
-    revalidateTag(`event-${eventId.trim()}`, "weeks");
-    revalidateTag(`event-interaction-${userId}-${eventId.trim()}`, { expire: 0 });
-    revalidateTag(`preference-events-${userId}`, "max");
+    // updateTag = read-your-own-writes: the next router.refresh() sees fresh data immediately
+    updateTag(`event-${eventId.trim()}`);
+    updateTag(`event-interaction-${userId}-${eventId.trim()}`);
+    updateTag(`preference-events-${userId}`);
 
     return { success: true };
   } catch (error) {

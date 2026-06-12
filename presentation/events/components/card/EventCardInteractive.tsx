@@ -17,7 +17,6 @@ const FEATURED_EVENTS_TAG = "featured-events";
 
 interface EventCardInteractiveProps {
   events: EventViewModel[];
-  attendeeCount?: number;
   likedByEventId?: Record<string, boolean>;
   info: {title: string, description: string}
   variant?: "horizontal" | "vertical";
@@ -35,7 +34,6 @@ interface ToastState {
 
 export function EventCardInteractive({
   events,
-  attendeeCount = 0,
   likedByEventId = {},
   info,
   variant = "horizontal"
@@ -166,7 +164,7 @@ export function EventCardInteractive({
             key={event.id}
             event={event}
             variant={variant}
-            attendeeCount={attendeeCount}
+            attendeeCount={event.analytics?.registrations ?? 0}
             initialLikes={event.analytics?.likes ?? 0}
             initialLiked={likedByEventId[event.id] ?? false}
             onLike={handleLike}

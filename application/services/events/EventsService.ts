@@ -78,6 +78,10 @@ export class EventsService {
     return this.eventsRepository.findById(id);
   }
 
+  async getEventBySlug(slug: string): Promise<Events | null> {
+    return this.eventsRepository.findBySlug(slug);
+  }
+
   async getAllEvents(): Promise<string[]> {
     return this.eventsRepository.findAllPublished();
   }

@@ -12,6 +12,7 @@ import { EventViewModel } from "@/presentation/events/view-models/EventViewModel
 import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 
 interface CreateDraftEventActionResult {
@@ -36,6 +37,9 @@ export async function createDraftEventAction(
 
   const resultParse = safeParse(FormEventSchema, {
     ...event,
+    slug: event.title
+      ? `${toSlug(event.title)}-${Date.now().toString(36)}`
+      : undefined,
     author: {
       id: tokens.decodedToken.uid,
       displayName: tokens.decodedToken.name ?? "pruebas evento",

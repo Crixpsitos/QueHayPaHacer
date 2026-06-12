@@ -267,6 +267,7 @@ const AuthorDraftSchema = v.object({
 
 export const EventSchema = v.object({
   id: v.pipe(v.string(), v.nonEmpty("El id es requerido")),
+  slug: v.optional(v.string()),
   ...step1Schema.entries,
   ...step2Schema.entries,
   author: AuthorSchema,
@@ -291,6 +292,7 @@ export const CreateEventSchema = v.omit(EventSchema, [
 
 export const publishEventSchema = v.object({
   id: v.optional(v.string()),
+  slug: v.optional(v.string()),
   ...step1Schema.entries,
   ...step2Schema.entries,
   author: AuthorSchema,
@@ -309,6 +311,7 @@ export const publishEventSchema = v.object({
 
 export const FormEventSchema = v.object({
   id: v.optional(v.string()),
+  slug: v.optional(v.string()),
   title: v.optional(v.string()),
   shortDescription: v.optional(v.string()),
   description: v.optional(RichTextWithLengthSchema),

@@ -59,10 +59,6 @@ export const AllEventsContainer = async ({ userId }: AllEventsContainerProps) =>
   return (
     <EventCardInteractive
       events={allEventsViewModels}
-      attendeeCount={allEventsViewModels.reduce(
-        (total, event) => total + (event.analytics?.registrations || 0),
-        0,
-      )}
       likedByEventId={likedByEventId}
       info={{ title: "Lamentablemente no hay eventos disponibles :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
       variant="vertical"

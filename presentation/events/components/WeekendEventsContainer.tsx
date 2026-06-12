@@ -15,10 +15,6 @@ export const WeekendEventsContainer = ({ weekendEvents, likedByEventId = {} }: W
   return (
     <EventCardInteractive
       events={weekendEventsViewModels}
-      attendeeCount={weekendEventsViewModels.reduce(
-        (total, event) => total + (event.analytics?.registrations || 0),
-        0,
-      )}
       likedByEventId={likedByEventId}
       info={{ title: "Lamentablemente no hay eventos para esta semana :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
       variant="vertical"

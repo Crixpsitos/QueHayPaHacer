@@ -12,6 +12,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
 import dynamic from "next/dynamic";
 
 interface Step6RegistrationProps {
@@ -25,6 +26,8 @@ const RegistrationFormBuilder = dynamic(
 
 export const Step6Registration = ({ form }: Step6RegistrationProps) => {
   const registrationType = form.watch("registrationType");
+  const capacityValue = form.watch("capacity");
+  const isLimited = !!(capacityValue && capacityValue > 0);
 
   return (
     <div className="space-y-6">
@@ -118,35 +121,61 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
           </div>
         )}
 
-        <Controller
-          name="capacity"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>Capacidad (opcional)</FieldLabel>
+        {/* Capacidad */}
+        <Field>
+          <div className="flex items-center justify-between">
+            <div>
+              <FieldLabel>Capacidad limitada</FieldLabel>
               <FieldDescription>
-                ¿Cuántas personas pueden asistir a tu evento? Deja en 0 o vacío si es ilimitado.
+                ¿Tu evento tiene un cupo máximo de asistentes?
               </FieldDescription>
-              <Input
-                type="number"
-                placeholder="Ej: 100"
-                aria-label="Capacidad"
-                min={0}
-                value={field.value || ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") {
-                    field.onChange(0);
-                    return;
-                  }
-                  const numericValue = parseInt(val, 10);
-                  field.onChange(isNaN(numericValue) ? 0 : numericValue);
-                }} 
-              />
-              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
-            </Field>
-          )}
-        />
+            </div>
+            <Switch
+              checked={isLimited}
+              onCheckedChange={(checked) => {
+                form.setValue("capacity", checked ? 50 : 0, { shouldValidate: true });
+              }}
+            />
+          </div>
+        </Field>
+
+        {isLimited && (
+          <Controller
+            name="capacity"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid.toString()}>
+                <FieldLabel>Número de cupos</FieldLabel>
+                <FieldDescription>
+                  ¿Cuántas personas pueden asistir a tu evento?
+                </FieldDescription>
+                <Input
+                  type="number"
+                  placeholder="Ej: 100"
+                  aria-label="Capacidad"
+                  min={1}
+                  value={field.value || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      field.onChange(0);
+                      return;
+                    }
+                    const numericValue = parseInt(val, 10);
+                    field.onChange(isNaN(numericValue) ? 0 : numericValue);
+                  }}
+                />
+                {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
+              </Field>
+            )}
+          />
+        )}
+
+        {!isLimited && (
+          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-4 text-sm text-gray-500">
+            🎉 Evento abierto — cualquier persona puede registrarse sin límite de cupos.
+          </div>
+        )}
       </FieldGroup>
     </div>
   );

@@ -56,6 +56,10 @@ export class EventsAdapter implements IEventsRepository {
     return this.repository.findById(id).then(dto => dto ? this.mapper.toDomain(dto) : null);
   }
 
+  findBySlug(slug: string): Promise<Events | null> {
+    return this.repository.findBySlug(slug).then(dto => dto ? this.mapper.toDomain(dto) : null);
+  }
+
   async findByTopCategory(categoryIds: string[]): Promise<string[]> {
     return await this.repository.findByTopCategory(categoryIds);
   }
