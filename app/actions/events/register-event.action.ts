@@ -36,7 +36,13 @@ export async function registerEventAction(
   const { uid, name, email } = tokens.decodedToken;
 
   try {
-    const { eventRegistrationService } = createServerContainer();
+    const { eventRegistrationService, eventsService } = createServerContainer();
+
+    // El organizador no puede inscribirse a su propio evento.
+    const event = await eventsService.getEventById(eventId.trim());
+    if (event?.author?.id && event.author.id === uid) {
+      return { error: "No puedes inscribirte a tu propio evento." };
+    }
 
     const alreadyRegistered = await eventRegistrationService.isUserRegistered(
       eventId.trim(),

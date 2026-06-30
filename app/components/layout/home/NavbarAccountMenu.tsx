@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, User as UserIcon } from "lucide-react";
+import { ChevronDown, LayoutDashboard, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -48,6 +48,9 @@ export function NavbarAccountMenu() {
   const accountTypeLabel = user?.profile?.accountType
     ? user.profile.accountType.toLowerCase().replace(/_/g, " ")
     : "Cuenta personal";
+
+  // El acceso al Estudio del Organizador es solo para cuentas profesionales.
+  const isProfessional = user?.customClaims?.role === "professional";
 
   const handleLogout = async () => {
     setUser(null);
@@ -117,6 +120,14 @@ export function NavbarAccountMenu() {
             <DropdownMenuItem asChild>
               <Link href="/my-events">Mis eventos</Link>
             </DropdownMenuItem>
+            {isProfessional && (
+              <DropdownMenuItem asChild>
+                <Link href="/studio" className="flex items-center gap-2">
+                  <LayoutDashboard className="size-4" aria-hidden="true" />
+                  Ir a estudio
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link href="/settings">Configuracion</Link>
             </DropdownMenuItem>

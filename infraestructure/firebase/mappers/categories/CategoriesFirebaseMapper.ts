@@ -2,12 +2,13 @@ import { Timestamp } from "firebase-admin/firestore";
 import type { Categories } from "@/domain/entities/categories/Categories";
 import type { FirebaseCategoriesDto } from "@/infraestructure/firebase/dto/categories/FirebaseCategoriesDto";
 import { ICategoriesMapper } from "./ICategoriesMapper";
+import { toSlug } from "@/app/lib/utils/slug";
 
 export class CategoriesFirebaseMapper implements ICategoriesMapper {
     toDomain(dto: FirebaseCategoriesDto): Categories {
         return {
             id: dto.id,
-            slug: dto.slug ?? dto.id,
+            slug: dto.slug ?? toSlug(dto.title),
             title: dto.title,
             description: dto.description,
             icon: dto.icon,

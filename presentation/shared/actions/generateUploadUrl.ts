@@ -16,6 +16,7 @@ type GenerateUploadUrlOptions = {
   fileName: string;
   contentType: string;
   visibility?: UploadVisibility;
+  subFolder?: string;
   customMetadata?: Record<string, string>;
 };
 
@@ -25,12 +26,13 @@ export async function generateUploadUrl({
   fileName,
   contentType,
   visibility = "public",
+  subFolder,
   customMetadata,
 }: GenerateUploadUrlOptions): Promise<UploadResult> {
   const { storageService } = createServerContainer();
   const bucketName = storageService.getBucketName;
-  const subFolder = contentType.startsWith("video/") ? "videos" : "images";
-  const fullPath = `${visibility}/${entityName}/${entityId}/${subFolder}/${fileName}-${crypto.randomUUID()}`;
+  const resolvedSubFolder = subFolder ?? (contentType.startsWith("video/") ? "videos" : "images");
+  const fullPath = `${visibility}/${entityName}/${entityId}/${resolvedSubFolder}/${fileName}-${crypto.randomUUID()}`;
 
   try {
     const signedUrl = await storageService.generateSignedUrl(

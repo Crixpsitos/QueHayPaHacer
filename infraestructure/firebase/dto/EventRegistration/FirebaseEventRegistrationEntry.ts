@@ -10,12 +10,14 @@ import type { Timestamp } from "firebase-admin/firestore";
  * Extra fields and their future utility:
  *   - status: lets the organizer move registrations to "waitlist" / "accepted" / "canceled"
  *   - eventId: denormalized so we can query "all events a user registered for" from a collectionGroup
+ *   - parentType: identifies the parent collection of the registration document
  *   - registrationType: lets the organizer know how the user registered (internal vs form)
  *   - formData: stores custom form answers for form-type events
  */
 export interface FirebaseEventRegistrationEntry {
   userId: string;
   eventId: string;
+  parentType: "events";
   name: string;
   email: string;
   registeredAt: Timestamp;

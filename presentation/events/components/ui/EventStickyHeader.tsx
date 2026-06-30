@@ -6,12 +6,13 @@ import { memo } from 'react';
 
 interface EventStickyHeaderProps {
   progressPercentage: number;
-  setShowCancelDialog: (showCancelDialog: boolean) => void;
+  /** Solicita salir: el padre decide si muestra el modal (hay cambios) o sale directo. */
+  onRequestExit: () => void;
 }
 
 const EventStickyHeader = ({
   progressPercentage,
-  setShowCancelDialog,
+  onRequestExit,
 }: EventStickyHeaderProps) => {
   return (
     <div className="sticky top-0 z-50 bg-white shadow-md">
@@ -23,7 +24,7 @@ const EventStickyHeader = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => setShowCancelDialog(true)}
+          onClick={onRequestExit}
           className="text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors rounded-full h-8 w-8 p-0"
           aria-label="Cancel event creation"
         >

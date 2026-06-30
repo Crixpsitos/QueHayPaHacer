@@ -29,6 +29,7 @@ export class EventRegistrationAdapter implements IEventRegistrationRepository {
     await this.repository.registerUserToEvent(input.eventId, {
       userId: input.userId,
       eventId: input.eventId,
+      parentType: "events",
       name: input.name,
       email: input.email,
       registeredAt: Timestamp.now(),

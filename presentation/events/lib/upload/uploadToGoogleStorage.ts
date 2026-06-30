@@ -8,6 +8,7 @@ export async function uploadToGoogleStorage(
     fileName: string;
     contentType: string;
     isPublic?: boolean;
+    subFolder?: string;
     customMetadata?: Record<string, string>;
   } = {
     fileName: "",
@@ -23,6 +24,7 @@ export async function uploadToGoogleStorage(
     fileName: options.fileName || file.name,
     contentType: options.contentType || file.type,
     visibility: options.isPublic ? "public" : "private",
+    subFolder: options.subFolder,
     customMetadata: options.customMetadata,
   });
 

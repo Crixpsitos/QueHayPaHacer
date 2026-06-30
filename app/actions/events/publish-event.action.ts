@@ -10,7 +10,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
@@ -35,6 +35,13 @@ export async function publishEventAction(
     return {
       success: false,
       error: "Debes iniciar sesion para crear un evento.",
+    };
+  }
+
+  if (!tokens.decodedToken.email_verified) {
+    return {
+      success: false,
+      error: "Debes verificar tu correo electrónico antes de publicar un evento.",
     };
   }
 
@@ -83,12 +90,54 @@ export async function publishEventAction(
   const userId = tokens.decodedToken.uid;
 
   try {
-    const { eventsService } = createServerContainer();
-    const publishedEvent = await eventsService.publishEvent(parsedData);
+    const { eventsService, badgeService, profileService, userService } = createServerContainer();
+
+    const author = await userService.getUserById(userId);
+    const publishedEvent = await eventsService.publishEvent(parsedData, {
+      isProfessionalAuthor: author?.accountType === "professional",
+    });
+
+    // Asignar insignia de "Primer Evento" si es el primer evento publicado
+    try {
+      const userEvents = await profileService.getUserEvents(userId);
+      console.log(`[BADGE DEBUG] Usuario ${userId} tiene ${userEvents.length} eventos totales`);
+      
+      const publishedEvents = userEvents.filter((e) => e.status === "published");
+      console.log(`[BADGE DEBUG] Eventos publicados: ${publishedEvents.length}`);
+      console.log(`[BADGE DEBUG] IDs: ${publishedEvents.map(e => e.id).join(", ")}`);
+      console.log(`[BADGE DEBUG] Evento recién publicado ID: ${publishedEvent.id}`);
+
+      // Contar eventos publicados EXCLUYENDO el que acabamos de crear
+      const otherPublishedEvents = userEvents.filter(
+        (e) => e.status === "published" && e.id !== publishedEvent.id
+      );
+      
+      console.log(`[BADGE DEBUG] Otros eventos publicados (sin el actual): ${otherPublishedEvents.length}`);
+
+      if (otherPublishedEvents.length === 0) {
+        console.log(`[BADGE DEBUG] ✅ Es el PRIMER evento, asignando badge...`);
+        await badgeService.awardBadgeToUser(
+          userId,
+          "first-event",
+          "Publicaste tu primer evento"
+        );
+        console.log(`[BADGE DEBUG] ✅ Badge asignado exitosamente`);
+        revalidateTag(`profile-badges-${userId}`, "max");
+        revalidateTag(`profile-stats-${userId}`, "max");
+      } else {
+        console.log(`[BADGE DEBUG] ❌ NO es el primer evento, usuario ya tiene ${otherPublishedEvents.length} publicados`);
+      }
+    } catch (badgeError) {
+      console.error(`[BADGE ERROR] No se pudo asignar insignia de primer evento:`, badgeError);
+    }
 
     updateTag("event-list");
     updateTag(`user-events-${userId}`);
-    
+
+    // revalidateTag (stale-while-revalidate) para las pestanas de Eventos y stats del perfil
+    revalidateTag(`profile-events-${userId}`, "max");
+    revalidateTag(`profile-stats-${userId}`, "max");
+
     revalidatePath("/", "page");
     revalidatePath("/events", "layout");
     revalidatePath("/profile/events", "layout");

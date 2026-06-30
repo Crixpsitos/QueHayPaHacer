@@ -19,9 +19,11 @@ import {
   TooltipTrigger,
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
+import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import {
   ArrowRight,
   Calendar,
+  Eye,
   MapPin,
   Share2,
   Sparkles,
@@ -47,8 +49,16 @@ interface EventCardProps {
   onLike?: (eventId: string, liked: boolean) => boolean | Promise<boolean>;
   /** Callback al compartir */
   onShare?: (event: EventViewModel) => void;
+  /** Callback al hacer click en "Ver detalles" (p. ej. registrar una vista) */
+  onViewDetails?: (event: EventViewModel) => void;
   /** Clase extra para el contenedor raíz */
   className?: string;
+  /** Indica si la imagen principal debe cargarse eager (LCP / above the fold) */
+  prioritizeImage?: boolean;
+  /** Número de vistas del evento */
+  viewCount?: number;
+  /** Indica si es el primer evento del autor */
+  isFirstEvent?: boolean;
 }
 
 function formatDate(date: string): string {
@@ -79,7 +89,11 @@ export const EventCard = ({
   variant = "vertical",
   onLike,
   onShare,
+  onViewDetails,
   className,
+  prioritizeImage = false,
+  viewCount = 0,
+  isFirstEvent = false,
 }: EventCardProps) => {
   const [shared, setShared] = useState(false);
 
@@ -179,7 +193,9 @@ export const EventCard = ({
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority={false}
+              loading={prioritizeImage ? "eager" : "lazy"}
+              fetchPriority={prioritizeImage ? "high" : "auto"}
+              priority={prioritizeImage}
             />
           </div>
 
@@ -189,7 +205,7 @@ export const EventCard = ({
             aria-hidden="true"
           />
 
-          {/* Badges top-left: categoría + destacado */}
+          {/* Badges top-left: categoría + destacado + primer evento */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
             <div
               className="inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm px-2 py-0.5"
@@ -213,18 +229,39 @@ export const EventCard = ({
                 Destacado
               </Badge>
             )}
+
+            {isFirstEvent && (
+              <Badge
+                className="text-[10px] py-0.5 px-2 font-medium bg-yellow-500/90 text-yellow-950 backdrop-blur-sm border-2 border-yellow-400"
+                aria-label="Primer evento del autor"
+              >
+                <Sparkles className="size-3 mr-1" aria-hidden="true" />
+                Primer Evento
+              </Badge>
+            )}
           </div>
 
-          {/* Badge top-right: asistentes */}
-          {attendeeCount > 0 && (
-            <div
-              className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-background/90 backdrop-blur-sm px-2 py-1 text-xs font-medium shadow-sm"
-              aria-label={`${attendeeCount.toLocaleString("es-CO")} personas asistirán a este evento`}
-            >
-              <Users className="size-3" aria-hidden="true" />
-              <span>{attendeeCount.toLocaleString("es-CO")}</span>
-            </div>
-          )}
+          {/* Badge top-right: asistentes + vistas */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+            {attendeeCount > 0 && (
+              <div
+                className="flex items-center gap-1 rounded-md bg-background/90 backdrop-blur-sm px-2 py-1 text-xs font-medium shadow-sm"
+                aria-label={`${attendeeCount.toLocaleString("es-CO")} personas asistirán a este evento`}
+              >
+                <Users className="size-3" aria-hidden="true" />
+                <span>{attendeeCount.toLocaleString("es-CO")}</span>
+              </div>
+            )}
+            {viewCount > 0 && (
+              <div
+                className="flex items-center gap-1 rounded-md bg-background/90 backdrop-blur-sm px-2 py-1 text-xs font-medium shadow-sm"
+                aria-label={`${viewCount.toLocaleString("es-CO")} personas han visto este evento`}
+              >
+                <Eye className="size-3" aria-hidden="true" />
+                <span>{viewCount.toLocaleString("es-CO")}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Cuerpo ── */}
@@ -240,21 +277,27 @@ export const EventCard = ({
               )}
             >
               <div className="flex items-center gap-2 w-full">
-                <Avatar className="size-6 shrink-0">
-                  <AvatarImage
-                    src={event.author.photoURL}
-                    alt={`Foto de ${event.author.displayName}`}
-                  />
-                  <AvatarFallback className="text-[10px]">
-                    {getAuthorInitials(event.author.displayName)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-foreground/70 truncate">
-                  Por{" "}
-                  <span className="font-medium text-foreground">
-                    {event.author.displayName}
+                <Link
+                  href={buildProfileHref(event.author)}
+                  className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
+                  aria-label={`Ver perfil de ${event.author.displayName}`}
+                >
+                  <Avatar className="size-6 shrink-0">
+                    <AvatarImage
+                      src={event.author.photoURL}
+                      alt={`Foto de ${event.author.displayName}`}
+                    />
+                    <AvatarFallback className="text-[10px]">
+                      {getAuthorInitials(event.author.displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-foreground/70 truncate">
+                    Por{" "}
+                    <span className="font-medium text-foreground">
+                      {event.author.displayName}
+                    </span>
                   </span>
-                </span>
+                </Link>
 
                 {/* Precio inline solo en variante vertical */}
                 {variant === "vertical" && (
@@ -481,6 +524,7 @@ export const EventCard = ({
                 href={detailUrl}
                 className="ml-auto"
                 aria-label={`Ver detalles del evento: ${event.title}`}
+                onClick={() => onViewDetails?.(event)}
               >
                 <ShimmerButton
                   shimmerColor="#ffffff"

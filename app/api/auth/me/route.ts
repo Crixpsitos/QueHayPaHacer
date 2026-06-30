@@ -57,6 +57,7 @@ export async function GET() {
 
   const user = {
     ...baseUser,
+    photoURL: dbUser?.photoURL ?? baseUser.photoURL,
     profile: dbUser
       ? {
           firstName: dbUser.firstName,
@@ -64,6 +65,15 @@ export async function GET() {
           username: dbUser.displayName,
           phoneNumber: dbUser.phoneNumber,
           accountType: dbUser.accountType ?? null,
+          bio: dbUser.bio ?? null,
+          photoURL: dbUser.photoURL ?? null,
+          imagePath: dbUser.imagePath ?? null,
+          isPublic: dbUser.isPublic,
+          brandName: dbUser.brandName,
+          website: dbUser.website,
+          mapsLink: dbUser.mapsLink,
+          socialLink: dbUser.socialLink,
+          professionalDetails: dbUser.professionalDetails,
         }
       : null,
   };

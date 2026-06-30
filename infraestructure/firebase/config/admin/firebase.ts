@@ -4,6 +4,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getStorage } from 'firebase-admin/storage';
+import { Firestore as EnterpriseFirestore } from "@google-cloud/firestore";
 
 export const serverConfig = {
     useSecureCookies: process.env.NODE_ENV === 'production',
@@ -48,6 +49,7 @@ export const authConfig = {
 };
 
 const ADMIN_APP_NAME = "firebase-admin-server";
+let enterpriseFirestoreInstance: EnterpriseFirestore | null = null;
 
 const getAdminApp = () => {
   const existing = getApps().find((app) => app.name === ADMIN_APP_NAME);
@@ -68,6 +70,25 @@ const getAdminApp = () => {
 };
 
 export const getFirebaseFirestore = () => getFirestore(getAdminApp(), 'quehaypahacer-db');
+
+export const getEnterpriseFirestore = (): EnterpriseFirestore => {
+  if (enterpriseFirestoreInstance) {
+    return enterpriseFirestoreInstance;
+  }
+
+  const serviceAccount = getServiceAccount();
+  enterpriseFirestoreInstance = new EnterpriseFirestore({
+    projectId: serviceAccount.projectId,
+    databaseId: 'quehaypahacer-db',
+    keyFilename: undefined,
+    credentials: {
+      client_email: serviceAccount.clientEmail,
+      private_key: serviceAccount.privateKey,
+    },
+  });
+
+  return enterpriseFirestoreInstance;
+};
 
 export const getFirebaseAdminAuth = () => getAuth(getAdminApp());
 

@@ -1,6 +1,7 @@
 "use client";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
+import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { updateTagAction } from "../../../../app/actions/cache/update-tag.action";
 import { Button } from "@/app/components/ui/button/button";
@@ -39,7 +40,7 @@ export function EventCardInteractive({
   variant = "horizontal"
 }: EventCardInteractiveProps) {
   const router = useRouter();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -108,6 +109,11 @@ export function EventCardInteractive({
     showToast(message, "error");
   };
 
+  const handleViewDetails = (event: EventViewModel) => {
+    // Registro de vista no bloqueante (solo cuenta una vez por usuario autenticado).
+    void recordEventViewAction(event.id, user?.uid);
+  };
+
   const handleReload = async () => {
     setIsLoading(true);
     try {
@@ -159,7 +165,7 @@ export function EventCardInteractive({
           ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           : "flex flex-wrap gap-6"
       )}>
-        {events.map((event) => (
+        {events.map((event, index) => (
           <EventCard
             key={event.id}
             event={event}
@@ -167,8 +173,11 @@ export function EventCardInteractive({
             attendeeCount={event.analytics?.registrations ?? 0}
             initialLikes={event.analytics?.likes ?? 0}
             initialLiked={likedByEventId[event.id] ?? false}
+            viewCount={event.analytics?.views ?? 0}
             onLike={handleLike}
             onShare={(ev) => shareEventAction(ev.id)}
+            onViewDetails={handleViewDetails}
+            prioritizeImage={index === 0}
           />
         ))}
       </div>

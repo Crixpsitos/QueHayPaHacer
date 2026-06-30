@@ -3,7 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
-import { updateTag } from "next/cache";
+import { revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 interface LikeEventActionResult {
@@ -38,6 +38,9 @@ export async function likeEventAction(
     updateTag(`event-${eventId.trim()}`);
     updateTag(`event-interaction-${userId}-${eventId.trim()}`);
     updateTag(`preference-events-${userId}`);
+
+    // revalidateTag (stale-while-revalidate) para el tab de Likes del perfil: una pequeña demora es aceptable
+    revalidateTag(`profile-likes-${userId}`, "max");
 
     return { success: true };
   } catch (error) {

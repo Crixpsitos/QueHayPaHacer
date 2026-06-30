@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
+import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { Events } from "@/domain/entities/events/Events";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
@@ -7,6 +8,7 @@ import { EventDetailClient } from "./EventDetailClient";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
+import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
 
 const fetchEventDetailById = async (id: string): Promise<Events | null> => {
   "use cache";
@@ -42,12 +44,12 @@ const fetchUserRegistered = async (eventId: string, userId: string): Promise<boo
 };
 
 interface EventDetailContainerProps {
-  /** Can be either a slug (new events) or a Firestore document ID (legacy events) */
+  /** Puede ser un slug (eventos nuevos) o un ID de documento Firestore (eventos legacy) */
   eventId: string;
 }
 
 export const EventDetailContainer = async ({ eventId }: EventDetailContainerProps) => {
-  // Try slug first; if not found fall back to direct ID lookup (legacy events)
+  // Intentar buscar por slug primero; si no se encuentra, usar búsqueda directa por ID (eventos legacy)
   let event = await fetchEventDetailBySlug(eventId);
   if (!event) {
     event = await fetchEventDetailById(eventId);
@@ -57,7 +59,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   const viewModel = EventViewModelMapper.toViewModel(event);
 
-  // Resolve user like and registration state (non-blocking — defaults to false if unauthenticated)
+  // Resolver estado de like y registro del usuario (no bloqueante — por defecto false si no autenticado)
   const tokens = await getTokens(await cookies(), authConfig);
   const userId = tokens?.decodedToken?.uid;
 
@@ -68,11 +70,31 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
       ])
     : [false, false];
 
+  // El dueño no puede inscribirse a su propio evento (sí puede dar like / compartir).
+  const isOwner = Boolean(userId && event.author?.id && userId === event.author.id);
+
+  // El acceso al Estudio es solo para dueños con cuenta profesional; los demás
+  // dueños ven un modal sencillo con sus inscritos.
+  let isProfessionalOwner = false;
+  if (isOwner && userId) {
+    const { userService } = createServerContainer();
+    const owner = await userService.getUserById(userId);
+    isProfessionalOwner = owner?.accountType === "professional";
+  }
+
+  // Registrar vista del evento de forma asincrónica sin bloquear la respuesta
+  // Solo se registra si el usuario está autenticado y es su primera vista del evento
+  after(async () => {
+    await recordEventViewAction(event.id, userId);
+  });
+
   return (
     <EventDetailClient
       event={viewModel}
       initialLiked={initialLiked}
       initialRegistered={initialRegistered}
+      isOwner={isOwner}
+      isProfessionalOwner={isProfessionalOwner}
     />
   );
 };
