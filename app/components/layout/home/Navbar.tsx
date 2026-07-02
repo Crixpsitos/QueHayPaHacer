@@ -141,39 +141,45 @@ export const Navbar = () => {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  asChild
-                  className="bg-zinc-900 text-white focus:bg-zinc-700 focus:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:focus:bg-zinc-300 dark:focus:text-zinc-900"
-                >
-                  <Link href="/events/create" className="font-semibold">
-                    Crear tu evento
-                  </Link>
+                <DropdownMenuItem asChild>
+                  <Link href="/events/create">Crear evento</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/sites/create">Crear nuevo sitio</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {isHydrating ? (
               <Skeleton className="hidden h-10 w-36 bg-zinc-200 dark:bg-zinc-800 md:inline-flex rounded-lg" />
-            ) : user ? (
-              <Button
-                asChild
-                variant="outline"
-                className="hidden! border-transparent bg-zinc-900 text-white shadow-sm hover:bg-zinc-700 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 md:inline-flex!"
-              >
-                <Link href="/events/create" className="inline-flex items-center gap-2">
-                  <Plus className="size-4" aria-hidden="true" />
-                  Crear tu evento
-                </Link>
-              </Button>
             ) : (
-              <Button
-                variant="outline"
-                className="hidden! border-transparent bg-zinc-900 text-white shadow-sm hover:bg-zinc-700 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 md:inline-flex!"
-                onClick={openLoginModal}
-              >
-                <Plus className="size-4" aria-hidden="true" />
-                Crear tu evento
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="hidden! border-transparent bg-zinc-900 text-white shadow-sm hover:bg-zinc-700 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 md:inline-flex!"
+                  >
+                    <Plus className="size-4" aria-hidden="true" />
+                    Crear
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={8}>
+                  <DropdownMenuItem asChild>
+                    {user ? (
+                      <Link href="/events/create">Crear evento</Link>
+                    ) : (
+                      <button type="button" onClick={openLoginModal}>Crear evento</button>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    {user ? (
+                      <Link href="/sites/create">Crear nuevo sitio</Link>
+                    ) : (
+                      <button type="button" onClick={openLoginModal}>Crear nuevo sitio</button>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             <NavbarAccountMenu />

@@ -1,0 +1,1 @@
+export type SiteModerationStatus = "pending" | "approved" | "rejected";
