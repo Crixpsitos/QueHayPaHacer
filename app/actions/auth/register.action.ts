@@ -6,6 +6,7 @@ import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/con
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
+import { revalidateTag } from "next/cache"
 import { updateProfile } from "firebase/auth"
 
 interface RegisterActionResult {
@@ -21,22 +22,22 @@ const REGISTER_ERROR_MESSAGES: Record<string, string> = {
 export async function registerAction(
     name: string,
     lastName: string,
-    username: string,
     email: string,
     phoneNumber: string,
     password: string,
 ): Promise<RegisterActionResult | void> {
     try {
         const { authService } = createClientContainer()
-        const { userService } = createServerContainer()
+        const { userService, badgeService } = createServerContainer()
 
         const credentials = await authService.register(email, password)
         const uid = credentials.user.uid
         const idToken = await credentials.user.getIdToken()
         const fullPhoneNumber = `+57${phoneNumber}`
 
+        const displayName = `${name} ${lastName}`
         await updateProfile(credentials.user, {
-            displayName: username,
+            displayName,
         })
 
         try {
@@ -48,15 +49,31 @@ export async function registerAction(
         }
 
         try {
+            const displayName = `${name} ${lastName}`
             await userService.createUser({
                 uid,
                 email,
-                displayName: username,
+                emailVerified: credentials.user.emailVerified,
+                displayName,
                 firstName: name,
                 lastName,
                 phoneNumber: fullPhoneNumber,
                 acceptedTerms: true,
+                isPublic: true,
             })
+            
+            // Asignar insignia "Usuario Nuevo" al registro
+            try {
+                await badgeService.awardBadgeToUser(
+                    uid,
+                    "new-user",
+                    "Registro completado"
+                )
+                revalidateTag(`profile-badges-${uid}`, "max")
+                revalidateTag(`profile-stats-${uid}`, "max")
+            } catch (badgeError) {
+                console.warn("No se pudo asignar insignia de usuario nuevo:", badgeError)
+            }
         } catch (dbError) {
             // Si falla la creacion en DB, eliminar el usuario de Firebase Auth para no dejar datos inconsistentes
             await getFirebaseAdminAuth().deleteUser(uid)

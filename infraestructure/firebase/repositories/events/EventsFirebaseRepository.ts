@@ -100,7 +100,7 @@ export class EventsFirebaseRepository
       .where("status", "==", "published")
       .where("endDate", ">=", now)
       .where("startDate", "<=", endOfWeek)
-      .orderBy("startDate", "asc")
+      .orderBy("analytics.score", "desc")
       .limit(20)
       .select()
       .get();
@@ -151,7 +151,7 @@ export class EventsFirebaseRepository
       .where("status", "==", "published")
       .where("categoryInfo.id", "in", categoryIds)
       .where("startDate", ">=", now)
-      .orderBy("startDate", "asc")
+      .orderBy("analytics.score", "desc")
       .limit(20)
       .select()
       .get();
@@ -164,7 +164,7 @@ export class EventsFirebaseRepository
     const snapshot = await this.collection
       .where("status", "==", "published")
       .where("endDate", ">=", now)
-      .orderBy("startDate", "asc")
+      .orderBy("analytics.score", "desc")
       .limit(30)
       .select()
       .get();

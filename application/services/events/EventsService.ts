@@ -3,6 +3,7 @@ import { IEventsRepository } from "@/domain/repository/events/IEventsRepository"
 import { IStorageService } from "@/domain/services/storage/IStorageService";
 
 export class EventsService {
+  private static readonly PROFESSIONAL_AUTHOR_SCORE_BOOST = 10;
 
   constructor(private readonly eventsRepository: IEventsRepository, private readonly storageService: IStorageService) {}
 
@@ -11,11 +12,20 @@ export class EventsService {
     return newEvent;
   }
 
-  async publishEvent(event: Partial<Events>): Promise<Events> {
+  async publishEvent(event: Partial<Events>, options?: { isProfessionalAuthor?: boolean }): Promise<Events> {
     if(!event.id) {
-      const newEvent = await this.eventsRepository.createEvent(event as Events);
+      const boost = options?.isProfessionalAuthor ? EventsService.PROFESSIONAL_AUTHOR_SCORE_BOOST : 0;
+      const eventWithScore: Events = {
+        ...event,
+        analytics: {
+          ...event.analytics,
+          score: (event.analytics?.score ?? 0) + boost,
+        },
+      } as Events;
+
+      const newEvent = await this.eventsRepository.createEvent(eventWithScore);
       return newEvent;
-    } 
+    }
 
     await this.eventsRepository.updateEvent(event as Events);
     return event as Events;

@@ -23,6 +23,7 @@ export class EventViewModelMapper {
       registrationEventForm: event.registrationEventForm,
       externalUrl: event.externalUrl,
       capacity: event.capacity,
+      requiresAttendance: event.requiresAttendance,
       price: event.price,
       promotion: event.promotion ? {
         isPromoted: event.promotion.isPromoted ?? false,
@@ -75,6 +76,7 @@ export class EventViewModelMapper {
       registrationEventForm: viewModel.registrationEventForm,
       externalUrl: viewModel.externalUrl,
       capacity: viewModel.capacity,
+      requiresAttendance: viewModel.requiresAttendance,
       price: viewModel.price,
       promotion: viewModel.promotion ? {
         isPromoted: viewModel.promotion.isPromoted ?? false,

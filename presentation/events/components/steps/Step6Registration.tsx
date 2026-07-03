@@ -28,6 +28,12 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
   const registrationType = form.watch("registrationType");
   const capacityValue = form.watch("capacity");
   const isLimited = !!(capacityValue && capacityValue > 0);
+  // El control de asistencia solo aplica cuando hay una lista de inscritos propia
+  // (registro interno o por formulario). En "ninguno"/"externo" no hay a quién
+  // pasarle lista, así que ocultamos el campo.
+  const tracksRegistrations =
+    registrationType === "internal" || registrationType === "form";
+  const requiresAttendance = !!form.watch("requiresAttendance");
 
   return (
     <div className="space-y-6">
@@ -175,6 +181,28 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
           <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-4 text-sm text-gray-500">
             🎉 Evento abierto — cualquier persona puede registrarse sin límite de cupos.
           </div>
+        )}
+
+        {/* Control de asistencia (check-in). Solo para eventos con lista propia. */}
+        {tracksRegistrations && (
+          <Field>
+            <div className="flex items-center justify-between">
+              <div>
+                <FieldLabel>¿Requiere asistencia?</FieldLabel>
+                <FieldDescription>
+                  Si lo activas, en la tabla de registros podrás confirmar la
+                  asistencia (check-in) de cada inscrito. Si lo dejas desactivado,
+                  solo verás la lista de inscritos.
+                </FieldDescription>
+              </div>
+              <Switch
+                checked={requiresAttendance}
+                onCheckedChange={(checked) =>
+                  form.setValue("requiresAttendance", checked, { shouldValidate: true })
+                }
+              />
+            </div>
+          </Field>
         )}
       </FieldGroup>
     </div>

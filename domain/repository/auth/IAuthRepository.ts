@@ -6,5 +6,6 @@ export interface IAuthRepository {
   signInWithGoogle(): Promise<UserCredential>;
   logout(): Promise<void>;
   sendPasswordResetEmail(email: string): Promise<void>;
+  sendEmailVerification(): Promise<void>;
   onAuthStateChanged(callback: (user: UserCredential | null) => void): () => void;
 }

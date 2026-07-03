@@ -6,7 +6,7 @@ import { CampaignAdapter } from "@/infraestructure/adapters/campaign/CampaignAda
 import { UserService } from "@/application/services/user/UserService";
 import { CampaignService } from "@/application/services/campaign/CampaignService";
 
-import { getFirebaseFirestore } from "../firebase/config/admin/firebase";
+import { getFirebaseFirestore, getEnterpriseFirestore } from "../firebase/config/admin/firebase";
 import { CampaignFirebaseMapper } from "../firebase/mappers/campaing/CampaignFirebaseMapper";
 import { UserFirebaseMapper } from "../firebase/mappers/user/UserFirebaseMapper";
 import { CategoriesFirebaseRepository } from "../firebase/repositories/categories/CategoriesFirebaseRepository";
@@ -32,6 +32,16 @@ import { UserPreferencesService } from "@/application/services/user/UserPreferen
 import { StorageService } from "../storage/firebase/FirebaseStorageService";
 import { UserPreferencesFirebaseRepository } from "../firebase/repositories/UserPreferences/UserPreferencesFirebaseRepository";
 import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
+import { ProfileFirebaseRepository } from "../firebase/repositories/profile/ProfileFirebaseRepository";
+import { ProfileAdapter } from "../adapters/profile/ProfileAdapter";
+import { ProfileService } from "@/application/services/profile/ProfileService";
+import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFirebaseRepository";
+import { BadgeService } from "@/application/services/user/BadgeService";
+import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
+import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
+import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
+import { StudioAdapter } from "../adapters/studio/StudioAdapter";
+import { StudioService } from "@/application/services/studio/StudioService";
 import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
@@ -93,6 +103,24 @@ export const createServerContainer = () => {
   const userPreferencesRepository = new UserPreferencesAdapter(userPreferencesFirebaseRepository, new UserPreferencesFirebaseMapper());
   const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
 
+  // profile
+  const profileFirebaseRepository = new ProfileFirebaseRepository(getFirebaseFirestore(), getEnterpriseFirestore());
+  const profileRepository = new ProfileAdapter(profileFirebaseRepository);
+  const profileService = new ProfileService(profileRepository);
+
+  // badges
+  const badgeFirebaseRepository = new BadgeFirebaseRepository(getFirebaseFirestore());
+  const badgeService = new BadgeService(badgeFirebaseRepository);
+
+  // professional requests
+  const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
+  const professionalRequestService = new ProfessionalRequestService(professionalRequestFirebaseRepository, userRepository);
+
+  // studio (Estudio del Organizador) — repo en stubs por ahora
+  const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
+  const studioRepository = new StudioAdapter(studioFirebaseRepository);
+  const studioService = new StudioService(studioRepository);
+
   // sites
   const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
@@ -109,6 +137,10 @@ export const createServerContainer = () => {
     userPreferencesService,
     sitesService,
     storageService,
+    profileService,
+    badgeService,
+    professionalRequestService,
+    studioService,
   };
 };
 

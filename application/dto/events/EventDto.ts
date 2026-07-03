@@ -182,6 +182,7 @@ const step6Object = v.object({
   ] as const),
   externalUrl: v.optional(v.string()),
   capacity: v.optional(v.number()),
+  requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(
     v.object({
       fields: v.array(
@@ -360,6 +361,7 @@ export const FormEventSchema = v.object({
   ),
   externalUrl: v.optional(v.string()),
   capacity: v.optional(v.number()),
+  requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(
     v.object({
       fields: v.optional(v.array(v.any())),

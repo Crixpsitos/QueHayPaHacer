@@ -53,6 +53,7 @@ export interface EventViewModel {
   };
   externalUrl?: string;
   capacity?: number;
+  requiresAttendance?: boolean;
   price: Price;
   promotion: {
     isPromoted: boolean;

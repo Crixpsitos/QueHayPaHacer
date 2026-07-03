@@ -21,13 +21,6 @@ const registerSchema = v.pipe(
       v.string(),
       v.nonEmpty("El apellido es obligatorio"),
     ),
-    username: v.pipe(
-      v.string(),
-      v.nonEmpty("El nombre de usuario es obligatorio"),
-      v.minLength(3, "Minimo 3 caracteres"),
-      v.maxLength(30, "Maximo 30 caracteres"),
-      v.regex(/^[a-zA-Z0-9._]+$/, "Solo letras, numeros, puntos y guiones bajos"),
-    ),
     email: v.pipe(
       v.string(),
       v.nonEmpty("El correo es obligatorio"),
@@ -69,7 +62,6 @@ interface RegisterFormProps {
   registerAction: (
     name: string,
     lastName: string,
-    username: string,
     email: string,
     phoneNumber: string,
     password: string,
@@ -90,7 +82,6 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
     defaultValues: {
       name: "",
       lastName: "",
-      username: "",
       email: "",
       phoneNumber: "",
       password: "",
@@ -106,7 +97,6 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       const result = await registerAction(
         data.name,
         data.lastName,
-        data.username,
         data.email,
         data.phoneNumber,
         data.password,
@@ -136,14 +126,6 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
           error={errors.lastName}
         />
       </div>
-
-      <TextInput<RegisterFormValues>
-        id="username"
-        name="username"
-        label="Nombre de usuario (@)"
-        register={register}
-        error={errors.username}
-      />
 
       <EmailInput<RegisterFormValues>
         id="email"

@@ -11,7 +11,7 @@ import {
 import { Categories } from "@/domain/entities/categories/Categories";
 import { use } from "react";
 import { type ControllerFieldState, type RefCallBack } from "react-hook-form";
-import slugify from "slugify";
+import { toSlug } from "@/app/lib/utils/slug";
 
 interface SelectCategoriesProps {
   fieldValue: {
@@ -54,7 +54,7 @@ export const SelectCategories = ({
       onChange({
         id: categoryFound.id,
         title: categoryFound.title,
-        slug: categoryFound?.slug ? categoryFound?.slug : slugify(categoryFound.title),
+        slug: categoryFound?.slug ? categoryFound?.slug : toSlug(categoryFound.title),
         tags: existingTags, 
       });
     }

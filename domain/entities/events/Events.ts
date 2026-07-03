@@ -45,6 +45,8 @@ export interface Events extends Dates {
   };
   externalUrl?: string;
   capacity?: number;
+  /** Si el organizador llevará control de asistencia (check-in) de los inscritos. */
+  requiresAttendance?: boolean;
   price: Price;
   promotion: Promotion;
   analytics?: {

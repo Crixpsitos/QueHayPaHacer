@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Play,
   Clock,
+  LayoutDashboard,
 } from "lucide-react";
 import { renderToHTMLString } from "@tiptap/static-renderer";
 import DOMPurify from "dompurify";
@@ -33,9 +35,12 @@ import {
   type CarouselApi,
 } from "@/app/components/ui/carousel";
 import { cn } from "@/app/lib/utils/cn";
+import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import type { MediaItem, MediaImageItem, MediaVideoItem } from "@/domain/entities/events/value-objects/Media";
 import { registerEventAction } from "@/app/actions/events/register-event.action";
+import { recordExternalRegistrationClickAction } from "@/app/actions/studio/record-external-registration-click.action";
+import { EventAttendeesDialog } from "./EventAttendeesDialog";
 
 // Lazy — solo se carga si el usuario abre el modal
 const EventRegistrationModal = lazy(() =>
@@ -461,9 +466,13 @@ interface EventDetailClientProps {
   event: EventViewModel;
   initialLiked: boolean;
   initialRegistered: boolean;
+  /** True cuando el usuario que ve el evento es su organizador. */
+  isOwner?: boolean;
+  /** True cuando el organizador tiene cuenta profesional (acceso al Estudio). */
+  isProfessionalOwner?: boolean;
 }
 
-export function EventDetailClient({ event, initialLiked, initialRegistered }: EventDetailClientProps) {
+export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false }: EventDetailClientProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
@@ -591,20 +600,38 @@ export function EventDetailClient({ event, initialLiked, initialRegistered }: Ev
             )}
 
             {/* Author */}
-            <div className="flex items-center gap-3">
-              <Avatar size="sm">
-                {event.author?.photoURL && (
-                  <AvatarImage src={event.author.photoURL} alt={event.author.displayName} />
-                )}
-                <AvatarFallback>
-                  <User className="h-4 w-4 text-gray-400" />
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-xs text-gray-500">Organizado por</p>
-                <p className="text-sm font-semibold text-gray-900">{event.author?.displayName || "Organizador"}</p>
+            {event.author?.id ? (
+              <Link
+                href={buildProfileHref(event.author)}
+                className="flex items-center gap-3 hover:underline"
+                aria-label={`Ver perfil de ${event.author.displayName || "el organizador"}`}
+              >
+                <Avatar size="sm">
+                  {event.author?.photoURL && (
+                    <AvatarImage src={event.author.photoURL} alt={event.author.displayName} />
+                  )}
+                  <AvatarFallback>
+                    <User className="h-4 w-4 text-gray-400" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-xs text-gray-500">Organizado por</p>
+                  <p className="text-sm font-semibold text-gray-900">{event.author?.displayName || "Organizador"}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Avatar size="sm">
+                  <AvatarFallback>
+                    <User className="h-4 w-4 text-gray-400" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-xs text-gray-500">Organizado por</p>
+                  <p className="text-sm font-semibold text-gray-900">Organizador</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Like / Share / Analytics */}
             <EventDetailActions event={event} initialLiked={initialLiked} />
@@ -678,7 +705,43 @@ export function EventDetailClient({ event, initialLiked, initialRegistered }: Ev
                   <p className="text-xl font-bold text-gray-900 shrink-0">{formatPrice(event.price)}</p>
                 </div>
 
-                {event.registrationType === "none" ? (
+                {isOwner ? (
+                  <div className="flex items-start gap-3 rounded-lg bg-gray-100 border border-gray-200 px-4 py-3">
+                    <span className="text-gray-500 text-lg shrink-0">📋</span>
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-medium text-gray-800">Este es tu evento</p>
+                      {isProfessionalOwner ? (
+                        // Cuenta profesional → acceso al Estudio del Organizador.
+                        <Link
+                          href={`/studio/events/${event.id}`}
+                          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                          Ir a estudio
+                        </Link>
+                      ) : event.registrationType === "internal" || event.registrationType === "form" ? (
+                        // Cuenta normal → modal simple con la lista de inscritos.
+                        <EventAttendeesDialog
+                          eventId={event.id}
+                          eventTitle={event.title}
+                          trigger={
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+                            >
+                              <Users className="h-4 w-4" />
+                              Ver inscritos
+                            </button>
+                          }
+                        />
+                      ) : (
+                        <p className="text-xs text-gray-500">
+                          Este evento no recolecta inscripciones en la plataforma.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : event.registrationType === "none" ? (
                   <div className="flex items-start gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
                     <span className="text-blue-500 text-lg shrink-0">🎉</span>
                     <p className="text-sm text-blue-800">
@@ -696,7 +759,11 @@ export function EventDetailClient({ event, initialLiked, initialRegistered }: Ev
                       type="button"
                       onClick={() => {
                         if (event.registrationType === "external") {
-                          if (event.externalUrl) window.open(event.externalUrl, "_blank", "noopener,noreferrer");
+                          if (event.externalUrl) {
+                            // Registra el click ANTES de redirigir (no bloqueante).
+                            void recordExternalRegistrationClickAction(event.id);
+                            window.open(event.externalUrl, "_blank", "noopener,noreferrer");
+                          }
                         } else {
                           setRegistrationModalOpen(true);
                         }

@@ -10,6 +10,9 @@ import { Events } from "@/domain/entities/events/Events";
 import { EventViewModel } from "../../view-models/EventViewModel";
 import { publishEventAction } from "@/app/actions/events/publish-event.action";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/store/auth/AuthContext";
+import { EmailVerificationRequiredDialog } from "./EmailVerificationRequiredDialog";
+import { EventFormSkeleton } from "./EventFormSkeleton";
 
 interface EventFormClientWrapperProps {
   mode: "create" | "edit";
@@ -21,7 +24,7 @@ export const EventClientWrapper = ({
  initialData,
 }: EventFormClientWrapperProps) => {
   const data = initialData ?  initialData : {};
-  
+  const { user, isHydrating } = useAuth();
 
   const router = useRouter();
 const handleDraftSubmit = useCallback(async (eventDraft: FormEventDto): Promise<Events | null> => {
@@ -71,6 +74,16 @@ const handleDraftSubmit = useCallback(async (eventDraft: FormEventDto): Promise<
       throw new Error("Error al publicar evento");
     }
   }, [router]);
+
+  if (mode === "create") {
+    if (isHydrating) {
+      return <EventFormSkeleton />;
+    }
+
+    if (!user?.emailVerified) {
+      return <EmailVerificationRequiredDialog />;
+    }
+  }
 
   return (
     <EventForm

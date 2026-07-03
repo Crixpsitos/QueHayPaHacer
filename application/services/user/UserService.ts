@@ -36,6 +36,9 @@ export class UserService {
         const user: User = {
             ...input,
             displayName: lowercaseDisplayName,
+            accountType: input.accountType ?? "personal",
+            professionalType: null,
+            professionalStatus: "none",
             acceptedTermsAt: now,
             createdAt: now,
             updatedAt: now,

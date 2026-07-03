@@ -37,29 +37,24 @@ export async function googleAuthAction(
             const firstName = nameParts[0] || googleUser.email.split("@")[0]
             const lastName = nameParts.slice(1).join(" ")
 
-            // Generate username from email prefix; if taken, append random suffix
-            let baseUsername = googleUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9._]/g, "")
-            let username = baseUsername
-            let attempts = 0
-            while (attempts < 5) {
-                const taken = await userService.getUserByUsername(username)
-                if (!taken) break
-                username = `${baseUsername}${Math.floor(Math.random() * 9000) + 1000}`
-                attempts++
-            }
+            const displayName = `${firstName} ${lastName}`
 
+            // Crear usuario con teléfono vacío
             await userService.createUser({
                 uid: googleUser.uid,
                 email: googleUser.email,
-                displayName: username,
+                emailVerified: false,
+                displayName,
                 firstName,
                 lastName,
                 phoneNumber: "",
                 photoURL: googleUser.photoURL,
                 acceptedTerms: true,
+                isPublic: true,
             })
         }
 
+        // Redirigir al home
         redirect("/")
     } catch (error) {
         unstable_rethrow(error)

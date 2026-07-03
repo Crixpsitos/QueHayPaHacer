@@ -24,6 +24,10 @@ export class AuthService {
     return this.authRepository.sendPasswordResetEmail(email);
   }
 
+  async sendEmailVerification(): Promise<void> {
+    return this.authRepository.sendEmailVerification();
+  }
+
   onAuthStateChanged(callback: (user: UserCredential | null) => void): () => void {
     return this.authRepository.onAuthStateChanged(callback);
   }

@@ -140,6 +140,7 @@ export const EventForm = ({
         fields: [],
       },
       capacity: 0,
+      requiresAttendance: false,
       price: {
         isFree: true,
         amount: 0,
@@ -198,7 +199,19 @@ export const EventForm = ({
     }
   }, [mode, initialData, defaultFormValues]);
 
+  // Reset form when entering create mode with no initialData (e.g., after publishing)
+  useEffect(() => {
+    if (mode === "create" && !initialData) {
+      form.reset(defaultFormValues as unknown as FormEventDto);
+      setCurrentStep(1);
+      setCompletedSteps([]);
+      mountedRef.current = false;
+    }
+  }, [mode, initialData, form, defaultFormValues]);
+
   const status = form.watch("status");
+  // Suscripción a isDirty (debe leerse en render para que RHF la rastree).
+  const isDirty = form.formState.isDirty;
 
   const canAccessStep = useCallback(
     (stepNumber: number) => {
@@ -272,22 +285,41 @@ export const EventForm = ({
     }
   }, [form, onSaveDraft]);
 
-  const handleExitWithoutSaving = useCallback(async () => {
-    startTransition(() => router.push("/profile/events"));
+  // Vuelve a la página anterior; si no hay historial (entrada directa), va al perfil.
+  const navigateAway = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/profile/events");
+    }
   }, [router]);
+
+  // La "X" del header pide salir: solo mostramos el modal si hay cambios sin guardar.
+  const handleRequestExit = useCallback(() => {
+    if (isDirty) {
+      setShowCancelDialog(true);
+    } else {
+      navigateAway();
+    }
+  }, [isDirty, navigateAway]);
+
+  const handleExitWithoutSaving = useCallback(async () => {
+    setShowCancelDialog(false);
+    startTransition(() => navigateAway());
+  }, [navigateAway]);
 
   const handleExitWithSaving = useCallback(async () => {
     try {
       setIsSubmitting(true);
       await handleDraftSubmit();
-      router.push("/profile/events");
-
+      setShowCancelDialog(false);
+      navigateAway();
     } catch (error) {
       console.error(error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [handleDraftSubmit, router]);
+  }, [handleDraftSubmit, navigateAway]);
 
 
   const handlePublishSubmit = async () => {
@@ -369,7 +401,7 @@ export const EventForm = ({
     <div className="flex flex-col min-h-dvh">
       <EventStickyHeader
         progressPercentage={progressPercentage}
-        setShowCancelDialog={setShowCancelDialog}
+        onRequestExit={handleRequestExit}
       />
       <Stepper
         currentStep={currentStep}

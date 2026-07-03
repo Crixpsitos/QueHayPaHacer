@@ -4,7 +4,8 @@ import { createContext, useContext } from "react";
 import { UserInfo } from "firebase/auth";
 import { Claims } from "next-firebase-auth-edge/auth/claims";
 import { Dispatch, SetStateAction } from "react";
- 
+import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
+
 export interface User extends UserInfo {
   emailVerified: boolean;
   customClaims: Claims;
@@ -14,6 +15,15 @@ export interface User extends UserInfo {
     username: string;
     phoneNumber: string;
     accountType: string | null;
+    bio: string | null;
+    photoURL?: string | null;
+    imagePath?: string | null;
+    isPublic: boolean;
+    brandName?: string;
+    website?: string;
+    mapsLink?: string;
+    socialLink?: string;
+    professionalDetails?: ProfessionalRequestDetails;
   } | null;
 }
  

@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -25,6 +26,14 @@ export class AuthFirebaseRepository implements IAuthRepository {
 
   sendPasswordResetEmail(email: string): Promise<void> {
     return sendPasswordResetEmail(this.auth, email);
+  }
+
+  sendEmailVerification(): Promise<void> {
+    if (!this.auth.currentUser) {
+      return Promise.reject(new Error("No hay un usuario autenticado"));
+    }
+
+    return sendEmailVerification(this.auth.currentUser);
   }
 
   async loginWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {

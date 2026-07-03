@@ -56,6 +56,7 @@ export interface FirebaseEventsDto {
         }[];
     };
     capacity?: number;
+    requiresAttendance?: boolean;
     price: Price;
     promotion: FirebasePromotionDto;
     createdAt: Timestamp;
