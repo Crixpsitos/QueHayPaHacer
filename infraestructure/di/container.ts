@@ -32,8 +32,10 @@ import { UserPreferencesService } from "@/application/services/user/UserPreferen
 import { StorageService } from "../storage/firebase/FirebaseStorageService";
 import { UserPreferencesFirebaseRepository } from "../firebase/repositories/UserPreferences/UserPreferencesFirebaseRepository";
 import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
-
-
+import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
+import { SitesAdapter } from "../adapters/sites/SitesAdapter";
+import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
+import { SitesService } from "@/application/services/sites/SitesService";
 
 
 export const createServerContainer = () => {
@@ -91,6 +93,11 @@ export const createServerContainer = () => {
   const userPreferencesRepository = new UserPreferencesAdapter(userPreferencesFirebaseRepository, new UserPreferencesFirebaseMapper());
   const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
 
+  // sites
+  const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
+  const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
+  const sitesService = new SitesService(sitesAdapter);
+
   return {
     userService,
     campaignService,
@@ -100,6 +107,7 @@ export const createServerContainer = () => {
     eventRegistrationService,
     eventFeed,
     userPreferencesService,
+    sitesService,
     storageService,
   };
 };

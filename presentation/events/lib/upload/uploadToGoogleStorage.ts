@@ -36,7 +36,11 @@ export async function uploadToGoogleStorage(
       body: file,
       headers: {
         "Content-Type": file.type,
-        ...(options.isPublic && { "x-goog-acl": "public-read" }),
+        // solo x-goog-acl va firmado en la signed URL — no agregar headers extra (rompen el ACL/firma).
+        // El cache-control de los archivos optimizados lo pone el Cloud Function.
+        ...(options.isPublic && {
+          "x-goog-acl": "public-read",
+        }),
         ...Object.fromEntries(
           Object.entries(options.customMetadata ?? {}).map(([key, value]) => [
             `x-goog-meta-${key}`,
