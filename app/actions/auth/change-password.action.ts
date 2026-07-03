@@ -54,7 +54,7 @@ export async function changePasswordAction(
     console.error("[CHANGE PASSWORD ERROR]", error);
 
     if (error instanceof Error) {
-      if (error.code === "auth/user-not-found") {
+      if ((error as { code?: string }).code === "auth/user-not-found") {
         return {
           success: false,
           error: "El usuario no existe.",

@@ -23,8 +23,8 @@ export class CampaignFirebaseRepository extends FirebaseBaseRepository implement
     const activeCampaigns = snapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() } as FirebaseCampaignDto))
       .filter((campaign) => {
-        const startAt = campaign.schedule?.startAt ? new Date(campaign.schedule.startAt) : null;
-        const endAt = campaign.schedule?.endAt ? new Date(campaign.schedule.endAt) : null;
+        const startAt = campaign.schedule?.startAt ? campaign.schedule.startAt.toDate() : null;
+        const endAt = campaign.schedule?.endAt ? campaign.schedule.endAt.toDate() : null;
         
         // Incluir si está dentro del rango de fechas
         if (startAt && endAt) {

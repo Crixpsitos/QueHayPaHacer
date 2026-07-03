@@ -14,6 +14,9 @@ export class BadgeFirebaseRepository implements IBadgeRepository {
       }
 
       const data = doc.data();
+      if (!data) {
+        return null;
+      }
       return {
         id: doc.id,
         name: data.name,
