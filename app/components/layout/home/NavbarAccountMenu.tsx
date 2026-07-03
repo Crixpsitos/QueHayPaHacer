@@ -8,6 +8,7 @@ import { logoutAction } from "@/app/actions/auth/logout.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { cn } from "@/app/lib/utils/cn";
 import { Button } from "../../ui/button/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,15 @@ import {
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 
-function AccountTriggerSkeleton() {
+function AccountTriggerSkeleton({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div
+        aria-hidden="true"
+        className="size-11 animate-pulse rounded-full border border-border bg-background/95 shadow-md"
+      />
+    );
+  }
   return (
     <div
       aria-hidden="true"
@@ -37,12 +46,18 @@ function AccountTriggerSkeleton() {
   );
 }
 
-export function NavbarAccountMenu() {
+export function NavbarAccountMenu({
+  compact = false,
+  showHome = false,
+}: {
+  compact?: boolean;
+  showHome?: boolean;
+} = {}) {
   const router = useRouter();
   const { user, isHydrating, setUser } = useAuth();
 
   if (isHydrating) {
-    return <AccountTriggerSkeleton />;
+    return <AccountTriggerSkeleton compact={compact} />;
   }
 
   const accountTypeLabel = user?.profile?.accountType
@@ -61,7 +76,22 @@ export function NavbarAccountMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {!user ? (
+        {compact ? (
+          <Button
+            variant="outline"
+            aria-label="Abrir menu de cuenta"
+            className="size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
+          >
+            <Avatar className="size-9">
+              {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+              <AvatarFallback>
+                {user?.displayName?.[0]?.toUpperCase() ?? (
+                  <UserIcon className="size-5" aria-hidden="true" />
+                )}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        ) : !user ? (
           <Button
             variant="outline"
             aria-label="Abrir menu de cuenta"
@@ -100,6 +130,15 @@ export function NavbarAccountMenu() {
           {user?.profile?.username ? `@${user.profile.username}` : "Cuenta"}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        {showHome && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/">Volver al inicio</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         {!user && (
           <>

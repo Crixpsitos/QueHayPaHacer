@@ -7,7 +7,7 @@ import {
 } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
-const PRIVATE_PATHS = ["/profile"];
+const PRIVATE_PATHS = ["/profile", "/sites"];
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
 
 export async function proxy(request: NextRequest) {

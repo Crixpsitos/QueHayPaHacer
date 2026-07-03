@@ -42,8 +42,10 @@ import { ProfessionalRequestService } from "@/application/services/professional/
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
 import { StudioService } from "@/application/services/studio/StudioService";
-
-
+import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
+import { SitesAdapter } from "../adapters/sites/SitesAdapter";
+import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
+import { SitesService } from "@/application/services/sites/SitesService";
 
 
 export const createServerContainer = () => {
@@ -119,6 +121,11 @@ export const createServerContainer = () => {
   const studioRepository = new StudioAdapter(studioFirebaseRepository);
   const studioService = new StudioService(studioRepository);
 
+  // sites
+  const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
+  const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
+  const sitesService = new SitesService(sitesAdapter);
+
   return {
     userService,
     campaignService,
@@ -128,6 +135,7 @@ export const createServerContainer = () => {
     eventRegistrationService,
     eventFeed,
     userPreferencesService,
+    sitesService,
     storageService,
     profileService,
     badgeService,
