@@ -47,7 +47,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId?: string
     publicationStatus: "published" as const,
     moderationStatus: "pending" as const,
     isActive: false,
-    analytics: { clicks: 0, views: 0, likes: 0, shares: 0, eventCount: 0, score: 0 },
+    analytics: { clicks: 0, likes: 0, shares: 0, eventCount: 0, score: 0 },
     publishedAt: null,
     reviewedAt: null,
     reviewedBy: null,

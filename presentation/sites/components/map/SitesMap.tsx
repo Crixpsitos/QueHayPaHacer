@@ -169,9 +169,9 @@ export function SitesMap(props: SitesMapProps) {
         <div className="w-full max-w-sm">
           <motion.div
             animate={{
-              width:  props.mode === "pick" ? "100%" : 36,
-              height: 36,
-              borderRadius: props.mode === "pick" ? 24 : 18,
+              width:  props.mode === "pick" ? "100%" : 44,
+              height: props.mode === "pick" ? 36 : 44,
+              borderRadius: props.mode === "pick" ? 24 : 22,
             }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
             className="pointer-events-auto overflow-hidden border border-border bg-background/95 shadow-md backdrop-blur"
@@ -183,10 +183,10 @@ export function SitesMap(props: SitesMapProps) {
                   initial={{ y: 8, opacity: 0 }}
                   animate={{ y: 0, opacity: 1, transition: { delay: 0.22, duration: 0.14 } }}
                   exit={{ y: -8, opacity: 0, transition: { duration: 0.07 } }}
-                  className="flex size-9 items-center justify-center"
+                  className="flex size-11 items-center justify-center"
                 >
                   <Link href="/" aria-label="Ir al inicio" className="flex size-full items-center justify-center text-foreground/60 transition-colors hover:text-foreground">
-                    <Home className="size-4" aria-hidden />
+                    <Home className="size-5" aria-hidden />
                   </Link>
                 </motion.div>
               ) : (

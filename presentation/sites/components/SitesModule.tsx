@@ -12,6 +12,7 @@ import { ListPanel } from "./list/ListPanel"
 import { SiteFormDrawer } from "./form/SiteFormDrawer"
 import { DetailModal } from "./DetailModal"
 import { useSiteForm } from "../hooks/useSiteForm"
+import { NavbarAccountMenu } from "@/app/components/layout/home/NavbarAccountMenu"
 import { FILTER_TABS, getDisplayStatus } from "../lib/constants"
 import type { Coordinates, MapSiteMarker, SiteDetail, SiteFilterTab } from "../view-models/SiteFormViewModel"
 
@@ -149,8 +150,11 @@ export function SitesModule() {
 
   // ¿estamos editando un borrador? → el drawer muestra acciones de borrador/publicar
   const editingSite = editId ? sites.find((s) => s.id === editId) : null
-  const isDraftEdit = formMode === "edit" && !!editingSite &&
-    getDisplayStatus(editingSite.publicationStatus, editingSite.moderationStatus) === "draft"
+  const editStatus = editingSite
+    ? getDisplayStatus(editingSite.publicationStatus, editingSite.moderationStatus)
+    : null
+  const isDraftEdit    = formMode === "edit" && editStatus === "draft"
+  const isRejectedEdit = formMode === "edit" && editStatus === "rejected"
 
   return (
     <main className="flex h-dvh w-full flex-col overflow-hidden lg:flex-row">
@@ -163,6 +167,16 @@ export function SitesModule() {
         aria-label="Mapa de sitios"
       >
         <SitesMap {...mapProps} />
+
+        {/* Cuenta — esquina sup-derecha del mapa. En form solo en lg (en móvil manda el drawer). Oculto con detalle abierto. */}
+        {!detailId && (
+          <div className={cn(
+            "absolute right-3 top-3 z-30 sm:right-4 sm:top-4",
+            panelMode === "form" && "hidden lg:block",
+          )}>
+            <NavbarAccountMenu compact showHome />
+          </div>
+        )}
       </section>
 
       {/* Panel section — hidden on mobile in form mode (portal drawer owns that space) */}
@@ -221,6 +235,8 @@ export function SitesModule() {
                 addressAutoDetected={siteForm.addressAutoDetected}
                 mode={formMode}
                 isDraft={isDraftEdit}
+                isRejected={isRejectedEdit}
+                rejectionReason={editingSite?.rejectionReason ?? null}
                 onBack={goToList}
                 onAddressChange={siteForm.handleAddressChange}
                 onUpdateField={siteForm.updateField}
@@ -233,7 +249,7 @@ export function SitesModule() {
                 onSetCover={siteForm.setCover}
                 onUpdateSchedule={siteForm.updateSchedule}
                 onSaveDraft={siteForm.handleSaveDraft}
-                onPublish={formMode === "edit" && !isDraftEdit ? siteForm.handleSaveEdit : siteForm.handlePublish}
+                onPublish={formMode === "edit" && !isDraftEdit && !isRejectedEdit ? siteForm.handleSaveEdit : siteForm.handlePublish}
                 onReset={goToList}
                 onEnsureDraftId={siteForm.ensureDraftId}
               />

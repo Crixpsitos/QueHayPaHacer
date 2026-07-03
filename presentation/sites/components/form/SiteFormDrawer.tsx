@@ -471,6 +471,8 @@ export interface SiteFormDrawerProps {
   isMediaProcessing: boolean
   mode?: "create" | "edit"
   isDraft?: boolean   // editando un borrador → mostrar acciones de borrador/publicar
+  isRejected?: boolean   // editando un rechazado → reenviar a revisión (limpia motivo, vuelve a pendiente)
+  rejectionReason?: string | null
   onBack: () => void
   onAddressChange: (v: string) => void
   onUpdateField: <K extends keyof SiteFormViewModel>(key: K, value: SiteFormViewModel[K]) => void
@@ -499,7 +501,7 @@ const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
 
 export function SiteFormDrawer({
   form, errors, submitState, coverUrl, addressAutoDetected, isMediaProcessing,
-  mode = "create", isDraft = false,
+  mode = "create", isDraft = false, isRejected = false, rejectionReason = null,
   onBack, onAddressChange, onUpdateField, onClearError,
   onReplaceCover, onAddMedia, onMediaUploaded, onUpdateMedia, onRemoveMedia, onSetCover,
   onUpdateSchedule, onSaveDraft, onPublish, onReset, onEnsureDraftId,
@@ -607,13 +609,18 @@ export function SiteFormDrawer({
             Este sitio es un borrador — publícalo para enviarlo a revisión
           </p>
         )}
+        {isEdit && isRejected && (
+          <p className="mb-2 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] leading-relaxed text-red-600">
+            <span className="font-semibold">Rechazado.</span>{rejectionReason ? ` ${rejectionReason}` : ""} Corrige y reenvía a revisión.
+          </p>
+        )}
         <div className="flex gap-3">
           {!showDraftActions ? (
             <>
               <Button variant="outline" className="flex-1" onClick={onBack} disabled={isBusy}>Cancelar</Button>
               <Button className="flex-1" onClick={onPublish} disabled={publishDisabled}>
                 {submitState === "publishing" ? <Loader2 className="size-4 animate-spin" /> : isMediaProcessing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                Guardar cambios
+                {isRejected ? "Reenviar a revisión" : "Guardar cambios"}
               </Button>
             </>
           ) : (
@@ -660,10 +667,10 @@ export function SiteFormDrawer({
                 <CheckCircle2 className="size-7" />
               </span>
               <h2 className="text-base font-semibold text-foreground">
-                {showDraftActions ? "¡Sitio enviado!" : "¡Cambios guardados!"}
+                {(showDraftActions || isRejected) ? "¡Sitio enviado!" : "¡Cambios guardados!"}
               </h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {showDraftActions ? "Será revisado antes de aparecer en el mapa." : "Los cambios serán revisados antes de publicarse."}
+                {(showDraftActions || isRejected) ? "Será revisado antes de aparecer en el mapa." : "Los cambios serán revisados antes de publicarse."}
               </p>
               <Button className="mt-1 w-full" onClick={onReset}>
                 {isEdit ? "Volver a mis sitios" : "Agregar otro"}

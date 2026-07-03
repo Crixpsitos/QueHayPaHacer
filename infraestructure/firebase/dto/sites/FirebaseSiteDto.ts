@@ -69,7 +69,7 @@ interface RawAuthorDto {
 
 interface RawAnalyticsDto {
   clicks: number
-  views: number
+  views?: number
   likes: number
   shares: number
   eventCount: number
