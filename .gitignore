@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+# reportes HTML generados por `npm test` (se regeneran; la evidencia son las capturas)
+tests/reporte-pruebas.html
+tests/reporte-fallos.html
 
 # next.js
 /.next/
