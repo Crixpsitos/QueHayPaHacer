@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test --test-reporter=spec 'tests/**/*.test.ts'"
+    "test": "node --import tsx --test --test-reporter=spec \"tests/**/*.test.ts\""
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
