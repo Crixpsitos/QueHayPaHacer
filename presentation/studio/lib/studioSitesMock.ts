@@ -71,7 +71,7 @@ const buildSiteEvents = (siteId: string): SiteEventItem[] =>
       {
         eventId: event.id,
         name: event.name,
-        date: event.date,
+        date: event.date ?? "",
         status: event.status,
         image: event.image,
         views: event.views,

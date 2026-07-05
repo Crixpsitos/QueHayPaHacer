@@ -3,7 +3,7 @@
 import { useEffect, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, BarChart3, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard } from "lucide-react";
+import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, BarChart3, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard, MousePointerClick } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type {
@@ -564,11 +564,51 @@ function ProfileTabsInner({
                   <motion.div
                     key={site.id}
                     variants={itemVariants}
-                    className="rounded-lg border border-border p-4"
+                    className="flex gap-3 rounded-xl border border-border/70 bg-background p-3 shadow-sm transition-colors hover:border-border"
                   >
-                    <p className="font-semibold">{site.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">{formatDate(site.createdAt)}</p>
+                    {/* Portada */}
+                    <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-24">
+                      {site.image ? (
+                        <Image
+                          src={site.image}
+                          alt={site.name}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                          Sin foto
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info + analíticas básicas */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <p className="truncate font-semibold text-foreground">{site.name}</p>
+                      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="size-3.5 shrink-0" aria-hidden />
+                        <span className="truncate">{site.address}</span>
+                      </p>
+                      <div className="mt-auto flex flex-wrap items-center gap-3 pt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1" title="Clics">
+                          <MousePointerClick className="size-3.5" aria-hidden />
+                          {(site.analytics?.clicks ?? 0).toLocaleString("es-CO")}
+                        </span>
+                        <span className="flex items-center gap-1" title="Likes">
+                          <Heart className="size-3.5" aria-hidden />
+                          {(site.analytics?.likes ?? 0).toLocaleString("es-CO")}
+                        </span>
+                        <span className="flex items-center gap-1" title="Compartidos">
+                          <Share2 className="size-3.5" aria-hidden />
+                          {(site.analytics?.shares ?? 0).toLocaleString("es-CO")}
+                        </span>
+                        <span className="flex items-center gap-1" title="Eventos">
+                          <Calendar className="size-3.5" aria-hidden />
+                          {(site.analytics?.eventCount ?? 0).toLocaleString("es-CO")}
+                        </span>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </motion.div>

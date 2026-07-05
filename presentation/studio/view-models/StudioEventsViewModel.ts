@@ -19,7 +19,7 @@ export interface TeamMemberVM {
 export interface StudioEventListItem {
   id: string;
   name: string;
-  date: string; // ISO
+  date: string | null; // ISO — null si el evento no tiene fecha de inicio
   status: string;
   image?: string;
   views: number;

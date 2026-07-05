@@ -2,7 +2,8 @@
 
 import { useEffect, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Activity, MapPin, Award, Calendar } from "lucide-react";
+import { Loader2, Activity, MapPin, Award, Calendar, ExternalLink } from "lucide-react";
+import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import type { UserBadge, UserEvent, UserSite } from "@/domain/repository/profile/IProfileRepository";
 import { PublicEventCard } from "./PublicEventCard";
@@ -152,10 +153,46 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                   <motion.div
                     key={site.id}
                     variants={itemVariants}
-                    className="rounded-xl border border-border bg-background p-4"
+                    className="group overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm transition-all hover:border-border hover:shadow-md"
                   >
-                    <p className="font-semibold text-foreground">{site.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
+                    {/* Portada */}
+                    <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                      {site.image ? (
+                        <Image
+                          src={site.image}
+                          alt={site.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, 50vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                          Sin foto
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="space-y-3 p-4">
+                      <div>
+                        <p className="truncate font-semibold text-foreground">{site.name}</p>
+                        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="size-3.5 shrink-0" aria-hidden />
+                          <span className="truncate">{site.address}</span>
+                        </p>
+                      </div>
+
+                      {/* Ir al sitio — sin URL propia por ahora */}
+                      <button
+                        type="button"
+                        disabled
+                        title="Próximamente"
+                        className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-muted-foreground"
+                      >
+                        <ExternalLink className="size-4" aria-hidden />
+                        Ir al sitio
+                      </button>
+                    </div>
                   </motion.div>
                 ))}
               </motion.div>

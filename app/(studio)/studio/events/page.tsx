@@ -32,7 +32,7 @@ function toViewModel(page: OrganizerEventsPage): StudioEventListItem[] {
   return page.events.map((e) => ({
     id: e.eventId,
     name: e.name,
-    date: e.date.toISOString(),
+    date: e.date ? e.date.toISOString() : null,
     status: e.status,
     image: e.image,
     views: e.views,

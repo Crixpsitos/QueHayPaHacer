@@ -277,12 +277,33 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
 
     return snapshot.docs.map((doc) => {
       const data = doc.data();
+
+      // Portada: item de media con isCover; la dirección vive en location.address
+      const media = Array.isArray(data.media)
+        ? (data.media as Array<Record<string, unknown>>)
+        : [];
+      const cover =
+        media.find((m) => m.type === "image" && m.isCover === true) ??
+        media.find((m) => m.type === "image");
+      const coverUrl = typeof cover?.url === "string" ? cover.url : undefined;
+
+      const location = data.location as { address?: string } | undefined;
+      const analytics = data.analytics as
+        | { clicks?: number; likes?: number; shares?: number; eventCount?: number }
+        | undefined;
+
       return {
         id: doc.id,
         name: data.name ?? "Sitio sin nombre",
-        address: data.address ?? "Sin direccion",
+        address: location?.address ?? data.address ?? "Sin dirección",
         createdAt: this.toDate(data.createdAt),
-        image: data.image,
+        image: coverUrl ?? (typeof data.image === "string" ? data.image : undefined),
+        analytics: {
+          clicks: analytics?.clicks ?? 0,
+          likes: analytics?.likes ?? 0,
+          shares: analytics?.shares ?? 0,
+          eventCount: analytics?.eventCount ?? 0,
+        },
       };
     });
   }

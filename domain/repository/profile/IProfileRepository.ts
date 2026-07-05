@@ -39,6 +39,12 @@ export interface UserSite {
   address: string;
   createdAt: Date;
   image?: string;
+  analytics?: {
+    clicks: number;
+    likes: number;
+    shares: number;
+    eventCount: number;
+  };
 }
 
 export interface UserEventInteraction {
