@@ -136,9 +136,9 @@ export const EventCard = ({
       address: {
         "@type": "PostalAddress",
         streetAddress: event.location.address,
-        addressLocality: event.location.city,
-        addressRegion: event.location.department,
-        addressCountry: event.location.country,
+        addressLocality: event.location.city.name,
+        addressRegion: event.location.department.name,
+        addressCountry: event.location.country.name,
       },
       geo: {
         "@type": "GeoCoordinates",
@@ -417,7 +417,7 @@ export const EventCard = ({
               {/* Ubicación */}
               <address
                 className="not-italic flex items-start gap-2 text-sm text-foreground/70"
-                aria-label={`Ubicación: ${event.location.venue}, ${event.location.address}, ${event.location.city}, ${event.location.department}, ${event.location.country}`}
+                aria-label={`Ubicación: ${event.location.venue}, ${event.location.address}, ${event.location.city.name}, ${event.location.department.name}, ${event.location.country.name}`}
               >
                 <MapPin
                   className="size-4 mt-0.5 shrink-0"
@@ -431,7 +431,7 @@ export const EventCard = ({
                     {event.location.address}
                   </div>
                   <div className="text-xs text-foreground/55 truncate">
-                    {event.location.city}, {event.location.department.name} ·{" "}
+                    {event.location.city.name}, {event.location.department.name} ·{" "}
                     {event.location.country.name}
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import { GeoPoint } from "firebase-admin/firestore"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { toSlug } from "@/app/lib/utils/slug"
+import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
@@ -38,6 +39,15 @@ function buildSiteInput(
   token: { name?: string; picture?: string },
   form: SiteFormViewModel,
 ) {
+  const { country, department, city } = buildLocationDetails({
+    countryName: form.country,
+    countrySlug: form.countrySlug,
+    departmentName: form.region,
+    departmentSlug: form.regionSlug,
+    cityName: form.city,
+    citySlug: form.citySlug,
+  })
+
   return {
     name: form.name,
     slug: `${toSlug(form.name)}-${Date.now().toString(36)}`,
@@ -46,12 +56,11 @@ function buildSiteInput(
     location: {
       geo: new GeoPoint(form.coordinates?.latitude ?? 0, form.coordinates?.longitude ?? 0),
       address: form.address,
-      city: form.city,
-      citySlug: form.citySlug,
-      region: form.region,
-      regionSlug: form.regionSlug,
-      country: form.country,
-      countrySlug: form.countrySlug,
+      city,
+      department,
+      country,
+      venue: form.name,
+      moreInfo: "",
     },
     media: buildSiteMedia(form.media),
     schedule: form.schedule,

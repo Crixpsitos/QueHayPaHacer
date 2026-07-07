@@ -11,6 +11,7 @@ import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { SelectLocation } from "../ui/SelectLocation";
+import { toGeoSlug } from "@/app/lib/utils/geoLocation";
 import {
   Country,
   State,
@@ -91,9 +92,9 @@ export const Step4Location = ({ form }: Step4Props) => {
   }, [watchedCountry, watchedDepartment]);
 
   const currentCity = useMemo(() => {
-    if (watchedCity) {
+    if (watchedCity?.name) {
       return citiesList.find(
-        (c) => c.name.toLowerCase() === watchedCity.toLowerCase(),
+        (c) => c.name.toLowerCase() === watchedCity.name.toLowerCase(),
       );
     }
     return null;
@@ -135,6 +136,7 @@ export const Step4Location = ({ form }: Step4Props) => {
         form.setValue("location.country", {
           isoCode: matchedCountry.isoCode,
           name: matchedCountry.name,
+          slug: toGeoSlug(matchedCountry.name),
         });
       }
       return;
@@ -150,6 +152,7 @@ export const Step4Location = ({ form }: Step4Props) => {
         form.setValue("location.department", {
           isoCode: matchedDepartment.isoCode,
           name: matchedDepartment.name,
+          slug: toGeoSlug(matchedDepartment.name),
         });
       }
       return;
@@ -161,7 +164,10 @@ export const Step4Location = ({ form }: Step4Props) => {
       );
 
       if (matchedCity) {
-        form.setValue("location.city", matchedCity.name);
+        form.setValue("location.city", {
+          name: matchedCity.name,
+          slug: toGeoSlug(matchedCity.name),
+        });
         hasInitializedGeoIp.current = true;
       }
     }
@@ -220,16 +226,18 @@ export const Step4Location = ({ form }: Step4Props) => {
                     field.onChange({
                       isoCode: fullCountry.isoCode,
                       name: fullCountry.name,
+                      slug: toGeoSlug(fullCountry.name),
                     });
                   } else {
-                    field.onChange({ isoCode: "", name: "" });
+                    field.onChange({ isoCode: "", name: "", slug: "" });
                   }
 
                   form.setValue("location.department", {
                     isoCode: "",
                     name: "",
+                    slug: "",
                   });
-                  form.setValue("location.city", "");
+                  form.setValue("location.city", { name: "", slug: "" });
                   form.setValue("location.venue", "");
                   form.setValue("location.address", "");
                   form.setValue("location.coordinates", {
@@ -262,12 +270,13 @@ export const Step4Location = ({ form }: Step4Props) => {
                     field.onChange({
                       isoCode: fullDepartment.isoCode,
                       name: fullDepartment.name,
+                      slug: toGeoSlug(fullDepartment.name),
                     });
                   } else {
-                    field.onChange({ isoCode: "", name: "" });
+                    field.onChange({ isoCode: "", name: "", slug: "" });
                   }
 
-                  form.setValue("location.city", "");
+                  form.setValue("location.city", { name: "", slug: "" });
                   form.setValue("location.venue", "");
                   form.setValue("location.address", "");
                   form.setValue("location.coordinates", {
@@ -292,9 +301,11 @@ export const Step4Location = ({ form }: Step4Props) => {
                 options={citiesList}
                 getValue={(option) => option.name}
                 getLabel={(option) => option.name}
-                value={field.value ?? ""}
+                value={field.value?.name ?? ""}
                 invalid={fieldState.invalid}
-                onChange={field.onChange}
+                onChange={(cityName) =>
+                  field.onChange({ name: cityName, slug: toGeoSlug(cityName) })
+                }
                 disabled={citiesList.length === 0 || field.disabled}
                 onBlur={field.onBlur}
                 error={fieldState.error?.message}

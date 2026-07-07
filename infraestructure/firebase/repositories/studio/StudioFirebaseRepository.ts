@@ -18,6 +18,10 @@ import type {
   FormResponseAnswer,
   SiteAnalytics,
   SiteEvent,
+  SiteEventsPage,
+  GetSiteEventsParams,
+  OrganizerSiteListItem,
+  GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
   AudienceSummary,
@@ -27,6 +31,7 @@ import type {
 } from "@/domain/entities/studio/Studio";
 import { Pipelines, FieldValue } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { buildWeeklyInteractions, WEEK_SECONDS } from "./weeklyInteractions";
 
 const {
   field,
@@ -730,7 +735,7 @@ export class StudioFirebaseRepository implements IStudioRepository {
       eventId: this.toDocId(row.eventId),
       name: row.name,
       status: row.status,
-      date: toDate(row.date),
+      date: row.date ? toDate(row.date) : null,
       image: row.image,
       views: Number(row.views ?? 0),
       registrations: Number(row.registrations ?? 0),
@@ -1214,16 +1219,252 @@ export class StudioFirebaseRepository implements IStudioRepository {
     return [];
   }
 
+  /**
+   * Analíticas de un sitio: totales acumulados (de los contadores del doc) +
+   * interactividad por SEMANA de la ventana reciente.
+   *
+   * El desglose temporal se obtiene del log `sites/{id}/interactions` (un doc
+   * por interacción con `{ type, createdAt }`). Se bucketea EN el pipeline con
+   * el mismo patrón que `getRegistrationsTimeline`, pero dividiendo por
+   * `WEEK_SECONDS` (semana) y agrupando también por `type`. Los contadores
+   * acumulados del doc (`analytics.*`) NO tienen historia, así que solo sirven
+   * para los totales, no para la serie.
+   */
   async getSiteAnalytics(siteId: string): Promise<SiteAnalytics | null> {
-    // TODO: implementación del repositorio (la hago yo)
-    void siteId;
-    return null;
+    const WEEKS = 8;
+
+    // Ventana: últimas WEEKS semanas, alineada a medianoche de hoy. El bucket 0
+    // es la semana más vieja; el bucket WEEKS-1 es la semana en curso. Como
+    // `createdAt >= windowStart`, el índice de semana siempre cae en [0, WEEKS-1].
+    const windowStart = new Date();
+    windowStart.setHours(0, 0, 0, 0);
+    windowStart.setDate(windowStart.getDate() - 7 * (WEEKS - 1));
+    const windowStartSeconds = Math.floor(windowStart.getTime() / 1000);
+
+    // El doc del sitio (contadores + meta) y el aggregate de interacciones son
+    // independientes → en paralelo. Mismo costo de lecturas, menos latencia.
+    const [snap, result] = await Promise.all([
+      this.db.collection("sites").doc(siteId).get(),
+      this.db
+        .pipeline()
+        .collection(`sites/${siteId}/interactions`)
+        .where(field("createdAt").greaterThanOrEqual(windowStart))
+        .addFields(
+          field("createdAt")
+            .timestampToUnixSeconds()
+            .subtract(constant(windowStartSeconds))
+            .divide(constant(WEEK_SECONDS))
+            .floor()
+            .as("week"),
+        )
+        .aggregate({
+          accumulators: [countAll().as("total")],
+          groups: [field("week").as("week"), field("type").as("type")],
+        })
+        .execute(),
+    ]);
+
+    if (!snap.exists) return null;
+
+    const data = snap.data() as {
+      name?: string;
+      category?: string;
+      media?: Array<{ type?: string; url?: string; isCover?: boolean }>;
+      analytics?: { clicks?: number; likes?: number; shares?: number; eventCount?: number };
+    };
+
+    const media = Array.isArray(data.media) ? data.media : [];
+    const cover =
+      media.find((m) => m.type === "image" && m.isCover) ??
+      media.find((m) => m.type === "image");
+    const image = typeof cover?.url === "string" ? cover.url : undefined;
+    const analytics = data.analytics ?? {};
+
+    const rows = result.results.map((r) => {
+      const row = r.data() as { week?: number; type?: string; total?: number };
+      return {
+        week: Number(row.week ?? 0),
+        type: String(row.type ?? ""),
+        total: Number(row.total ?? 0),
+      };
+    });
+
+    return {
+      siteId,
+      name: data.name ?? "Sitio sin nombre",
+      category: data.category ?? "",
+      image,
+      totalClicks: Number(analytics.clicks ?? 0),
+      totalLikes: Number(analytics.likes ?? 0),
+      totalShares: Number(analytics.shares ?? 0),
+      interactionsOverTime: buildWeeklyInteractions(rows, windowStartSeconds, WEEKS),
+      eventsCount: Number(analytics.eventCount ?? 0),
+    };
   }
 
-  async getEventsBySite(siteId: string): Promise<SiteEvent[]> {
-    // TODO: implementación del repositorio (la hago yo)
-    void siteId;
-    return [];
+  /**
+   * Grid de "Sitios" del organizador: pipeline sobre `sites` filtrando por
+   * `author.id`, con búsqueda full-text opcional (`documentMatches`) y `limit`.
+   * SIN paginación. Mismo patrón de búsqueda que `getOrganizerEvents`.
+   */
+  async getOrganizerSites(
+    uid: string,
+    { search, limit = 12 }: GetStudioListParams = {},
+  ): Promise<OrganizerSiteListItem[]> {
+    const collection = this.db.pipeline().collection("sites");
+
+    // `search()` debe ser el PRIMER stage tras `collection()`; el filtro va después.
+    const stage = search
+      ? collection
+          .search({ query: documentMatches(search), sort: score().descending() })
+          .where(field("author.id").equal(uid))
+      : collection.where(field("author.id").equal(uid));
+
+    const result = await stage
+      .limit(limit)
+      .select(
+        field("__name__").as("siteId"),
+        field("name").as("name"),
+        field("category").as("category"),
+        field("media").as("media"),
+        field("analytics.clicks").as("clicks"),
+        field("analytics.likes").as("likes"),
+        field("analytics.shares").as("shares"),
+        field("analytics.eventCount").as("eventsCount"),
+      )
+      .execute();
+
+    return result.results.map((r) => {
+      const row = r.data() as {
+        siteId: unknown;
+        name?: string;
+        category?: string;
+        media?: Array<{ type?: string; url?: string; isCover?: boolean }>;
+        clicks?: number;
+        likes?: number;
+        shares?: number;
+        eventsCount?: number;
+      };
+
+      const media = Array.isArray(row.media) ? row.media : [];
+      const cover =
+        media.find((m) => m.type === "image" && m.isCover) ??
+        media.find((m) => m.type === "image");
+      const clicks = Number(row.clicks ?? 0);
+
+      return {
+        id: this.toDocId(row.siteId),
+        name: row.name ?? "Sitio sin nombre",
+        category: row.category ?? "",
+        image: typeof cover?.url === "string" ? cover.url : undefined,
+        clicks,
+        likes: Number(row.likes ?? 0),
+        shares: Number(row.shares ?? 0),
+        eventsCount: Number(row.eventsCount ?? 0),
+        // MOCK — tendencia semanal placeholder, determinista para pruebas de UI.
+        // TODO: calcular real desde el log de interacciones (getSiteAnalytics).
+        trend: (clicks % 40) - 15,
+      };
+    });
+  }
+
+  /**
+   * Itinerario de eventos de un sitio: pipeline sobre `events` filtrando por la
+   * FK `location.siteId` (la location del evento apunta a un sitio nuestro), con
+   * búsqueda + paginación por CURSOR (mismo patrón que `getOrganizerEvents`).
+   * Ordena/cursorea por `createdAt` (siempre presente) para no descartar eventos
+   * sin `startDate`. Pide `limit + 1` para saber si hay página siguiente.
+   */
+  async getEventsBySite(
+    siteId: string,
+    { search, limit = 20, cursor, direction = "next" }: GetSiteEventsParams = {},
+  ): Promise<SiteEventsPage> {
+    const isPrev = Boolean(cursor) && direction === "prev";
+    const cursorDate = cursor ? new Date(cursor) : undefined;
+
+    const collection = this.db.pipeline().collection("events");
+
+    let stage = search
+      ? collection
+          .search({ query: documentMatches(search), sort: score().descending() })
+          .where(field("location.siteId").equal(siteId))
+      : collection.where(field("location.siteId").equal(siteId));
+
+    if (cursorDate) {
+      stage = stage.where(
+        isPrev
+          ? field("createdAt").greaterThan(cursorDate)
+          : field("createdAt").lessThan(cursorDate),
+      );
+    }
+
+    const result = await stage
+      .sort(isPrev ? field("createdAt").ascending() : field("createdAt").descending())
+      .limit(limit + 1)
+      .select(
+        field("__name__").as("eventId"),
+        field("title").as("name"),
+        field("startDate").as("date"),
+        field("status").as("status"),
+        field("mainImage.url").as("image"),
+        field("analytics.views").as("views"),
+        field("analytics.registrations").as("registrations"),
+        field("createdAt").as("createdAt"),
+      )
+      .execute();
+
+    let rows = result.results.map(
+      (r) =>
+        r.data() as {
+          eventId: unknown;
+          name?: string;
+          date?: unknown;
+          status?: string;
+          image?: string;
+          views?: number;
+          registrations?: number;
+          createdAt: unknown;
+        },
+    );
+
+    // En "prev" se consultó ascendente; se revierte al orden de despliegue (desc).
+    if (isPrev) rows = rows.reverse();
+
+    const hasMore = rows.length > limit;
+    // "next": el extra queda al final (más viejo). "prev" (tras revertir): al inicio.
+    const pageRows = hasMore ? (isPrev ? rows.slice(1) : rows.slice(0, limit)) : rows;
+
+    const events: SiteEvent[] = pageRows.map((row) => ({
+      eventId: this.toDocId(row.eventId),
+      name: row.name ?? "Evento sin título",
+      date: row.date ? this.toDateOrNull(row.date) : null,
+      status: row.status ?? "draft",
+      image: row.image,
+      views: Number(row.views ?? 0),
+      registrations: Number(row.registrations ?? 0),
+    }));
+
+    // Cursor de una fila = su `createdAt` (ISO). El proto `{_seconds}` lo maneja `toDateOrNull`.
+    const cursorOf = (row: (typeof pageRows)[number]): string | null =>
+      this.toDateOrNull(row.createdAt)?.toISOString() ?? null;
+
+    const nextCursor = isPrev
+      ? pageRows.length > 0
+        ? cursorOf(pageRows[pageRows.length - 1])
+        : null
+      : hasMore
+        ? cursorOf(pageRows[pageRows.length - 1])
+        : null;
+
+    const prevCursor = isPrev
+      ? hasMore
+        ? cursorOf(pageRows[0])
+        : null
+      : cursorDate && pageRows.length > 0
+        ? cursorOf(pageRows[0])
+        : null;
+
+    return { events, nextCursor, prevCursor };
   }
 
   async getCollaborators(uid: string): Promise<Collaborator[]> {

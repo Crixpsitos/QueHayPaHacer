@@ -7,7 +7,10 @@ import type {
   EventStats,
   FormResponseAnswer,
   SiteAnalytics,
-  SiteEvent,
+  SiteEventsPage,
+  GetSiteEventsParams,
+  OrganizerSiteListItem,
+  GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
   AudienceSummary,
@@ -38,8 +41,11 @@ export interface IStudioRepository {
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]>;
 
   // Sitios
+  /** Grid de "Sitios" del organizador. Pipeline con búsqueda + límite, sin paginación. */
+  getOrganizerSites(uid: string, params?: GetStudioListParams): Promise<OrganizerSiteListItem[]>;
   getSiteAnalytics(siteId: string): Promise<SiteAnalytics | null>;
-  getEventsBySite(siteId: string): Promise<SiteEvent[]>;
+  /** Itinerario de eventos de un sitio (FK `location.siteId`). Pipeline con búsqueda + paginación por cursor. */
+  getEventsBySite(siteId: string, params?: GetSiteEventsParams): Promise<SiteEventsPage>;
 
   // Colaboradores
   /** Personas que colaboran con MI entidad (yo las invité). */

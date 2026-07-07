@@ -141,7 +141,7 @@ export function getMockEventStats(eventId: string): EventStatsViewModel | null {
     eventId: event.id,
     name: event.name,
     status: event.status,
-    date: event.date,
+    date: event.date ?? "",
     registrationType: event.registrationType,
     views: event.views,
     registrations: event.registrations,

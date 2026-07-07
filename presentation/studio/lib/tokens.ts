@@ -4,8 +4,10 @@
  * concretos (no clases de Tailwind).
  */
 export const STUDIO_COLORS = {
-  primary: "#6366F1", // índigo
+  primary: "#6366F1", // índigo — clicks
   primarySoft: "#A5B4FC",
+  rose: "#F43F5E", // likes
+  sky: "#0EA5E9", // shares
   positive: "#10B981", // verde
   negative: "#EF4444", // rojo
   amber: "#F59E0B",

@@ -331,11 +331,13 @@ export const FormEventSchema = v.object({
   ),
   location: v.optional(
     v.object({
-      country: v.optional(v.object({ isoCode: v.string(), name: v.string() })),
-      department: v.optional(
-        v.object({ isoCode: v.string(), name: v.string() }),
+      country: v.optional(
+        v.object({ isoCode: v.string(), name: v.string(), slug: v.string() }),
       ),
-      city: v.optional(v.string()),
+      department: v.optional(
+        v.object({ isoCode: v.string(), name: v.string(), slug: v.string() }),
+      ),
+      city: v.optional(v.object({ name: v.string(), slug: v.string() })),
       venue: v.optional(v.string()),
       address: v.optional(v.string()),
       moreInfo: v.optional(v.string()),

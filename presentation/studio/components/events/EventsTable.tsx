@@ -91,7 +91,7 @@ export function EventsTable({ events, query }: EventsTableProps) {
               <td className="hidden px-4 py-3 text-slate-500 sm:table-cell" suppressHydrationWarning>
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                  {formatDate(event.date)}
+                  {event.date ? formatDate(event.date) : "Sin fecha"}
                 </span>
               </td>
               <td className="hidden px-4 py-3 md:table-cell">
