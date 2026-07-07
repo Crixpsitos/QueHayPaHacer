@@ -4,18 +4,20 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { cookies } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 
 const DEFAULT_LIMIT = 12;
 const LIMIT_OPTIONS = [12, 24, 48];
 
-// MVP: el grid cambia poco → se cachea 5 minutos. Sin cacheTag por ahora.
+// Tag por organizador → las actions de sitios (publish/update/draft/delete/active)
+// invalidan `sites-<uid>` con updateTag para read-your-own-writes sin esperar TTL.
 async function getCachedOrganizerSites(
   uid: string,
   params: GetStudioListParams,
 ): Promise<OrganizerSiteListItem[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(`sites-${uid}`);
 
   const { studioService } = createServerContainer();
   return studioService.getOrganizerSites(uid, params);

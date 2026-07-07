@@ -8,6 +8,7 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { toSlug } from "@/app/lib/utils/slug"
 import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
+import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 type Result = { success: true; siteId: string } | { success: false; error: string }
@@ -68,9 +69,11 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId?: string
     // siteId present → a draft already exists (created during upload). Convert it in place, don't duplicate.
     if (siteId) {
       await sitesService.publishExisting(siteId, input)
+      revalidateSite(uid, siteId)
       return { success: true, siteId }
     }
     const newId = await sitesService.publish(input)
+    revalidateSite(uid, newId)
     return { success: true, siteId: newId }
   } catch (e) {
     console.error("[publishSite]", e)

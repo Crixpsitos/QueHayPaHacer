@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { getCachedEventStats } from "@/presentation/studio/lib/cachedEventStats";
 import { toEventRegistrationsViewModel } from "@/presentation/studio/mapper/EventRegistrationsViewModelMapper";
 
 interface SlotProps {
@@ -26,9 +27,12 @@ export default async function EventRegistrationsSlot({ params, searchParams }: S
   const cursor = typeof sp.cursor === "string" ? sp.cursor : undefined;
   const direction = sp.direction === "prev" ? "prev" : "next";
 
-  const { studioService } = createServerContainer();
-  const stats = await studioService.getEventStats(id);
+  // Stats cacheadas (comparte entrada con la page y el slot @stats → 1 sola
+  // lectura). Las inscripciones sí son dinámicas: dependen de los searchParams.
+  const stats = await getCachedEventStats(id);
   if (!stats) notFound();
+
+  const { studioService } = createServerContainer();
 
   // Si el evento es borrador, no hay datos que recolectar todavía.
   if (stats.status.toLowerCase() === "draft") {
