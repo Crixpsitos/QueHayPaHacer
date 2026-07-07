@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { cn } from "@/app/lib/utils/cn";
+import { Plus } from "lucide-react";
 import type { StudioEventListItem } from "../../view-models/StudioEventsViewModel";
+import { CursorPagination } from "./CursorPagination";
 import { EventsLimitSelect } from "./EventsLimitSelect";
 import { EventsSearchInput } from "./EventsSearchInput";
 import { EventsTable } from "./EventsTable";
@@ -16,51 +16,6 @@ interface EventsListProps {
   nextCursor: string | null;
   /** ISO de `createdAt` del cursor para "Anterior". `null` si ya estás en la primera página. */
   prevCursor: string | null;
-}
-
-function cursorHref(
-  cursor: string,
-  direction: "next" | "prev",
-  limit: number,
-  query: string,
-) {
-  const params = new URLSearchParams({ cursor, direction, limit: String(limit) });
-  if (query) params.set("q", query);
-  return `/studio/events?${params.toString()}`;
-}
-
-function PaginationLink({
-  href,
-  disabled,
-  direction,
-}: {
-  href: string | null;
-  disabled: boolean;
-  direction: "prev" | "next";
-}) {
-  const label = direction === "prev" ? "Anterior" : "Siguiente";
-  const className = cn(
-    "inline-flex h-7 items-center gap-1 rounded-md border border-gray-200 px-2 text-xs font-medium text-slate-600 transition-colors",
-    disabled ? "cursor-not-allowed opacity-40" : "hover:bg-gray-50",
-  );
-
-  if (disabled || !href) {
-    return (
-      <span className={className} aria-disabled="true">
-        {direction === "prev" && <ChevronLeft className="h-3.5 w-3.5" />}
-        {label}
-        {direction === "next" && <ChevronRight className="h-3.5 w-3.5" />}
-      </span>
-    );
-  }
-
-  return (
-    <Link href={href} className={className}>
-      {direction === "prev" && <ChevronLeft className="h-3.5 w-3.5" />}
-      {label}
-      {direction === "next" && <ChevronRight className="h-3.5 w-3.5" />}
-    </Link>
-  );
 }
 
 export function EventsList({
@@ -107,16 +62,13 @@ export function EventsList({
         </div>
 
         {events.length > 0 && (
-          <div className="flex items-center justify-end gap-1.5 border-t border-gray-200 px-3 py-2.5">
-            <PaginationLink
-              href={prevCursor ? cursorHref(prevCursor, "prev", limit, query) : null}
-              disabled={!prevCursor}
-              direction="prev"
-            />
-            <PaginationLink
-              href={nextCursor ? cursorHref(nextCursor, "next", limit, query) : null}
-              disabled={!nextCursor}
-              direction="next"
+          <div className="border-t border-gray-200 px-3 py-2.5">
+            <CursorPagination
+              basePath="/studio/events"
+              query={query}
+              nextCursor={nextCursor}
+              prevCursor={prevCursor}
+              extraParams={{ limit: String(limit) }}
             />
           </div>
         )}

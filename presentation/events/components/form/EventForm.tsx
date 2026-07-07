@@ -120,9 +120,9 @@ export const EventForm = ({
         tags: [],
       },
       location: {
-        country: { isoCode: "", name: "" },
-        department: { isoCode: "", name: "" },
-        city: "",
+        country: { isoCode: "", name: "", slug: "" },
+        department: { isoCode: "", name: "", slug: "" },
+        city: { name: "", slug: "" },
         venue: "",
         address: "",
         moreInfo: "",

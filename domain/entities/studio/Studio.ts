@@ -42,7 +42,8 @@ export interface OrganizerEventListItem {
   eventId: string;
   name: string;
   status: string;
-  date: Date;
+  /** `null` si el evento no tiene fecha de inicio (`startDate`). */
+  date: Date | null;
   image?: string;
   views: number;
   registrations: number;
@@ -178,21 +179,79 @@ export interface GetEventRegistrationsParams {
   search?: string;
 }
 
+/** Un bucket semanal de interacciones del sitio. */
+export interface SiteInteractionsPoint {
+  /** ISO (YYYY-MM-DD) del inicio del bucket semanal. */
+  weekStart: string;
+  clicks: number;
+  likes: number;
+  shares: number;
+}
+
 export interface SiteAnalytics {
   siteId: string;
   name: string;
   category: string;
   image?: string;
   totalClicks: number;
-  clicksOverTime: { date: string; clicks: number }[];
+  totalLikes: number;
+  totalShares: number;
+  /** Interacciones (clicks + likes + shares) por semana en la ventana reciente. */
+  interactionsOverTime: SiteInteractionsPoint[];
   eventsCount: number;
 }
 
 export interface SiteEvent {
   eventId: string;
   name: string;
-  date: Date;
+  /** `startDate` del evento; `null` si no tiene fecha de inicio. */
+  date: Date | null;
   status: string;
+  image?: string;
+  views: number;
+  registrations: number;
+}
+
+/**
+ * Parámetros del itinerario de eventos de un sitio: búsqueda + paginación por
+ * cursor (mismo patrón que `getOrganizerEvents`). El cursor es el `createdAt`
+ * (ISO) del evento límite de la página.
+ */
+export interface GetSiteEventsParams {
+  limit?: number;
+  /** ISO de `createdAt` del evento límite de la página actual. */
+  cursor?: string;
+  /** "next" pide eventos más viejos que el cursor; "prev" los más nuevos. Ignorado sin `cursor`. */
+  direction?: "next" | "prev";
+  search?: string;
+}
+
+export interface SiteEventsPage {
+  events: SiteEvent[];
+  /** ISO de `createdAt` a pasar como `cursor` con direction "next". `null` si no hay más. */
+  nextCursor: string | null;
+  /** ISO de `createdAt` a pasar como `cursor` con direction "prev". `null` si es la primera página. */
+  prevCursor: string | null;
+}
+
+/** Item del grid de "Sitios" del Estudio (lista). */
+export interface OrganizerSiteListItem {
+  id: string;
+  name: string;
+  category: string;
+  image?: string;
+  clicks: number;
+  likes: number;
+  shares: number;
+  eventsCount: number;
+  /** MOCK: tendencia semanal (%). Placeholder para probar la UI; aún no se calcula real. */
+  trend: number;
+}
+
+/** Parámetros comunes de las listas del Estudio: búsqueda full-text + tope. Sin paginación. */
+export interface GetStudioListParams {
+  search?: string;
+  limit?: number;
 }
 
 export interface Collaborator {

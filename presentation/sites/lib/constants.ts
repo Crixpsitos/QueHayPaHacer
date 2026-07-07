@@ -25,6 +25,15 @@ export const CATEGORY_OPTIONS: { value: SiteCategory; label: string }[] = [
   { value: "other",       label: "Otro" },
 ]
 
+const CATEGORY_LABELS = new Map<SiteCategory, string>(
+  CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+/** Etiqueta en español de una categoría de sitio. Cae al valor crudo si no la conoce. */
+export function siteCategoryLabel(value: string): string {
+  return CATEGORY_LABELS.get(value as SiteCategory) ?? value
+}
+
 export const WEEK_DAYS: { key: WeekDay; label: string }[] = [
   { key: "monday", label: "Lunes" },
   { key: "tuesday", label: "Martes" },

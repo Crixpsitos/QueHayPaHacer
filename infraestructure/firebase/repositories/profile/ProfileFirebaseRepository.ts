@@ -164,7 +164,7 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
       priceCurrency: typeof priceObj?.currency === "string" ? priceObj.currency : undefined,
       location: {
         venue: typeof locationObj?.venue === "string" ? locationObj.venue : undefined,
-        city: typeof locationObj?.city === "string" ? locationObj.city : undefined,
+        city: this.cityName(locationObj?.city),
         department:
           typeof departmentObj?.name === "string"
             ? departmentObj.name
@@ -243,7 +243,7 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
         capacity: typeof data.capacity === "number" ? data.capacity : undefined,
         location: {
           venue: typeof data.location?.venue === "string" ? data.location.venue : undefined,
-          city: typeof data.location?.city === "string" ? data.location.city : undefined,
+          city: this.cityName(data.location?.city),
           department: typeof data.location?.department?.name === "string" ? data.location.department.name : undefined,
           country: typeof data.location?.country?.name === "string" ? data.location.country.name : undefined,
         },
@@ -285,6 +285,15 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
         image: data.image,
       };
     });
+  }
+
+  /** `location.city` puede ser string (forma vieja) u objeto `{name}` (nueva). Devuelve el nombre. */
+  private cityName(value: unknown): string | undefined {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object" && typeof (value as { name?: unknown }).name === "string") {
+      return (value as { name: string }).name;
+    }
+    return undefined;
   }
 
   private toDate(value: unknown): Date {

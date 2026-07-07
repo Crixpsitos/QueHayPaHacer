@@ -5,6 +5,7 @@ import { cookies } from "next/headers"
 import { GeoPoint } from "firebase-admin/firestore"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
+import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
@@ -19,6 +20,15 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel):
 
   const { sitesService } = createServerContainer()
 
+  const { country, department, city } = buildLocationDetails({
+    countryName: form.country,
+    countrySlug: form.countrySlug,
+    departmentName: form.region,
+    departmentSlug: form.regionSlug,
+    cityName: form.city,
+    citySlug: form.citySlug,
+  })
+
   try {
     await sitesService.updateSite(siteId, {
       name: form.name,
@@ -27,12 +37,11 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel):
       location: {
         geo: new GeoPoint(form.coordinates.latitude, form.coordinates.longitude),
         address: form.address,
-        city: form.city,
-        citySlug: form.citySlug,
-        region: form.region,
-        regionSlug: form.regionSlug,
-        country: form.country,
-        countrySlug: form.countrySlug,
+        city,
+        department,
+        country,
+        venue: form.name,
+        moreInfo: "",
       },
       media: buildSiteMedia(form.media),
       schedule: form.schedule,

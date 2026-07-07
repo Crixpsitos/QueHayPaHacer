@@ -50,15 +50,25 @@ interface RawScheduleDto {
   sunday: RawDayScheduleDto
 }
 
+interface RawGeoDetailDto {
+  isoCode: string
+  name: string
+  slug: string
+}
+
+interface RawCityDetailDto {
+  name: string
+  slug: string
+}
+
 interface RawLocationDto {
-  geo: GeoPoint                
-  countrySlug: string
-  country: string
-  regionSlug: string
-  region: string
-  citySlug: string
-  city: string
+  geo: GeoPoint                       // GeoPoint nativo de Firebase — SE MANTIENE
+  country: RawGeoDetailDto
+  department: RawGeoDetailDto
+  city: RawCityDetailDto
   address: string
+  venue: string
+  moreInfo: string
 }
 
 interface RawAuthorDto {

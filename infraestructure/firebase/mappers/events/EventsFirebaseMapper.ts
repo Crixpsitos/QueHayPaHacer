@@ -1,7 +1,68 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, GeoPoint } from "firebase-admin/firestore";
 import { Events } from "@/domain/entities/events/Events";
+import type { Location } from "@/domain/entities/events/value-objects/Location";
+import type { LocationDetail, CityDetail } from "@/domain/shared/LocationDetail";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
 import { IEventsMapper } from "./IEventsMapper";
+
+/** country/department: preserva isoCode+name, garantiza slug ("" si falta). */
+function detailWithSlug(d: unknown): LocationDetail {
+  const o = (d ?? {}) as { isoCode?: unknown; name?: unknown; slug?: unknown };
+  return {
+    isoCode: typeof o.isoCode === "string" ? o.isoCode : "",
+    name: typeof o.name === "string" ? o.name : "",
+    slug: typeof o.slug === "string" ? o.slug : "",
+  };
+}
+
+/** city: acepta string (forma vieja) u objeto {name,slug} (nueva) → siempre objeto. */
+function cityDetail(c: unknown): CityDetail {
+  if (typeof c === "string") return { name: c, slug: "" };
+  const o = (c ?? {}) as { name?: unknown; slug?: unknown };
+  return {
+    name: typeof o.name === "string" ? o.name : "",
+    slug: typeof o.slug === "string" ? o.slug : "",
+  };
+}
+
+/** coordinates: acepta GeoPoint (nuevo) o {lat,lng} (viejo) → {lat,lng} en dominio. */
+function toLatLng(coords: unknown): { lat: number; lng: number } {
+  const c = (coords ?? {}) as { lat?: unknown; lng?: unknown; latitude?: unknown; longitude?: unknown };
+  return {
+    lat: typeof c.latitude === "number" ? c.latitude : typeof c.lat === "number" ? c.lat : 0,
+    lng: typeof c.longitude === "number" ? c.longitude : typeof c.lng === "number" ? c.lng : 0,
+  };
+}
+
+/** Firestore (GeoPoint, city string|objeto) → dominio (`{lat,lng}`, city objeto). Defensivo en transición. */
+function toDomainLocation(raw: unknown): Location {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    siteId: (r.siteId as string | null | undefined) ?? null,
+    venue: typeof r.venue === "string" ? r.venue : "",
+    address: typeof r.address === "string" ? r.address : "",
+    moreInfo: typeof r.moreInfo === "string" ? r.moreInfo : "",
+    city: cityDetail(r.city),
+    department: detailWithSlug(r.department),
+    country: detailWithSlug(r.country),
+    coordinates: toLatLng(r.coordinates),
+  };
+}
+
+/** Dominio (`{lat,lng}`) → Firestore (GeoPoint). Mantiene la forma anidada uniforme. */
+function toStoredLocation(loc: Location) {
+  const { lat, lng } = toLatLng(loc.coordinates);
+  return {
+    siteId: loc.siteId ?? null,
+    venue: loc.venue,
+    address: loc.address,
+    moreInfo: loc.moreInfo ?? "",
+    city: cityDetail(loc.city),
+    department: detailWithSlug(loc.department),
+    country: detailWithSlug(loc.country),
+    coordinates: new GeoPoint(lat, lng),
+  };
+}
 
 export class EventsFirebaseMapper implements IEventsMapper {
   toDomain(dto: FirebaseEventsDto): Events {
@@ -15,7 +76,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       media: dto.media,
       categoryInfo: dto.categoryInfo,
       author: dto.author,
-      location: dto.location,
+      location: toDomainLocation(dto.location),
       status: dto.status,
       registrationType: dto.registrationType,
       externalUrl: dto.externalUrl,
@@ -52,7 +113,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       media: domain.media,
       categoryInfo: domain.categoryInfo,
       author: domain.author,
-      location: domain.location,
+      location: toStoredLocation(domain.location),
       status: domain.status,
       registrationType: domain.registrationType,
       externalUrl: domain.externalUrl,

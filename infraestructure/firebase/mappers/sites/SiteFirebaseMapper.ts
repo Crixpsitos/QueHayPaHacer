@@ -16,13 +16,12 @@ export class SiteFirebaseMapper {
     )
     const location = new SiteLocation(
       coords,
-      dto.location.countrySlug,
       dto.location.country,
-      dto.location.regionSlug,
-      dto.location.region,
-      dto.location.citySlug,
+      dto.location.department,
       dto.location.city,
       dto.location.address,
+      dto.location.venue,
+      dto.location.moreInfo ?? "",
     )
     const media = dto.media.map((m) => {
       if (m.type === "image") {
@@ -135,13 +134,12 @@ export class SiteFirebaseMapper {
       description: domain.description,
       location: {
         geo: new GeoPoint(domain.location.coordinates.latitude, domain.location.coordinates.longitude),
-        countrySlug: domain.location.countrySlug,
         country: domain.location.country,
-        regionSlug: domain.location.regionSlug,
-        region: domain.location.region,
-        citySlug: domain.location.citySlug,
+        department: domain.location.department,
         city: domain.location.city,
         address: domain.location.address,
+        venue: domain.location.venue,
+        moreInfo: domain.location.moreInfo,
       },
       media: domain.media.map((m) => {
         if (m.type === "image") {
