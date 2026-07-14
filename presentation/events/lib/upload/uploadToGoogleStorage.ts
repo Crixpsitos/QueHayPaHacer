@@ -10,6 +10,7 @@ export async function uploadToGoogleStorage(
     isPublic?: boolean;
     subFolder?: string;
     customMetadata?: Record<string, string>;
+    cacheControl?: string;
   } = {
     fileName: "",
     contentType: "",
@@ -26,6 +27,7 @@ export async function uploadToGoogleStorage(
     visibility: options.isPublic ? "public" : "private",
     subFolder: options.subFolder,
     customMetadata: options.customMetadata,
+    cacheControl: options.cacheControl,
   });
 
   if (!uploadUrl) {
@@ -43,6 +45,8 @@ export async function uploadToGoogleStorage(
         ...(options.isPublic && {
           "x-goog-acl": "public-read",
         }),
+        // Cache-Control va firmado en la signed URL — debe enviarse aquí exacto o rompe la firma.
+        ...(options.cacheControl && { "Cache-Control": options.cacheControl }),
         ...Object.fromEntries(
           Object.entries(options.customMetadata ?? {}).map(([key, value]) => [
             `x-goog-meta-${key}`,

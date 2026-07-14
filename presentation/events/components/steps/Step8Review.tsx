@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { Separator } from "@base-ui/react";
 import { SummarySection } from "../ui/SummarySection";
 import { SummaryItem } from "../ui/SummaryItem";
+import { SessionsReviewSection } from "./SessionsReviewSection";
 import { Badge } from "@/app/components/ui/badge";
 import { renderToHTMLString } from "@tiptap/static-renderer";
 import DOMPurify from "dompurify";
@@ -28,6 +29,8 @@ import StarterKit from "@tiptap/starter-kit";
 interface Step8ReviewProps {
   form: UseFormReturn<FormEventDto>;
   onGoToStep: (step: number) => void;
+  /** En multi-fecha, fecha/lugar/registro/precio viven en cada sesión, no en el evento. */
+  isMultiDate?: boolean;
 }
 
 const PROMOTION_PRICE_PER_DAY = 7500;
@@ -87,7 +90,7 @@ const ExpandableContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const Step8Review = ({ form, onGoToStep }: Step8ReviewProps) => {
+export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8ReviewProps) => {
   const formData = form.watch();
   const isPromoted = form.watch("promotion.isPromoted");
   const promotedUntil = form.watch("promotion.promotedUntil");
@@ -411,6 +414,14 @@ export const Step8Review = ({ form, onGoToStep }: Step8ReviewProps) => {
           />
         </SummarySection>
 
+        {/* Multi-fecha: fecha/lugar/registro/precio viven en cada sesión → preview por sesión */}
+        {isMultiDate ? (
+          <SessionsReviewSection
+            eventId={formData.id}
+            onEdit={() => onGoToStep(4)}
+          />
+        ) : (
+          <>
         {/* Ubicación */}
         <SummarySection title="Ubicación" onEdit={() => onGoToStep(4)}>
           <SummaryItem
@@ -490,6 +501,8 @@ export const Step8Review = ({ form, onGoToStep }: Step8ReviewProps) => {
             }
           />
         </SummarySection>
+          </>
+        )}
       </div>
     </div>
   );

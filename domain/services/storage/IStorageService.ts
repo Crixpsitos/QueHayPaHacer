@@ -18,5 +18,6 @@ export interface IStorageService {
         isPublic: boolean,
         contentType?: string,
         customMetadata?: Record<string, string>,
+        cacheControl?: string,
     ): Promise<string>;
 }

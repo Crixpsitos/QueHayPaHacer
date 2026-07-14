@@ -10,6 +10,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
+import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
@@ -32,6 +33,16 @@ export async function createDraftEventAction(
     };
   }
 
+  // Multi-fecha es exclusivo de cuentas profesionales.
+  if (
+    event.eventType === "multi-date" &&
+    filterStandardClaims(tokens.decodedToken).role !== "professional"
+  ) {
+    return {
+      success: false,
+      error: "Los eventos multi-fecha son exclusivos de cuentas profesionales.",
+    };
+  }
 
   console.log("probandooooo", event)
 

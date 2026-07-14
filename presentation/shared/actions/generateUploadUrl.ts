@@ -18,6 +18,7 @@ type GenerateUploadUrlOptions = {
   visibility?: UploadVisibility;
   subFolder?: string;
   customMetadata?: Record<string, string>;
+  cacheControl?: string;
 };
 
 export async function generateUploadUrl({
@@ -28,11 +29,15 @@ export async function generateUploadUrl({
   visibility = "public",
   subFolder,
   customMetadata,
+  cacheControl,
 }: GenerateUploadUrlOptions): Promise<UploadResult> {
   const { storageService } = createServerContainer();
   const bucketName = storageService.getBucketName;
   const resolvedSubFolder = subFolder ?? (contentType.startsWith("video/") ? "videos" : "images");
-  const fullPath = `${visibility}/${entityName}/${entityId}/${resolvedSubFolder}/${fileName}-${crypto.randomUUID()}`;
+  // filter(Boolean) colapsa subFolder="" → sin doble slash (public/sessions/{id}/{file})
+  const fullPath = [visibility, entityName, entityId, resolvedSubFolder, `${fileName}-${crypto.randomUUID()}`]
+    .filter(Boolean)
+    .join("/");
 
   try {
     const signedUrl = await storageService.generateSignedUrl(
@@ -40,6 +45,7 @@ export async function generateUploadUrl({
       visibility === "public",
       contentType,
       customMetadata,
+      cacheControl,
     );
 
     return {

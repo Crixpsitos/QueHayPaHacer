@@ -84,7 +84,7 @@ interface TiptapNode {
   content?: TiptapNode[];
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getTiptapPlainText = (node: TiptapNode | TiptapContent | any): string => {
+export const getTiptapPlainText = (node: TiptapNode | TiptapContent | any): string => {
   if (node?.text) return node.text;
   if (node?.content && Array.isArray(node.content)) {
     return node.content.map(getTiptapPlainText).join("");
@@ -92,7 +92,7 @@ const getTiptapPlainText = (node: TiptapNode | TiptapContent | any): string => {
   return "";
 };
 
-const RichTextWithLengthSchema = v.pipe(
+export const RichTextWithLengthSchema = v.pipe(
   TiptapContentSchema,
   v.check((data) => {
     const textContent = getTiptapPlainText(data);
@@ -145,7 +145,10 @@ export const step4Schema = v.object({
   location: v.object({
     country: locationObjectSchema("El país es requerido"),
     department: locationObjectSchema("El departamento es requerido"),
-    city: v.pipe(v.string(), v.nonEmpty("La ciudad es requerida")),
+    city: v.object({
+      name: v.pipe(v.string(), v.nonEmpty("La ciudad es requerida")),
+      slug: v.string(),
+    }),
     venue: v.pipe(v.string(), v.nonEmpty("El espacio es requerido")),
     address: v.pipe(v.string(), v.nonEmpty("La dirección es requerida")),
     moreInfo: v.optional(v.string()),
@@ -310,6 +313,26 @@ export const publishEventSchema = v.object({
   publishedAt: v.string(),
 });
 
+/**
+ * Publicación de eventos multi-fecha: solo campos del encabezado.
+ * fecha / lugar / precio / registro viven en cada sesión, no en el evento padre.
+ * (v.object ignora claves desconocidas, así que un payload completo se recorta solo.)
+ */
+export const publishEventMultiDateSchema = v.object({
+  id: v.optional(v.string()),
+  slug: v.optional(v.string()),
+  ...step1Schema.entries,
+  ...step2Schema.entries,
+  author: AuthorSchema,
+  ...step3Schema.entries,
+  ...step8Schema.entries,
+  status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
+  eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
+  createdAt: v.optional(v.string()),
+  updatedAt: v.optional(v.string()),
+  publishedAt: v.string(),
+});
+
 export const FormEventSchema = v.object({
   id: v.optional(v.string()),
   slug: v.optional(v.string()),
@@ -377,6 +400,7 @@ export const FormEventSchema = v.object({
       currency: v.optional(v.string()),
     }),
   ),
+  eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
 });
 export type EventDto = v.InferOutput<typeof EventSchema>;
 export type CreateEventDto = v.InferOutput<typeof CreateEventSchema>;

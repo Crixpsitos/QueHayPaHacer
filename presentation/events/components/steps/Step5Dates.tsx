@@ -22,11 +22,25 @@ import { Input } from "@/app/components/ui/input";
 
 interface Step5DatesProps {
   form: UseFormReturn<FormEventDto>;
+  /** Si se define, la fecha de fin no puede superar startDate + maxDurationMs (sesiones). */
+  maxDurationMs?: number;
 }
 
-export const Step5Dates = ({ form }: Step5DatesProps) => {
+export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
+  const maxHours = maxDurationMs ? Math.round(maxDurationMs / 3_600_000) : null;
+
+  // Violación de duración calculada en vivo desde los valores observados. No
+  // depende del resolver (evita timing raro de RHF): se ve apenas se supera.
+  const durationExceeded = Boolean(
+    maxDurationMs &&
+      startDate &&
+      endDate &&
+      new Date(endDate).getTime() - new Date(startDate).getTime() >
+        maxDurationMs,
+  );
+  const durationErrorMsg = `La sesión no puede durar más de ${maxHours} h. Crea otra fecha para días adicionales.`;
 
   return (
     <div className="space-y-6">
@@ -140,10 +154,16 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                 : "";
 
               return (
-                <Field data-invalid={fieldState.invalid.toString()}>
+                <Field
+                  data-invalid={(
+                    fieldState.invalid || durationExceeded
+                  ).toString()}
+                >
                   <FieldLabel>Fecha de finalización</FieldLabel>
                   <FieldDescription>
-                    ¿Cuándo se llevará a cabo el evento?
+                    {maxHours
+                      ? `Máximo ${maxHours} h después del inicio.`
+                      : "¿Cuándo se llevará a cabo el evento?"}
                   </FieldDescription>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -180,6 +200,7 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                             );
                           }
                           field.onChange(newDate.toISOString());
+                          form.trigger("endDate");
                         }}
                         disabled={(date) => {
                           if (!startDate) {
@@ -189,7 +210,15 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                           }
                           const startLimit = new Date(startDate);
                           startLimit.setHours(0, 0, 0, 0);
-                          return date < startLimit;
+                          if (date < startLimit) return true;
+                          if (maxDurationMs) {
+                            const maxEndDay = new Date(
+                              new Date(startDate).getTime() + maxDurationMs,
+                            );
+                            maxEndDay.setHours(0, 0, 0, 0);
+                            if (date > maxEndDay) return true;
+                          }
+                          return false;
                         }}
                       />
                     </PopoverContent>
@@ -212,11 +241,16 @@ export const Step5Dates = ({ form }: Step5DatesProps) => {
                         parseInt(minute, 10),
                       );
                       field.onChange(newDate.toISOString());
+                      form.trigger("endDate");
                     }}
                     value={timeInputValue}
                     aria-label="Hora de finalización"
                   />
-                  <FieldError>{fieldState.error?.message}</FieldError>
+                  <FieldError>
+                    {durationExceeded
+                      ? durationErrorMsg
+                      : fieldState.error?.message}
+                  </FieldError>
                 </Field>
               );
             }}

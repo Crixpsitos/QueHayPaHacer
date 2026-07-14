@@ -48,6 +48,7 @@ export class EventViewModelMapper {
       createdAt: event.createdAt?.toISOString() ?? new Date().toISOString(),
       updatedAt: event.updatedAt?.toISOString() ?? new Date().toISOString(),
       publishedAt: event.publishedAt?.toISOString(),
+      eventType: event.eventType,
     };
   }
 
@@ -101,6 +102,7 @@ export class EventViewModelMapper {
       createdAt: viewModel.createdAt ? new Date(viewModel.createdAt) : new Date(),
       updatedAt: viewModel.updatedAt ? new Date(viewModel.updatedAt) : new Date(),
       publishedAt: viewModel.publishedAt ? new Date(viewModel.publishedAt) : undefined,
+      eventType: viewModel.eventType,
     } as unknown as Events;
   }
 }

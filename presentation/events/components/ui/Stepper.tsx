@@ -1,4 +1,4 @@
-import { Check, FileText, Tag, Image, MapPin, Calendar, Users, DollarSign, CheckCircle} from "lucide-react";
+import { Check, FileText, Tag, Image, MapPin, Calendar, Users, DollarSign, CheckCircle, Star } from "lucide-react";
 import { STEPS } from "../../constants/steps";
 
 const stepIcons = {
@@ -10,22 +10,25 @@ const stepIcons = {
   Users,
   DollarSign,
   CheckCircle,
+  Star,
 };
+
+type StepDef = { number: number; label: string; icon: string };
 
 interface StepperProps {
     currentStep: number;
     completedSteps: number[];
     canAccessStep: (stepNumber: number) => boolean;
     handleStepClick: (stepNumber: number) => void;
-    
+    steps?: readonly StepDef[];
 }
 
-const Stepper = ({ currentStep, completedSteps, canAccessStep, handleStepClick }: StepperProps) => {
+const Stepper = ({ currentStep, completedSteps, canAccessStep, handleStepClick, steps = STEPS }: StepperProps) => {
   return (
     <div className="border-b border-gray-200 bg-white">
         <div className="overflow-x-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            {STEPS.map((step) => {
+            {steps.map((step) => {
               const Icon = stepIcons[step.icon as keyof typeof stepIcons];
               const isCompleted = completedSteps.includes(step.number);
               const isCurrent = currentStep === step.number;

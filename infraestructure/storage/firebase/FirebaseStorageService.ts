@@ -152,6 +152,7 @@ export class StorageService implements IStorageService {
   isPublic: boolean,
   contentType?: string,
   customMetadata?: Record<string, string>,
+  cacheControl?: string,
 ): Promise<string> {
   try {
     const fileRef = this.bucket.file(path);
@@ -166,6 +167,7 @@ export class StorageService implements IStorageService {
 
     const extensionHeaders = {
       ...(isPublic && { "x-goog-acl": "public-read" }),
+      ...(cacheControl && { "cache-control": cacheControl }),
       ...metadataHeaders,
     };
 
