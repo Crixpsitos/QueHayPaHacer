@@ -8,6 +8,7 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { toSlug } from "@/app/lib/utils/slug"
 import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
+import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 type Result = { success: true; siteId: string } | { success: false; error: string }
@@ -24,9 +25,11 @@ export async function saveDraftSiteAction(form: SiteFormViewModel, siteId?: stri
     // siteId present → update the SAME doc (autosave during upload / re-save). Otherwise create one.
     if (siteId) {
       await sitesService.updateDraft(siteId, input)
+      revalidateSite(uid, siteId)
       return { success: true, siteId }
     }
     const newId = await sitesService.saveDraft(input)
+    revalidateSite(uid, newId)
     return { success: true, siteId: newId }
   } catch (e) {
     console.error("[saveDraftSite]", e)

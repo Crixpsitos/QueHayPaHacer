@@ -47,24 +47,16 @@ export class EventInteractionsFirebaseRepository
     super(db);
   }
 
-  /**
-   * Doc de interacción de un usuario. Si `sessionId`, apunta a la subcolección
-   * de la sesión: events/{eventId}/sessions/{sessionId}/interactions/{userId}.
-   */
-  private interactionDoc(eventId: string, userId: string, sessionId?: string) {
-    if (!sessionId) return this.subCollection(eventId, "interactions").doc(userId);
-    return this.subCollection(eventId, "sessions")
-      .doc(sessionId)
-      .collection("interactions")
-      .doc(userId);
+  /** Doc de interacción de un usuario: events/{eventId}/interactions/{userId}. */
+  private interactionDoc(eventId: string, userId: string) {
+    return this.subCollection(eventId, "interactions").doc(userId);
   }
 
   async findByEventAndUser(
     eventId: string,
     userId: string,
-    sessionId?: string,
   ): Promise<FirebaseEventInteractionDto | null> {
-    const doc = await this.interactionDoc(eventId, userId, sessionId).get();
+    const doc = await this.interactionDoc(eventId, userId).get();
     if (!doc.exists) {
       return null;
     }
@@ -80,16 +72,14 @@ export class EventInteractionsFirebaseRepository
     userId: string,
     liked: boolean,
     eventData: DenormalizedEventFirebaseData,
-    sessionId?: string,
   ): Promise<void> {
-    const eventInteractionRef = this.interactionDoc(eventId, userId, sessionId);
+    const eventInteractionRef = this.interactionDoc(eventId, userId);
 
     const payload = {
       id: userId,
       eventId,
       userId,
-      type: sessionId ? "session" : "event",
-      ...(sessionId ? { sessionId } : {}),
+      type: "event",
       event: cleanUndefined(eventData),
       liked,
       likedAt: FieldValue.serverTimestamp(),

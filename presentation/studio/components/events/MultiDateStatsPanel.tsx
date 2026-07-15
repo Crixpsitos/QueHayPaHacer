@@ -9,6 +9,8 @@ import {
   ImageIcon,
   Layers,
   Pencil,
+  Share2,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
@@ -54,8 +56,9 @@ const STATUS_LABEL: Record<string, string> = {
 export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
   const published = stats.status.toLowerCase() === "published";
 
+  // Los likes NO se acumulan: son del evento. Sumar los de las fechas contaría
+  // dos veces a quien dio like al evento y a una de sus fechas (mismo uid).
   const totalItems = [
-    { key: "likes", label: "Likes", icon: Heart, value: stats.totals.likes },
     { key: "views", label: "Vistas", icon: Eye, value: stats.totals.views },
     {
       key: "registrations",
@@ -63,6 +66,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
       icon: Users,
       value: stats.totals.registrations,
     },
+    { key: "shares", label: "Compartidos", icon: Share2, value: stats.totals.shares },
     {
       key: "sessions",
       label: "Fechas",
@@ -162,13 +166,26 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
             </div>
           ))}
         </div>
-        {/* Los likes al evento completo no son de ninguna fecha concreta. */}
-        <p className="mt-2 text-xs text-slate-400">
-          Del acumulado, el evento completo aporta{" "}
-          {formatNumber(stats.event.likes)} like(s),{" "}
-          {formatNumber(stats.event.views)} vista(s) y score{" "}
-          {stats.event.score.toFixed(2)}.
-        </p>
+        {/* El like es del evento completo, no de una fecha: por eso va aparte. */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <span className="inline-flex items-center gap-1.5">
+            <Heart className="h-3.5 w-3.5 text-slate-400" />
+            <span className="font-semibold text-slate-900">
+              {formatNumber(stats.event.likes)}
+            </span>
+            like(s) al evento
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
+            score{" "}
+            <span className="font-semibold text-slate-900">
+              {stats.event.score.toFixed(2)}
+            </span>
+          </span>
+          <span className="text-slate-400">
+            El like es del evento completo, no de una fecha.
+          </span>
+        </div>
       </div>
 
       {/* Fechas */}
@@ -232,12 +249,6 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-3.5 text-xs text-slate-600">
                       <span className="inline-flex items-center gap-1">
-                        <Heart className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="tabular-nums font-medium">
-                          {formatNumber(session.likes)}
-                        </span>
-                      </span>
-                      <span className="inline-flex items-center gap-1">
                         <Eye className="h-3.5 w-3.5 text-slate-400" />
                         <span className="tabular-nums font-medium">
                           {formatNumber(session.views)}
@@ -247,6 +258,12 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
                         <Users className="h-3.5 w-3.5 text-slate-400" />
                         <span className="tabular-nums font-medium">
                           {formatNumber(session.registrations)}
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Share2 className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="tabular-nums font-medium">
+                          {formatNumber(session.shares)}
                         </span>
                       </span>
                     </div>

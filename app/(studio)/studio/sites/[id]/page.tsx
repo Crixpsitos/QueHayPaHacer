@@ -6,7 +6,7 @@ import type {
 } from "@/presentation/studio/view-models/StudioSitesViewModel";
 import type { SiteAnalytics, SiteEventsPage } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 
 // ponytail: en dev, page size 1 por defecto (+opción en el select) para probar
 // la paginación del itinerario con pocos eventos. En prod arranca en 20.
@@ -18,6 +18,7 @@ const DEFAULT_LIMIT = IS_DEV ? 1 : 20;
 async function getCachedSiteAnalytics(siteId: string): Promise<SiteAnalytics | null> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(`site-${siteId}`);
   const { studioService } = createServerContainer();
   return studioService.getSiteAnalytics(siteId);
 }
@@ -33,6 +34,7 @@ async function getCachedSiteEvents(
 ): Promise<SiteEventsPage> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(`site-${siteId}`);
   const { studioService } = createServerContainer();
   return studioService.getEventsBySite(siteId, { search, cursor, direction, limit });
 }

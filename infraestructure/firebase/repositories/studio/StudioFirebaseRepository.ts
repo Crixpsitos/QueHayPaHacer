@@ -1163,9 +1163,9 @@ export class StudioFirebaseRepository implements IStudioRepository {
       status: s.status ?? "draft",
       startDate: this.toDateOrNull(s.startDate),
       image: this.resolveSessionCover(s, row.parentCoverUrl, rawSessions),
-      likes: Number(s.analytics?.likes ?? 0),
       views: Number(s.analytics?.views ?? 0),
       registrations: Number(s.analytics?.registrations ?? 0),
+      shares: Number(s.analytics?.shares ?? 0),
     }));
 
     const event = {
@@ -1186,10 +1186,12 @@ export class StudioFirebaseRepository implements IStudioRepository {
       image: row.parentCoverUrl,
       event,
       sessions,
+      // Sin `likes`: sumarlos contaría dos veces al mismo uid (like al evento +
+      // like a una fecha). Los likes salen tal cual en `event.likes`.
       totals: {
-        likes: event.likes + sum((s) => s.likes),
         views: event.views + sum((s) => s.views),
         registrations: event.registrations + sum((s) => s.registrations),
+        shares: event.shares + sum((s) => s.shares),
       },
     };
   }

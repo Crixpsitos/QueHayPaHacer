@@ -4,6 +4,7 @@ import { getTokens } from "next-firebase-auth-edge"
 import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
+import { revalidateSite } from "./_revalidate"
 
 type Result = { success: true } | { success: false; error: string }
 
@@ -15,6 +16,7 @@ export async function setSiteActiveAction(siteId: string, active: boolean): Prom
 
   try {
     await sitesService.setActive(tokens.decodedToken.uid, siteId, active)
+    revalidateSite(tokens.decodedToken.uid, siteId)
     return { success: true }
   } catch (e) {
     console.error("[setSiteActive]", e)

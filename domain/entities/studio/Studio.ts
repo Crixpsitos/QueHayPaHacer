@@ -103,7 +103,10 @@ export interface EventStats {
   registrationRamp: RegistrationRampPoint[];
 }
 
-/** Contadores de una sesión dentro del desglose de un evento multi-date. */
+/**
+ * Contadores de una sesión dentro del desglose de un evento multi-date.
+ * Sin `likes`: el like es del evento padre (ver `EventInteractionsService`).
+ */
 export interface MultiDateSessionStats {
   sessionId: string;
   title: string;
@@ -111,9 +114,9 @@ export interface MultiDateSessionStats {
   startDate: Date | null;
   /** Portada ya resuelta según `coverSource` (propia, del padre u otra sesión). */
   image?: string;
-  likes: number;
   views: number;
   registrations: number;
+  shares: number;
 }
 
 /**
@@ -138,11 +141,15 @@ export interface MultiDateEventStats {
     score: number;
   };
   sessions: MultiDateSessionStats[];
-  /** Acumulado: evento + todas sus sesiones. */
+  /**
+   * Acumulado evento + sesiones. SIN likes a propósito: sumarlos contaría dos
+   * veces a quien dio like al evento y a una fecha (mismo uid). Los likes se
+   * reportan solos, en `event.likes`.
+   */
   totals: {
-    likes: number;
     views: number;
     registrations: number;
+    shares: number;
   };
 }
 

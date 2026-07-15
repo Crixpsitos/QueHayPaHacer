@@ -13,14 +13,12 @@ export interface IEventInteractionsRepository {
   findByEventAndUser(
     eventId: string,
     userId: string,
-    sessionId?: string,
   ): Promise<EventInteractions | null>;
   createLikeInteraction(
     eventId: string,
     userId: string,
     liked: boolean,
     eventData: DenormalizedEventData,
-    sessionId?: string,
   ): Promise<void>;
   createClickInteraction(eventId: string, userId: string, eventData: DenormalizedEventData): Promise<void>;
   createRegistrationInteraction(eventId: string, userId: string, eventData: DenormalizedEventData): Promise<void>;

@@ -37,20 +37,17 @@ export const fetchEventSessions = async (eventId: string): Promise<EventSession[
   return await eventSessionService.getByEventId(eventId);
 };
 
+/** Like del EVENTO: no hay like por sesión, así que el detalle de una fecha
+ *  comparte esta misma entrada de caché con el detalle del evento. */
 export const fetchUserLiked = async (
   eventId: string,
   userId: string,
-  sessionId?: string,
 ): Promise<boolean> => {
   "use cache";
   cacheLife({ expire: 300, stale: 60, revalidate: 60 });
-  cacheTag(
-    sessionId
-      ? `event-interaction-${userId}-${eventId}-${sessionId}`
-      : `event-interaction-${userId}-${eventId}`,
-  );
+  cacheTag(`event-interaction-${userId}-${eventId}`);
   const { eventInteractionsService } = createServerContainer();
-  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId, sessionId);
+  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
   return !!interaction?.liked;
 };
 

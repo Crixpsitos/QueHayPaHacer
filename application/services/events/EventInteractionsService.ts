@@ -27,21 +27,24 @@ export class EventInteractionsService {
   async getByEventAndUser(
     eventId: string,
     userId: string,
-    sessionId?: string,
   ): Promise<EventInteractions | null> {
-    return this.eventInteractionsRepository.findByEventAndUser(eventId, userId, sessionId);
+    return this.eventInteractionsRepository.findByEventAndUser(eventId, userId);
   }
 
+  /**
+   * Like del EVENTO. No existe like por sesión a propósito: el like es el estado
+   * de una persona (el doc de interacción es su uid), así que un like al evento
+   * y otro a su fecha contarían a la misma persona dos veces e inflarían el
+   * score. Lo que sí es por sesión son las ACCIONES: vista, registro y share.
+   */
   async registerLike(
     eventId: string,
     userId: string,
     liked: boolean,
-    sessionId?: string,
   ): Promise<void> {
     const currentInteraction = await this.eventInteractionsRepository.findByEventAndUser(
       eventId,
       userId,
-      sessionId,
     );
     const previousLiked = currentInteraction?.liked ?? false;
 
@@ -53,26 +56,18 @@ export class EventInteractionsService {
       userId,
       liked,
       eventData,
-      sessionId,
     );
 
-    // La proyección de perfil ("mis likes") solo aplica a likes de evento por ahora.
-    if (!sessionId) {
-      await this.userEventInteractionsProjectionRepository.upsertLikeProjection(
-        eventId,
-        userId,
-        liked,
-        eventData,
-      );
-    }
+    await this.userEventInteractionsProjectionRepository.upsertLikeProjection(
+      eventId,
+      userId,
+      liked,
+      eventData,
+    );
 
     const likesDelta = previousLiked === liked ? 0 : liked ? 1 : -1;
     if (likesDelta !== 0) {
-      if (sessionId) {
-        await this.eventSessionRepository.incrementCounter(eventId, sessionId, "likes", likesDelta);
-      } else {
-        await this.eventsRepository.incrementLikes(eventId, likesDelta);
-      }
+      await this.eventsRepository.incrementLikes(eventId, likesDelta);
     }
   }
 
@@ -92,7 +87,12 @@ export class EventInteractionsService {
     );
   }
 
-  async registerShare(eventId: string, userId: string): Promise<void> {
+  /**
+   * Share del evento o de una de sus fechas (`sessionId`). A diferencia del
+   * like, un share es una ACCIÓN: compartir el evento y compartir una fecha son
+   * dos enlaces distintos repartidos, así que contar ambos no duplica nada.
+   */
+  async registerShare(eventId: string, userId: string, sessionId?: string): Promise<void> {
     const event = await this.eventsRepository.findById(eventId);
     const eventData = event ? extractEventData(event) : { id: eventId, title: "", slug: "" };
     
@@ -108,6 +108,12 @@ export class EventInteractionsService {
       eventData,
     );
 
-    await this.eventsRepository.incrementShares(eventId, 1);
+    // El contador va donde ocurrió el share; el score del padre lo recoge por
+    // el agregado `analytics.sessionShares` que calcula la Cloud Function.
+    if (sessionId) {
+      await this.eventSessionRepository.incrementCounter(eventId, sessionId, "shares", 1);
+    } else {
+      await this.eventsRepository.incrementShares(eventId, 1);
+    }
   }
 }

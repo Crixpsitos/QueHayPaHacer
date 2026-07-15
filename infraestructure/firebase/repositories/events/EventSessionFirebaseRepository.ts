@@ -135,7 +135,7 @@ export class EventSessionFirebaseRepository
   async incrementCounter(
     eventId: string,
     sessionId: string,
-    field: "likes" | "views" | "registrations",
+    field: "views" | "registrations" | "shares",
     delta: number,
   ): Promise<void> {
     await this.sessionsCollection(eventId).doc(sessionId).set(

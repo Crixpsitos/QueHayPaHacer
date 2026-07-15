@@ -37,9 +37,9 @@ export interface FirebaseEventSessionDto {
   price: Price;
   status: "draft" | "published" | "cancelled" | "ended";
   analytics?: {
-    likes?: number;
     views?: number;
     registrations?: number;
+    shares?: number;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;

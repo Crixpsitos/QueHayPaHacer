@@ -4,6 +4,7 @@ import { getTokens } from "next-firebase-auth-edge"
 import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
+import { revalidateSite } from "./_revalidate"
 
 type Result = { success: true } | { success: false; error: string }
 
@@ -15,6 +16,7 @@ export async function deleteSiteAction(siteId: string): Promise<Result> {
 
   try {
     await sitesService.deleteSite(tokens.decodedToken.uid, siteId)
+    revalidateSite(tokens.decodedToken.uid, siteId)
     return { success: true }
   } catch (e) {
     console.error("[deleteSite]", e)
