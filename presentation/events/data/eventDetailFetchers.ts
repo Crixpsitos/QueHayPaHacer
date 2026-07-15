@@ -22,7 +22,15 @@ export const fetchEventDetailBySlug = async (slug: string): Promise<Events | nul
   cacheLife("weeks");
   cacheTag(`event-slug-${slug}`);
   const { eventsService } = createServerContainer();
-  return await eventsService.getEventBySlug(slug);
+  const event = await eventsService.getEventBySlug(slug);
+
+  // Además del tag por slug, esta entrada cuelga del tag por ID: las actions
+  // (like, share, publicar, editar) invalidan `event-<id>` porque no conocen el
+  // slug. Sin esto, quien entra por /events/<slug> —o sea, todo el mundo— se
+  // come una copia fósil durante semanas: contador viejo con estado fresco.
+  if (event?.id) cacheTag(`event-${event.id}`);
+
+  return event;
 };
 
 /**

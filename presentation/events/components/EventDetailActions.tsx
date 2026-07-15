@@ -84,13 +84,18 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
       <div className="flex items-center justify-between gap-4">
         {/* Like + Share */}
         <div className="flex items-center gap-2">
-          <HeartLikeButton
-            eventId={event.id}
-            initialLiked={initialLiked}
-            initialLikes={analytics?.likes ?? 0}
-            onLike={handleLike}
-            className="h-10 px-4 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-red-50 hover:border-red-200"
-          />
+          {/* Sin corazón en el detalle de una fecha: el like es del evento, y un
+              corazón aquí haría creer que se le da a esta fecha. Se da like en el
+              evento; compartir sí queda, porque comparte ESTA fecha. */}
+          {!sessionId && (
+            <HeartLikeButton
+              eventId={event.id}
+              initialLiked={initialLiked}
+              initialLikes={analytics?.likes ?? 0}
+              onLike={handleLike}
+              className="h-10 px-4 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-red-50 hover:border-red-200"
+            />
+          )}
 
           <Tooltip>
             <TooltipTrigger asChild>
