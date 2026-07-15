@@ -94,6 +94,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
         promotedUntil: undefined,
       },
       analytics: dto.analytics,
+      eventType: dto.eventType,
       startDate: dto.startDate?.toDate ? dto.startDate.toDate() : undefined,
       endDate: dto.endDate?.toDate ? dto.endDate.toDate() : undefined,
       createdAt: dto.createdAt?.toDate ? dto.createdAt.toDate() : new Date(),
@@ -102,7 +103,75 @@ export class EventsFirebaseMapper implements IEventsMapper {
     } as unknown as Events;
   }
 
+  /**
+   * Garantiza analytics.score presente (default 0). Sin score, el evento queda
+   * fuera de los listados: findAllEvents/... hacen orderBy("analytics.score"),
+   * y Firestore excluye los docs que no tienen el campo del orderBy.
+   */
+  private withScore(analytics: Events["analytics"]) {
+    return { ...(analytics ?? {}), score: analytics?.score ?? 0 };
+  }
+
+  /** promoción dominio → Firestore (Timestamps). Compartido entre standard y multi-date. */
+  private toStoredPromotion(promotion: Events["promotion"]) {
+    return promotion
+      ? {
+          isPromoted: promotion.isPromoted ?? false,
+          promotedAt:
+            promotion.promotedAt instanceof Date && !isNaN(promotion.promotedAt.getTime())
+              ? Timestamp.fromDate(promotion.promotedAt)
+              : undefined,
+          promotedUntil:
+            promotion.promotedUntil instanceof Date && !isNaN(promotion.promotedUntil.getTime())
+              ? Timestamp.fromDate(promotion.promotedUntil)
+              : undefined,
+        }
+      : { isPromoted: false, promotedAt: undefined, promotedUntil: undefined };
+  }
+
+  /**
+   * Multi-fecha: el evento padre solo persiste el encabezado.
+   * location/startDate/endDate/registro/precio viven en las sesiones.
+   * Omite las claves (no undefined) y descarta undefined para no romper el write.
+   */
+  private toMultiDateHeaderDto(domain: Events): FirebaseEventsDto {
+    const dto = {
+      id: domain.id,
+      slug: domain.slug,
+      title: domain.title,
+      shortDescription: domain.shortDescription,
+      description: domain.description,
+      mainImage: domain.mainImage,
+      media: domain.media,
+      categoryInfo: domain.categoryInfo,
+      author: domain.author,
+      status: domain.status,
+      promotion: this.toStoredPromotion(domain.promotion),
+      analytics: this.withScore(domain.analytics),
+      eventType: domain.eventType,
+      createdAt:
+        domain.createdAt instanceof Date && !isNaN(domain.createdAt.getTime())
+          ? Timestamp.fromDate(domain.createdAt)
+          : Timestamp.now(),
+      updatedAt:
+        domain.updatedAt instanceof Date && !isNaN(domain.updatedAt.getTime())
+          ? Timestamp.fromDate(domain.updatedAt)
+          : Timestamp.now(),
+      publishedAt:
+        domain.publishedAt instanceof Date && !isNaN(domain.publishedAt.getTime())
+          ? Timestamp.fromDate(domain.publishedAt)
+          : undefined,
+      metadata: {},
+    };
+    return Object.fromEntries(
+      Object.entries(dto).filter(([, value]) => value !== undefined),
+    ) as unknown as FirebaseEventsDto;
+  }
+
   toDto(domain: Events): FirebaseEventsDto {
+    if (domain.eventType === "multi-date") {
+      return this.toMultiDateHeaderDto(domain);
+    }
     return {
       id: domain.id,
       slug: domain.slug,
@@ -134,7 +203,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
         promotedAt: undefined,
         promotedUntil: undefined,
       },
-      analytics: domain.analytics,
+      analytics: this.withScore(domain.analytics),
       startDate: domain.startDate instanceof Date && !isNaN(domain.startDate.getTime())
         ? Timestamp.fromDate(domain.startDate)
         : undefined,

@@ -13,6 +13,13 @@ import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/components/ui/tooltip";
+import { useAuth } from "@/app/store/auth/AuthContext";
 import dynamic from "next/dynamic";
 
 interface Step6RegistrationProps {
@@ -25,6 +32,8 @@ const RegistrationFormBuilder = dynamic(
 );
 
 export const Step6Registration = ({ form }: Step6RegistrationProps) => {
+  const { user } = useAuth();
+  const isProfessional = user?.customClaims?.role === "professional";
   const registrationType = form.watch("registrationType");
   const capacityValue = form.watch("capacity");
   const isLimited = !!(capacityValue && capacityValue > 0);
@@ -68,27 +77,57 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                   { value: "internal", label: "Registro interno", desc: "Registro básico en la plataforma" },
                   { value: "external", label: "Registro externo", desc: "Toma el control del registro en un sitio externo" },
                   { value: "form", label: "Formulario personalizado", desc: "Crea un formulario de registro personalizado" },
-                ].map((option) => (
-                  <Label
-                    key={option.value}
-                    htmlFor={option.value}
-                    className={`flex cursor-pointer items-start gap-3 rounded border p-4 transition-colors ${
-                      field.value === option.value
-                        ? "border-black bg-gray-50"
-                        : "border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <RadioGroupItem
-                      value={option.value}
-                      id={option.value}
-                      className="mt-0.5 border-gray-400 text-black"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">{option.label}</p>
-                      <p className="text-sm text-gray-500">{option.desc}</p>
-                    </div>
-                  </Label>
-                ))}
+                ].map((option) => {
+                  const isFormOption = option.value === "form";
+                  const isDisabled = isFormOption && !isProfessional;
+
+                  const card = (
+                    <Label
+                      key={option.value}
+                      htmlFor={option.value}
+                      className={`flex items-start gap-3 rounded border p-4 transition-colors ${
+                        isDisabled
+                          ? "cursor-not-allowed border-amber-400 bg-amber-50/50 opacity-60"
+                          : field.value === option.value
+                          ? "cursor-pointer border-black bg-gray-50"
+                          : "cursor-pointer border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <RadioGroupItem
+                        value={option.value}
+                        id={option.value}
+                        disabled={isDisabled}
+                        className={`mt-0.5 border-gray-400 text-black ${
+                          isDisabled ? "pointer-events-none" : ""
+                        }`}
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">{option.label}</p>
+                        <p className="text-sm text-gray-500">{option.desc}</p>
+                        {isDisabled && (
+                          <p className="mt-1 text-xs font-medium text-amber-600">
+                            Solo disponible para cuentas profesionales
+                          </p>
+                        )}
+                      </div>
+                    </Label>
+                  );
+
+                  if (isDisabled) {
+                    return (
+                      <TooltipProvider key={option.value}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>{card}</TooltipTrigger>
+                          <TooltipContent side="top">
+                            Activa una cuenta profesional para usar esta opción
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  }
+
+                  return card;
+                })}
               </RadioGroup>
               {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>

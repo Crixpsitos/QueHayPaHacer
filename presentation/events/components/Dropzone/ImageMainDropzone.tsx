@@ -47,8 +47,6 @@ export const ImageMainDropzone = ({
 
   const displayUrl = fileUrl ?? pendingPreviewUrl;
 
-  console.log("displayUrl", displayUrl);
-
   const isProcessing = typeof value === "object" && value?.status === "processing";
   const hasOptimizationError = typeof value === "object" && value?.status === "error";
 

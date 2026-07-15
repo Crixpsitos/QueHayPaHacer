@@ -12,6 +12,9 @@ export interface IEventsRepository extends IBaseRepository<Events>{
     createDraftEvent(event: Events): Promise<Events>;
     createEvent(event: Events): Promise<Events>;
     updateEvent(event: Events): Promise<void>;
+    /** Escribe solo startDate/endDate (merge). Usado para sincronizar el rango
+     *  de fechas de un evento multi-date desde sus sesiones. */
+    updateEventDateRange(eventId: string, startDate: Date, endDate: Date): Promise<void>;
 
     incrementLikes(eventId: string, delta: number): Promise<void>;    
     incrementShares(eventId: string, delta: number): Promise<void>;    

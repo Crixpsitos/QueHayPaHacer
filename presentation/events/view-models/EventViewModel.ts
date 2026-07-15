@@ -68,6 +68,7 @@ export interface EventViewModel {
     shares?: number;
     score?: number;
   };
+  eventType?: "standard" | "multi-date";
   // Fechas como strings ISO 8601
   startDate: string;
   endDate: string;

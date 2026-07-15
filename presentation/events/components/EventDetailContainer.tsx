@@ -1,47 +1,21 @@
 import { notFound } from "next/navigation";
-import { cacheLife, cacheTag } from "next/cache";
 import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
-import type { Events } from "@/domain/entities/events/Events";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
+import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
-
-const fetchEventDetailById = async (id: string): Promise<Events | null> => {
-  "use cache";
-  cacheLife("weeks");
-  cacheTag(`event-${id}`);
-  const { eventsService } = createServerContainer();
-  return await eventsService.getEventById(id);
-};
-
-const fetchEventDetailBySlug = async (slug: string): Promise<Events | null> => {
-  "use cache";
-  cacheLife("weeks");
-  cacheTag(`event-slug-${slug}`);
-  const { eventsService } = createServerContainer();
-  return await eventsService.getEventBySlug(slug);
-};
-
-const fetchUserLiked = async (eventId: string, userId: string): Promise<boolean> => {
-  "use cache";
-  cacheLife({ expire: 300, stale: 60, revalidate: 60 });
-  cacheTag(`event-interaction-${userId}-${eventId}`);
-  const { eventInteractionsService } = createServerContainer();
-  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
-  return !!interaction?.liked;
-};
-
-const fetchUserRegistered = async (eventId: string, userId: string): Promise<boolean> => {
-  "use cache";
-  cacheLife({ expire: 300, stale: 60, revalidate: 60 });
-  cacheTag(`event-registration-${userId}-${eventId}`);
-  const { eventRegistrationService } = createServerContainer();
-  return await eventRegistrationService.isUserRegistered(eventId, userId);
-};
+import {
+  fetchEventDetailById,
+  fetchEventDetailBySlug,
+  fetchEventSessions,
+  fetchUserLiked,
+  fetchUserRegistered,
+} from "../data/eventDetailFetchers";
 
 interface EventDetailContainerProps {
   /** Puede ser un slug (eventos nuevos) o un ID de documento Firestore (eventos legacy) */
@@ -73,6 +47,31 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
   // El dueño no puede inscribirse a su propio evento (sí puede dar like / compartir).
   const isOwner = Boolean(userId && event.author?.id && userId === event.author.id);
 
+  // Registrar vista del evento (misma lógica para standard y multi-date).
+  after(async () => {
+    await recordEventViewAction(event.id, userId);
+  });
+
+  // ── Multi-date: layout con lista de sesiones ──
+  if (event.eventType === "multi-date") {
+    const sessions = await fetchEventSessions(event.id);
+    // Portadas se resuelven contra TODAS las sesiones ({ sessionId } refs);
+    // el dueño previsualiza borradores, el público solo ve las publicadas.
+    const sessionVMs = SessionViewModelMapper.toViewModels(
+      sessions,
+      viewModel.mainImage?.url,
+    ).filter((s) => isOwner || s.status === "published");
+
+    return (
+      <MultiDateEventDetailClient
+        event={viewModel}
+        sessions={sessionVMs}
+        initialLiked={initialLiked}
+        isOwner={isOwner}
+      />
+    );
+  }
+
   // El acceso al Estudio es solo para dueños con cuenta profesional; los demás
   // dueños ven un modal sencillo con sus inscritos.
   let isProfessionalOwner = false;
@@ -81,12 +80,6 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
     const owner = await userService.getUserById(userId);
     isProfessionalOwner = owner?.accountType === "professional";
   }
-
-  // Registrar vista del evento de forma asincrónica sin bloquear la respuesta
-  // Solo se registra si el usuario está autenticado y es su primera vista del evento
-  after(async () => {
-    await recordEventViewAction(event.id, userId);
-  });
 
   return (
     <EventDetailClient

@@ -20,7 +20,7 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { safeParse, type BaseSchema, type BaseIssue } from "valibot";
 import { Step1BasicInfo } from "../steps/Step1BasicInfo";
 import { Button } from "@/app/components/ui/button";
-import { STEPS } from "../../constants/steps";
+import { STEPS, MULTI_DATE_HEADER_STEPS } from "../../constants/steps";
 import { Step2Media } from "../steps/Step2Media";
 import { Step3Clasification } from "../steps/Step3Clasification";
 import { Step4Location } from "../steps/Step4Location";
@@ -28,6 +28,7 @@ import { Step5Dates } from "../steps/Step5Dates";
 import { Step6Registration } from "../steps/Step6Registration";
 import { Step7Pricing } from "../steps/Step7Pricing";
 import { Step8Review } from "../steps/Step8Review";
+import { StepSessionsManager } from "../steps/StepSessionsManager";
 import { Events } from "@/domain/entities/events/Events";
 import { notify } from "@/presentation/shared/lib/notify";
 import {
@@ -51,7 +52,7 @@ type StepSchema =
   | typeof step7Schema
   | typeof step8Schema;
 
-const stepSchema: StepSchema[] = [
+const standardStepSchema: StepSchema[] = [
   step1Schema,
   step2Schema,
   step3Schema,
@@ -59,25 +60,46 @@ const stepSchema: StepSchema[] = [
   step5Schema,
   step6Schema,
   step7Schema,
-  step8Schema
+  step8Schema,
+];
+
+/** Para multi-date: 5 pasos (encabezado + sesiones + promoción). */
+const multiDateHeaderSchema: StepSchema[] = [
+  step1Schema, // 1: Información básica
+  step2Schema, // 2: Portada principal
+  step3Schema, // 3: Clasificación
+  step8Schema, // 4: Sesiones (step8 tiene promotion opcional → pasa trivialmente)
+  step8Schema, // 5: Promoción
 ];
 
 const { eventsRepository } = createClientContainer();
 
 interface EventFormProps {
   mode: "create" | "edit";
+  eventType?: "standard" | "multi-date";
   initialData?: Partial<FormEventDto>;
+  /** Paso inicial (1-based). Usado para abrir el form directo en un paso (p.ej. Sesiones). */
+  initialStep?: number;
   onPublish: (data: FormEventDto) => Promise<void>;
   onSaveDraft: (data: FormEventDto) => Promise<Events | null>;
 }
 
 export const EventForm = ({
   mode,
+  eventType = "standard",
   initialData,
+  initialStep,
   onPublish,
   onSaveDraft,
 }: EventFormProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const isMultiDate = eventType === "multi-date";
+  const stepSchema = isMultiDate ? multiDateHeaderSchema : standardStepSchema;
+  const ACTIVE_STEPS = isMultiDate ? MULTI_DATE_HEADER_STEPS : STEPS;
+  const [currentStep, setCurrentStep] = useState(() =>
+    initialStep && initialStep >= 1 && initialStep <= ACTIVE_STEPS.length
+      ? initialStep
+      : 1,
+  );
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   // helper to log unexpected step changes during debugging
@@ -94,8 +116,8 @@ export const EventForm = ({
   const mountedRef = useRef(false);
 
   const progressPercentage = useMemo(
-    () => (currentStep / STEPS.length) * 100,
-    [currentStep],
+    () => (currentStep / ACTIVE_STEPS.length) * 100,
+    [currentStep, ACTIVE_STEPS.length],
   );
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -157,9 +179,10 @@ export const EventForm = ({
         promotedUntil: null,
       },
       publishedAt: "",
+      eventType: eventType,
       ...initialData,
     }),
-    [initialData],
+    [initialData, eventType],
   );
 
   const form = useForm<FormEventDto>({
@@ -194,10 +217,17 @@ export const EventForm = ({
       }
 
       setCompletedSteps(validSteps);
-      goToStep(hasIncomplete ? firstIncomplete : 1);
+      // initialStep (p.ej. ?step=sessions) tiene prioridad sobre el auto-avance.
+      const targetStep =
+        initialStep && initialStep >= 1 && initialStep <= ACTIVE_STEPS.length
+          ? initialStep
+          : hasIncomplete
+            ? firstIncomplete
+            : 1;
+      goToStep(targetStep);
       mountedRef.current = true;
     }
-  }, [mode, initialData, defaultFormValues]);
+  }, [mode, initialData, defaultFormValues, initialStep, ACTIVE_STEPS.length]);
 
   // Reset form when entering create mode with no initialData (e.g., after publishing)
   useEffect(() => {
@@ -243,11 +273,11 @@ export const EventForm = ({
       setCompletedSteps((prev) => [...prev, currentStep]);
     }
 
-    if (currentStep < 8) {
+    if (currentStep < ACTIVE_STEPS.length) {
       goToStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [currentStep, completedSteps, form]);
+  }, [currentStep, completedSteps, form, ACTIVE_STEPS.length]);
 
   const handleStepClick = (stepNumber: number) => {
     if (!canAccessStep(stepNumber)) return;
@@ -270,6 +300,8 @@ export const EventForm = ({
       const serializeData = {
         ...form.getValues(),
         description: JSON.parse(JSON.stringify(form.getValues("description"))),
+        // Garantiza que eventType siempre se persiste aunque no esté en los valores del form
+        eventType: eventType,
       };
 
       const eventInfo = await onSaveDraft(serializeData);
@@ -283,7 +315,7 @@ export const EventForm = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, onSaveDraft]);
+  }, [form, onSaveDraft, eventType]);
 
   // Vuelve a la página anterior; si no hay historial (entrada directa), va al perfil.
   const navigateAway = useCallback(() => {
@@ -360,6 +392,18 @@ export const EventForm = ({
   };
 
   const renderStep = () => {
+    if (isMultiDate) {
+      // 5-step header form for multi-date events
+      switch (currentStep) {
+        case 1: return <Step1BasicInfo form={form} />;
+        case 2: return <Step2Media form={form} saveDraftEvent={handleDraftSubmit} hideMedia />;
+        case 3: return <Step3Clasification form={form} />;
+        case 4: return <StepSessionsManager form={form} onSaveDraft={handleDraftSubmit} />;
+        case 5: return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate />;
+        default: return null;
+      }
+    }
+
     switch (currentStep) {
       case 1:
         return <Step1BasicInfo form={form} />;
@@ -408,6 +452,7 @@ export const EventForm = ({
         completedSteps={completedSteps}
         canAccessStep={canAccessStep}
         handleStepClick={handleStepClick}
+        steps={ACTIVE_STEPS}
       />
       <Section spacing="sm" className="flex-1">
         <FormProvider {...form}>
@@ -453,7 +498,7 @@ export const EventForm = ({
               </Button>
             )}
 
-            {currentStep === 8 ? (
+            {currentStep === ACTIVE_STEPS.length ? (
               <Button
                 type="button"
                 disabled={isSubmitting}

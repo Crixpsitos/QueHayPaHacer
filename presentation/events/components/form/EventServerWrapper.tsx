@@ -54,5 +54,7 @@ export const EventServerWrapper = async ({
     notFound();
   }
 
+  // El wizard renderiza el tipo correcto según eventData.eventType:
+  // standard → 7 pasos; multi-date → 5 pasos con gestor de sesiones.
   return <EventClientWrapper mode="edit" initialData={eventData} />;
 };

@@ -14,9 +14,11 @@ import { useEventModalStore } from "@/presentation/events/store/useEventModalSto
 interface Step2Props {
   form: UseFormReturn<FormEventDto>;
   saveDraftEvent: () => Promise<void>;
+  /** Si es true, oculta la sección de medios adicionales (ideal para encabezado multi-fecha). */
+  hideMedia?: boolean;
 }
 
-export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
+export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Props) => {
   const eventId = form.watch("id") as string;
   const mainImage = form.watch("mainImage");
   const mainImageStatus = mainImage?.status;
@@ -188,10 +190,12 @@ export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
     <div className="space-y-6">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Medios de tu evento
+          {hideMedia ? "Portada principal" : "Medios de tu evento"}
         </h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Selecciona las piezas gráficas que le darán identidad a tu evento.
+          {hideMedia
+            ? "Elige la imagen principal que identificará tu evento."
+            : "Selecciona las piezas gráficas que le darán identidad a tu evento."}
         </p>
       </div>
 
@@ -226,6 +230,7 @@ export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
             );
           }}
         />
+        {!hideMedia && (
         <Controller
           name="media"
           control={form.control}
@@ -243,6 +248,7 @@ export const Step2Media = ({ form, saveDraftEvent }: Step2Props) => {
             />
           )}
         />
+        )}
       </FieldGroup>
     </div>
   );

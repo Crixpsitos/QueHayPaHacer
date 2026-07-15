@@ -16,9 +16,13 @@ import type { EventViewModel } from "../view-models/EventViewModel";
 interface EventDetailActionsProps {
   event: EventViewModel;
   initialLiked: boolean;
+  /** Ruta a compartir (p.ej. la de una sesión). Por defecto: la del evento. */
+  shareUrl?: string;
+  /** Si se pasa, el like/compartir se registran contra la SESIÓN, no el evento. */
+  sessionId?: string;
 }
 
-export function EventDetailActions({ event, initialLiked }: EventDetailActionsProps) {
+export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }: EventDetailActionsProps) {
   const router = useRouter();
   const { refreshUser } = useAuth();
   const [, startTransition] = useTransition();
@@ -26,12 +30,13 @@ export function EventDetailActions({ event, initialLiked }: EventDetailActionsPr
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<{ liked: boolean } | null>(null);
 
+  const path = shareUrl ?? `/events/${event.slug || event.id}`;
   const eventUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/events/${event.slug || event.id}`
-    : `/events/${event.slug || event.id}`;
+    ? `${window.location.origin}${path}`
+    : path;
 
   const handleLike = useCallback(async (eventId: string, liked: boolean): Promise<boolean> => {
-    const result = await likeEventAction(eventId, liked);
+    const result = await likeEventAction(eventId, liked, sessionId);
 
     if (result.authRequired) {
       setPendingLike({ liked });
@@ -43,7 +48,7 @@ export function EventDetailActions({ event, initialLiked }: EventDetailActionsPr
 
     // HeartLikeButton already handles optimistic state — no router.refresh() needed
     return true;
-  }, []);
+  }, [sessionId]);
 
   const handleShare = useCallback(async () => {
     const url = eventUrl;
@@ -64,12 +69,12 @@ export function EventDetailActions({ event, initialLiked }: EventDetailActionsPr
   const handleLoginSuccess = useCallback(async () => {
     await refreshUser();
     if (pendingLike) {
-      await likeEventAction(event.id, pendingLike.liked);
+      await likeEventAction(event.id, pendingLike.liked, sessionId);
     }
     setIsLoginOpen(false);
     setPendingLike(null);
     startTransition(() => router.refresh());
-  }, [event.id, pendingLike, refreshUser, router]);
+  }, [event.id, pendingLike, refreshUser, router, sessionId]);
 
   const analytics = event.analytics;
 

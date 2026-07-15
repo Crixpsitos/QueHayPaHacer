@@ -59,6 +59,8 @@ export interface FirebaseEventsDto {
     requiresAttendance?: boolean;
     price: Price;
     promotion: FirebasePromotionDto;
+    /** "standard" = evento único. "multi-date" = evento con sesiones (solo profesionales). */
+    eventType?: "standard" | "multi-date";
     createdAt: Timestamp;
     updatedAt: Timestamp;
     publishedAt?: Timestamp;

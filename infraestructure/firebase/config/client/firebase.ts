@@ -4,6 +4,7 @@ import {
   connectAuthEmulator,
   getAuth,
   inMemoryPersistence,
+  onIdTokenChanged,
   setPersistence,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -57,3 +58,28 @@ export const getFirebaseAnalytics = () => {
 
 export const getFirebaseFirestore = () =>
   getFirestore(getFirebaseApp(), "quehaypahacer-db");
+
+/**
+ * Ejecuta `subscribe()` solo cuando el SDK cliente ya tiene sesión (token listo).
+ * next-firebase-auth-edge usa inMemoryPersistence y re-autentica async
+ * (signInWithCustomToken en AuthProvider), así que suscribir un onSnapshot antes
+ * de eso da "Missing or insufficient permissions". Espera el token, y si el usuario
+ * se desloguea corta el listener (se re-suscribe al volver a autenticar).
+ * Devuelve un unsubscribe combinado (auth + listener interno).
+ */
+export const subscribeWhenAuthed = (subscribe: () => () => void): () => void => {
+  const auth = getFirebaseAuth();
+  let inner: (() => void) | undefined;
+  const unsubAuth = onIdTokenChanged(auth, (user) => {
+    if (user && !inner) {
+      inner = subscribe();
+    } else if (!user && inner) {
+      inner();
+      inner = undefined;
+    }
+  });
+  return () => {
+    unsubAuth();
+    inner?.();
+  };
+};

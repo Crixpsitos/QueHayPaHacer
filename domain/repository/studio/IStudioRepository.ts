@@ -5,6 +5,7 @@ import type {
   EventRegistrationsResult,
   GetEventRegistrationsParams,
   EventStats,
+  MultiDateEventStats,
   FormResponseAnswer,
   SiteAnalytics,
   SiteEventsPage,
@@ -33,10 +34,18 @@ export interface IStudioRepository {
   getEventRegistrations(
     eventId: string,
     params?: GetEventRegistrationsParams,
+    sessionId?: string,
   ): Promise<EventRegistrationsResult | null>;
-  getEventStats(eventId: string): Promise<EventStats | null>;
-  confirmAttendance(eventId: string, userId: string): Promise<void>;
-  removeParticipant(eventId: string, userId: string): Promise<void>;
+  /** `sessionId` apunta las métricas a `events/{id}/sessions/{sid}` en vez del evento. */
+  getEventStats(eventId: string, sessionId?: string): Promise<EventStats | null>;
+  /**
+   * Analíticas de un evento multi-date (padre + sesiones + acumulado) en una
+   * sola query. `getEventStats` no sirve aquí: asume un evento con fecha,
+   * registro y lugar propios, que en multi-date viven en cada sesión.
+   */
+  getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null>;
+  confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void>;
+  removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void>;
   incrementExternalRegistrationClick(eventId: string): Promise<void>;
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]>;
 

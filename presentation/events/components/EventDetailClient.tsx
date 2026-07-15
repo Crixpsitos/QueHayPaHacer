@@ -19,6 +19,7 @@ import {
   Play,
   Clock,
   LayoutDashboard,
+  Pencil,
 } from "lucide-react";
 import { renderToHTMLString } from "@tiptap/static-renderer";
 import DOMPurify from "dompurify";
@@ -470,9 +471,17 @@ interface EventDetailClientProps {
   isOwner?: boolean;
   /** True cuando el organizador tiene cuenta profesional (acceso al Estudio). */
   isProfessionalOwner?: boolean;
+  /** Ruta a compartir (usada por el detalle de sesión para compartir la sesión). */
+  shareUrl?: string;
+  /** Enlace de regreso (p.ej. al evento padre desde una sesión). */
+  backLink?: { href: string; label: string };
+  /** Si se pasa, el dueño ve un botón "Editar sesión" que apunta aquí. */
+  editSessionHref?: string;
+  /** Si se pasa, el like se registra contra la SESIÓN (detalle de sesión). */
+  sessionId?: string;
 }
 
-export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false }: EventDetailClientProps) {
+export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false, shareUrl, backLink, editSessionHref, sessionId }: EventDetailClientProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
@@ -539,6 +548,7 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
               if (!event.id) return;
               const result = await registerEventAction({
                 eventId: event.id,
+                ...(sessionId ? { sessionId } : {}),
                 registrationType: event.registrationType as "internal" | "form",
                 ...(formData ? { formData: formData as Record<string, string | string[] | number | boolean | null | Record<string, unknown>> } : {}),
               });
@@ -566,6 +576,17 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
 
           {/* ── RIGHT: Info ── */}
           <div className="space-y-5">
+
+            {/* Volver al evento padre (detalle de sesión) */}
+            {backLink && (
+              <Link
+                href={backLink.href}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Volver a {backLink.label}
+              </Link>
+            )}
 
             {/* Header: categoría + badges */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -634,7 +655,7 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
             )}
 
             {/* Like / Share / Analytics */}
-            <EventDetailActions event={event} initialLiked={initialLiked} />
+            <EventDetailActions event={event} initialLiked={initialLiked} shareUrl={shareUrl} sessionId={sessionId} />
 
             <Separator />
 
@@ -709,7 +730,10 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                   <div className="flex items-start gap-3 rounded-lg bg-gray-100 border border-gray-200 px-4 py-3">
                     <span className="text-gray-500 text-lg shrink-0">📋</span>
                     <div className="space-y-1.5">
-                      <p className="text-sm font-medium text-gray-800">Este es tu evento</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {editSessionHref ? "Esta sesión es tuya" : "Este es tu evento"}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
                       {isProfessionalOwner ? (
                         // Cuenta profesional → acceso al Estudio del Organizador.
                         <Link
@@ -734,11 +758,21 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                             </button>
                           }
                         />
-                      ) : (
+                      ) : !editSessionHref ? (
                         <p className="text-xs text-gray-500">
                           Este evento no recolecta inscripciones en la plataforma.
                         </p>
+                      ) : null}
+                      {editSessionHref && (
+                        <Link
+                          href={editSessionHref}
+                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar sesión
+                        </Link>
                       )}
+                      </div>
                     </div>
                   </div>
                 ) : event.registrationType === "none" ? (

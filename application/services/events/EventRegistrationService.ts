@@ -9,15 +9,17 @@ export class EventRegistrationService {
   async getByEventIdAndUserId(
     eventId: string,
     userId: string,
+    sessionId?: string,
   ): Promise<EventRegistration | null> {
     return this.eventRegistrationRepository.findByEventIdAndUserId(
       eventId,
       userId,
+      sessionId,
     );
   }
 
-  async isUserRegistered(eventId: string, userId: string): Promise<boolean> {
-    return this.eventRegistrationRepository.isUserRegistered(eventId, userId);
+  async isUserRegistered(eventId: string, userId: string, sessionId?: string): Promise<boolean> {
+    return this.eventRegistrationRepository.isUserRegistered(eventId, userId, sessionId);
   }
 
   async registerUserToEvent(input: RegisterEventInput): Promise<void> {

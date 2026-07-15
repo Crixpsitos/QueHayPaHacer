@@ -49,6 +49,8 @@ export interface Events extends Dates {
   requiresAttendance?: boolean;
   price: Price;
   promotion: Promotion;
+  /** "standard" = evento único (comportamiento actual). "multi-date" = evento con sesiones (solo profesionales). */
+  eventType?: "standard" | "multi-date";
   analytics?: {
     views?: number;
     clicks?: number;

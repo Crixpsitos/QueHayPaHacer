@@ -46,6 +46,8 @@ import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFir
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
+import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
+import { EventSessionService } from "@/application/services/events/EventSessionService";
 
 
 export const createServerContainer = () => {
@@ -71,6 +73,10 @@ export const createServerContainer = () => {
   const eventsRepository = new EventsAdapter(eventsFirebaseRepository, new EventsFirebaseMapper());
   const eventsService = new EventsService(eventsRepository, storageService);
 
+  // event sessions (solo para eventos multi-date)
+  const eventSessionRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionService = new EventSessionService(eventSessionRepository);
+
   // event interactions
   const eventInteractionsFirebaseRepository = new EventInteractionsFirebaseRepository(getFirebaseFirestore());
   const eventInteractionsRepository = new EventInteractionsAdapter(
@@ -83,6 +89,7 @@ export const createServerContainer = () => {
     eventInteractionsRepository,
     userEventInteractionsProjectionRepository,
     eventsRepository,
+    eventSessionRepository,
   );
 
   // event registrations
@@ -131,6 +138,7 @@ export const createServerContainer = () => {
     campaignService,
     categoriesService,
     eventsService,
+    eventSessionService,
     eventInteractionsService,
     eventRegistrationService,
     eventFeed,

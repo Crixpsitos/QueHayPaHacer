@@ -15,6 +15,7 @@ interface LikeEventActionResult {
 export async function likeEventAction(
   eventId: string,
   liked: boolean,
+  sessionId?: string,
 ): Promise<LikeEventActionResult> {
   if (!eventId || !eventId.trim()) {
     return { error: "El id del evento es requerido." };
@@ -28,19 +29,25 @@ export async function likeEventAction(
 
   try {
     const { eventInteractionsService } = createServerContainer();
+    const id = eventId.trim();
     await eventInteractionsService.registerLike(
-      eventId.trim(),
+      id,
       tokens.decodedToken.uid,
       liked,
+      sessionId,
     );
 
     // updateTag = read-your-own-writes: the next router.refresh() sees fresh data immediately
-    updateTag(`event-${eventId.trim()}`);
-    updateTag(`event-interaction-${userId}-${eventId.trim()}`);
-    updateTag(`preference-events-${userId}`);
-
-    // revalidateTag (stale-while-revalidate) para el tab de Likes del perfil: una pequeña demora es aceptable
-    revalidateTag(`profile-likes-${userId}`, "max");
+    if (sessionId) {
+      updateTag(`event-interaction-${userId}-${id}-${sessionId}`);
+      updateTag(`event-sessions-${id}`); // refresca el contador en la lista de sesiones
+    } else {
+      updateTag(`event-${id}`);
+      updateTag(`event-interaction-${userId}-${id}`);
+      updateTag(`preference-events-${userId}`);
+      // revalidateTag (stale-while-revalidate) para el tab de Likes del perfil: una pequeña demora es aceptable
+      revalidateTag(`profile-likes-${userId}`, "max");
+    }
 
     return { success: true };
   } catch (error) {

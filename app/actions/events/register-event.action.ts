@@ -8,6 +8,8 @@ import { cookies } from "next/headers";
 
 export interface RegisterEventActionInput {
   eventId: string;
+  /** Registro a una sesión concreta (multi-date). */
+  sessionId?: string;
   registrationType: "internal" | "form";
   formData?: Record<string, string | string[] | number | boolean | null | Record<string, unknown>>;
 }
@@ -22,7 +24,7 @@ export interface RegisterEventActionResult {
 export async function registerEventAction(
   input: RegisterEventActionInput,
 ): Promise<RegisterEventActionResult> {
-  const { eventId, registrationType, formData } = input;
+  const { eventId, sessionId, registrationType, formData } = input;
 
   if (!eventId?.trim()) {
     return { error: "El id del evento es requerido." };
@@ -47,6 +49,7 @@ export async function registerEventAction(
     const alreadyRegistered = await eventRegistrationService.isUserRegistered(
       eventId.trim(),
       uid,
+      sessionId,
     );
     if (alreadyRegistered) {
       return { alreadyRegistered: true };
@@ -55,15 +58,21 @@ export async function registerEventAction(
     await eventRegistrationService.registerUserToEvent({
       userId: uid,
       eventId: eventId.trim(),
+      ...(sessionId ? { sessionId } : {}),
       name: name ?? "Usuario",
       email: email ?? "",
       registrationType,
       ...(formData ? { formData } : {}),
     });
 
-    // Invalidate the event cache (analytics.registrations changed) and the per-user registration status
-    updateTag(`event-${eventId.trim()}`);
-    updateTag(`event-registration-${uid}-${eventId.trim()}`);
+    // Invalidate the event/session cache (analytics.registrations changed) and the per-user registration status
+    if (sessionId) {
+      updateTag(`event-sessions-${eventId.trim()}`);
+      updateTag(`event-registration-${uid}-${eventId.trim()}-${sessionId}`);
+    } else {
+      updateTag(`event-${eventId.trim()}`);
+      updateTag(`event-registration-${uid}-${eventId.trim()}`);
+    }
 
     return { success: true };
   } catch (error) {

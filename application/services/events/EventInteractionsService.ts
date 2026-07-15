@@ -2,6 +2,7 @@ import type { EventInteractions } from "@/domain/entities/EventInteractions/Even
 import type { IEventInteractionsRepository, DenormalizedEventData } from "@/domain/repository/EventInteraction/IEventInteractionsRepository";
 import type { IUserEventInteractionsProjectionRepository } from "@/domain/repository/EventInteraction/IUserEventInteractionsProjectionRepository";
 import type { IEventsRepository } from "@/domain/repository/events/IEventsRepository";
+import type { IEventSessionRepository } from "@/domain/repository/events/IEventSessionRepository";
 import type { Events } from "@/domain/entities/events/Events";
 
 const extractEventData = (event: Events): DenormalizedEventData => ({
@@ -20,23 +21,27 @@ export class EventInteractionsService {
     private readonly eventInteractionsRepository: IEventInteractionsRepository,
     private readonly userEventInteractionsProjectionRepository: IUserEventInteractionsProjectionRepository,
     private readonly eventsRepository: IEventsRepository,
+    private readonly eventSessionRepository: IEventSessionRepository,
   ) {}
 
   async getByEventAndUser(
     eventId: string,
     userId: string,
+    sessionId?: string,
   ): Promise<EventInteractions | null> {
-    return this.eventInteractionsRepository.findByEventAndUser(eventId, userId);
+    return this.eventInteractionsRepository.findByEventAndUser(eventId, userId, sessionId);
   }
 
   async registerLike(
     eventId: string,
     userId: string,
     liked: boolean,
+    sessionId?: string,
   ): Promise<void> {
     const currentInteraction = await this.eventInteractionsRepository.findByEventAndUser(
       eventId,
       userId,
+      sessionId,
     );
     const previousLiked = currentInteraction?.liked ?? false;
 
@@ -48,18 +53,26 @@ export class EventInteractionsService {
       userId,
       liked,
       eventData,
+      sessionId,
     );
 
-    await this.userEventInteractionsProjectionRepository.upsertLikeProjection(
-      eventId,
-      userId,
-      liked,
-      eventData,
-    );
+    // La proyección de perfil ("mis likes") solo aplica a likes de evento por ahora.
+    if (!sessionId) {
+      await this.userEventInteractionsProjectionRepository.upsertLikeProjection(
+        eventId,
+        userId,
+        liked,
+        eventData,
+      );
+    }
 
     const likesDelta = previousLiked === liked ? 0 : liked ? 1 : -1;
     if (likesDelta !== 0) {
-      await this.eventsRepository.incrementLikes(eventId, likesDelta);
+      if (sessionId) {
+        await this.eventSessionRepository.incrementCounter(eventId, sessionId, "likes", likesDelta);
+      } else {
+        await this.eventsRepository.incrementLikes(eventId, likesDelta);
+      }
     }
   }
 
