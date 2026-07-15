@@ -7,6 +7,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
+import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 type Result = { success: true } | { success: false; error: string }
@@ -46,6 +47,7 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel):
       media: buildSiteMedia(form.media),
       schedule: form.schedule,
     })
+    revalidateSite(tokens.decodedToken.uid, siteId)
     return { success: true }
   } catch (e) {
     console.error("[updateSite]", e)
