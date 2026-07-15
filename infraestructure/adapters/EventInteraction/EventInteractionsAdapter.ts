@@ -12,9 +12,8 @@ export class EventInteractionsAdapter implements IEventInteractionsRepository {
   async findByEventAndUser(
     eventId: string,
     userId: string,
-    sessionId?: string,
   ): Promise<EventInteractions | null> {
-    const dto = await this.repository.findByEventAndUser(eventId, userId, sessionId);
+    const dto = await this.repository.findByEventAndUser(eventId, userId);
     if (!dto) return null;
     return this.mapper.toDomain(dto);
   }
@@ -24,9 +23,8 @@ export class EventInteractionsAdapter implements IEventInteractionsRepository {
     userId: string,
     liked: boolean,
     eventData: any,
-    sessionId?: string,
   ): Promise<void> {
-    await this.repository.createLikeInteraction(eventId, userId, liked, eventData, sessionId);
+    await this.repository.createLikeInteraction(eventId, userId, liked, eventData);
   }
 
   async createClickInteraction(eventId: string, userId: string, eventData: any): Promise<void> {

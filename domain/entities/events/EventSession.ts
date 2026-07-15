@@ -61,11 +61,18 @@ export interface EventSession {
 
   status: "draft" | "published" | "cancelled" | "ended";
 
-  /** Contadores agregados propios de la sesión (like/registro por sesión). */
+  /**
+   * Contadores propios de la sesión. Solo ACCIONES (registro, vista, share):
+   * suceden N veces y sumarlas al evento padre no infla nada.
+   *
+   * NO hay `likes`: un like es el ESTADO de una persona (`interactions/{uid}`,
+   * deduplicado por uid), así que un like al evento y otro a su fecha serían la
+   * misma intención contada dos veces. El like vive solo en el evento.
+   */
   analytics?: {
-    likes?: number;
     views?: number;
     registrations?: number;
+    shares?: number;
   };
 
   createdAt: Date;

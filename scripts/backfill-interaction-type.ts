@@ -30,8 +30,12 @@ async function main() {
   let ops = 0;
 
   for (const doc of snap.docs) {
-    // Solo interacciones de eventos/sesiones (events/…/interactions).
-    // Excluye la proyección de perfil (users/{uid}/interactions), que tiene su propio `type`.
+    // Solo interacciones de eventos (events/…/interactions).
+    //
+    // `collectionGroup("interactions")` TAMBIÉN captura `sites/{id}/interactions`,
+    // que usa el mismo nombre de subcolección pero un `type` con otro significado
+    // ("click" | "like" | "share"): es el log del que `getSiteAnalytics` saca su
+    // gráfica semanal. Escribirles `type: "event"` la destruiría en silencio.
     if (!doc.ref.path.startsWith("events/")) {
       skipped++;
       continue;

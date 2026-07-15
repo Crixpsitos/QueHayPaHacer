@@ -18,7 +18,8 @@ interface EventDetailActionsProps {
   initialLiked: boolean;
   /** Ruta a compartir (p.ej. la de una sesión). Por defecto: la del evento. */
   shareUrl?: string;
-  /** Si se pasa, el like/compartir se registran contra la SESIÓN, no el evento. */
+  /** Si se pasa, el COMPARTIR se registra contra la sesión. El like siempre es
+   *  del evento: es el estado de una persona y duplicarlo la contaría dos veces. */
   sessionId?: string;
 }
 
@@ -36,7 +37,7 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
     : path;
 
   const handleLike = useCallback(async (eventId: string, liked: boolean): Promise<boolean> => {
-    const result = await likeEventAction(eventId, liked, sessionId);
+    const result = await likeEventAction(eventId, liked);
 
     if (result.authRequired) {
       setPendingLike({ liked });
@@ -48,7 +49,7 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
 
     // HeartLikeButton already handles optimistic state — no router.refresh() needed
     return true;
-  }, [sessionId]);
+  }, []);
 
   const handleShare = useCallback(async () => {
     const url = eventUrl;
@@ -60,21 +61,21 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
         setShared(true);
         setTimeout(() => setShared(false), 2500);
       }
-      await shareEventAction(event.id);
+      await shareEventAction(event.id, sessionId);
     } catch {
       // user cancelled share — no-op
     }
-  }, [event.id, event.title, eventUrl]);
+  }, [event.id, event.title, eventUrl, sessionId]);
 
   const handleLoginSuccess = useCallback(async () => {
     await refreshUser();
     if (pendingLike) {
-      await likeEventAction(event.id, pendingLike.liked, sessionId);
+      await likeEventAction(event.id, pendingLike.liked);
     }
     setIsLoginOpen(false);
     setPendingLike(null);
     startTransition(() => router.refresh());
-  }, [event.id, pendingLike, refreshUser, router, sessionId]);
+  }, [event.id, pendingLike, refreshUser, router]);
 
   const analytics = event.analytics;
 

@@ -16,11 +16,14 @@ export interface IEventSessionRepository {
 
   delete(eventId: string, sessionId: string): Promise<void>;
 
-  /** Incrementa un contador de analytics de la sesión (like/view/registro). */
+  /**
+   * Incrementa un contador de analytics de la sesión. Solo ACCIONES: no hay
+   * "likes" porque el like es del evento (ver `EventInteractionsService`).
+   */
   incrementCounter(
     eventId: string,
     sessionId: string,
-    field: "likes" | "views" | "registrations",
+    field: "views" | "registrations" | "shares",
     delta: number,
   ): Promise<void>;
 

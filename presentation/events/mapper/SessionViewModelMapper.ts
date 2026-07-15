@@ -86,12 +86,14 @@ export class SessionViewModelMapper {
       price: session.price,
       status: session.status,
       eventType: "standard", // fuerza el layout estándar del detalle
-      // Like/analytics de la SESIÓN (no del padre): el corazón cuenta likes de la sesión.
+      // `likes` y `score` son del PADRE: el like es del evento (el corazón de una
+      // fecha contaría a la misma persona dos veces). `views`/`registrations`/
+      // `shares` sí son de la sesión: son acciones y pasan por fecha.
       analytics: {
         ...parent.analytics,
-        likes: session.analytics?.likes ?? 0,
         views: session.analytics?.views ?? 0,
         registrations: session.analytics?.registrations ?? 0,
+        shares: session.analytics?.shares ?? 0,
       },
       startDate: session.startDate,
       endDate: session.endDate,

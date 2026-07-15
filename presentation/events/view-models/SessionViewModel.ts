@@ -34,9 +34,10 @@ export interface SessionViewModel {
   registrationEventForm?: { fields: unknown[] };
   price: Price;
   status: "draft" | "published" | "cancelled" | "ended";
+  /** Solo acciones: el like es del evento padre, no de la fecha. */
   analytics?: {
-    likes?: number;
     views?: number;
     registrations?: number;
+    shares?: number;
   };
 }
