@@ -1,45 +1,23 @@
 import { notFound } from "next/navigation";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { createServerContainer } from "@/infraestructure/di/container";
-import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
-import { SessionManagerClientWrapper } from "@/presentation/events/components/session/SessionManagerClientWrapper";
+import { EventDetailSkeleton } from "@/presentation/events/components/EventDetailSkeleton";
+import { ServerBoundary } from "@/presentation/shared/components/ServerBoundary";
+import { SessionManagerContainer } from "@/presentation/events/components/session/SessionManagerContainer";
 
 interface SessionsPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function EventSessionsPage({ params }: SessionsPageProps) {
-  const { id } = await params;
-
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
-    notFound();
-  }
-
-  const { eventsService, eventSessionService } = createServerContainer();
-
-  const event = await eventsService.getEventById(id);
-
-  if (!event || event.author.id !== tokens.decodedToken.uid) {
-    notFound();
-  }
-
-  // Permitir acceso aunque eventType no esté guardado (compatibilidad con eventos anteriores)
-  // Si no es multi-date, redirigir al formulario de edición
-  if (event.eventType && event.eventType !== "multi-date") {
-    notFound();
-  }
-
-  const [sessions] = await Promise.all([eventSessionService.getByEventId(id)]);
-
-  const eventViewModel = EventViewModelMapper.toViewModel(event);
-
+/**
+ * Con Cache Components, los datos sin cachear (cookies del usuario) deben leerse
+ * dentro de un <Suspense> o el prerender falla.
+ */
+export default function EventSessionsPage({ params }: SessionsPageProps) {
   return (
-    <SessionManagerClientWrapper
-      event={eventViewModel}
-      initialSessions={sessions}
-    />
+    <ServerBoundary params={params} fallback={<EventDetailSkeleton />}>
+      {({ params: { id } }) => {
+        if (!id) return notFound();
+        return <SessionManagerContainer eventId={id} />;
+      }}
+    </ServerBoundary>
   );
 }
