@@ -17,7 +17,9 @@ import type { Timestamp } from "firebase-admin/firestore";
 export interface FirebaseEventRegistrationEntry {
   userId: string;
   eventId: string;
-  parentType: "events";
+  /** Presente cuando el registro es a una sesión concreta (multi-date). */
+  sessionId?: string;
+  parentType: "events" | "sessions";
   name: string;
   email: string;
   registeredAt: Timestamp;

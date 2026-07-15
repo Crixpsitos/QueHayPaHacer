@@ -83,7 +83,13 @@ export function SessionCard({
       {/* Cover thumbnail */}
       <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
         {coverUrl ? (
-          <Image src={coverUrl} alt={session.title ?? "Sesión"} fill className="object-cover" />
+          <Image
+            src={coverUrl}
+            alt={session.title ?? "Sesión"}
+            fill
+            sizes="112px"
+            className="object-cover"
+          />
         ) : (
           <div className="flex h-full items-center justify-center">
             <CalendarIcon className="h-6 w-6 text-gray-400" />

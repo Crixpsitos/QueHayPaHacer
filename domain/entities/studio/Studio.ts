@@ -103,6 +103,49 @@ export interface EventStats {
   registrationRamp: RegistrationRampPoint[];
 }
 
+/** Contadores de una sesión dentro del desglose de un evento multi-date. */
+export interface MultiDateSessionStats {
+  sessionId: string;
+  title: string;
+  status: string;
+  startDate: Date | null;
+  /** Portada ya resuelta según `coverSource` (propia, del padre u otra sesión). */
+  image?: string;
+  likes: number;
+  views: number;
+  registrations: number;
+}
+
+/**
+ * Analíticas de un evento multi-date: los contadores del evento padre y los de
+ * cada sesión, más el acumulado (padre + sesiones).
+ *
+ * Un multi-date no tiene fecha/lugar/registro propios (viven en las sesiones),
+ * así que `EventStats` — pensado para un evento único — no le sirve.
+ */
+export interface MultiDateEventStats {
+  eventId: string;
+  name: string;
+  status: string;
+  /** Portada del evento padre. */
+  image?: string;
+  /** Contadores del documento del evento (los del "encabezado"). */
+  event: {
+    likes: number;
+    views: number;
+    registrations: number;
+    shares: number;
+    score: number;
+  };
+  sessions: MultiDateSessionStats[];
+  /** Acumulado: evento + todas sus sesiones. */
+  totals: {
+    likes: number;
+    views: number;
+    registrations: number;
+  };
+}
+
 export interface TopEvent {
   eventId: string;
   name: string;

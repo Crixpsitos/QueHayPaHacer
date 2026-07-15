@@ -35,6 +35,26 @@ export class EventsService {
     await this.eventsRepository.updateEvent(event as Events);
   }
 
+  /** Sincroniza el rango de fechas del evento (multi-date) con sus sesiones:
+   *  startDate = inicio más temprano, endDate = fin más tardío. Sin esto, las
+   *  consultas de listado (filtran por endDate/startDate) excluyen el evento. */
+  async syncDateRangeFromSessions(
+    eventId: string,
+    sessions: { startDate: Date | string; endDate: Date | string; status: string }[],
+  ): Promise<void> {
+    // Excluye canceladas; si no queda ninguna, no toca las fechas existentes.
+    const source = sessions.filter((s) => s.status !== "cancelled");
+    if (source.length === 0) return;
+
+    const start = new Date(
+      Math.min(...source.map((s) => new Date(s.startDate).getTime())),
+    );
+    const end = new Date(
+      Math.max(...source.map((s) => new Date(s.endDate).getTime())),
+    );
+    await this.eventsRepository.updateEventDateRange(eventId, start, end);
+  }
+
   async startDraftEvent(
   user: { id: string; displayName: string; photoURL: string; }
 ) {

@@ -132,6 +132,21 @@ export class EventSessionFirebaseRepository
     await this.sessionsCollection(eventId).doc(sessionId).delete();
   }
 
+  async incrementCounter(
+    eventId: string,
+    sessionId: string,
+    field: "likes" | "views" | "registrations",
+    delta: number,
+  ): Promise<void> {
+    await this.sessionsCollection(eventId).doc(sessionId).set(
+      {
+        analytics: { [field]: FieldValue.increment(delta) },
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  }
+
   async hasOverlap(
     eventId: string,
     startDate: Date,

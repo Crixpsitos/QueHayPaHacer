@@ -78,6 +78,8 @@ interface EventFormProps {
   mode: "create" | "edit";
   eventType?: "standard" | "multi-date";
   initialData?: Partial<FormEventDto>;
+  /** Paso inicial (1-based). Usado para abrir el form directo en un paso (p.ej. Sesiones). */
+  initialStep?: number;
   onPublish: (data: FormEventDto) => Promise<void>;
   onSaveDraft: (data: FormEventDto) => Promise<Events | null>;
 }
@@ -86,13 +88,18 @@ export const EventForm = ({
   mode,
   eventType = "standard",
   initialData,
+  initialStep,
   onPublish,
   onSaveDraft,
 }: EventFormProps) => {
   const isMultiDate = eventType === "multi-date";
   const stepSchema = isMultiDate ? multiDateHeaderSchema : standardStepSchema;
   const ACTIVE_STEPS = isMultiDate ? MULTI_DATE_HEADER_STEPS : STEPS;
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() =>
+    initialStep && initialStep >= 1 && initialStep <= ACTIVE_STEPS.length
+      ? initialStep
+      : 1,
+  );
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   // helper to log unexpected step changes during debugging
@@ -210,10 +217,17 @@ export const EventForm = ({
       }
 
       setCompletedSteps(validSteps);
-      goToStep(hasIncomplete ? firstIncomplete : 1);
+      // initialStep (p.ej. ?step=sessions) tiene prioridad sobre el auto-avance.
+      const targetStep =
+        initialStep && initialStep >= 1 && initialStep <= ACTIVE_STEPS.length
+          ? initialStep
+          : hasIncomplete
+            ? firstIncomplete
+            : 1;
+      goToStep(targetStep);
       mountedRef.current = true;
     }
-  }, [mode, initialData, defaultFormValues]);
+  }, [mode, initialData, defaultFormValues, initialStep, ACTIVE_STEPS.length]);
 
   // Reset form when entering create mode with no initialData (e.g., after publishing)
   useEffect(() => {

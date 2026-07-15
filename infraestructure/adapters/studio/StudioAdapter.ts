@@ -6,6 +6,7 @@ import type {
   EventRegistrationsResult,
   GetEventRegistrationsParams,
   EventStats,
+  MultiDateEventStats,
   FormResponseAnswer,
   SiteAnalytics,
   SiteEventsPage,
@@ -39,20 +40,25 @@ export class StudioAdapter implements IStudioRepository {
   getEventRegistrations(
     eventId: string,
     params?: GetEventRegistrationsParams,
+    sessionId?: string,
   ): Promise<EventRegistrationsResult | null> {
-    return this.repository.getEventRegistrations(eventId, params);
+    return this.repository.getEventRegistrations(eventId, params, sessionId);
   }
 
-  getEventStats(eventId: string): Promise<EventStats | null> {
-    return this.repository.getEventStats(eventId);
+  getEventStats(eventId: string, sessionId?: string): Promise<EventStats | null> {
+    return this.repository.getEventStats(eventId, sessionId);
   }
 
-  confirmAttendance(eventId: string, userId: string): Promise<void> {
-    return this.repository.confirmAttendance(eventId, userId);
+  getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null> {
+    return this.repository.getMultiDateEventStats(eventId);
   }
 
-  removeParticipant(eventId: string, userId: string): Promise<void> {
-    return this.repository.removeParticipant(eventId, userId);
+  confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void> {
+    return this.repository.confirmAttendance(eventId, userId, sessionId);
+  }
+
+  removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void> {
+    return this.repository.removeParticipant(eventId, userId, sessionId);
   }
 
   incrementExternalRegistrationClick(eventId: string): Promise<void> {

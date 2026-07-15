@@ -3,6 +3,8 @@ import type { EventRegistration } from "@/domain/entities/EventRegistration/Even
 export interface RegisterEventInput {
   userId: string;
   eventId: string;
+  /** Registro a una sesión concreta (multi-date). */
+  sessionId?: string;
   name: string;
   email: string;
   registrationType: "internal" | "form";
@@ -13,9 +15,10 @@ export interface IEventRegistrationRepository {
   findByEventIdAndUserId(
     eventId: string,
     userId: string,
+    sessionId?: string,
   ): Promise<EventRegistration | null>;
 
-  isUserRegistered(eventId: string, userId: string): Promise<boolean>;
+  isUserRegistered(eventId: string, userId: string, sessionId?: string): Promise<boolean>;
 
   registerUserToEvent(input: RegisterEventInput): Promise<void>;
 }

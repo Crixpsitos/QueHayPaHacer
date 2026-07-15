@@ -78,6 +78,7 @@ export class EventSessionFirebaseMapper {
     return {
       id: dto.id,
       eventId: dto.eventId,
+      slug: dto.slug,
       title: dto.title,
       shortDescription: dto.shortDescription,
       description: dto.description,
@@ -94,6 +95,7 @@ export class EventSessionFirebaseMapper {
       registrationEventForm: dto.registrationEventForm,
       price: dto.price ?? { isFree: true, amount: 0, currency: "COP" },
       status: dto.status ?? "draft",
+      analytics: dto.analytics,
       createdAt: dto.createdAt?.toDate ? dto.createdAt.toDate() : new Date(),
       updatedAt: dto.updatedAt?.toDate ? dto.updatedAt.toDate() : new Date(),
     };
@@ -104,6 +106,7 @@ export class EventSessionFirebaseMapper {
     return {
       id: domain.id,
       eventId: domain.eventId,
+      slug: domain.slug,
       title: domain.title,
       shortDescription: domain.shortDescription,
       description: domain.description,

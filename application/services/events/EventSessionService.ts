@@ -1,5 +1,6 @@
 import type { IEventSessionRepository } from "@/domain/repository/events/IEventSessionRepository";
 import type { EventSession } from "@/domain/entities/events/EventSession";
+import { toSlug } from "@/app/lib/utils/slug";
 
 /** Mensaje único para el solapamiento de horarios (reutilizado en las actions). */
 export const SESSION_OVERLAP_MESSAGE =
@@ -44,8 +45,29 @@ export class EventSessionService {
     if (await this.repo.hasOverlap(data.eventId, data.startDate, data.endDate)) {
       throw new SessionOverlapError();
     }
-    const session = await this.repo.create(data);
+    const slug = data.slug || (await this.buildUniqueSlug(data.eventId, data.title));
+    const session = await this.repo.create({ ...data, slug });
     return { session, hasOverlap: false };
+  }
+
+  /** Slug único DENTRO del evento, derivado del título. Añade sufijo -2, -3… si choca. */
+  private async buildUniqueSlug(
+    eventId: string,
+    title: string | undefined,
+    excludeSessionId?: string,
+  ): Promise<string> {
+    const base = toSlug(title ?? "") || "sesion";
+    const existing = await this.repo.getByEventId(eventId);
+    const taken = new Set(
+      existing
+        .filter((s) => s.id !== excludeSessionId)
+        .map((s) => s.slug)
+        .filter((s): s is string => !!s),
+    );
+    if (!taken.has(base)) return base;
+    let i = 2;
+    while (taken.has(`${base}-${i}`)) i++;
+    return `${base}-${i}`;
   }
 
   /**

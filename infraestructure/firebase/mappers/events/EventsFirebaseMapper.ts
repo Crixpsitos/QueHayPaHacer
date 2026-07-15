@@ -103,6 +103,15 @@ export class EventsFirebaseMapper implements IEventsMapper {
     } as unknown as Events;
   }
 
+  /**
+   * Garantiza analytics.score presente (default 0). Sin score, el evento queda
+   * fuera de los listados: findAllEvents/... hacen orderBy("analytics.score"),
+   * y Firestore excluye los docs que no tienen el campo del orderBy.
+   */
+  private withScore(analytics: Events["analytics"]) {
+    return { ...(analytics ?? {}), score: analytics?.score ?? 0 };
+  }
+
   /** promoción dominio → Firestore (Timestamps). Compartido entre standard y multi-date. */
   private toStoredPromotion(promotion: Events["promotion"]) {
     return promotion
@@ -138,7 +147,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       author: domain.author,
       status: domain.status,
       promotion: this.toStoredPromotion(domain.promotion),
-      analytics: domain.analytics,
+      analytics: this.withScore(domain.analytics),
       eventType: domain.eventType,
       createdAt:
         domain.createdAt instanceof Date && !isNaN(domain.createdAt.getTime())
@@ -194,7 +203,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
         promotedAt: undefined,
         promotedUntil: undefined,
       },
-      analytics: domain.analytics,
+      analytics: this.withScore(domain.analytics),
       startDate: domain.startDate instanceof Date && !isNaN(domain.startDate.getTime())
         ? Timestamp.fromDate(domain.startDate)
         : undefined,
