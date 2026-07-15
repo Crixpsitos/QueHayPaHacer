@@ -16,6 +16,7 @@ import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
+import { syncEventDateRange } from "./lib/syncEventDateRange";
 
 type PublishEventActionResult =
   | {
@@ -135,6 +136,12 @@ export async function publishEventAction(
     const publishedEvent = await eventsService.publishEvent(parsedData, {
       isProfessionalAuthor: author?.accountType === "professional",
     });
+
+    // Multi-date: el evento no guarda fechas propias → derivarlas de las sesiones
+    // (min inicio / max fin) para que aparezca en los listados por fecha.
+    if (event.eventType === "multi-date") {
+      await syncEventDateRange(publishedEvent.id || parsedData.id);
+    }
 
     // Asignar insignia de "Primer Evento" si es el primer evento publicado
     try {

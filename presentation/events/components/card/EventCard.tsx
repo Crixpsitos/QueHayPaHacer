@@ -20,6 +20,8 @@ import {
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   ArrowRight,
   Calendar,
@@ -81,6 +83,30 @@ function getAuthorInitials(displayName: string): string {
     .toUpperCase();
 }
 
+/**
+ * Pastilla de fecha — mismo lenguaje visual que `PublicSessionCard` del detalle,
+ * pero con tokens semánticos para que invierta bien en modo oscuro.
+ */
+function DatePill({ iso, label }: { iso: string; label: string }) {
+  const date = new Date(iso);
+  return (
+    <div
+      className="flex w-13 shrink-0 flex-col items-center rounded-lg bg-foreground py-1.5 text-background"
+      suppressHydrationWarning
+    >
+      <span className="text-[9px] font-medium uppercase leading-none opacity-70">
+        {label}
+      </span>
+      <span className="text-lg font-bold leading-tight">
+        {format(date, "d", { locale: es })}
+      </span>
+      <span className="text-[9px] font-medium uppercase leading-none opacity-70">
+        {format(date, "MMM", { locale: es })}
+      </span>
+    </div>
+  );
+}
+
 export const EventCard = ({
   event,
   attendeeCount = 0,
@@ -114,53 +140,71 @@ export const EventCard = ({
     onShare?.(event);
   }, [event, onShare]);
 
-  const isFree = event.price.isFree ?? event.price.amount === 0;
+  const isFree = event.price?.isFree ?? event.price?.amount === 0;
   const detailUrl = `/events/${event.slug || event.id}`;
+  // Multi-date: la ubicación, fechas y precio viven en las sesiones, no en el evento.
+  const isMultiDate = event.eventType === "multi-date";
+  const hasLocation = !isMultiDate && !!event.location;
+  // El rango sale de las sesiones (primera startDate → última endDate), sincronizado
+  // al guardar/publicar. Un multi-date sin sesiones todavía no tiene rango.
+  const hasRange = isMultiDate && !!event.startDate && !!event.endDate;
+  const isSingleDay =
+    hasRange &&
+    new Date(event.startDate).toDateString() ===
+      new Date(event.endDate).toDateString();
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: event.title,
     description: event.shortDescription,
-    startDate: event.startDate,
-    endDate: event.endDate,
+    ...(event.startDate ? { startDate: event.startDate } : {}),
+    ...(event.endDate ? { endDate: event.endDate } : {}),
     eventStatus:
       event.status === "published"
         ? "https://schema.org/EventScheduled"
         : event.status === "cancelled"
           ? "https://schema.org/EventCancelled"
           : "https://schema.org/EventPostponed",
-    location: {
-      "@type": "Place",
-      name: event.location.venue,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: event.location.address,
-        addressLocality: event.location.city.name,
-        addressRegion: event.location.department.name,
-        addressCountry: event.location.country.name,
-      },
-      geo: {
-        "@type": "GeoCoordinates",
-        latitude: event.location.coordinates.lat,
-        longitude: event.location.coordinates.lng,
-      },
-    },
+    ...(hasLocation
+      ? {
+          location: {
+            "@type": "Place",
+            name: event.location.venue,
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: event.location.address,
+              addressLocality: event.location.city.name,
+              addressRegion: event.location.department.name,
+              addressCountry: event.location.country.name,
+            },
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: event.location.coordinates.lat,
+              longitude: event.location.coordinates.lng,
+            },
+          },
+        }
+      : {}),
     organizer: {
       "@type": "Person",
       name: event.author.displayName,
     },
     image: event.mainImage?.url,
-    offers: {
-      "@type": "Offer",
-      price: isFree ? "0" : event.price.amount.toString(),
-      priceCurrency: event.price.currency ?? "COP",
-      availability:
-        attendeeCount > 0 && event.capacity && attendeeCount >= event.capacity
-          ? "https://schema.org/SoldOut"
-          : "https://schema.org/InStock",
-      url: detailUrl,
-    },
+    ...(isMultiDate
+      ? {}
+      : {
+          offers: {
+            "@type": "Offer",
+            price: isFree ? "0" : event.price.amount.toString(),
+            priceCurrency: event.price.currency ?? "COP",
+            availability:
+              attendeeCount > 0 && event.capacity && attendeeCount >= event.capacity
+                ? "https://schema.org/SoldOut"
+                : "https://schema.org/InStock",
+            url: detailUrl,
+          },
+        }),
     keywords: event.categoryInfo.tags.join(", "),
     about: { "@type": "Thing", name: event.categoryInfo.title },
   };
@@ -219,6 +263,16 @@ export const EventCard = ({
                 {event.categoryInfo.title}
               </AnimatedGradientText>
             </div>
+
+            {isMultiDate && (
+              <Badge
+                className="text-[10px] py-0.5 px-2 font-medium bg-violet-500/90 text-white backdrop-blur-sm border-0"
+                aria-label="Evento con varias fechas"
+              >
+                <Calendar className="size-3 mr-1" aria-hidden="true" />
+                Varias fechas
+              </Badge>
+            )}
 
             {event.promotion.isPromoted && (
               <Badge
@@ -299,8 +353,8 @@ export const EventCard = ({
                   </span>
                 </Link>
 
-                {/* Precio inline solo en variante vertical */}
-                {variant === "vertical" && (
+                {/* Precio inline solo en variante vertical (no multi-date: el precio vive en las sesiones) */}
+                {variant === "vertical" && !isMultiDate && (
                   <span
                     className={cn(
                       "ml-auto text-xs font-semibold shrink-0",
@@ -321,8 +375,8 @@ export const EventCard = ({
                 )}
               </div>
 
-              {/* Precio debajo del nombre solo en variante horizontal */}
-              {variant === "horizontal" && (
+              {/* Precio debajo del nombre solo en variante horizontal (no multi-date) */}
+              {variant === "horizontal" && !isMultiDate && (
                 <span
                   className={cn(
                     "ml-8 text-xs font-semibold shrink-0",
@@ -344,7 +398,8 @@ export const EventCard = ({
             </div>
 
             {/* Título */}
-            <h2 className="text-lg font-semibold leading-snug text-foreground line-clamp-2">
+            {/* break-words: sin esto un título sin espacios desborda la card. */}
+            <h2 className="text-lg font-semibold leading-snug text-foreground line-clamp-2 break-words">
               {event.title}
             </h2>
           </CardHeader>
@@ -356,7 +411,7 @@ export const EventCard = ({
             )}
           >
             {/* Descripción corta */}
-            <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
+            <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2 break-words">
               {event.shortDescription}
             </p>
 
@@ -384,59 +439,104 @@ export const EventCard = ({
               </div>
             )}
 
-            {/* Fecha + Ubicación — grid en horizontal, columna en vertical */}
-            <div
-              className={cn(
-                "gap-3",
-                variant === "horizontal" ? "grid grid-cols-2" : "flex flex-col",
-              )}
-            >
-              {/* Fecha */}
-              <div
-                className="flex items-start gap-2 text-sm text-foreground/70"
-                aria-label={`Evento del ${formatDate(event.startDate)} al ${formatDate(event.endDate)}`}
-                suppressHydrationWarning
-              >
-                <Calendar
-                  className="size-4 mt-0.5 shrink-0"
-                  aria-hidden="true"
-                />
-                <div className="leading-snug">
-                  <div
-                    className="font-medium text-foreground text-xs"
-                    suppressHydrationWarning
-                  >
-                    {formatDate(event.startDate)}
-                  </div>
-                  <div className="text-xs" suppressHydrationWarning>
-                    hasta {formatDate(event.endDate)}
-                  </div>
-                </div>
-              </div>
+            {/* Multi-date: sin lugar ni precio únicos (viven en cada sesión) —
+                mostramos el rango que cubren las sesiones. */}
+            {isMultiDate ? (
+              hasRange ? (
+                <div
+                  className="flex items-center gap-2 rounded-xl border bg-muted/30 p-2"
+                  aria-label={
+                    isSingleDay
+                      ? `Varias sesiones el ${formatDate(event.startDate)}`
+                      : `Varias fechas, del ${formatDate(event.startDate)} al ${formatDate(event.endDate)}`
+                  }
+                  suppressHydrationWarning
+                >
+                  <DatePill
+                    iso={event.startDate}
+                    label={isSingleDay ? "El" : "Desde"}
+                  />
 
-              {/* Ubicación */}
-              <address
-                className="not-italic flex items-start gap-2 text-sm text-foreground/70"
-                aria-label={`Ubicación: ${event.location.venue}, ${event.location.address}, ${event.location.city.name}, ${event.location.department.name}, ${event.location.country.name}`}
+                  {/* Mismo día → una pastilla y texto: "14 jul → 14 jul" parecería un bug.
+                      No repetimos "varias fechas": ya es un badge sobre la imagen. */}
+                  {isSingleDay ? (
+                    <span className="min-w-0 flex-1 text-xs text-foreground/70">
+                      Todas las sesiones este día
+                    </span>
+                  ) : (
+                    <>
+                      <div
+                        className="flex min-w-0 flex-1 items-center gap-1"
+                        aria-hidden="true"
+                      >
+                        <span className="h-px flex-1 bg-border" />
+                        <ArrowRight className="size-3.5 shrink-0 text-foreground/40" />
+                      </div>
+                      <DatePill iso={event.endDate} label="Hasta" />
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl border border-dashed p-2.5 text-xs text-foreground/60">
+                  <Calendar className="size-4 shrink-0" aria-hidden="true" />
+                  Fechas por confirmar
+                </div>
+              )
+            ) : (
+              /* Fecha + Ubicación — grid en horizontal, columna en vertical */
+              <div
+                className={cn(
+                  "gap-3",
+                  variant === "horizontal" ? "grid grid-cols-2" : "flex flex-col",
+                )}
               >
-                <MapPin
-                  className="size-4 mt-0.5 shrink-0"
-                  aria-hidden="true"
-                />
-                <div className="leading-snug min-w-0">
-                  <div className="font-medium text-foreground text-xs truncate">
-                    {event.location.venue}
-                  </div>
-                  <div className="text-xs truncate">
-                    {event.location.address}
-                  </div>
-                  <div className="text-xs text-foreground/55 truncate">
-                    {event.location.city.name}, {event.location.department.name} ·{" "}
-                    {event.location.country.name}
+                {/* Fecha */}
+                <div
+                  className="flex items-start gap-2 text-sm text-foreground/70"
+                  aria-label={`Evento del ${formatDate(event.startDate)} al ${formatDate(event.endDate)}`}
+                  suppressHydrationWarning
+                >
+                  <Calendar
+                    className="size-4 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div className="leading-snug">
+                    <div
+                      className="font-medium text-foreground text-xs"
+                      suppressHydrationWarning
+                    >
+                      {formatDate(event.startDate)}
+                    </div>
+                    <div className="text-xs" suppressHydrationWarning>
+                      hasta {formatDate(event.endDate)}
+                    </div>
                   </div>
                 </div>
-              </address>
-            </div>
+
+                {/* Ubicación */}
+                <address
+                  className="not-italic flex items-start gap-2 text-sm text-foreground/70"
+                  aria-label={`Ubicación: ${event.location.venue}, ${event.location.address}, ${event.location.city.name}, ${event.location.department.name}, ${event.location.country.name}`}
+                >
+                  <MapPin
+                    className="size-4 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div className="leading-snug min-w-0">
+                    <div className="font-medium text-foreground text-xs truncate">
+                      {event.location.venue}
+                    </div>
+                    <div className="text-xs truncate">
+                      {event.location.address}
+                    </div>
+                    <div className="text-xs text-foreground/55 truncate">
+                      {event.location.city.name}, {event.location.department.name} ·{" "}
+                      {event.location.country.name}
+                    </div>
+                  </div>
+                </address>
+              </div>
+            )}
 
             {/* Barra de capacidad */}
             {event.capacity !== undefined && event.capacity > 0 && attendeeCount > 0 && (
@@ -531,7 +631,7 @@ export const EventCard = ({
                   background="black"
                   className="h-8 px-3 gap-1.5 text-xs font-medium"
                 >
-                  Ver detalles
+                  {isMultiDate ? "Ver fechas" : "Ver detalles"}
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </ShimmerButton>
               </Link>

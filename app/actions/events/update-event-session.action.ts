@@ -4,7 +4,9 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
+import { updateTag } from "next/cache";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
+import { syncEventDateRange } from "./lib/syncEventDateRange";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
 type UpdateSessionResult =
@@ -28,6 +30,8 @@ export async function updateEventSessionAction(
       sessionId,
       data,
     );
+    await syncEventDateRange(eventId);
+    updateTag(`event-sessions-${eventId}`);
     return { success: true, session, hasOverlap };
   } catch (error) {
     if (error instanceof SessionOverlapError) {

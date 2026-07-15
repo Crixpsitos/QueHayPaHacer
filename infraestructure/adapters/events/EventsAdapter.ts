@@ -20,7 +20,10 @@ export class EventsAdapter implements IEventsRepository {
     const dto = this.mapper.toDto(event);
     const cleanDto = removeUndefinedProperties(dto);
 
-    await this.repository.updateEvent(cleanDto); 
+    await this.repository.updateEvent(cleanDto);
+  }
+  async updateEventDateRange(eventId: string, startDate: Date, endDate: Date): Promise<void> {
+    await this.repository.updateEventDateRange(eventId, startDate, endDate);
   }
   async findLastDraftEventToUser(userId: string): Promise<Events | null> {
     const dto = await this.repository.findLastDraftEventToUser(userId);

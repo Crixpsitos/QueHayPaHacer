@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
-import { createServerContainer } from "@/infraestructure/di/container";
+import {
+  getCachedEventRegistrations,
+  getCachedEventStats,
+} from "@/presentation/studio/lib/cachedStudioData";
 import { toEventRegistrationsViewModel } from "@/presentation/studio/mapper/EventRegistrationsViewModelMapper";
 
 interface SlotProps {
@@ -26,8 +29,7 @@ export default async function EventRegistrationsSlot({ params, searchParams }: S
   const cursor = typeof sp.cursor === "string" ? sp.cursor : undefined;
   const direction = sp.direction === "prev" ? "prev" : "next";
 
-  const { studioService } = createServerContainer();
-  const stats = await studioService.getEventStats(id);
+  const stats = await getCachedEventStats(id);
   if (!stats) notFound();
 
   // Si el evento es borrador, no hay datos que recolectar todavía.
@@ -35,7 +37,7 @@ export default async function EventRegistrationsSlot({ params, searchParams }: S
     return <DraftEventNotice eventId={id} />;
   }
 
-  const result = await studioService.getEventRegistrations(id, {
+  const result = await getCachedEventRegistrations(id, {
     sortBy,
     sortDir,
     limit,

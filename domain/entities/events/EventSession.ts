@@ -14,6 +14,10 @@ export interface EventSession {
   id: string;
   /** Referencia al evento padre. */
   eventId: string;
+  /** Slug único DENTRO del evento, derivado del título. Usado en la URL pública
+   *  (/events/{evento}/sessions/{slug}). Opcional por compatibilidad con sesiones
+   *  anteriores al slug (la UI cae al id si falta). */
+  slug?: string;
   /** Título opcional para diferenciar la sesión (ej: "Noche del 7 de diciembre"). */
   title?: string;
   /** Sinopsis / descripción corta de la sesión (máx 150 chars). */
@@ -56,6 +60,13 @@ export interface EventSession {
   price: Price;
 
   status: "draft" | "published" | "cancelled" | "ended";
+
+  /** Contadores agregados propios de la sesión (like/registro por sesión). */
+  analytics?: {
+    likes?: number;
+    views?: number;
+    registrations?: number;
+  };
 
   createdAt: Date;
   updatedAt: Date;

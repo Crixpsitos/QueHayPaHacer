@@ -15,6 +15,22 @@ export class EventsFirebaseRepository
   async updateEvent(event: FirebaseEventsDto): Promise<void> {
     await this.collection.doc(event.id).set(event, { merge: true });
   }
+  async updateEventDateRange(
+    eventId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<void> {
+    // Merge dirigido: solo startDate/endDate. Evita el toDto multi-date (que
+    // omite fechas) y no pisa promotion/createdAt/metadata.
+    await this.collection.doc(eventId).set(
+      {
+        startDate: Timestamp.fromDate(startDate),
+        endDate: Timestamp.fromDate(endDate),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  }
   async createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto> {
     const documentReference = await this.collection.add(event);
     const id = documentReference.id

@@ -9,6 +9,7 @@ export interface IEventsFirebaseRepository {
     findDraftEventByIdAndUser(id: string, userId: string): Promise<FirebaseEventsDto | null>;
     createDraftEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
     updateEvent(event: FirebaseEventsDto): Promise<void>;
+    updateEventDateRange(eventId: string, startDate: Date, endDate: Date): Promise<void>;
     findById(id: string): Promise<FirebaseEventsDto | null>;
     findBySlug(slug: string): Promise<FirebaseEventsDto | null>;
     incrementLikes(eventId: string, delta: number): Promise<void>;

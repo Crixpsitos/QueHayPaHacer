@@ -33,6 +33,14 @@ export const EventClientWrapper = ({
 
   const isProfessional = user?.customClaims?.role === "professional";
 
+  // ?step=sessions abre el form directo en el paso de Sesiones (multi-date = paso 4).
+  const resolvedEventType =
+    (initialData as EventViewModel & { eventType?: "standard" | "multi-date" })?.eventType ??
+    (eventType === "multi-date" && isProfessional ? "multi-date" : "standard");
+  const stepParam = searchParams.get("step");
+  const initialStep =
+    stepParam === "sessions" && resolvedEventType === "multi-date" ? 4 : undefined;
+
   const handleDraftSubmit = useCallback(
     async (eventDraft: FormEventDto): Promise<Events | null> => {
       const params = new URLSearchParams(window.location.search);
@@ -116,6 +124,7 @@ export const EventClientWrapper = ({
           : (initialData as EventViewModel & { eventType?: "standard" | "multi-date" })?.eventType ?? "standard"
       }
       initialData={data}
+      initialStep={initialStep}
       onPublish={handlePublishSubmit}
       onSaveDraft={handleDraftSubmit}
     />

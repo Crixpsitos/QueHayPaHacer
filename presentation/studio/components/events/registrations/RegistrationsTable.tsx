@@ -38,6 +38,8 @@ import type { RegistrationSortBy } from "@/domain/entities/studio/Studio";
 
 interface RegistrationsTableProps {
   eventId: string;
+  /** Si viene, las inscripciones son de una sesión, no del evento padre. */
+  sessionId?: string;
   rows: RegistrationRow[];
   /** Orden, límite y búsqueda actuales (vienen de los query params del slot). */
   sortBy: RegistrationSortBy;
@@ -62,6 +64,7 @@ const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
 export function RegistrationsTable({
   eventId,
+  sessionId,
   rows,
   sortBy,
   sortDir,
@@ -138,7 +141,7 @@ export function RegistrationsTable({
 
   const confirmOne = async (userId: string) => {
     setData((prev) => prev.map((r) => (r.userId === userId ? { ...r, attendanceConfirmed: true } : r)));
-    const res = await confirmAttendanceAction(eventId, userId);
+    const res = await confirmAttendanceAction(eventId, userId, sessionId);
     if (!res.success) notify.error(res.error ?? "Error al confirmar.");
   };
 
@@ -149,7 +152,7 @@ export function RegistrationsTable({
       next.delete(userId);
       return next;
     });
-    const res = await removeParticipantAction(eventId, userId);
+    const res = await removeParticipantAction(eventId, userId, sessionId);
     if (!res.success) notify.error(res.error ?? "Error al quitar participante.");
     // Refresca los Server Components de la ruta (slot @stats: card "Registros" y
     // gráficas) para que reflejen el contador actualizado. En éxito muestra el
@@ -161,7 +164,7 @@ export function RegistrationsTable({
     const ids = [...selected];
     setData((prev) => prev.map((r) => (selected.has(r.userId) ? { ...r, attendanceConfirmed: true } : r)));
     setSelected(new Set());
-    await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id)));
+    await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id, sessionId)));
     notify.success(`${ids.length} asistencia(s) confirmada(s).`);
   };
 
@@ -169,7 +172,7 @@ export function RegistrationsTable({
     const ids = [...selected];
     setData((prev) => prev.filter((r) => !selected.has(r.userId)));
     setSelected(new Set());
-    await Promise.all(ids.map((id) => removeParticipantAction(eventId, id)));
+    await Promise.all(ids.map((id) => removeParticipantAction(eventId, id, sessionId)));
     notify.success(`${ids.length} participante(s) removido(s).`);
     // Sincroniza el slot @stats (contador "Registros" y gráficas) con el servidor.
     router.refresh();

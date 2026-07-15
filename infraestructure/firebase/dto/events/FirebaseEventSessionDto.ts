@@ -7,6 +7,7 @@ import type { SessionCoverSource } from "@/domain/entities/events/EventSession";
 export interface FirebaseEventSessionDto {
   id: string;
   eventId: string;
+  slug?: string;
   title?: string;
   shortDescription?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,6 +36,11 @@ export interface FirebaseEventSessionDto {
   };
   price: Price;
   status: "draft" | "published" | "cancelled" | "ended";
+  analytics?: {
+    likes?: number;
+    views?: number;
+    registrations?: number;
+  };
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -5,7 +5,6 @@ import { useWatch } from "react-hook-form";
 import type { UseFormReturn } from "react-hook-form";
 import type { FormEventDto } from "@/application/dto/events/EventDto";
 import type { EventSession } from "@/domain/entities/events/EventSession";
-import { getEventSessionsAction } from "@/app/actions/events/get-event-sessions.action";
 import { deleteEventSessionAction } from "@/app/actions/events/delete-event-session.action";
 import { setSessionStatusAction } from "@/app/actions/events/set-session-status.action";
 import { SessionCard } from "../session/SessionCard";
@@ -44,9 +43,14 @@ export function StepSessionsManager({
 
   const loadSessions = useCallback(async (id: string) => {
     setIsLoading(true);
-    const result = await getEventSessionsAction(id);
-    if (result.success) setSessions(sortByDate(result.sessions));
-    setIsLoading(false);
+    try {
+      const res = await fetch(`/api/events/${id}/sessions`);
+      if (res.ok) setSessions(sortByDate((await res.json()) as EventSession[]));
+    } catch {
+      // Sin sesiones cargadas: la lista queda vacía y el usuario puede reintentar.
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {

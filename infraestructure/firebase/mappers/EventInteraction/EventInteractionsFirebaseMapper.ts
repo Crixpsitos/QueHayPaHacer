@@ -17,6 +17,8 @@ export class EventInteractionsFirebaseMapper
     return {
       id: dto.id,
       eventId: dto.eventId,
+      type: dto.type ?? "event",
+      sessionId: dto.sessionId,
       liked: dto.liked ?? false,
       likedAt,
       viewedAt: dto.viewedAt?.toDate() ?? likedAt,
@@ -34,6 +36,8 @@ export class EventInteractionsFirebaseMapper
     return {
       id: domain.id,
       eventId: domain.eventId,
+      type: domain.type,
+      sessionId: domain.sessionId,
       liked: domain.liked,
       likedAt: domain.likedAt ? Timestamp.fromDate(domain.likedAt) : undefined,
       viewedAt: domain.viewedAt ? Timestamp.fromDate(domain.viewedAt) : undefined,

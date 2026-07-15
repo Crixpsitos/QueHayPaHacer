@@ -6,6 +6,9 @@ import { EmptyRegistrations } from "./EmptyRegistrations";
 
 interface RegistrationsPanelProps {
   data: EventRegistrationsViewModel;
+  /** Si viene, los inscritos son de una sesión: las acciones deben escribir en
+   *  `events/{id}/sessions/{sid}/registrations`, no en las del evento padre. */
+  sessionId?: string;
   /** Orden, límite y búsqueda actuales (vienen de los query params del slot). */
   sortBy: RegistrationSortBy;
   sortDir: "asc" | "desc";
@@ -17,7 +20,7 @@ interface RegistrationsPanelProps {
  * SLOT B — el contenido cambia según el tipo de registro del evento:
  * none → vacío · internal → tabla · external → contador · form → tabla + respuestas.
  */
-export function RegistrationsPanel({ data, sortBy, sortDir, limit, query }: RegistrationsPanelProps) {
+export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, query }: RegistrationsPanelProps) {
   switch (data.registrationType) {
     case "none":
       return <EmptyRegistrations />;
@@ -27,6 +30,7 @@ export function RegistrationsPanel({ data, sortBy, sortDir, limit, query }: Regi
       return (
         <RegistrationsTable
           eventId={data.eventId}
+          sessionId={sessionId}
           rows={data.rows}
           sortBy={sortBy}
           sortDir={sortDir}
@@ -43,6 +47,7 @@ export function RegistrationsPanel({ data, sortBy, sortDir, limit, query }: Regi
       return (
         <RegistrationsTable
           eventId={data.eventId}
+          sessionId={sessionId}
           rows={data.rows}
           sortBy={sortBy}
           sortDir={sortDir}

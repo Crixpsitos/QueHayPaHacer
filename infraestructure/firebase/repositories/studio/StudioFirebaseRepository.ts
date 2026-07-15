@@ -28,6 +28,8 @@ import type {
   SupportTicket,
   SupportTicketDetail,
   CreateSupportTicketInput,
+  MultiDateEventStats,
+  MultiDateSessionStats,
 } from "@/domain/entities/studio/Studio";
 import { Pipelines, FieldValue } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
@@ -52,6 +54,29 @@ interface RegistrationUserInfo {
   photoURL?: string;
   /** "personal" | "professional" — determina el "@handle" y el chulito. */
   accountType?: string;
+}
+
+/** Mapa `analytics` tal como llega del pipeline: cualquier clave puede faltar. */
+interface PipelineAnalytics {
+  likes?: number;
+  views?: number;
+  registrations?: number;
+  shares?: number;
+  clicks?: number;
+  score?: number;
+}
+
+/** Fila de sesión del `toArrayExpression()` del join events → sessions. */
+interface PipelineSessionRow {
+  sessionId?: unknown;
+  title?: string;
+  status?: string;
+  startDate?: unknown;
+  analytics?: PipelineAnalytics;
+  /** "own" | "parent" | { sessionId } — de dónde toma la portada. */
+  coverSource?: "own" | "parent" | { sessionId?: string };
+  /** Portada propia (solo cuando `coverSource === "own"`). */
+  ownCoverUrl?: string;
 }
 
 /**
@@ -779,6 +804,7 @@ export class StudioFirebaseRepository implements IStudioRepository {
   async getEventRegistrations(
     eventId: string,
     params: GetEventRegistrationsParams = {},
+    sessionId?: string,
   ): Promise<EventRegistrationsResult | null> {
     try {
       const {
@@ -792,8 +818,10 @@ export class StudioFirebaseRepository implements IStudioRepository {
 
       const EMPTY = { registrations: [], nextCursor: null, prevCursor: null };
 
-      // 1) Metadatos del evento (tipo de registro, formulario, externo).
-      const eventSnap = await this.db.collection("events").doc(eventId).get();
+      // 1) Metadatos del evento o de la sesión (tipo de registro, formulario,
+      // externo): una sesión define los suyos propios, no hereda los del padre.
+      const basePath = this.docPath(eventId, sessionId);
+      const eventSnap = await this.db.doc(basePath).get();
       if (!eventSnap.exists) return null;
 
       const event = eventSnap.data() as {
@@ -843,7 +871,7 @@ export class StudioFirebaseRepository implements IStudioRepository {
 
       const collection = this.db
         .pipeline()
-        .collection(`events/${eventId}/registrations`);
+        .collection(`${basePath}/registrations`);
 
       // Búsqueda por texto sobre el índice tokenizado (`name` + `email`). Es la
       // única opción realmente indexada en Firestore Enterprise: el plan usa
@@ -1001,11 +1029,31 @@ export class StudioFirebaseRepository implements IStudioRepository {
     return String(value);
   }
 
-  async getEventStats(eventId: string): Promise<EventStats | null> {
-    const result = await this.db.collection("events").doc(eventId).get();
+  /**
+   * Path del documento cuyas métricas se piden: el evento, o una sesión suya.
+   *
+   * Una sesión tiene la MISMA forma que un evento para el Estudio (fecha,
+   * `registrationType`, `registrationEventForm`, `analytics` y su propia
+   * subcolección `registrations`), así que todo el pipeline de stats/registros
+   * funciona igual apuntando a otro path. Por eso se parametriza en vez de
+   * duplicar los métodos.
+   */
+  private docPath(eventId: string, sessionId?: string): string {
+    return sessionId
+      ? `events/${eventId}/sessions/${sessionId}`
+      : `events/${eventId}`;
+  }
+
+  async getEventStats(
+    eventId: string,
+    sessionId?: string,
+  ): Promise<EventStats | null> {
+    const path = this.docPath(eventId, sessionId);
+    const result = await this.db.doc(path).get();
     if (!result.exists) return null;
 
     const data = result.data() as {
+      title?: string;
       name?: string;
       status?: string;
       startDate?: unknown;
@@ -1026,12 +1074,14 @@ export class StudioFirebaseRepository implements IStudioRepository {
 
     const { rampUnit, points: registrationRamp } =
       startDate && endDate
-        ? await this.getRegistrationRamp(eventId, startDate, endDate)
+        ? await this.getRegistrationRamp(path, startDate, endDate)
         : { rampUnit: "day" as RampUnit, points: [] };
 
     return {
-      eventId,
-      name: data.name ?? "",
+      eventId: sessionId ?? eventId,
+      // Eventos y sesiones guardan `title`; `name` queda como respaldo (el resto
+      // del repo ya hace `field("title").as("name")` por lo mismo).
+      name: data.title ?? data.name ?? "",
       status: data.status ?? "draft",
       date: startDate ?? new Date(0),
       registrationType: data.registrationType ?? "none",
@@ -1044,6 +1094,127 @@ export class StudioFirebaseRepository implements IStudioRepository {
       rampUnit,
       registrationRamp,
     };
+  }
+
+  /**
+   * Analíticas de un evento multi-date en UNA sola query: el doc del evento
+   * unido con su subcolección `sessions` vía `toArrayExpression()`.
+   *
+   * Devuelve dos campos aliaseados: `analyticsEvents` (el mapa `analytics` del
+   * padre) y `analyticsSessions` (un array con los datos de cada sesión). El
+   * acumulado (padre + sesiones) se calcula aquí, no en Firestore, porque el
+   * array ya viene en memoria y sumarlo es trivial.
+   *
+   * Ojo con dos cosas verificadas contra la base real:
+   *  - Los campos ausentes se OMITEN del resultado (una sesión sin likes no
+   *    trae `analytics`, un draft solo trae `analytics.score`) → todo con `?? 0`.
+   *  - `__name__` llega como DocumentReference (con refs circulares internas);
+   *    hay que pasarlo por `toDocId` o la serialización RSC entra en recursión.
+   */
+  async getMultiDateEventStats(
+    eventId: string,
+  ): Promise<MultiDateEventStats | null> {
+    const result = await this.db
+      .pipeline()
+      .documents([`/events/${eventId}`])
+      .select(
+        field("__name__").as("eventId"),
+        field("title").as("name"),
+        field("status").as("status"),
+        field("eventType").as("eventType"),
+        field("mainImage.url").as("parentCoverUrl"),
+        field("analytics").as("analyticsEvents"),
+        subcollection("sessions")
+          .sort(field("startDate").ascending())
+          .select(
+            field("__name__").as("sessionId"),
+            field("title").as("title"),
+            field("status").as("status"),
+            field("startDate").as("startDate"),
+            field("coverSource").as("coverSource"),
+            field("mainImage.url").as("ownCoverUrl"),
+            field("analytics").as("analytics"),
+          )
+          .toArrayExpression()
+          .as("analyticsSessions"),
+      )
+      .execute();
+
+    const row = result.results[0]?.data() as
+      | {
+          eventId?: unknown;
+          name?: string;
+          status?: string;
+          eventType?: string;
+          parentCoverUrl?: string;
+          analyticsEvents?: PipelineAnalytics;
+          analyticsSessions?: PipelineSessionRow[];
+        }
+      | undefined;
+
+    if (!row) return null;
+
+    const eventAnalytics = row.analyticsEvents ?? {};
+    const rawSessions = row.analyticsSessions ?? [];
+
+    const sessions: MultiDateSessionStats[] = rawSessions.map((s) => ({
+      sessionId: this.toDocId(s.sessionId),
+      title: s.title ?? "Sesión sin título",
+      status: s.status ?? "draft",
+      startDate: this.toDateOrNull(s.startDate),
+      image: this.resolveSessionCover(s, row.parentCoverUrl, rawSessions),
+      likes: Number(s.analytics?.likes ?? 0),
+      views: Number(s.analytics?.views ?? 0),
+      registrations: Number(s.analytics?.registrations ?? 0),
+    }));
+
+    const event = {
+      likes: Number(eventAnalytics.likes ?? 0),
+      views: Number(eventAnalytics.views ?? 0),
+      registrations: Number(eventAnalytics.registrations ?? 0),
+      shares: Number(eventAnalytics.shares ?? 0),
+      score: Number(eventAnalytics.score ?? 0),
+    };
+
+    const sum = (pick: (s: MultiDateSessionStats) => number) =>
+      sessions.reduce((acc, s) => acc + pick(s), 0);
+
+    return {
+      eventId: this.toDocId(row.eventId),
+      name: row.name ?? "Evento sin título",
+      status: row.status ?? "draft",
+      image: row.parentCoverUrl,
+      event,
+      sessions,
+      totals: {
+        likes: event.likes + sum((s) => s.likes),
+        views: event.views + sum((s) => s.views),
+        registrations: event.registrations + sum((s) => s.registrations),
+      },
+    };
+  }
+
+  /**
+   * Portada de una sesión según su `coverSource`: propia, heredada del evento
+   * padre, o tomada de otra sesión. Misma lógica que `SessionViewModelMapper`
+   * del lado público (allí se resuelve sobre entidades; aquí sobre las filas
+   * del pipeline, que no pasan por el mapper).
+   */
+  private resolveSessionCover(
+    session: PipelineSessionRow,
+    parentCoverUrl: string | undefined,
+    allSessions: PipelineSessionRow[],
+  ): string | undefined {
+    const source = session.coverSource;
+    if (source === "parent") return parentCoverUrl;
+    if (source === "own") return session.ownCoverUrl;
+    if (source && typeof source === "object" && source.sessionId) {
+      const refId = source.sessionId;
+      const ref = allSessions.find((s) => this.toDocId(s.sessionId) === refId);
+      return ref?.ownCoverUrl;
+    }
+    // Sin `coverSource` (sesiones viejas): cae a la portada del evento.
+    return parentCoverUrl;
   }
 
   /** Convierte un Timestamp/Date de Firestore a Date, o null si no es válido. */
@@ -1088,7 +1259,7 @@ export class StudioFirebaseRepository implements IStudioRepository {
    * izquierda (lejos del evento) a derecha (inicio del evento).
    */
   private async getRegistrationRamp(
-    eventId: string,
+    docPath: string,
     startDate: Date,
     endDate: Date,
   ): Promise<{ rampUnit: RampUnit; points: EventStats["registrationRamp"] }> {
@@ -1097,7 +1268,7 @@ export class StudioFirebaseRepository implements IStudioRepository {
 
     const result = await this.db
       .pipeline()
-      .collection(`events/${eventId}/registrations`)
+      .collection(`${docPath}/registrations`)
       .where(field("registeredAt").lessThanOrEqual(endDate))
       .addFields(
         constant(startSeconds)
@@ -1161,9 +1332,13 @@ export class StudioFirebaseRepository implements IStudioRepository {
    * así que basta con sellar la marca de tiempo del servidor. Usa `update`, que
    * falla si la inscripción no existe (la UI solo ofrece el botón en filas reales).
    */
-  async confirmAttendance(eventId: string, userId: string): Promise<void> {
+  async confirmAttendance(
+    eventId: string,
+    userId: string,
+    sessionId?: string,
+  ): Promise<void> {
     const regRef = this.db
-      .collection(`events/${eventId}/registrations`)
+      .collection(`${this.docPath(eventId, sessionId)}/registrations`)
       .doc(userId);
     await regRef.update({ checkedInAt: FieldValue.serverTimestamp() });
   }
@@ -1175,21 +1350,25 @@ export class StudioFirebaseRepository implements IStudioRepository {
    * escribir de forma consistente; idempotente: si la inscripción ya no existe,
    * no hace nada (ni decrementa de más). El contador nunca baja de 0.
    */
-  async removeParticipant(eventId: string, userId: string): Promise<void> {
-    const regRef = this.db
-      .collection(`events/${eventId}/registrations`)
-      .doc(userId);
-    const eventRef = this.db.collection("events").doc(eventId);
+  async removeParticipant(
+    eventId: string,
+    userId: string,
+    sessionId?: string,
+  ): Promise<void> {
+    // El contador a decrementar vive en el MISMO doc que la subcolección de
+    // inscritos: si el registro fue a una sesión, el contador es el de la sesión.
+    const targetRef = this.db.doc(this.docPath(eventId, sessionId));
+    const regRef = targetRef.collection("registrations").doc(userId);
 
     await this.db.runTransaction(async (tx) => {
       const regSnap = await tx.get(regRef);
       if (!regSnap.exists) return; // ya removido → no-op
 
-      const eventSnap = await tx.get(eventRef);
-      const current = Number(eventSnap.get("analytics.registrations") ?? 0);
+      const targetSnap = await tx.get(targetRef);
+      const current = Number(targetSnap.get("analytics.registrations") ?? 0);
 
       tx.delete(regRef);
-      tx.update(eventRef, {
+      tx.update(targetRef, {
         "analytics.registrations": Math.max(0, current - 1),
         updatedAt: FieldValue.serverTimestamp(),
       });

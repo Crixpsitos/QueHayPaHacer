@@ -48,7 +48,13 @@ export function SessionCoverSelector({
         >
           <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
             {parentCoverUrl ? (
-              <Image src={parentCoverUrl} alt="Portada del evento" fill className="object-cover" />
+              <Image
+                src={parentCoverUrl}
+                alt="Portada del evento"
+                fill
+                sizes="(min-width: 640px) 33vw, 100vw"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <CalendarIcon className="h-5 w-5 text-gray-300" />
@@ -75,7 +81,13 @@ export function SessionCoverSelector({
         >
           <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
             {ownImageUrl ? (
-              <Image src={ownImageUrl} alt="Portada propia" fill className="object-cover" />
+              <Image
+                src={ownImageUrl}
+                alt="Portada propia"
+                fill
+                sizes="(min-width: 640px) 33vw, 100vw"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-400">
                 <span className="text-xs">+ Subir imagen</span>
@@ -101,7 +113,13 @@ export function SessionCoverSelector({
                 (() => {
                   const ref = otherSessions.find((s) => s.id === otherSessionId);
                   return ref?.mainImage?.url ? (
-                    <Image src={ref.mainImage.url} alt="Portada de otra sesión" fill className="object-cover" />
+                    <Image
+                      src={ref.mainImage.url}
+                      alt="Portada de otra sesión"
+                      fill
+                      sizes="(min-width: 640px) 33vw, 100vw"
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <CalendarIcon className="h-5 w-5 text-gray-300" />

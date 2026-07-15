@@ -11,6 +11,8 @@ export interface DenormalizedEventFirebaseData {
 export interface FirebaseEventInteractionDto {
   id: string;
   eventId: string;
+  type?: "event" | "session";
+  sessionId?: string;
   event?: DenormalizedEventFirebaseData;
   liked?: boolean;
   likedAt?: Timestamp;

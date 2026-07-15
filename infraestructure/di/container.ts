@@ -89,6 +89,7 @@ export const createServerContainer = () => {
     eventInteractionsRepository,
     userEventInteractionsProjectionRepository,
     eventsRepository,
+    eventSessionRepository,
   );
 
   // event registrations

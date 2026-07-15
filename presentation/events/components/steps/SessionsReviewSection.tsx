@@ -12,7 +12,6 @@ import {
   DollarSign,
 } from "lucide-react";
 import type { EventSession } from "@/domain/entities/events/EventSession";
-import { getEventSessionsAction } from "@/app/actions/events/get-event-sessions.action";
 
 const STATUS_LABELS: Record<EventSession["status"], string> = {
   draft: "Borrador",
@@ -108,16 +107,18 @@ export function SessionsReviewSection({
   useEffect(() => {
     if (!eventId) return;
     let active = true;
-    getEventSessionsAction(eventId)
+    fetch(`/api/events/${eventId}/sessions`)
+      .then((res) => (res.ok ? (res.json() as Promise<EventSession[]>) : []))
       .then((result) => {
-        if (!active || !result.success) return;
+        if (!active) return;
         setSessions(
-          [...result.sessions].sort(
+          [...result].sort(
             (a, b) =>
               new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
           ),
         );
       })
+      .catch(() => {})
       .finally(() => {
         if (active) setIsLoading(false);
       });
