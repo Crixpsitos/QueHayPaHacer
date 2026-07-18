@@ -10,7 +10,7 @@ import { Input } from "@/app/components/ui/input";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import dynamic from "next/dynamic";
 import { Controller, type UseFormReturn } from "react-hook-form";
-import { JSONContent } from "@tiptap/react";  
+import { JSONContent } from "@tiptap/react";
 import { RichTextEditorSkeleton } from "../editor/RichTextEditorSkeleton";
 
 const RichTextEditor = dynamic(

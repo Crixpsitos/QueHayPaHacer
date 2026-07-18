@@ -61,6 +61,11 @@ export interface FirebaseEventsDto {
     promotion: FirebasePromotionDto;
     /** "standard" = evento único. "multi-date" = evento con sesiones (solo profesionales). */
     eventType?: "standard" | "multi-date";
+    collaborators?: { refId: string; kind: "user" | "external" }[];
+    collaboratorsData?: Record<
+        string,
+        { displayName: string; photoURL?: string | null; role: "editor" | "viewer" | "credit" }
+    >;
     createdAt: Timestamp;
     updatedAt: Timestamp;
     publishedAt?: Timestamp;

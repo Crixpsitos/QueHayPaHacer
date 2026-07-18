@@ -1,36 +1,36 @@
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
-
 /**
- * ViewModels de la sección "Colaboradores".
- * Datos MOCK por ahora (ver `lib/studioCollaboratorsMock.ts`).
- * Repos relacionados (stubs): getCollaborators, getReceivedInvitations,
- * inviteCollaborator, respondCollaboratorInvitation.
+ * ViewModels de la sección "Colaboradores" del Estudio (hub de gestión).
+ * Red a nivel de cuenta: invitar usuarios, ver invitaciones enviadas/recibidas y
+ * gestionar mi red (aceptados + perfiles externos).
  */
-
-export interface CollaboratorVM {
-  uid: string;
-  displayName: string;
-  brandName?: string;
-  photoURL?: string;
-  professionalType: ProfessionalType;
-}
 
 export interface InvitationVM {
   id: string;
+  fromUid: string;
   fromDisplayName: string;
-  fromBrandName?: string;
   fromPhotoURL?: string;
-  professionalType: ProfessionalType;
+  fromProfessionalType?: "organizer" | "business" | "government";
   invitedAt: string; // ISO
 }
 
+export interface SentInvitationVM {
+  id: string;
+  toDisplayName: string;
+  toPhotoURL?: string;
+  toEmail: string;
+  invitedAt: string; // ISO
+}
+
+export interface CollaboratorVM {
+  refId: string;
+  kind: "user" | "external";
+  displayName: string;
+  photoURL?: string;
+  professionalType?: "organizer" | "business" | "government";
+}
+
 export interface StudioCollaboratorsViewModel {
-  /** Nombre de mi entidad (para mostrar "Invitas en nombre de …"). */
-  myEntityName: string;
-  /** Personas que colaboran con MI entidad (yo las invité). */
-  collaborators: CollaboratorVM[];
-  /** Entidades en las que YO soy colaborador. */
-  entities: CollaboratorVM[];
-  /** Invitaciones recibidas (entidades que me invitaron). */
-  invitations: InvitationVM[];
+  received: InvitationVM[];
+  sent: SentInvitationVM[];
+  network: CollaboratorVM[];
 }

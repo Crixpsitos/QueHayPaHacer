@@ -49,6 +49,8 @@ export class EventViewModelMapper {
       updatedAt: event.updatedAt?.toISOString() ?? new Date().toISOString(),
       publishedAt: event.publishedAt?.toISOString(),
       eventType: event.eventType,
+      collaborators: event.collaborators,
+      collaboratorsData: event.collaboratorsData,
     };
   }
 
@@ -103,6 +105,8 @@ export class EventViewModelMapper {
       updatedAt: viewModel.updatedAt ? new Date(viewModel.updatedAt) : new Date(),
       publishedAt: viewModel.publishedAt ? new Date(viewModel.publishedAt) : undefined,
       eventType: viewModel.eventType,
+      collaborators: viewModel.collaborators,
+      collaboratorsData: viewModel.collaboratorsData,
     } as unknown as Events;
   }
 }

@@ -20,7 +20,6 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { safeParse, type BaseSchema, type BaseIssue } from "valibot";
 import { Step1BasicInfo } from "../steps/Step1BasicInfo";
 import { Button } from "@/app/components/ui/button";
-import { STEPS, MULTI_DATE_HEADER_STEPS } from "../../constants/steps";
 import { Step2Media } from "../steps/Step2Media";
 import { Step3Clasification } from "../steps/Step3Clasification";
 import { Step4Location } from "../steps/Step4Location";
@@ -29,6 +28,8 @@ import { Step6Registration } from "../steps/Step6Registration";
 import { Step7Pricing } from "../steps/Step7Pricing";
 import { Step8Review } from "../steps/Step8Review";
 import { StepSessionsManager } from "../steps/StepSessionsManager";
+import { StepCollaborators } from "../steps/StepCollaborators";
+import { useAuth } from "@/app/store/auth/AuthContext";
 import { Events } from "@/domain/entities/events/Events";
 import { notify } from "@/presentation/shared/lib/notify";
 import {
@@ -52,25 +53,25 @@ type StepSchema =
   | typeof step7Schema
   | typeof step8Schema;
 
-const standardStepSchema: StepSchema[] = [
-  step1Schema,
-  step2Schema,
-  step3Schema,
-  step4Schema,
-  step5Schema,
-  step6Schema,
-  step7Schema,
-  step8Schema,
-];
+type StepKey =
+  | "basic"
+  | "media"
+  | "class"
+  | "location"
+  | "dates"
+  | "registration"
+  | "pricing"
+  | "sessions"
+  | "collab"
+  | "review"
+  | "promo";
 
-/** Para multi-date: 5 pasos (encabezado + sesiones + promoción). */
-const multiDateHeaderSchema: StepSchema[] = [
-  step1Schema, // 1: Información básica
-  step2Schema, // 2: Portada principal
-  step3Schema, // 3: Clasificación
-  step8Schema, // 4: Sesiones (step8 tiene promotion opcional → pasa trivialmente)
-  step8Schema, // 5: Promoción
-];
+interface StepDef {
+  key: StepKey;
+  label: string;
+  icon: string;
+  schema: StepSchema;
+}
 
 const { eventsRepository } = createClientContainer();
 
@@ -93,8 +94,41 @@ export const EventForm = ({
   onSaveDraft,
 }: EventFormProps) => {
   const isMultiDate = eventType === "multi-date";
-  const stepSchema = isMultiDate ? multiDateHeaderSchema : standardStepSchema;
-  const ACTIVE_STEPS = isMultiDate ? MULTI_DATE_HEADER_STEPS : STEPS;
+  const { user } = useAuth();
+  // Step dinámico "Colaboradores": solo para cuentas profesionales, insertado antes
+  // del último paso (Revisión / Promoción). Todo se deriva de `stepDefs`.
+  const isProfessional = user?.customClaims?.role === "professional";
+
+  const stepDefs: StepDef[] = useMemo(() => {
+    const collab: StepDef = { key: "collab", label: "Colaboradores", icon: "Users", schema: step8Schema };
+    if (isMultiDate) {
+      const base: StepDef[] = [
+        { key: "basic", label: "Información básica", icon: "FileText", schema: step1Schema },
+        { key: "media", label: "Portada principal", icon: "Image", schema: step2Schema },
+        { key: "class", label: "Clasificación", icon: "Tag", schema: step3Schema },
+        { key: "sessions", label: "Sesiones", icon: "Calendar", schema: step8Schema },
+        { key: "promo", label: "Promoción", icon: "Star", schema: step8Schema },
+      ];
+      return isProfessional ? [...base.slice(0, 4), collab, base[4]] : base;
+    }
+    const base: StepDef[] = [
+      { key: "basic", label: "Información básica", icon: "FileText", schema: step1Schema },
+      { key: "media", label: "Medios", icon: "Image", schema: step2Schema },
+      { key: "class", label: "Clasificación", icon: "Tag", schema: step3Schema },
+      { key: "location", label: "Ubicación", icon: "MapPin", schema: step4Schema },
+      { key: "dates", label: "Fechas", icon: "Calendar", schema: step5Schema },
+      { key: "registration", label: "Registro", icon: "Users", schema: step6Schema },
+      { key: "pricing", label: "Precios", icon: "DollarSign", schema: step7Schema },
+      { key: "review", label: "Revisión", icon: "CheckCircle", schema: step8Schema },
+    ];
+    return isProfessional ? [...base.slice(0, 7), collab, base[7]] : base;
+  }, [isMultiDate, isProfessional]);
+
+  const stepSchema = useMemo(() => stepDefs.map((s) => s.schema), [stepDefs]);
+  const ACTIVE_STEPS = useMemo(
+    () => stepDefs.map((s, i) => ({ number: i + 1, label: s.label, icon: s.icon })),
+    [stepDefs],
+  );
   const [currentStep, setCurrentStep] = useState(() =>
     initialStep && initialStep >= 1 && initialStep <= ACTIVE_STEPS.length
       ? initialStep
@@ -116,7 +150,7 @@ export const EventForm = ({
   const mountedRef = useRef(false);
 
   const progressPercentage = useMemo(
-    () => (currentStep / ACTIVE_STEPS.length) * 100,
+    () => Math.round((currentStep / ACTIVE_STEPS.length) * 100),
     [currentStep, ACTIVE_STEPS.length],
   );
 
@@ -180,6 +214,8 @@ export const EventForm = ({
       },
       publishedAt: "",
       eventType: eventType,
+      collaborators: [],
+      collaboratorsData: {},
       ...initialData,
     }),
     [initialData, eventType],
@@ -227,7 +263,7 @@ export const EventForm = ({
       goToStep(targetStep);
       mountedRef.current = true;
     }
-  }, [mode, initialData, defaultFormValues, initialStep, ACTIVE_STEPS.length]);
+  }, [mode, initialData, defaultFormValues, initialStep, ACTIVE_STEPS.length, stepSchema]);
 
   // Reset form when entering create mode with no initialData (e.g., after publishing)
   useEffect(() => {
@@ -392,35 +428,28 @@ export const EventForm = ({
   };
 
   const renderStep = () => {
-    if (isMultiDate) {
-      // 5-step header form for multi-date events
-      switch (currentStep) {
-        case 1: return <Step1BasicInfo form={form} />;
-        case 2: return <Step2Media form={form} saveDraftEvent={handleDraftSubmit} hideMedia />;
-        case 3: return <Step3Clasification form={form} />;
-        case 4: return <StepSessionsManager form={form} onSaveDraft={handleDraftSubmit} />;
-        case 5: return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate />;
-        default: return null;
-      }
-    }
-
-    switch (currentStep) {
-      case 1:
+    switch (stepDefs[currentStep - 1]?.key) {
+      case "basic":
         return <Step1BasicInfo form={form} />;
-      case 2:
-        return <Step2Media form={form} saveDraftEvent={handleDraftSubmit} />;
-      case 3:
+      case "media":
+        return <Step2Media form={form} saveDraftEvent={handleDraftSubmit} hideMedia={isMultiDate} />;
+      case "class":
         return <Step3Clasification form={form} />;
-      case 4:
+      case "location":
         return <Step4Location form={form} />;
-      case 5:
+      case "dates":
         return <Step5Dates form={form} />;
-      case 6:
+      case "registration":
         return <Step6Registration form={form} />;
-      case 7:
+      case "pricing":
         return <Step7Pricing form={form} />;
-      case 8:
-        return <Step8Review form={form} onGoToStep={handleStepClick} />;
+      case "sessions":
+        return <StepSessionsManager form={form} onSaveDraft={handleDraftSubmit} />;
+      case "collab":
+        return <StepCollaborators form={form} />;
+      case "promo":
+      case "review":
+        return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate={isMultiDate} />;
       default:
         return null;
     }

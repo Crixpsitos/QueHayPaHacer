@@ -269,6 +269,25 @@ const AuthorDraftSchema = v.object({
   photoURL: v.optional(v.pipe(v.string(), v.url("Foto inválida"))),
 });
 
+// Colaboradores del evento (solo cuentas profesionales). Referencias tipadas +
+// datos denormalizados por refId para pintar créditos sin joins.
+const CollaboratorRefSchema = v.object({
+  refId: v.string(),
+  kind: v.picklist(["user", "external"] as const),
+});
+const CollaboratorsDataSchema = v.record(
+  v.string(),
+  v.object({
+    displayName: v.string(),
+    photoURL: v.nullish(v.string()),
+    role: v.picklist(["editor", "viewer", "credit"] as const),
+  }),
+);
+const collaboratorEntries = {
+  collaborators: v.optional(v.array(CollaboratorRefSchema)),
+  collaboratorsData: v.optional(CollaboratorsDataSchema),
+};
+
 export const EventSchema = v.object({
   id: v.pipe(v.string(), v.nonEmpty("El id es requerido")),
   slug: v.optional(v.string()),
@@ -281,6 +300,7 @@ export const EventSchema = v.object({
   ...step6Object.entries,
   ...step7Object.entries,
   ...step8Schema.entries,
+  ...collaboratorEntries,
   startDate: v.string(),
   endDate: v.string(),
   createdAt: v.string(),
@@ -306,6 +326,7 @@ export const publishEventSchema = v.object({
   ...step6Object.entries,
   ...step7Object.entries,
   ...step8Schema.entries,
+  ...collaboratorEntries,
   startDate: v.string(),
   endDate: v.string(),
   createdAt: v.optional(v.string()),
@@ -326,6 +347,7 @@ export const publishEventMultiDateSchema = v.object({
   author: AuthorSchema,
   ...step3Schema.entries,
   ...step8Schema.entries,
+  ...collaboratorEntries,
   status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
   createdAt: v.optional(v.string()),
@@ -401,6 +423,7 @@ export const FormEventSchema = v.object({
     }),
   ),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
+  ...collaboratorEntries,
 });
 export type EventDto = v.InferOutput<typeof EventSchema>;
 export type CreateEventDto = v.InferOutput<typeof CreateEventSchema>;

@@ -3,23 +3,46 @@ import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { CollaboratorsView } from "@/presentation/studio/components/collaborators/CollaboratorsView";
-import { MOCK_STUDIO_COLLABORATORS } from "@/presentation/studio/lib/studioCollaboratorsMock";
+import type { StudioCollaboratorsViewModel } from "@/presentation/studio/view-models/StudioCollaboratorsViewModel";
 
 export default async function StudioCollaboratorsPage() {
-  // El nombre de la entidad sí es real (de tu perfil profesional); el resto es MOCK.
-  let myEntityName = MOCK_STUDIO_COLLABORATORS.myEntityName;
+  let data: StudioCollaboratorsViewModel = { received: [], sent: [], network: [] };
+
   const tokens = await getTokens(await cookies(), authConfig);
   if (tokens) {
-    const { userService } = createServerContainer();
-    const user = await userService.getUserById(tokens.decodedToken.uid);
-    myEntityName = user?.brandName || user?.displayName || myEntityName;
-  }
+    const { studioService } = createServerContainer();
+    const uid = tokens.decodedToken.uid;
+    const [received, sent, network] = await Promise.all([
+      studioService.getReceivedInvitations(uid),
+      studioService.getSentInvitations(uid),
+      studioService.getCollaborators(uid),
+    ]);
 
-  // MOCK. Cuando implementes el repositorio:
-  //   const collaborators = await studioService.getCollaborators(uid);
-  //   const entities = await studioService.getMemberEntities(uid);
-  //   const invitations = await studioService.getReceivedInvitations(uid);
-  const data = { ...MOCK_STUDIO_COLLABORATORS, myEntityName };
+    data = {
+      received: received.map((i) => ({
+        id: i.id,
+        fromUid: i.fromUid,
+        fromDisplayName: i.fromDisplayName,
+        fromPhotoURL: i.fromPhotoURL,
+        fromProfessionalType: i.fromProfessionalType,
+        invitedAt: i.invitedAt.toISOString(),
+      })),
+      sent: sent.map((i) => ({
+        id: i.id,
+        toDisplayName: i.toDisplayName,
+        toPhotoURL: i.toPhotoURL,
+        toEmail: i.toEmail,
+        invitedAt: i.invitedAt.toISOString(),
+      })),
+      network: network.map((c) => ({
+        refId: c.refId,
+        kind: c.kind,
+        displayName: c.displayName,
+        photoURL: c.photoURL,
+        professionalType: c.professionalType,
+      })),
+    };
+  }
 
   return <CollaboratorsView data={data} />;
 }
