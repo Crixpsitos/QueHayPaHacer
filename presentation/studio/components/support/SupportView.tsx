@@ -376,7 +376,10 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
       <Dialog open={detailId !== null} onOpenChange={(open) => !open && closeDetail()}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           {detailLoading || !detail ? (
-            <div className="py-10 text-center text-sm text-slate-400">Cargando ticket…</div>
+            <>
+              <DialogTitle className="sr-only">Cargando ticket</DialogTitle>
+              <div className="py-10 text-center text-sm text-slate-400">Cargando ticket…</div>
+            </>
           ) : (
             <>
               <DialogHeader>
