@@ -60,13 +60,13 @@ function ExpandableDescription({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = text.length > 320 || text.split("\n").length > 6;
   return (
-    <div className="rounded-lg border border-gray-100 bg-slate-50 p-3">
+    <div className="min-w-0 rounded-lg border border-gray-100 bg-slate-50 p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
         Descripción
       </p>
       <p
         className={cn(
-          "mt-1 whitespace-pre-line break-words text-sm text-slate-700",
+          "mt-1 whitespace-pre-line text-sm text-slate-700 [overflow-wrap:anywhere]",
           !expanded && isLong && "line-clamp-6",
         )}
       >
@@ -374,7 +374,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
 
       {/* Modal de detalle del ticket */}
       <Dialog open={detailId !== null} onOpenChange={(open) => !open && closeDetail()}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto overflow-x-hidden sm:max-w-lg">
           {detailLoading || !detail ? (
             <>
               <DialogTitle className="sr-only">Cargando ticket</DialogTitle>
@@ -382,14 +382,16 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
             </>
           ) : (
             <>
-              <DialogHeader>
-                <DialogTitle className="pr-6 text-base">{detail.subject}</DialogTitle>
+              <DialogHeader className="min-w-0">
+                <DialogTitle className="pr-6 text-base [overflow-wrap:anywhere]">
+                  {detail.subject}
+                </DialogTitle>
                 <DialogDescription>
                   {detail.category} · {formatDate(detail.createdAt)}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4">
+              <div className="min-w-0 space-y-4">
                 <div className="flex items-center gap-2">
                   <StatusBadge status={detail.status} />
                 </div>
@@ -442,7 +444,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                         <Lock className="h-3 w-3" />
                         Motivo del cierre
                       </p>
-                      <p className="mt-1 whitespace-pre-line break-words text-sm text-emerald-900">
+                      <p className="mt-1 whitespace-pre-line text-sm text-emerald-900 [overflow-wrap:anywhere]">
                         {detail.closeReason}
                       </p>
                     </div>
