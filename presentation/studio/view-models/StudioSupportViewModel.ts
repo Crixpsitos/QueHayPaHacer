@@ -2,8 +2,9 @@ import type { SupportTicketStatus } from "@/domain/entities/studio/Studio";
 
 /**
  * ViewModels de la sección "Soporte prioritario".
- * Datos MOCK por ahora (ver `lib/studioSupportMock.ts`).
- * Repos relacionados (stubs): getSupportTickets, createSupportTicket.
+ *
+ * Modelo: NO es un chat. El usuario crea el ticket y espera; el equipo lo
+ * contacta por fuera (correo/teléfono). En la app solo se ve el estado.
  */
 
 export interface SupportTicketVM {
@@ -14,18 +15,9 @@ export interface SupportTicketVM {
   createdAt: string; // ISO
 }
 
-export interface SupportMessageVM {
-  id: string;
-  author: "user" | "admin";
-  authorName: string;
-  message: string;
-  createdAt: string; // ISO
-}
-
 export interface SupportTicketDetailVM extends SupportTicketVM {
   description: string;
   attachments: string[];
-  messages: SupportMessageVM[];
   closeReason?: string;
 }
 

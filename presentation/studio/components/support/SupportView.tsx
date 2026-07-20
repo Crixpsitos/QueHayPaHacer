@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImagePlus, LifeBuoy, Lock, Send, Sparkles, X } from "lucide-react";
+import { ImagePlus, Info, LifeBuoy, Lock, Send, Sparkles, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,18 +12,21 @@ import {
 } from "@/app/components/ui/dialog";
 import { cn } from "@/app/lib/utils/cn";
 import { notify } from "@/presentation/shared/lib/notify";
+import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage";
 import { createSupportTicketAction } from "@/app/actions/studio/create-support-ticket.action";
 import { closeSupportTicketAction } from "@/app/actions/studio/close-support-ticket.action";
+import { getSupportTicketDetailAction } from "@/app/actions/studio/get-support-ticket-detail.action";
 import {
   SUPPORT_CATEGORIES,
   SUPPORT_STATUS_LABEL,
   type SupportTicketVM,
   type SupportTicketDetailVM,
 } from "../../view-models/StudioSupportViewModel";
-import { getMockSupportTicketDetail } from "../../lib/studioSupportMock";
 import type { SupportTicketStatus } from "@/domain/entities/studio/Studio";
 
 interface SupportViewProps {
+  /** uid del dueño de la sesión, para organizar la ruta de los adjuntos. */
+  uid: string;
   tickets: SupportTicketVM[];
 }
 
@@ -31,6 +34,9 @@ interface Attachment {
   file: File;
   url: string;
 }
+
+const DESCRIPTION_MAX = 2000;
+const CACHE_IMMUTABLE = "public, max-age=31536000, immutable";
 
 const STATUS_STYLES: Record<SupportTicketStatus, string> = {
   open: "bg-blue-50 text-blue-700",
@@ -40,8 +46,6 @@ const STATUS_STYLES: Record<SupportTicketStatus, string> = {
 
 const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(iso));
-const formatDateTime = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 
 function StatusBadge({ status }: { status: SupportTicketStatus }) {
   return (
@@ -51,7 +55,37 @@ function StatusBadge({ status }: { status: SupportTicketStatus }) {
   );
 }
 
-export function SupportView({ tickets: initialTickets }: SupportViewProps) {
+/** Descripción que se recorta si es larga, con "Ver más / Ver menos". */
+function ExpandableDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length > 320 || text.split("\n").length > 6;
+  return (
+    <div className="rounded-lg border border-gray-100 bg-slate-50 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        Descripción
+      </p>
+      <p
+        className={cn(
+          "mt-1 whitespace-pre-line break-words text-sm text-slate-700",
+          !expanded && isLong && "line-clamp-6",
+        )}
+      >
+        {text}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+        >
+          {expanded ? "Ver menos" : "Ver más"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) {
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState<string>(SUPPORT_CATEGORIES[0]);
   const [description, setDescription] = useState("");
@@ -61,7 +95,9 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Detalle / cierre
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SupportTicketDetailVM | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [showCloseForm, setShowCloseForm] = useState(false);
   const [closeReason, setCloseReason] = useState("");
   const [isClosing, setIsClosing] = useState(false);
@@ -79,39 +115,71 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
     });
   };
 
-  const openDetail = (ticket: SupportTicketVM) => {
-    const base = getMockSupportTicketDetail(ticket.id);
-    if (!base) {
-      notify.error("No se pudo cargar el detalle.");
-      return;
-    }
-    // Reflejar el estado local (por si se cerró en esta sesión).
-    setDetail({ ...base, status: ticket.status });
+  const openDetail = async (ticket: SupportTicketVM) => {
+    setDetailId(ticket.id);
+    setDetail(null);
     setShowCloseForm(false);
     setCloseReason("");
+    setDetailLoading(true);
+    const res = await getSupportTicketDetailAction(ticket.id);
+    setDetailLoading(false);
+    if (!res.success || !res.detail) {
+      notify.error(res.error ?? "No se pudo cargar el detalle.");
+      setDetailId(null);
+      return;
+    }
+    setDetail(res.detail);
+  };
+
+  const closeDetail = () => {
+    setDetailId(null);
+    setDetail(null);
+    setShowCloseForm(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Los adjuntos suben directo a Storage (fuera del action, que tiene límite de peso).
+    let attachmentUrls: string[] = [];
+    try {
+      attachmentUrls = await Promise.all(
+        attachments.map(async (a) => {
+          const { publicUrl } = await uploadToGoogleStorage(a.file, "support", uid || "anon", {
+            fileName: "attachment",
+            contentType: a.file.type,
+            isPublic: true,
+            subFolder: "attachments",
+            cacheControl: CACHE_IMMUTABLE,
+          });
+          return publicUrl;
+        }),
+      );
+    } catch {
+      setIsSubmitting(false);
+      notify.error("No se pudieron subir las evidencias. Intenta de nuevo.");
+      return;
+    }
+
     const res = await createSupportTicketAction({
       subject,
       category,
       description,
-      attachments: attachments.map((a) => a.file.name),
+      attachments: attachmentUrls,
     });
     setIsSubmitting(false);
-    if (!res.success) {
+    if (!res.success || !res.ticket) {
       notify.error(res.error ?? "No se pudo enviar el ticket.");
       return;
     }
     setTickets((prev) => [
       {
-        id: `tkt-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: res.ticket!.id,
         subject: subject.trim(),
         category,
         status: "open",
-        createdAt: new Date().toISOString(),
+        createdAt: res.ticket!.createdAt,
       },
       ...prev,
     ]);
@@ -120,7 +188,7 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
     setCategory(SUPPORT_CATEGORIES[0]);
     setDescription("");
     setAttachments([]);
-    notify.success("Ticket enviado. Te responderemos con prioridad.");
+    notify.success("Ticket enviado. Te contactaremos con prioridad.");
   };
 
   const handleClose = async () => {
@@ -156,7 +224,7 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
         <div>
           <p className="text-sm font-semibold text-indigo-900">Atención prioritaria activa</p>
           <p className="text-xs text-indigo-700/80">
-            Tiempo de respuesta estimado para cuentas profesionales: menos de 24 horas.
+            Creas el ticket y nuestro equipo te contacta por correo en menos de 24 horas. No es un chat en vivo.
           </p>
         </div>
       </div>
@@ -178,6 +246,7 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              maxLength={120}
               placeholder="Resume tu problema en una línea"
               className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-400"
             />
@@ -199,13 +268,24 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">Descripción</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-medium text-slate-600">Descripción</label>
+              <span
+                className={cn(
+                  "text-[11px] tabular-nums",
+                  description.length >= DESCRIPTION_MAX ? "text-red-500" : "text-slate-400",
+                )}
+              >
+                {description.length}/{DESCRIPTION_MAX}
+              </span>
+            </div>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
+              maxLength={DESCRIPTION_MAX}
               placeholder="Describe con detalle qué ocurre, qué esperabas y qué pasos seguiste."
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-indigo-400"
+              className="max-h-64 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-indigo-400"
             />
           </div>
 
@@ -274,15 +354,15 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
                 <li key={t.id}>
                   <button
                     type="button"
-                    onClick={() => openDetail(t)}
+                    onClick={() => void openDetail(t)}
                     className="w-full rounded-lg border border-gray-100 p-3 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-slate-800">{t.subject}</p>
+                      <p className="line-clamp-1 text-sm font-medium text-slate-800">{t.subject}</p>
                       <StatusBadge status={t.status} />
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {t.category} · #{t.id} · {formatDate(t.createdAt)}
+                    <p className="mt-1 truncate text-xs text-slate-400">
+                      {t.category} · {formatDate(t.createdAt)}
                     </p>
                   </button>
                 </li>
@@ -293,16 +373,16 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
       </div>
 
       {/* Modal de detalle del ticket */}
-      <Dialog open={detail !== null} onOpenChange={(open) => !open && setDetail(null)}>
+      <Dialog open={detailId !== null} onOpenChange={(open) => !open && closeDetail()}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          {detail && (
+          {detailLoading || !detail ? (
+            <div className="py-10 text-center text-sm text-slate-400">Cargando ticket…</div>
+          ) : (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 pr-6 text-base">
-                  {detail.subject}
-                </DialogTitle>
+                <DialogTitle className="pr-6 text-base">{detail.subject}</DialogTitle>
                 <DialogDescription>
-                  {detail.category} · #{detail.id} · {formatDate(detail.createdAt)}
+                  {detail.category} · {formatDate(detail.createdAt)}
                 </DialogDescription>
               </DialogHeader>
 
@@ -311,13 +391,8 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
                   <StatusBadge status={detail.status} />
                 </div>
 
-                {/* Lo que escribió el usuario */}
-                <div className="rounded-lg border border-gray-100 bg-slate-50 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                    Descripción
-                  </p>
-                  <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{detail.description}</p>
-                </div>
+                {/* Lo que escribió el usuario (recortado si es largo) */}
+                <ExpandableDescription text={detail.description} />
 
                 {/* Evidencias */}
                 {detail.attachments.length > 0 && (
@@ -334,61 +409,41 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
                           rel="noopener noreferrer"
                           className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200"
                         >
-                          <Image src={url} alt={`Evidencia ${i + 1}`} fill sizes="80px" className="object-cover" />
+                          <Image
+                            src={url}
+                            alt={`Evidencia ${i + 1}`}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                            loading="lazy"
+                          />
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Conversación / respuestas del admin */}
-                <div>
-                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                    Conversación
-                  </p>
-                  {detail.messages.length === 0 ? (
-                    <p className="text-sm text-slate-400">Aún no hay respuestas del equipo de soporte.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {detail.messages.map((m) => (
-                        <li
-                          key={m.id}
-                          className={cn(
-                            "rounded-lg border p-2.5",
-                            m.author === "admin"
-                              ? "border-indigo-100 bg-indigo-50/60"
-                              : "border-gray-100 bg-white",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={cn(
-                                "text-xs font-semibold",
-                                m.author === "admin" ? "text-indigo-700" : "text-slate-700",
-                              )}
-                            >
-                              {m.authorName}
-                            </span>
-                            <span className="text-[11px] text-slate-400" suppressHydrationWarning>
-                              {formatDateTime(m.createdAt)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-slate-700">{m.message}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                {/* Razón de cierre */}
-                {detail.status === "resolved" && detail.closeReason && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
-                    <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
-                      <Lock className="h-3 w-3" />
-                      Motivo del cierre
+                {/* Estado del seguimiento — no es chat: el equipo contacta por fuera */}
+                {detail.status !== "resolved" ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+                    <p className="text-sm text-indigo-900">
+                      Recibimos tu solicitud. Nuestro equipo te contactará por correo. No hace
+                      falta que respondas aquí.
                     </p>
-                    <p className="mt-1 text-sm text-emerald-900">{detail.closeReason}</p>
                   </div>
+                ) : (
+                  detail.closeReason && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                        <Lock className="h-3 w-3" />
+                        Motivo del cierre
+                      </p>
+                      <p className="mt-1 whitespace-pre-line break-words text-sm text-emerald-900">
+                        {detail.closeReason}
+                      </p>
+                    </div>
+                  )
                 )}
 
                 {/* Cerrar ticket */}
@@ -412,8 +467,9 @@ export function SupportView({ tickets: initialTickets }: SupportViewProps) {
                           value={closeReason}
                           onChange={(e) => setCloseReason(e.target.value)}
                           rows={3}
+                          maxLength={500}
                           placeholder="Ej. El problema se resolvió tras verificar el correo."
-                          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                          className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
                         />
                         <div className="flex items-center gap-2">
                           <button

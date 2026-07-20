@@ -15,6 +15,8 @@ interface CreateSupportTicketPayload {
 interface ActionResult {
   success: boolean;
   error?: string;
+  /** Ticket creado (para pintarlo en el historial sin recargar). */
+  ticket?: { id: string; createdAt: string };
 }
 
 export async function createSupportTicketAction(
@@ -34,13 +36,13 @@ export async function createSupportTicketAction(
     }
 
     const { studioService } = createServerContainer();
-    await studioService.createSupportTicket(tokens.decodedToken.uid, {
+    const id = await studioService.createSupportTicket(tokens.decodedToken.uid, {
       subject,
       category: payload.category,
       description,
       attachments: payload.attachments,
     });
-    return { success: true };
+    return { success: true, ticket: { id, createdAt: new Date().toISOString() } };
   } catch (error) {
     console.error("[CREATE SUPPORT TICKET ERROR]", error);
     return { success: false, error: "No se pudo enviar el ticket." };

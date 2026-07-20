@@ -409,18 +409,9 @@ export interface SupportTicket {
   createdAt: Date;
 }
 
-export interface SupportMessage {
-  id: string;
-  author: "user" | "admin";
-  authorName: string;
-  message: string;
-  createdAt: Date;
-}
-
 export interface SupportTicketDetail extends SupportTicket {
   description: string;
   attachments: string[];
-  messages: SupportMessage[];
   /** Motivo por el que se cerró el ticket (si aplica). */
   closeReason?: string;
 }
