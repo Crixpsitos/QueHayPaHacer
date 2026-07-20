@@ -29,6 +29,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/app/components/ui/avatar"
 import { Separator } from "@/app/components/ui/separator";
 import { Section } from "@/app/components/layout/shared/Section";
 import { EventDetailActions } from "./EventDetailActions";
+import { EventCollaboratorsDialog } from "./EventCollaboratorsDialog";
 import {
   Carousel,
   CarouselContent,
@@ -653,6 +654,12 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                 </div>
               </div>
             )}
+
+            {/* Colaboradores acreditados */}
+            <EventCollaboratorsDialog
+              collaborators={event.collaborators}
+              collaboratorsData={event.collaboratorsData}
+            />
 
             {/* Like / Share / Analytics */}
             <EventDetailActions event={event} initialLiked={initialLiked} shareUrl={shareUrl} sessionId={sessionId} />

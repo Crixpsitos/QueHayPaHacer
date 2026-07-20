@@ -24,6 +24,15 @@ import type {
   GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
+  SentInvitation,
+  UserSearchItem,
+  InviteeInput,
+  ExternalProfile,
+  ExternalProfileInput,
+  ExternalProfileType,
+  ExternalSocialLinks,
+  CollaboratorKind,
+  CollaboratorRole,
   AudienceSummary,
   SupportTicket,
   SupportTicketDetail,
@@ -31,6 +40,7 @@ import type {
   MultiDateEventStats,
   MultiDateSessionStats,
 } from "@/domain/entities/studio/Studio";
+import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
 import { Pipelines, FieldValue } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
 import { buildWeeklyInteractions, WEEK_SECONDS } from "./weeklyInteractions";
@@ -1648,52 +1658,485 @@ export class StudioFirebaseRepository implements IStudioRepository {
     return { events, nextCursor, prevCursor };
   }
 
-  async getCollaborators(uid: string): Promise<Collaborator[]> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    return [];
+  /**
+   * Crea un perfil externo (cara sin login). La imagen ya viene subida a Storage
+   * (`photoURL`); el upload lo hace la server action. No toca el evento: la action
+   * embebe el `{refId, kind:"external"}` en el payload del evento al guardarlo.
+   */
+  /**
+   * Busca usuarios para invitar (pipeline de búsqueda tokenizada sobre `users`,
+   * mismo motor que `getEventRegistrations`). Excluye a uno mismo.
+   * Requiere índice de búsqueda en `users` (Firestore Enterprise).
+   */
+  async searchPotentialCollaborators(
+    uid: string,
+    query: string,
+    limit = 8,
+  ): Promise<UserSearchItem[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    try {
+      const result = await this.db
+        .pipeline()
+        .collection("users")
+        .search({ query: documentMatches(trimmed), sort: score().descending() })
+        // Solo cuentas profesionales pueden ser colaboradoras.
+        .where(field("accountType").equal("professional"))
+        .limit(limit + 1)
+        .select(
+          field("__name__").as("uid"),
+          field("displayName").as("displayName"),
+          field("photoURL").as("photoURL"),
+          field("email").as("email"),
+          field("professionalType").as("professionalType"),
+        )
+        .execute();
+
+      return result.results
+        .map((r) => {
+          const row = r.data() as {
+            uid: unknown;
+            displayName?: string;
+            photoURL?: string;
+            email?: string;
+            professionalType?: ProfessionalType;
+          };
+          return {
+            uid: this.toDocId(row.uid),
+            displayName: row.displayName || row.email || "Usuario",
+            photoURL: row.photoURL ?? undefined,
+            email: row.email ?? "",
+            professionalType: row.professionalType ?? undefined,
+          };
+        })
+        .filter((u) => u.uid !== uid)
+        .slice(0, limit);
+    } catch (error) {
+      // Fallback sin índice de búsqueda (Firestore Enterprise): match EXACTO por
+      // correo. Permite invitar por email aunque no exista el search index; la
+      // búsqueda por nombre/tokens sí requiere el índice. Ver README/deuda.
+      console.warn(
+        "[searchPotentialCollaborators] búsqueda por índice falló; fallback a email exacto",
+        error,
+      );
+      const email = trimmed.toLowerCase();
+      if (!email.includes("@")) return [];
+      const snap = await this.db
+        .collection("users")
+        .where("email", "==", email)
+        .limit(1)
+        .get();
+      return snap.docs
+        // Solo profesionales; se excluye a uno mismo.
+        .filter((d) => {
+          const u = d.data() as { accountType?: string };
+          return d.id !== uid && u.accountType === "professional";
+        })
+        .map((d) => {
+          const u = d.data() as {
+            displayName?: string;
+            photoURL?: string;
+            email?: string;
+            professionalType?: ProfessionalType;
+          };
+          return {
+            uid: d.id,
+            displayName: u.displayName || u.email || "Usuario",
+            photoURL: u.photoURL ?? undefined,
+            email: u.email ?? "",
+            professionalType: u.professionalType ?? undefined,
+          };
+        });
+    }
   }
 
-  async getMemberEntities(uid: string): Promise<Collaborator[]> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    return [];
+  /**
+   * Envía invitaciones (a mi red) a varios usuarios a la vez, en batch. Denormaliza
+   * emisor e invitado en la invitación. Salta auto-invitación y duplicados
+   * (pendientes o ya aceptados). Account-level: sin eventId.
+   */
+  async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
+    if (invitees.length === 0) return;
+
+    const meSnap = await this.db.collection("users").doc(fromUid).get();
+    const me = meSnap.exists
+      ? (meSnap.data() as {
+          displayName?: string;
+          photoURL?: string;
+          professionalType?: ProfessionalType;
+        })
+      : {};
+
+    // Dedup: invitaciones ya existentes (pendientes o aceptadas) que yo envié.
+    const existing = await this.db
+      .collection("collaborationInvites")
+      .where("fromUid", "==", fromUid)
+      .get();
+    const seen = new Set(
+      existing.docs
+        .filter((d) => ["pending", "accepted"].includes(d.data().status))
+        .map((d) => d.data().toUid as string),
+    );
+
+    // Solo se puede invitar a cuentas profesionales (defensa: el buscador ya las
+    // filtra, pero validamos server-side por si llega un uid crafteado).
+    const inviteeSnaps = await Promise.all(
+      invitees.map((inv) => this.db.collection("users").doc(inv.uid).get()),
+    );
+    const professionalUids = new Set(
+      inviteeSnaps
+        .filter(
+          (s) => s.exists && (s.data() as { accountType?: string }).accountType === "professional",
+        )
+        .map((s) => s.id),
+    );
+
+    const batch = this.db.batch();
+    let added = 0;
+    for (const inv of invitees) {
+      if (inv.uid === fromUid || seen.has(inv.uid) || !professionalUids.has(inv.uid)) continue;
+      const ref = this.db.collection("collaborationInvites").doc();
+      batch.set(ref, {
+        fromUid,
+        fromDisplayName: me.displayName ?? "",
+        fromPhotoURL: me.photoURL ?? null,
+        fromProfessionalType: me.professionalType ?? null,
+        toUid: inv.uid,
+        toEmail: inv.email.trim().toLowerCase(),
+        toDisplayName: inv.displayName,
+        toPhotoURL: inv.photoURL ?? null,
+        toProfessionalType: inv.professionalType ?? null,
+        status: "pending",
+        createdAt: FieldValue.serverTimestamp(),
+        respondedAt: null,
+      });
+      seen.add(inv.uid);
+      added++;
+    }
+    if (added > 0) await batch.commit();
   }
 
+  /** Invitaciones pendientes que YO recibí. Emisor ya denormalizado en el doc. */
   async getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    return [];
+    const snap = await this.db
+      .collection("collaborationInvites")
+      .where("toUid", "==", uid)
+      .get();
+    return snap.docs
+      .filter((d) => d.data().status === "pending")
+      .map((d) => {
+        const inv = d.data() as {
+          fromUid?: string;
+          fromDisplayName?: string;
+          fromPhotoURL?: string;
+          fromProfessionalType?: ProfessionalType;
+          createdAt?: unknown;
+        };
+        return {
+          id: d.id,
+          fromUid: inv.fromUid ?? "",
+          fromDisplayName: inv.fromDisplayName || "Organizador",
+          fromPhotoURL: inv.fromPhotoURL ?? undefined,
+          fromProfessionalType: inv.fromProfessionalType ?? undefined,
+          invitedAt: this.toDateOrNull(inv.createdAt) ?? new Date(0),
+        };
+      });
   }
 
-  async inviteCollaborator(uid: string, email: string): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    void email;
+  /** Invitaciones pendientes que YO envié (para cancelar). Invitado denormalizado. */
+  async getSentInvitations(uid: string): Promise<SentInvitation[]> {
+    const snap = await this.db
+      .collection("collaborationInvites")
+      .where("fromUid", "==", uid)
+      .get();
+    return snap.docs
+      .filter((d) => d.data().status === "pending")
+      .map((d) => {
+        const inv = d.data() as {
+          toUid?: string;
+          toDisplayName?: string;
+          toPhotoURL?: string;
+          toEmail?: string;
+          createdAt?: unknown;
+        };
+        return {
+          id: d.id,
+          toUid: inv.toUid ?? "",
+          toDisplayName: inv.toDisplayName || inv.toEmail || "Usuario",
+          toPhotoURL: inv.toPhotoURL ?? undefined,
+          toEmail: inv.toEmail ?? "",
+          invitedAt: this.toDateOrNull(inv.createdAt) ?? new Date(0),
+        };
+      });
   }
 
+  /**
+   * Mi red de colaboradores (BIDIRECCIONAL): usuarios que invité y aceptaron +
+   * usuarios cuya invitación yo acepté (ellos me invitaron) + mis perfiles
+   * externos. Denormalizado en la invitación, sin joins. Dedup por refId.
+   */
+  async getCollaborators(uid: string): Promise<Collaborator[]> {
+    const [sentSnap, receivedSnap, externalsSnap] = await Promise.all([
+      this.db.collection("collaborationInvites").where("fromUid", "==", uid).get(),
+      this.db.collection("collaborationInvites").where("toUid", "==", uid).get(),
+      this.db.collection("externalProfiles").where("managedBy", "==", uid).get(),
+    ]);
+
+    // Yo invité (aceptadas) → el invitado (to*).
+    const asInviter: Collaborator[] = sentSnap.docs
+      .filter((d) => d.data().status === "accepted")
+      .map((d): Collaborator => {
+        const inv = d.data() as {
+          toUid?: string;
+          toDisplayName?: string;
+          toPhotoURL?: string;
+          toProfessionalType?: ProfessionalType;
+        };
+        return {
+          refId: inv.toUid ?? "",
+          kind: "user",
+          displayName: inv.toDisplayName || "Colaborador",
+          photoURL: inv.toPhotoURL ?? undefined,
+          professionalType: inv.toProfessionalType ?? undefined,
+        };
+      });
+
+    // Me invitaron y acepté → quien invitó (from*). Hace la red bidireccional.
+    const asInvitee: Collaborator[] = receivedSnap.docs
+      .filter((d) => d.data().status === "accepted")
+      .map((d): Collaborator => {
+        const inv = d.data() as {
+          fromUid?: string;
+          fromDisplayName?: string;
+          fromPhotoURL?: string;
+          fromProfessionalType?: ProfessionalType;
+        };
+        return {
+          refId: inv.fromUid ?? "",
+          kind: "user",
+          displayName: inv.fromDisplayName || "Colaborador",
+          photoURL: inv.fromPhotoURL ?? undefined,
+          professionalType: inv.fromProfessionalType ?? undefined,
+        };
+      });
+
+    const externals: Collaborator[] = externalsSnap.docs.map((d): Collaborator => {
+      const e = d.data() as { displayName?: string; photoURL?: string };
+      return {
+        refId: d.id,
+        kind: "external",
+        displayName: e.displayName || "Externo",
+        photoURL: e.photoURL ?? undefined,
+      };
+    });
+
+    const byId = new Map<string, Collaborator>();
+    [...asInviter, ...asInvitee, ...externals].forEach((c) => {
+      if (c.refId && !byId.has(c.refId)) byId.set(c.refId, c);
+    });
+    return [...byId.values()];
+  }
+
+  /**
+   * Aceptar/rechazar una invitación recibida. `uid` DEBE ser el invitado
+   * (`toUid`) — verificado en la transacción. Account-level: solo marca el estado,
+   * no toca eventos (el crédito por evento se hace luego en el editor).
+   * Idempotente: si ya no está pendiente, no hace nada.
+   */
   async respondCollaboratorInvitation(
-    invitationId: string,
+    inviteId: string,
+    uid: string,
     accept: boolean,
   ): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void invitationId;
-    void accept;
+    const inviteRef = this.db.collection("collaborationInvites").doc(inviteId);
+    await this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(inviteRef);
+      if (!snap.exists) throw new Error("Invitación no encontrada.");
+      const inv = snap.data() as { toUid?: string; status?: string };
+      if (inv.toUid !== uid) throw new Error("No autorizado.");
+      if (inv.status !== "pending") return; // ya respondida → no-op
+
+      tx.update(inviteRef, {
+        status: accept ? "accepted" : "declined",
+        respondedAt: FieldValue.serverTimestamp(),
+      });
+    });
   }
 
-  async removeCollaborator(
-    uid: string,
-    collaboratorUid: string,
+  /** Cancelar una invitación pendiente que YO envié. Solo el emisor (`fromUid`). */
+  async cancelInvitation(inviteId: string, uid: string): Promise<void> {
+    const inviteRef = this.db.collection("collaborationInvites").doc(inviteId);
+    const snap = await inviteRef.get();
+    if (!snap.exists) return; // no-op
+    const inv = snap.data() as { fromUid?: string; status?: string };
+    if (inv.fromUid !== uid) throw new Error("No autorizado.");
+    if (inv.status !== "pending") return; // aceptada → usar removeCollaborator
+    await inviteRef.delete();
+  }
+
+  /**
+   * Quita de mi red a un colaborador. Externo: borra el `externalProfiles`
+   * (solo su `managedBy`). User: borra las invitaciones aceptadas que yo le envié.
+   * No toca los eventos donde ya está acreditado (se quitan desde el editor).
+   */
+  async removeCollaborator(uid: string, refId: string, kind: CollaboratorKind): Promise<void> {
+    if (kind === "external") {
+      const ref = this.db.collection("externalProfiles").doc(refId);
+      const snap = await ref.get();
+      if (!snap.exists) return;
+      if ((snap.data() as { managedBy?: string }).managedBy !== uid) {
+        throw new Error("No autorizado.");
+      }
+      await ref.delete();
+      return;
+    }
+
+    const snap = await this.db
+      .collection("collaborationInvites")
+      .where("fromUid", "==", uid)
+      .get();
+    const batch = this.db.batch();
+    let n = 0;
+    snap.docs.forEach((d) => {
+      const x = d.data();
+      if (x.toUid === refId && x.status === "accepted") {
+        batch.delete(d.ref);
+        n++;
+      }
+    });
+    if (n > 0) await batch.commit();
+  }
+
+  async createExternalProfile(
+    managedBy: string,
+    input: ExternalProfileInput,
+    photoURL: string | undefined,
+  ): Promise<ExternalProfile> {
+    const email = input.email ? input.email.trim().toLowerCase() : null;
+    // Solo guarda las redes con valor.
+    const socialLinks = Object.fromEntries(
+      Object.entries(input.socialLinks ?? {}).filter(
+        ([, v]) => typeof v === "string" && v.trim(),
+      ),
+    );
+
+    const ref = await this.db.collection("externalProfiles").add({
+      displayName: input.displayName,
+      photoURL: photoURL ?? null,
+      bio: input.bio ?? null,
+      type: input.type,
+      managedBy,
+      email,
+      socialLinks,
+      linkedUserId: null,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return {
+      id: ref.id,
+      displayName: input.displayName,
+      photoURL,
+      bio: input.bio,
+      type: input.type,
+      managedBy,
+      email,
+      socialLinks,
+      linkedUserId: null,
+      createdAt: new Date(),
+    };
+  }
+
+  async getExternalProfile(id: string): Promise<ExternalProfile | null> {
+    const snap = await this.db.collection("externalProfiles").doc(id).get();
+    if (!snap.exists) return null;
+    const d = snap.data() as {
+      displayName?: string;
+      photoURL?: string | null;
+      bio?: string | null;
+      type?: ExternalProfileType;
+      managedBy?: string;
+      email?: string | null;
+      socialLinks?: ExternalSocialLinks;
+      createdAt?: unknown;
+    };
+    return {
+      id: snap.id,
+      displayName: d.displayName ?? "Externo",
+      photoURL: d.photoURL ?? undefined,
+      bio: d.bio ?? undefined,
+      type: d.type ?? "person",
+      managedBy: d.managedBy ?? "",
+      email: d.email ?? null,
+      socialLinks: d.socialLinks,
+      linkedUserId: null,
+      createdAt: this.toDateOrNull(d.createdAt) ?? new Date(0),
+    };
+  }
+
+  /**
+   * Acredita a un miembro de mi red en un evento (con rol). Op atómica
+   * (arrayUnion + nested set), no pasa por el save del evento para no clobberear
+   * el array. Solo el owner. Idempotente.
+   */
+  async addCollaboratorToEvent(
+    eventId: string,
+    member: {
+      refId: string;
+      kind: CollaboratorKind;
+      displayName: string;
+      photoURL?: string;
+      role: CollaboratorRole;
+    },
+    actingUid: string,
   ): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    void collaboratorUid;
+    const eventRef = this.db.collection("events").doc(eventId);
+    const snap = await eventRef.get();
+    if (!snap.exists) throw new Error("Evento no encontrado.");
+    const event = snap.data() as {
+      author?: { id?: string };
+      collaborators?: { refId: string; kind: string }[];
+    };
+    if (event.author?.id !== actingUid) throw new Error("No autorizado.");
+    if ((event.collaborators ?? []).some((c) => c.refId === member.refId)) return;
+
+    await eventRef.update({
+      collaborators: FieldValue.arrayUnion({ refId: member.refId, kind: member.kind }),
+      [`collaboratorsData.${member.refId}`]: {
+        displayName: member.displayName,
+        photoURL: member.photoURL ?? null,
+        role: member.role,
+      },
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   }
 
-  async leaveEntity(uid: string, entityUid: string): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    void entityUid;
+  /**
+   * Quita un colaborador de un evento (solo el owner). Borra del array
+   * `collaborators` y elimina su entrada de `collaboratorsData`. Idempotente.
+   */
+  async removeCollaboratorFromEvent(
+    eventId: string,
+    refId: string,
+    actingUid: string,
+  ): Promise<void> {
+    const eventRef = this.db.collection("events").doc(eventId);
+    await this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(eventRef);
+      if (!snap.exists) return; // ya no existe → no-op
+      const event = snap.data() as {
+        author?: { id?: string };
+        collaborators?: { refId: string; kind: string }[];
+      };
+      if (event.author?.id !== actingUid) throw new Error("No autorizado.");
+
+      const next = (event.collaborators ?? []).filter((c) => c.refId !== refId);
+      tx.update(eventRef, {
+        collaborators: next,
+        [`collaboratorsData.${refId}`]: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
   }
 
   async getAudienceSummary(uid: string): Promise<AudienceSummary | null> {

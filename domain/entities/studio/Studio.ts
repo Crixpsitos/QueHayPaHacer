@@ -304,22 +304,92 @@ export interface GetStudioListParams {
   limit?: number;
 }
 
+/** Tipo de colaborador: user real de la plataforma o perfil externo sin login. */
+export type CollaboratorKind = "user" | "external";
+/** Rol de un colaborador de user real (los externos siempre son "credit"). */
+export type UserCollaboratorRole = "editor" | "viewer";
+export type CollaboratorRole = UserCollaboratorRole | "credit";
+export type ExternalProfileType = "producer" | "artist" | "venue" | "person";
+
+/** Miembro de mi red de colaboradores: user que aceptó, o perfil externo mío. */
 export interface Collaborator {
-  uid: string;
+  refId: string;
+  kind: CollaboratorKind;
   displayName: string;
-  brandName?: string;
   photoURL?: string;
-  professionalType: ProfessionalType;
+  /** Solo para `kind: "user"`: tipo de cuenta profesional. */
+  professionalType?: ProfessionalType;
 }
 
-/** Invitación de colaboración recibida (alguien me invitó a colaborar). */
+/** Resultado de búsqueda de usuarios para invitar (pipeline sobre `users`). */
+export interface UserSearchItem {
+  uid: string;
+  displayName: string;
+  photoURL?: string;
+  email: string;
+  professionalType?: ProfessionalType;
+}
+
+/** Datos de un usuario a invitar (denormalizados en la invitación). */
+export interface InviteeInput {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  professionalType?: ProfessionalType;
+}
+
+/** Redes sociales opcionales de un perfil externo. */
+export interface ExternalSocialLinks {
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  website?: string;
+}
+
+/** Datos para crear un perfil externo (cara sin login). La imagen se sube aparte. */
+export interface ExternalProfileInput {
+  displayName: string;
+  bio?: string;
+  type: ExternalProfileType;
+  /** Opcional; solo si algún día se quiere invitar a reclamar el perfil. */
+  email?: string;
+  socialLinks?: ExternalSocialLinks;
+}
+
+/** Perfil externo persistido (`externalProfiles/{id}`). */
+export interface ExternalProfile {
+  id: string;
+  displayName: string;
+  photoURL?: string;
+  bio?: string;
+  type: ExternalProfileType;
+  /** uid del profesional que lo creó y administra. */
+  managedBy: string;
+  email: string | null;
+  socialLinks?: ExternalSocialLinks;
+  /** Reservado a futuro (reclamación); no se implementa ahora. */
+  linkedUserId: null;
+  createdAt: Date;
+}
+
+/** Invitación pendiente que YO recibí (alguien me invitó a su red). Account-level. */
 export interface CollaboratorInvitation {
   id: string;
   fromUid: string;
   fromDisplayName: string;
-  fromBrandName?: string;
   fromPhotoURL?: string;
-  professionalType: ProfessionalType;
+  fromProfessionalType?: ProfessionalType;
+  invitedAt: Date;
+}
+
+/** Invitación pendiente que YO envié (para poder cancelarla). */
+export interface SentInvitation {
+  id: string;
+  toUid: string;
+  toDisplayName: string;
+  toPhotoURL?: string;
+  toEmail: string;
   invitedAt: Date;
 }
 

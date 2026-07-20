@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button/button";
 import { CardContent, CardFooter, CardHeader } from "@/app/components/ui/card";
+import { EventCredits } from "../EventCredits";
 import { MagicCard } from "@/app/components/ui/magic-card";
 import Image from "next/image";
 import { Separator } from "@/app/components/ui/separator";
@@ -396,6 +397,9 @@ export const EventCard = ({
                 </span>
               )}
             </div>
+
+            {/* Colaboradores acreditados (compacto) */}
+            <EventCredits collaboratorsData={event.collaboratorsData} compact className="mt-1" />
 
             {/* Título */}
             {/* break-words: sin esto un título sin espacios desborda la card. */}

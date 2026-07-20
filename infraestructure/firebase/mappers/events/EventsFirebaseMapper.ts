@@ -95,6 +95,15 @@ export class EventsFirebaseMapper implements IEventsMapper {
       },
       analytics: dto.analytics,
       eventType: dto.eventType,
+      collaborators: dto.collaborators,
+      collaboratorsData: dto.collaboratorsData
+        ? Object.fromEntries(
+            Object.entries(dto.collaboratorsData).map(([k, v]) => [
+              k,
+              { ...v, photoURL: v.photoURL ?? undefined },
+            ]),
+          )
+        : undefined,
       startDate: dto.startDate?.toDate ? dto.startDate.toDate() : undefined,
       endDate: dto.endDate?.toDate ? dto.endDate.toDate() : undefined,
       createdAt: dto.createdAt?.toDate ? dto.createdAt.toDate() : new Date(),
@@ -149,6 +158,8 @@ export class EventsFirebaseMapper implements IEventsMapper {
       promotion: this.toStoredPromotion(domain.promotion),
       analytics: this.withScore(domain.analytics),
       eventType: domain.eventType,
+      collaborators: domain.collaborators ?? [],
+      collaboratorsData: domain.collaboratorsData ?? {},
       createdAt:
         domain.createdAt instanceof Date && !isNaN(domain.createdAt.getTime())
           ? Timestamp.fromDate(domain.createdAt)
@@ -189,6 +200,11 @@ export class EventsFirebaseMapper implements IEventsMapper {
       registrationEventForm: domain.registrationEventForm,
       capacity: domain.capacity,
       requiresAttendance: domain.requiresAttendance,
+      // Colaboradores: los persiste el owner con el save del evento (los edita en
+      // el step del wizard). En el modelo account-level, aceptar una invitación NO
+      // escribe en el evento, así que el owner es el único escritor → sin race.
+      collaborators: domain.collaborators ?? [],
+      collaboratorsData: domain.collaboratorsData ?? {},
       price: domain.price,
       promotion: domain.promotion ? {
         isPromoted: domain.promotion.isPromoted ?? false,

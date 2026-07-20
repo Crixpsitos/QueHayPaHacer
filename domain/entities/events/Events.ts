@@ -51,6 +51,13 @@ export interface Events extends Dates {
   promotion: Promotion;
   /** "standard" = evento único (comportamiento actual). "multi-date" = evento con sesiones (solo profesionales). */
   eventType?: "standard" | "multi-date";
+  /** Colaboradores acreditados (referencias tipadas). Solo cuentas profesionales las agregan. */
+  collaborators?: { refId: string; kind: "user" | "external" }[];
+  /** Datos denormalizados de cada colaborador para pintar créditos sin joins. Clave = refId. */
+  collaboratorsData?: Record<
+    string,
+    { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+  >;
   analytics?: {
     views?: number;
     clicks?: number;

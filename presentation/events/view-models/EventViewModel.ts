@@ -69,6 +69,11 @@ export interface EventViewModel {
     score?: number;
   };
   eventType?: "standard" | "multi-date";
+  collaborators?: { refId: string; kind: "user" | "external" }[];
+  collaboratorsData?: Record<
+    string,
+    { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+  >;
   // Fechas como strings ISO 8601
   startDate: string;
   endDate: string;

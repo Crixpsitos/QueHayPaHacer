@@ -17,6 +17,7 @@ import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import type { SessionViewModel } from "../view-models/SessionViewModel";
 import { EventDetailActions } from "./EventDetailActions";
+import { EventCollaboratorsDialog } from "./EventCollaboratorsDialog";
 import { PublicSessionCard } from "./session/PublicSessionCard";
 
 const extensions = [StarterKit];
@@ -170,6 +171,12 @@ export function MultiDateEventDetailClient({
             </div>
           </Link>
         ) : null}
+
+        {/* Colaboradores acreditados */}
+        <EventCollaboratorsDialog
+          collaborators={event.collaborators}
+          collaboratorsData={event.collaboratorsData}
+        />
 
         {/* Like / Share / Analytics */}
         <EventDetailActions event={event} initialLiked={initialLiked} />

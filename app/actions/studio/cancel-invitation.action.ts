@@ -5,27 +5,22 @@ import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { revalidatePath } from "next/cache";
-import type { CollaboratorKind } from "@/domain/entities/studio/Studio";
 
-/** Quita de mi red a un colaborador (user aceptado o externo mío). */
-export async function removeCollaboratorAction(
-  refId: string,
-  kind: CollaboratorKind,
+/** Cancela una invitación pendiente que YO envié. */
+export async function cancelInvitationAction(
+  inviteId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const tokens = await getTokens(await cookies(), authConfig);
     if (!tokens) return { success: false, error: "No hay sesión activa." };
-    if (!refId || (kind !== "user" && kind !== "external")) {
-      return { success: false, error: "Datos inválidos." };
-    }
 
     const { studioService } = createServerContainer();
-    await studioService.removeCollaborator(tokens.decodedToken.uid, refId, kind);
+    await studioService.cancelInvitation(inviteId, tokens.decodedToken.uid);
     revalidatePath("/studio/collaborators");
     return { success: true };
   } catch (error) {
-    console.error("[REMOVE COLLABORATOR ERROR]", error);
-    const message = error instanceof Error ? error.message : "No se pudo quitar el colaborador.";
+    console.error("[CANCEL INVITATION ERROR]", error);
+    const message = error instanceof Error ? error.message : "No se pudo cancelar la invitación.";
     return { success: false, error: message };
   }
 }

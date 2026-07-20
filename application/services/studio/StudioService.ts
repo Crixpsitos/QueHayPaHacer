@@ -15,6 +15,13 @@ import type {
   GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
+  SentInvitation,
+  UserSearchItem,
+  InviteeInput,
+  ExternalProfile,
+  ExternalProfileInput,
+  CollaboratorKind,
+  CollaboratorRole,
   AudienceSummary,
   SupportTicket,
   SupportTicketDetail,
@@ -81,32 +88,66 @@ export class StudioService {
     return this.repository.getEventsBySite(siteId, params);
   }
 
-  getCollaborators(uid: string): Promise<Collaborator[]> {
-    return this.repository.getCollaborators(uid);
+  searchPotentialCollaborators(uid: string, query: string, limit?: number): Promise<UserSearchItem[]> {
+    return this.repository.searchPotentialCollaborators(uid, query, limit);
   }
 
-  getMemberEntities(uid: string): Promise<Collaborator[]> {
-    return this.repository.getMemberEntities(uid);
+  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
+    return this.repository.inviteCollaborators(fromUid, invitees);
   }
 
   getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]> {
     return this.repository.getReceivedInvitations(uid);
   }
 
-  inviteCollaborator(uid: string, email: string): Promise<void> {
-    return this.repository.inviteCollaborator(uid, email);
+  getSentInvitations(uid: string): Promise<SentInvitation[]> {
+    return this.repository.getSentInvitations(uid);
   }
 
-  respondCollaboratorInvitation(invitationId: string, accept: boolean): Promise<void> {
-    return this.repository.respondCollaboratorInvitation(invitationId, accept);
+  getCollaborators(uid: string): Promise<Collaborator[]> {
+    return this.repository.getCollaborators(uid);
   }
 
-  removeCollaborator(uid: string, collaboratorUid: string): Promise<void> {
-    return this.repository.removeCollaborator(uid, collaboratorUid);
+  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<void> {
+    return this.repository.respondCollaboratorInvitation(inviteId, uid, accept);
   }
 
-  leaveEntity(uid: string, entityUid: string): Promise<void> {
-    return this.repository.leaveEntity(uid, entityUid);
+  cancelInvitation(inviteId: string, uid: string): Promise<void> {
+    return this.repository.cancelInvitation(inviteId, uid);
+  }
+
+  removeCollaborator(uid: string, refId: string, kind: CollaboratorKind): Promise<void> {
+    return this.repository.removeCollaborator(uid, refId, kind);
+  }
+
+  createExternalProfile(
+    managedBy: string,
+    input: ExternalProfileInput,
+    photoURL: string | undefined,
+  ): Promise<ExternalProfile> {
+    return this.repository.createExternalProfile(managedBy, input, photoURL);
+  }
+
+  getExternalProfile(id: string): Promise<ExternalProfile | null> {
+    return this.repository.getExternalProfile(id);
+  }
+
+  addCollaboratorToEvent(
+    eventId: string,
+    member: {
+      refId: string;
+      kind: CollaboratorKind;
+      displayName: string;
+      photoURL?: string;
+      role: CollaboratorRole;
+    },
+    actingUid: string,
+  ): Promise<void> {
+    return this.repository.addCollaboratorToEvent(eventId, member, actingUid);
+  }
+
+  removeCollaboratorFromEvent(eventId: string, refId: string, actingUid: string): Promise<void> {
+    return this.repository.removeCollaboratorFromEvent(eventId, refId, actingUid);
   }
 
   getAudienceSummary(uid: string): Promise<AudienceSummary | null> {
