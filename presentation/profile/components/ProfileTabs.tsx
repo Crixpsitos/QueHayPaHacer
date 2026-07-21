@@ -474,7 +474,7 @@ function ProfileTabsInner({
                       <div className="flex gap-2">
                         {event.status?.toLowerCase() === "published" && (
                           <Link
-                            href={`/events/${event.id}`}
+                            href={`/eventos/${event.id}`}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                             aria-label={`Ver evento: ${event.title}`}
                           >
@@ -483,7 +483,7 @@ function ProfileTabsInner({
                           </Link>
                         )}
                         <Link
-                          href={`/events/${event.id}/edit`}
+                          href={`/eventos/${event.id}/edit`}
                           className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-violet/40 bg-brand-violet/5 px-3 py-2 text-sm font-semibold text-brand-violet transition-colors hover:bg-brand-violet/10"
                           aria-label={`Editar evento: ${event.title}`}
                         >

@@ -45,7 +45,7 @@ export const Navbar = () => {
 
   const routes = [
     { name: "Inicio", href: "/" },
-    { name: "Eventos", href: "/events" },
+    { name: "Eventos", href: "/eventos" },
     { name: "Donde parchar?", href: "/where-to-party" },
     { name: "Contactanos", href: "/contact" },
   ];
@@ -55,7 +55,7 @@ export const Navbar = () => {
       await refreshUser();
       closeModal();
       startTransition(() => {
-        router.push("/events/create");
+        router.push("/eventos/create");
       });
     } catch {
       showToast("No se pudo completar el inicio de sesion.", "error");
@@ -142,7 +142,7 @@ export const Navbar = () => {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/events/create">Crear evento</Link>
+                  <Link href="/eventos/create">Crear evento</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/sites/create">Crear nuevo sitio</Link>
@@ -166,7 +166,7 @@ export const Navbar = () => {
                 <DropdownMenuContent align="end" sideOffset={8}>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/events/create">Crear evento</Link>
+                      <Link href="/eventos/create">Crear evento</Link>
                     ) : (
                       <button type="button" onClick={openLoginModal}>Crear evento</button>
                     )}

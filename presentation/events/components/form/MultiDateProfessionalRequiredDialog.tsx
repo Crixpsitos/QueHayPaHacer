@@ -37,7 +37,7 @@ export function MultiDateProfessionalRequiredDialog() {
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
             variant="outline"
-            onClick={() => router.push("/events/create?type=standard")}
+            onClick={() => router.push("/eventos/create?type=standard")}
             className="w-full font-semibold sm:w-auto"
           >
             Crear evento estándar

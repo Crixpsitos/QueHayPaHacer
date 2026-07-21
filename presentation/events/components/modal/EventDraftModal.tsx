@@ -27,12 +27,12 @@ export const EventDraftModal = ({ draftId }: EventDraftModalProps) => {
 
   const handleContinue = () => {
     handleClose();
-    router.push(`/events/${draftId}/edit`);
+    router.push(`/eventos/${draftId}/edit`);
   };
 
   const handleCreateNew = () => {
     handleClose();
-    router.push("/events/create?isNew=true");
+    router.push("/eventos/create?isNew=true");
   };
 
   return (

@@ -39,6 +39,19 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+
+  // Migración de rutas: /events → /eventos (español, SEO). Red de seguridad por
+  // si queda algún link viejo o URL externa. `:path*` cubre también /events exacto.
+  // permanent:false (307) — flexible en MVP; subir a true al estabilizar.
+  async redirects() {
+    return [
+      {
+        source: "/events/:path*",
+        destination: "/eventos/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

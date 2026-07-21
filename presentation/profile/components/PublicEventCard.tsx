@@ -141,7 +141,7 @@ export function PublicEventCard({ event }: PublicEventCardProps) {
           </div>
         </div>
 
-        <Link href={`/events/${event.id}`} className="mt-1">
+        <Link href={`/eventos/${event.id}`} className="mt-1">
           <ShimmerButton
             shimmerColor="#ffffff"
             background="black"

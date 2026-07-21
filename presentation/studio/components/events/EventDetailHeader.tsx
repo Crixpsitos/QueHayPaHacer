@@ -61,7 +61,7 @@ export function EventDetailHeader({
         <div className="flex shrink-0 items-center gap-2">
           {published && (
             <Link
-              href={`/events/${eventId}`}
+              href={`/eventos/${eventId}`}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-gray-50"
             >
               <Eye className="h-4 w-4" />
@@ -69,7 +69,7 @@ export function EventDetailHeader({
             </Link>
           )}
           <Link
-            href={`/events/${eventId}/edit`}
+            href={`/eventos/${eventId}/edit`}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
           >
             <Pencil className="h-4 w-4" />
