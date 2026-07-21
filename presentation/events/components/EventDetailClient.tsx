@@ -673,8 +673,8 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
               <DetailRow
                 icon={MapPin}
                 label="Lugar"
-                value={venue || [city, department?.name].filter(Boolean).join(", ")}
-                sub={[address, city, department?.name, country?.name].filter(Boolean).join(", ")}
+                value={venue || [city?.name, department?.name].filter(Boolean).join(", ")}
+                sub={[address, city?.name, department?.name, country?.name].filter(Boolean).join(", ")}
               />
               {moreInfo && <p className="text-xs text-gray-500 pl-11">{moreInfo}</p>}
             </div>
