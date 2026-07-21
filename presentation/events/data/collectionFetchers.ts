@@ -23,6 +23,7 @@ const fetchCollectionEventIds = async (
   const { eventFeed } = createServerContainer();
   if (kind === "featured") return eventFeed.getFeatured();
   if (kind === "weekend") return eventFeed.getWeekend();
+  if (kind === "all") return eventFeed.getAll();
   // Filtra por id O slug: `categoryInfo.id` en los eventos es inconsistente.
   const catValues = [categoryId, categorySlug].filter((v): v is string => Boolean(v));
   return catValues.length ? eventFeed.getByUserPreferences(catValues) : [];

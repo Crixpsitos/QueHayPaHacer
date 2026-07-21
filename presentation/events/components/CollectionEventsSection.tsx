@@ -37,10 +37,11 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
     for (const { id, liked } of results) likedByEventId[id] = liked;
   }
 
-  const isCategory = def.kind === "category";
+  // Categoría y "todos": lista plana (catálogo). Destacados/fin de semana:
+  // agrupados por categoría con "Ver más" a cada landing.
+  const isFlat = def.kind === "category" || def.kind === "all";
 
-  // Categoría: lista plana. Destacados/fin de semana: agrupados por categoría.
-  if (isCategory) {
+  if (isFlat) {
     return (
       <Section spacing="sm" className="mt-4">
         <EventCardInteractive

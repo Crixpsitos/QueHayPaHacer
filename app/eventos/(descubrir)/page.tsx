@@ -68,7 +68,10 @@ export default async function EventosIndexPage() {
 
       <Separator className="my-6" />
 
-      <ContentSection title="Todos los eventos">
+      <ContentSection
+        title="Todos los eventos"
+        action={{ href: "/eventos-todos-ibague" }}
+      >
         <AllEventsContainer />
       </ContentSection>
     </>
