@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { Section } from "@/app/components/layout/shared/Section";
-import { ContentSection } from "@/app/components/layout/shared/ContentSection";
-import { Separator } from "@/app/components/ui/separator";
-import { FeaturedEventsContainer } from "@/presentation/events/components/FeaturedEventsContainer";
-import { WeekendEventsContainer } from "@/presentation/events/components/WeekendEventsContainer";
-import { AllEventsContainer } from "@/presentation/events/components/AllEventsContainer";
+import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
+import { EventosIndexSections } from "@/presentation/events/components/EventosIndexSections";
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
-import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
 
 export const metadata: Metadata = {
   title: "Eventos en Ibagué | Que Hay Pa Hacer?",
@@ -17,16 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function EventosIndexPage() {
+  // Chips de categoría: estáticas (sin cookies). Las secciones de eventos —que
+  // leen la cookie para el like— van en un hueco PPR (<Suspense>).
   const collections = await getEventCollections();
-  // Por kind (no por slug hardcodeado): robusto a cambios de formato de slug.
-  const featuredDef = collections.find((c) => c.kind === "featured");
-  const weekendDef = collections.find((c) => c.kind === "weekend");
   const categoryCollections = collections.filter((c) => c.kind === "category");
-
-  const [featuredEvents, weekendEvents] = await Promise.all([
-    featuredDef ? fetchCollectionEvents(featuredDef) : Promise.resolve([]),
-    weekendDef ? fetchCollectionEvents(weekendDef) : Promise.resolve([]),
-  ]);
 
   return (
     <>
@@ -52,28 +43,9 @@ export default async function EventosIndexPage() {
         )}
       </Section>
 
-      <ContentSection
-        title="Eventos destacados"
-        action={{ href: "/eventos-destacados-ibague" }}
-      >
-        <FeaturedEventsContainer featuredEvents={featuredEvents} />
-      </ContentSection>
-
-      <ContentSection
-        title="Este fin de semana"
-        action={{ href: "/eventos-este-fin-de-semana-ibague" }}
-      >
-        <WeekendEventsContainer weekendEvents={weekendEvents} />
-      </ContentSection>
-
-      <Separator className="my-6" />
-
-      <ContentSection
-        title="Todos los eventos"
-        action={{ href: "/eventos-todos-ibague" }}
-      >
-        <AllEventsContainer />
-      </ContentSection>
+      <Suspense fallback={<EventsSectionsSkeleton />}>
+        <EventosIndexSections />
+      </Suspense>
     </>
   );
 }
