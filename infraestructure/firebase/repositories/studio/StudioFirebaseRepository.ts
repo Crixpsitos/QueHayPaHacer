@@ -1,5 +1,13 @@
 import type { Firestore } from "firebase-admin/firestore";
-import type { IStudioRepository } from "@/domain/repository/studio/IStudioRepository";
+import type { IStudioFirebaseRepository } from "./IStudioFirebaseRepository";
+import type {
+  FirebaseSupportTicketDto,
+  FirebaseSupportTicketDetailDto,
+  FirebaseReceivedInviteDto,
+  FirebaseSentInviteDto,
+  StudioCollaboratorsRaw,
+  FirebaseExternalProfileDto,
+} from "@/infraestructure/firebase/dto/studio/FirebaseStudioDto";
 import type {
   OrganizerOverview,
   OrganizerKpis,
@@ -22,20 +30,13 @@ import type {
   GetSiteEventsParams,
   OrganizerSiteListItem,
   GetStudioListParams,
-  Collaborator,
-  CollaboratorInvitation,
-  SentInvitation,
   UserSearchItem,
   InviteeInput,
   ExternalProfile,
   ExternalProfileInput,
-  ExternalProfileType,
-  ExternalSocialLinks,
   CollaboratorKind,
   CollaboratorRole,
   AudienceSummary,
-  SupportTicket,
-  SupportTicketDetail,
   CreateSupportTicketInput,
   MultiDateEventStats,
   MultiDateSessionStats,
@@ -110,7 +111,7 @@ interface PipelineRegistrationRow {
  * El desarrollador implementará aquí la conexión real a Firestore.
  * La UI funciona por ahora con datos MOCK en los ViewModels.
  */
-export class StudioFirebaseRepository implements IStudioRepository {
+export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   private readonly now = new Date();
   private readonly startOfCurrentMonth = new Date(
     this.now.getFullYear(),
@@ -1818,57 +1819,25 @@ export class StudioFirebaseRepository implements IStudioRepository {
   }
 
   /** Invitaciones pendientes que YO recibí. Emisor ya denormalizado en el doc. */
-  async getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]> {
+  async getReceivedInvitations(uid: string): Promise<FirebaseReceivedInviteDto[]> {
     const snap = await this.db
       .collection("collaborationInvites")
       .where("toUid", "==", uid)
       .get();
     return snap.docs
       .filter((d) => d.data().status === "pending")
-      .map((d) => {
-        const inv = d.data() as {
-          fromUid?: string;
-          fromDisplayName?: string;
-          fromPhotoURL?: string;
-          fromProfessionalType?: ProfessionalType;
-          createdAt?: unknown;
-        };
-        return {
-          id: d.id,
-          fromUid: inv.fromUid ?? "",
-          fromDisplayName: inv.fromDisplayName || "Organizador",
-          fromPhotoURL: inv.fromPhotoURL ?? undefined,
-          fromProfessionalType: inv.fromProfessionalType ?? undefined,
-          invitedAt: this.toDateOrNull(inv.createdAt) ?? new Date(0),
-        };
-      });
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<FirebaseReceivedInviteDto, "id">) }));
   }
 
   /** Invitaciones pendientes que YO envié (para cancelar). Invitado denormalizado. */
-  async getSentInvitations(uid: string): Promise<SentInvitation[]> {
+  async getSentInvitations(uid: string): Promise<FirebaseSentInviteDto[]> {
     const snap = await this.db
       .collection("collaborationInvites")
       .where("fromUid", "==", uid)
       .get();
     return snap.docs
       .filter((d) => d.data().status === "pending")
-      .map((d) => {
-        const inv = d.data() as {
-          toUid?: string;
-          toDisplayName?: string;
-          toPhotoURL?: string;
-          toEmail?: string;
-          createdAt?: unknown;
-        };
-        return {
-          id: d.id,
-          toUid: inv.toUid ?? "",
-          toDisplayName: inv.toDisplayName || inv.toEmail || "Usuario",
-          toPhotoURL: inv.toPhotoURL ?? undefined,
-          toEmail: inv.toEmail ?? "",
-          invitedAt: this.toDateOrNull(inv.createdAt) ?? new Date(0),
-        };
-      });
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<FirebaseSentInviteDto, "id">) }));
   }
 
   /**
@@ -1876,17 +1845,16 @@ export class StudioFirebaseRepository implements IStudioRepository {
    * usuarios cuya invitación yo acepté (ellos me invitaron) + mis perfiles
    * externos. Denormalizado en la invitación, sin joins. Dedup por refId.
    */
-  async getCollaborators(uid: string): Promise<Collaborator[]> {
+  async getCollaborators(uid: string): Promise<StudioCollaboratorsRaw> {
     const [sentSnap, receivedSnap, externalsSnap] = await Promise.all([
       this.db.collection("collaborationInvites").where("fromUid", "==", uid).get(),
       this.db.collection("collaborationInvites").where("toUid", "==", uid).get(),
       this.db.collection("externalProfiles").where("managedBy", "==", uid).get(),
     ]);
 
-    // Yo invité (aceptadas) → el invitado (to*).
-    const asInviter: Collaborator[] = sentSnap.docs
+    const sentAccepted = sentSnap.docs
       .filter((d) => d.data().status === "accepted")
-      .map((d): Collaborator => {
+      .map((d) => {
         const inv = d.data() as {
           toUid?: string;
           toDisplayName?: string;
@@ -1894,18 +1862,16 @@ export class StudioFirebaseRepository implements IStudioRepository {
           toProfessionalType?: ProfessionalType;
         };
         return {
-          refId: inv.toUid ?? "",
-          kind: "user",
-          displayName: inv.toDisplayName || "Colaborador",
-          photoURL: inv.toPhotoURL ?? undefined,
-          professionalType: inv.toProfessionalType ?? undefined,
+          toUid: inv.toUid,
+          toDisplayName: inv.toDisplayName,
+          toPhotoURL: inv.toPhotoURL,
+          toProfessionalType: inv.toProfessionalType,
         };
       });
 
-    // Me invitaron y acepté → quien invitó (from*). Hace la red bidireccional.
-    const asInvitee: Collaborator[] = receivedSnap.docs
+    const receivedAccepted = receivedSnap.docs
       .filter((d) => d.data().status === "accepted")
-      .map((d): Collaborator => {
+      .map((d) => {
         const inv = d.data() as {
           fromUid?: string;
           fromDisplayName?: string;
@@ -1913,29 +1879,19 @@ export class StudioFirebaseRepository implements IStudioRepository {
           fromProfessionalType?: ProfessionalType;
         };
         return {
-          refId: inv.fromUid ?? "",
-          kind: "user",
-          displayName: inv.fromDisplayName || "Colaborador",
-          photoURL: inv.fromPhotoURL ?? undefined,
-          professionalType: inv.fromProfessionalType ?? undefined,
+          fromUid: inv.fromUid,
+          fromDisplayName: inv.fromDisplayName,
+          fromPhotoURL: inv.fromPhotoURL,
+          fromProfessionalType: inv.fromProfessionalType,
         };
       });
 
-    const externals: Collaborator[] = externalsSnap.docs.map((d): Collaborator => {
+    const externals = externalsSnap.docs.map((d) => {
       const e = d.data() as { displayName?: string; photoURL?: string };
-      return {
-        refId: d.id,
-        kind: "external",
-        displayName: e.displayName || "Externo",
-        photoURL: e.photoURL ?? undefined,
-      };
+      return { id: d.id, displayName: e.displayName, photoURL: e.photoURL };
     });
 
-    const byId = new Map<string, Collaborator>();
-    [...asInviter, ...asInvitee, ...externals].forEach((c) => {
-      if (c.refId && !byId.has(c.refId)) byId.set(c.refId, c);
-    });
-    return [...byId.values()];
+    return { sentAccepted, receivedAccepted, externals };
   }
 
   /**
@@ -2047,31 +2003,10 @@ export class StudioFirebaseRepository implements IStudioRepository {
     };
   }
 
-  async getExternalProfile(id: string): Promise<ExternalProfile | null> {
+  async getExternalProfile(id: string): Promise<FirebaseExternalProfileDto | null> {
     const snap = await this.db.collection("externalProfiles").doc(id).get();
     if (!snap.exists) return null;
-    const d = snap.data() as {
-      displayName?: string;
-      photoURL?: string | null;
-      bio?: string | null;
-      type?: ExternalProfileType;
-      managedBy?: string;
-      email?: string | null;
-      socialLinks?: ExternalSocialLinks;
-      createdAt?: unknown;
-    };
-    return {
-      id: snap.id,
-      displayName: d.displayName ?? "Externo",
-      photoURL: d.photoURL ?? undefined,
-      bio: d.bio ?? undefined,
-      type: d.type ?? "person",
-      managedBy: d.managedBy ?? "",
-      email: d.email ?? null,
-      socialLinks: d.socialLinks,
-      linkedUserId: null,
-      createdAt: this.toDateOrNull(d.createdAt) ?? new Date(0),
-    };
+    return { id: snap.id, ...(snap.data() as Omit<FirebaseExternalProfileDto, "id">) };
   }
 
   /**
@@ -2145,60 +2080,30 @@ export class StudioFirebaseRepository implements IStudioRepository {
     return null;
   }
 
-  /** Resumen de los tickets del usuario, más nuevos primero. */
-  async getSupportTickets(uid: string): Promise<SupportTicket[]> {
+  /** Tickets crudos del usuario. El mapeo y el orden por fecha los hace el adapter. */
+  async getSupportTickets(uid: string): Promise<FirebaseSupportTicketDto[]> {
     const snap = await this.db
       .collection("supportTickets")
       .where("uid", "==", uid)
       .get();
-    // ponytail: orden en memoria para no exigir índice compuesto (uid + createdAt).
-    return snap.docs
-      .map((d) => {
-        const t = d.data() as {
-          subject?: string;
-          category?: string;
-          status?: SupportTicket["status"];
-          createdAt?: unknown;
-        };
-        return {
-          id: d.id,
-          subject: t.subject ?? "",
-          category: t.category ?? "",
-          status: t.status ?? "open",
-          createdAt: this.toDateOrNull(t.createdAt) ?? new Date(0),
-        };
-      })
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return snap.docs.map(
+      (d) => ({ id: d.id, ...(d.data() as Omit<FirebaseSupportTicketDto, "id">) }),
+    );
   }
 
-  /** Detalle de un ticket. Devuelve null si no existe o no es del usuario. */
+  /**
+   * Detalle crudo de un ticket. Null si no existe o no es del usuario: el check
+   * de propiedad se hace aquí (server-side) antes de exponer nada.
+   */
   async getSupportTicketDetail(
     ticketId: string,
     uid: string,
-  ): Promise<SupportTicketDetail | null> {
+  ): Promise<FirebaseSupportTicketDetailDto | null> {
     const doc = await this.db.collection("supportTickets").doc(ticketId).get();
     if (!doc.exists) return null;
-    const t = doc.data() as {
-      uid?: string;
-      subject?: string;
-      category?: string;
-      status?: SupportTicketDetail["status"];
-      description?: string;
-      attachments?: string[];
-      closeReason?: string;
-      createdAt?: unknown;
-    };
-    if (t.uid !== uid) return null; // no es tu ticket
-    return {
-      id: doc.id,
-      subject: t.subject ?? "",
-      category: t.category ?? "",
-      status: t.status ?? "open",
-      description: t.description ?? "",
-      attachments: Array.isArray(t.attachments) ? t.attachments : [],
-      closeReason: t.closeReason || undefined,
-      createdAt: this.toDateOrNull(t.createdAt) ?? new Date(0),
-    };
+    const data = doc.data() as { uid?: string } & Omit<FirebaseSupportTicketDetailDto, "id">;
+    if (data.uid !== uid) return null; // no es tu ticket
+    return { id: doc.id, ...data };
   }
 
   async createSupportTicket(

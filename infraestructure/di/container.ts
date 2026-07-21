@@ -34,19 +34,27 @@ import { UserPreferencesFirebaseRepository } from "../firebase/repositories/User
 import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
 import { ProfileFirebaseRepository } from "../firebase/repositories/profile/ProfileFirebaseRepository";
 import { ProfileAdapter } from "../adapters/profile/ProfileAdapter";
+import { ProfileFirebaseMapper } from "../firebase/mappers/profile/ProfileFirebaseMapper";
 import { ProfileService } from "@/application/services/profile/ProfileService";
 import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFirebaseRepository";
+import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
+import { BadgeFirebaseMapper } from "../firebase/mappers/user/BadgeFirebaseMapper";
 import { BadgeService } from "@/application/services/user/BadgeService";
 import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
+import { ProfessionalRequestAdapter } from "../adapters/professional/ProfessionalRequestAdapter";
+import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professional/ProfessionalRequestFirebaseMapper";
 import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
+import { StudioFirebaseMapper } from "../firebase/mappers/studio/StudioFirebaseMapper";
 import { StudioService } from "@/application/services/studio/StudioService";
 import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
 import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
+import { EventSessionAdapter } from "../adapters/events/EventSessionAdapter";
+import { EventSessionFirebaseMapper } from "../firebase/mappers/events/EventSessionFirebaseMapper";
 import { EventSessionService } from "@/application/services/events/EventSessionService";
 
 
@@ -74,7 +82,11 @@ export const createServerContainer = () => {
   const eventsService = new EventsService(eventsRepository, storageService);
 
   // event sessions (solo para eventos multi-date)
-  const eventSessionRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionFirebaseRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionRepository = new EventSessionAdapter(
+    eventSessionFirebaseRepository,
+    new EventSessionFirebaseMapper(),
+  );
   const eventSessionService = new EventSessionService(eventSessionRepository);
 
   // event interactions
@@ -112,20 +124,25 @@ export const createServerContainer = () => {
 
   // profile
   const profileFirebaseRepository = new ProfileFirebaseRepository(getFirebaseFirestore(), getEnterpriseFirestore());
-  const profileRepository = new ProfileAdapter(profileFirebaseRepository);
+  const profileRepository = new ProfileAdapter(profileFirebaseRepository, new ProfileFirebaseMapper());
   const profileService = new ProfileService(profileRepository);
 
   // badges
   const badgeFirebaseRepository = new BadgeFirebaseRepository(getFirebaseFirestore());
-  const badgeService = new BadgeService(badgeFirebaseRepository);
+  const badgeRepository = new BadgeAdapter(badgeFirebaseRepository, new BadgeFirebaseMapper());
+  const badgeService = new BadgeService(badgeRepository);
 
   // professional requests
   const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
-  const professionalRequestService = new ProfessionalRequestService(professionalRequestFirebaseRepository, userRepository);
+  const professionalRequestRepository = new ProfessionalRequestAdapter(
+    professionalRequestFirebaseRepository,
+    new ProfessionalRequestFirebaseMapper(),
+  );
+  const professionalRequestService = new ProfessionalRequestService(professionalRequestRepository, userRepository);
 
-  // studio (Estudio del Organizador) — repo en stubs por ahora
+  // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
-  const studioRepository = new StudioAdapter(studioFirebaseRepository);
+  const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
   const studioService = new StudioService(studioRepository);
 
   // sites

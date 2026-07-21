@@ -1,11 +1,11 @@
-import type { IBadgeRepository } from "@/domain/repository/user/IBadgeRepository";
-import type { Badge } from "@/domain/entities/user/Badge";
+import type { IBadgeFirebaseRepository } from "./IBadgeFirebaseRepository";
+import type { FirebaseBadgeDto } from "@/infraestructure/firebase/dto/user/FirebaseBadgeDto";
 import { Firestore } from "firebase-admin/firestore";
 
-export class BadgeFirebaseRepository implements IBadgeRepository {
+export class BadgeFirebaseRepository implements IBadgeFirebaseRepository {
   constructor(private db: Firestore) {}
 
-  async getBadge(badgeId: string): Promise<Badge | null> {
+  async getBadge(badgeId: string): Promise<FirebaseBadgeDto | null> {
     try {
       const doc = await this.db.collection("badges").doc(badgeId).get();
 
@@ -25,7 +25,7 @@ export class BadgeFirebaseRepository implements IBadgeRepository {
         color: data.color,
         category: data.category,
         criteria: data.criteria,
-        createdAt: data.createdAt?.toDate?.() ?? new Date(),
+        createdAt: data.createdAt,
         active: data.active,
       };
     } catch (error) {

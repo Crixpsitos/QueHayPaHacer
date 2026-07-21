@@ -1,14 +1,16 @@
-import type { Firestore } from "firebase-admin/firestore";
+import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
+import type { ProfileStats } from "@/domain/repository/profile/IProfileRepository";
+import type { IProfileFirebaseRepository } from "./IProfileFirebaseRepository";
 import type {
-  ProfileStats,
-  UserBadge,
-  UserEvent,
-  UserEventInteraction,
-  UserSite,
-} from "@/domain/repository/profile/IProfileRepository";
+  FirestoreDoc,
+  ProfileInteractionsRaw,
+} from "@/infraestructure/firebase/dto/profile/FirebaseProfileDto";
 
-export class ProfileFirebaseRepository extends FirebaseBaseRepository {
+export class ProfileFirebaseRepository
+  extends FirebaseBaseRepository
+  implements IProfileFirebaseRepository
+{
   protected readonly collectionName = "users";
 
   constructor(db: Firestore, _enterpriseDb: unknown) {
@@ -44,29 +46,23 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
     };
   }
 
-  async getUserEvents(uid: string): Promise<UserEvent[]> {
-    const byAuthorId = await this.getEventsByAuthorPath("author.id", uid);
+  async getUserEvents(uid: string): Promise<FirestoreDoc[]> {
+    const byAuthorId = await this.getDocsByAuthorPath("events", "author.id", uid);
     const byAuthorUid = byAuthorId.length
       ? []
-      : await this.getEventsByAuthorPath("author.uid", uid);
-
-    return [...byAuthorId, ...byAuthorUid].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+      : await this.getDocsByAuthorPath("events", "author.uid", uid);
+    return [...byAuthorId, ...byAuthorUid];
   }
 
-  async getUserSites(uid: string): Promise<UserSite[]> {
-    const byAuthorId = await this.getSitesByAuthorPath("author.id", uid);
+  async getUserSites(uid: string): Promise<FirestoreDoc[]> {
+    const byAuthorId = await this.getDocsByAuthorPath("sites", "author.id", uid);
     const byAuthorUid = byAuthorId.length
       ? []
-      : await this.getSitesByAuthorPath("author.uid", uid);
-
-    return [...byAuthorId, ...byAuthorUid].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+      : await this.getDocsByAuthorPath("sites", "author.uid", uid);
+    return [...byAuthorId, ...byAuthorUid];
   }
 
-  async getUserEventInteractions(uid: string): Promise<UserEventInteraction[]> {
+  async getUserEventInteractions(uid: string): Promise<ProfileInteractionsRaw> {
     const interactionsCollection = this.subCollection(uid, "eventInteractions");
 
     let interactionsSnapshot;
@@ -76,147 +72,52 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
       interactionsSnapshot = await interactionsCollection.get();
     }
 
-    const interactionsBase = interactionsSnapshot.docs.map((doc) => {
-      const data = doc.data() as Record<string, unknown>;
-      const rawType = data.type;
-      const interactionType: "like" | "comment" | "share" =
-        rawType === "comment" || rawType === "share" ? rawType : "like";
-
-      return {
-        id: doc.id,
-        eventId: typeof data.eventId === "string" ? data.eventId : "",
-        type: interactionType,
-        createdAt: this.toDate(data.createdAt),
-      };
-    });
+    const interactions: FirestoreDoc[] = interactionsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      data: doc.data(),
+    }));
 
     const uniqueEventIds = Array.from(
-      new Set(interactionsBase.map((interaction) => interaction.eventId).filter(Boolean)),
+      new Set(
+        interactions
+          .map((doc) => (typeof doc.data.eventId === "string" ? (doc.data.eventId as string) : ""))
+          .filter(Boolean),
+      ),
     );
 
     const eventEntries = await Promise.all(
       uniqueEventIds.map(async (eventId) => {
         const eventDoc = await this.db.collection("events").doc(eventId).get();
-
-        if (!eventDoc.exists) {
-          return [eventId, undefined] as const;
-        }
-
-        const eventData = eventDoc.data() as Record<string, unknown>;
-        return [eventId, this.mapEventPreview(eventData)] as const;
+        return [eventId, eventDoc.exists ? eventDoc.data() : undefined] as const;
       }),
     );
 
-    const eventsById = new Map(eventEntries);
+    const eventsById: Record<string, DocumentData> = {};
+    for (const [eventId, data] of eventEntries) {
+      if (data) eventsById[eventId] = data;
+    }
 
-    return interactionsBase.map((interaction) => ({
-      ...interaction,
-      event: eventsById.get(interaction.eventId),
-    }));
+    return { interactions, eventsById };
   }
 
-  private mapEventPreview(eventObj: Record<string, unknown>) {
-    const priceObj =
-      eventObj.price && typeof eventObj.price === "object"
-        ? (eventObj.price as Record<string, unknown>)
-        : undefined;
-
-    const locationObj =
-      eventObj.location && typeof eventObj.location === "object"
-        ? (eventObj.location as Record<string, unknown>)
-        : undefined;
-
-    const departmentObj =
-      locationObj?.department && typeof locationObj.department === "object"
-        ? (locationObj.department as Record<string, unknown>)
-        : undefined;
-
-    const countryObj =
-      locationObj?.country && typeof locationObj.country === "object"
-        ? (locationObj.country as Record<string, unknown>)
-        : undefined;
-
-    const analyticsObj =
-      eventObj.analytics && typeof eventObj.analytics === "object"
-        ? (eventObj.analytics as Record<string, unknown>)
-        : undefined;
-
-    const mainImage =
-      eventObj.mainImage && typeof eventObj.mainImage === "object"
-        ? (eventObj.mainImage as Record<string, unknown>)
-        : undefined;
-
-    const imageUrl =
-      typeof mainImage?.url === "string"
-        ? mainImage.url
-        : typeof mainImage?.temporaryUrl === "string"
-          ? mainImage.temporaryUrl
-          : undefined;
-
-    return {
-      title: typeof eventObj.title === "string" ? eventObj.title : "Evento sin título",
-      image: imageUrl,
-      status: typeof eventObj.status === "string" ? eventObj.status : undefined,
-      startDate: this.toOptionalDate(eventObj.startDate ?? eventObj.start),
-      endDate: this.toOptionalDate(eventObj.endDate ?? eventObj.end),
-      isFree: typeof priceObj?.isFree === "boolean" ? priceObj.isFree : undefined,
-      priceAmount: typeof priceObj?.amount === "number" ? priceObj.amount : undefined,
-      priceCurrency: typeof priceObj?.currency === "string" ? priceObj.currency : undefined,
-      location: {
-        venue: typeof locationObj?.venue === "string" ? locationObj.venue : undefined,
-        city: this.cityName(locationObj?.city),
-        department:
-          typeof departmentObj?.name === "string"
-            ? departmentObj.name
-            : typeof locationObj?.department === "string"
-              ? locationObj.department
-              : undefined,
-        country:
-          typeof countryObj?.name === "string"
-            ? countryObj.name
-            : typeof locationObj?.country === "string"
-              ? locationObj.country
-              : undefined,
-      },
-      analytics: {
-        likes: typeof analyticsObj?.likes === "number" ? analyticsObj.likes : undefined,
-        views: typeof analyticsObj?.views === "number" ? analyticsObj.views : undefined,
-        registrations:
-          typeof analyticsObj?.registrations === "number"
-            ? analyticsObj.registrations
-            : undefined,
-      },
-    };
-  }
-
-  async getUserBadges(uid: string): Promise<UserBadge[]> {
+  async getUserBadges(uid: string): Promise<FirestoreDoc[]> {
     const snapshot = await this.subCollection(uid, "badges")
       .orderBy("earnedAt", "desc")
       .get();
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.name,
-        description: data.description,
-        icon: data.icon,
-        color: data.color,
-        category: data.category ?? "system",
-        earnedAt: this.toDate(data.earnedAt),
-      };
-    });
+    return snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
   }
 
-  private async getEventsByAuthorPath(
+  private async getDocsByAuthorPath(
+    collection: "events" | "sites",
     path: "author.id" | "author.uid",
     uid: string,
-  ): Promise<UserEvent[]> {
+  ): Promise<FirestoreDoc[]> {
     const withOrderQuery = this.db
-      .collection("events")
+      .collection(collection)
       .where(path, "==", uid)
       .orderBy("createdAt", "desc");
-    const noOrderQuery = this.db.collection("events").where(path, "==", uid);
+    const noOrderQuery = this.db.collection(collection).where(path, "==", uid);
 
     let snapshot;
     try {
@@ -225,158 +126,6 @@ export class ProfileFirebaseRepository extends FirebaseBaseRepository {
       snapshot = await noOrderQuery.get();
     }
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title ?? "Evento sin titulo",
-        description: data.shortDescription ?? "Sin descripcion",
-        status: data.status ?? "draft",
-        registrationType: data.registrationType ?? "none",
-        createdAt: this.toDate(data.createdAt),
-        startDate: this.toOptionalDate(data.startDate ?? data.start),
-        endDate: this.toOptionalDate(data.endDate ?? data.end),
-        image: data.mainImage?.url,
-        isFree: typeof data.price?.isFree === "boolean" ? data.price.isFree : undefined,
-        priceAmount: typeof data.price?.amount === "number" ? data.price.amount : undefined,
-        priceCurrency: typeof data.price?.currency === "string" ? data.price.currency : undefined,
-        capacity: typeof data.capacity === "number" ? data.capacity : undefined,
-        location: {
-          venue: typeof data.location?.venue === "string" ? data.location.venue : undefined,
-          city: this.cityName(data.location?.city),
-          department: typeof data.location?.department?.name === "string" ? data.location.department.name : undefined,
-          country: typeof data.location?.country?.name === "string" ? data.location.country.name : undefined,
-        },
-        analytics: {
-          views: data.analytics?.views ?? 0,
-          clicks: data.analytics?.clicks ?? 0,
-          likes: data.analytics?.likes ?? 0,
-          shares: data.analytics?.shares ?? 0,
-          registrations: data.analytics?.registrations ?? 0,
-        },
-      };
-    });
-  }
-
-  private async getSitesByAuthorPath(
-    path: "author.id" | "author.uid",
-    uid: string,
-  ): Promise<UserSite[]> {
-    const withOrderQuery = this.db
-      .collection("sites")
-      .where(path, "==", uid)
-      .orderBy("createdAt", "desc");
-    const noOrderQuery = this.db.collection("sites").where(path, "==", uid);
-
-    let snapshot;
-    try {
-      snapshot = await withOrderQuery.get();
-    } catch {
-      snapshot = await noOrderQuery.get();
-    }
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.name ?? "Sitio sin nombre",
-        address: data.address ?? "Sin direccion",
-        createdAt: this.toDate(data.createdAt),
-        image: data.image,
-      };
-    });
-  }
-
-  /** `location.city` puede ser string (forma vieja) u objeto `{name}` (nueva). Devuelve el nombre. */
-  private cityName(value: unknown): string | undefined {
-    if (typeof value === "string") return value;
-    if (value && typeof value === "object" && typeof (value as { name?: unknown }).name === "string") {
-      return (value as { name: string }).name;
-    }
-    return undefined;
-  }
-
-  private toDate(value: unknown): Date {
-    if (!value) {
-      return new Date();
-    }
-
-    if (value instanceof Date) {
-      return value;
-    }
-
-    if (typeof value === "string" || typeof value === "number") {
-      const parsed = new Date(value);
-      return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-    }
-
-    if (typeof value === "object" && value !== null && "toDate" in value) {
-      const dateValue = (value as { toDate: () => Date }).toDate();
-      return dateValue instanceof Date ? dateValue : new Date();
-    }
-
-    if (typeof value === "object" && value !== null) {
-      const timestamp = value as {
-        seconds?: number;
-        nanoseconds?: number;
-        _seconds?: number;
-        _nanoseconds?: number;
-      };
-
-      const seconds =
-        typeof timestamp.seconds === "number"
-          ? timestamp.seconds
-          : typeof timestamp._seconds === "number"
-            ? timestamp._seconds
-            : undefined;
-
-      if (typeof seconds === "number") {
-        return new Date(seconds * 1000);
-      }
-    }
-
-    return new Date();
-  }
-
-  private toOptionalDate(value: unknown): Date | undefined {
-    if (!value) {
-      return undefined;
-    }
-
-    if (value instanceof Date) {
-      return value;
-    }
-
-    if (typeof value === "string" || typeof value === "number") {
-      const parsed = new Date(value);
-      return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-    }
-
-    if (typeof value === "object" && value !== null && "toDate" in value) {
-      const dateValue = (value as { toDate: () => Date }).toDate();
-      return dateValue instanceof Date ? dateValue : undefined;
-    }
-
-    if (typeof value === "object" && value !== null) {
-      const timestamp = value as {
-        seconds?: number;
-        nanoseconds?: number;
-        _seconds?: number;
-        _nanoseconds?: number;
-      };
-
-      const seconds =
-        typeof timestamp.seconds === "number"
-          ? timestamp.seconds
-          : typeof timestamp._seconds === "number"
-            ? timestamp._seconds
-            : undefined;
-
-      if (typeof seconds === "number") {
-        return new Date(seconds * 1000);
-      }
-    }
-
-    return undefined;
+    return snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
   }
 }
