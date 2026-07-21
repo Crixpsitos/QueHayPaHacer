@@ -2,7 +2,7 @@
  * Backfill: genera `slug` en las sesiones existentes que no lo tengan.
  *
  * El slug es único DENTRO de cada evento, derivado del título (+ sufijo -2, -3…
- * si choca). Se usa en la URL pública /events/{evento}/sessions/{slug}.
+ * si choca). Se usa en la URL pública /eventos/{evento}/sessions/{slug}.
  *
  * Uso:
  *   npx tsx scripts/backfill-session-slugs.ts            # DRY-RUN (no escribe)

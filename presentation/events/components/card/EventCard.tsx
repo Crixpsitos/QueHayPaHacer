@@ -126,7 +126,7 @@ export const EventCard = ({
 
 
   const handleShare = useCallback(async () => {
-    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/events/${event.slug || event.id}`;
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug || event.id}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: event.title, url });
@@ -142,7 +142,7 @@ export const EventCard = ({
   }, [event, onShare]);
 
   const isFree = event.price?.isFree ?? event.price?.amount === 0;
-  const detailUrl = `/events/${event.slug || event.id}`;
+  const detailUrl = `/eventos/${event.slug || event.id}`;
   // Multi-date: la ubicación, fechas y precio viven en las sesiones, no en el evento.
   const isMultiDate = event.eventType === "multi-date";
   const hasLocation = !isMultiDate && !!event.location;

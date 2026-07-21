@@ -42,7 +42,7 @@ export function PublicSessionCard({ session, parentRef }: PublicSessionCardProps
 
   return (
     <Link
-      href={`/events/${parentRef}/sessions/${session.slug || session.id}`}
+      href={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       className="group flex items-stretch gap-4 rounded-2xl border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
       aria-label={`Ver sesión: ${session.title || "sesión"}`}
     >

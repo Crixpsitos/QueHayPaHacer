@@ -21,7 +21,7 @@ export function DraftEventNotice({ eventId }: DraftEventNoticeProps) {
           publicado. Publícalo para empezar a recibir inscripciones y ver analíticas.
         </p>
         <Link
-          href={`/events/${eventId}/edit`}
+          href={`/eventos/${eventId}/edit`}
           className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
         >
           <Rocket className="h-4 w-4" />

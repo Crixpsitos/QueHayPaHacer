@@ -185,7 +185,7 @@ export async function publishEventAction(
     revalidateTag(`profile-stats-${userId}`, "max");
 
     revalidatePath("/", "page");
-    revalidatePath("/events", "layout");
+    revalidatePath("/eventos", "layout");
     revalidatePath("/profile/events", "layout");
     return { success: true, eventId: publishedEvent.id || parsedData.id, slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id };
   } catch (error) {

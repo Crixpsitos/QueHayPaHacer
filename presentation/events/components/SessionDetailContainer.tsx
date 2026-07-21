@@ -90,9 +90,9 @@ export async function SessionDetailContainer({
       initialRegistered={initialRegistered}
       isOwner={isOwner}
       isProfessionalOwner={isProfessionalOwner}
-      shareUrl={`/events/${parentRef}/sessions/${session.slug || session.id}`}
-      backLink={{ href: `/events/${parentRef}`, label: parent.title }}
-      editSessionHref={`/events/${parent.id}/edit?step=sessions`}
+      shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
+      backLink={{ href: `/eventos/${parentRef}`, label: parent.title }}
+      editSessionHref={`/eventos/${parent.id}/edit?step=sessions`}
       sessionId={session.id}
     />
   );

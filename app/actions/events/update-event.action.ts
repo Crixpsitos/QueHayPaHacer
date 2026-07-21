@@ -74,8 +74,8 @@ export async function updateEventAction(
       updateTag("event-list");
 
       revalidatePath("/", "page");
-      revalidatePath("/events", "page");
-      revalidatePath(`/events/${eventId}`, "page");
+      revalidatePath("/eventos", "page");
+      revalidatePath(`/eventos/${eventId}`, "page");
     }
     updateTag(`event-${eventId}`);
     updateTag(`user-events-${userId}`);

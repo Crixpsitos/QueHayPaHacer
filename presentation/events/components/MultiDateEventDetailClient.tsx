@@ -76,7 +76,7 @@ export function MultiDateEventDetailClient({
         {/* Banner del dueño */}
         {isOwner && (
           <Link
-            href={`/events/${event.id}/edit?step=sessions`}
+            href={`/eventos/${event.id}/edit?step=sessions`}
             className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-colors hover:bg-gray-100"
           >
             <span className="text-sm font-medium text-gray-800">

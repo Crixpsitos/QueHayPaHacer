@@ -80,7 +80,7 @@ export const EventClientWrapper = ({
 
         if (result.success) {
           notify.success("Evento publicado exitosamente.");
-          startTransition(() => router.push(`/events/${result.slug}`));
+          startTransition(() => router.push(`/eventos/${result.slug}`));
         } else {
           notify.error(result.error ?? "Error al publicar evento.");
           return;

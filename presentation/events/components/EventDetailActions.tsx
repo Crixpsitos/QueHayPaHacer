@@ -31,7 +31,7 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<{ liked: boolean } | null>(null);
 
-  const path = shareUrl ?? `/events/${event.slug || event.id}`;
+  const path = shareUrl ?? `/eventos/${event.slug || event.id}`;
   const eventUrl = typeof window !== "undefined"
     ? `${window.location.origin}${path}`
     : path;

@@ -200,7 +200,7 @@ async function main() {
   console.log(`\n✅ Eventos creados (owner: ${ownerEmail}) con ${allCollabs.length} colaboradores:\n`);
   console.log(`   Usuarios: ${userCollabs.map((c) => c.displayName).join(", ") || "(ninguno)"}`);
   console.log(`   Externos: ${externalCollabs.map((c) => c.displayName).join(", ")}`);
-  created.forEach((e) => console.log(`   [${e.type}] /events/${e.slug}`));
+  created.forEach((e) => console.log(`   [${e.type}] /eventos/${e.slug}`));
   console.log(`\nBorra estos eventos de prueba con:  npx tsx scripts/cleanup-test-events.ts ${ownerEmail}\n`);
 }
 
