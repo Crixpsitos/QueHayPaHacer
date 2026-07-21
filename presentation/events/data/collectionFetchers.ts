@@ -14,6 +14,7 @@ const fetchCollectionEventIds = async (
   slug: string,
   kind: CollectionDef["kind"],
   categoryId?: string,
+  categorySlug?: string,
 ): Promise<string[]> => {
   "use cache";
   cacheLife("hours");
@@ -22,12 +23,19 @@ const fetchCollectionEventIds = async (
   const { eventFeed } = createServerContainer();
   if (kind === "featured") return eventFeed.getFeatured();
   if (kind === "weekend") return eventFeed.getWeekend();
-  return categoryId ? eventFeed.getByUserPreferences([categoryId]) : [];
+  // Filtra por id O slug: `categoryInfo.id` en los eventos es inconsistente.
+  const catValues = [categoryId, categorySlug].filter((v): v is string => Boolean(v));
+  return catValues.length ? eventFeed.getByUserPreferences(catValues) : [];
 };
 
 /** Eventos (detalle) de una colección, listos para mapear a ViewModel. */
 export async function fetchCollectionEvents(def: CollectionDef): Promise<Events[]> {
-  const ids = await fetchCollectionEventIds(def.slug, def.kind, def.categoryId);
+  const ids = await fetchCollectionEventIds(
+    def.slug,
+    def.kind,
+    def.categoryId,
+    def.categorySlug,
+  );
   const events = await Promise.all(ids.map(fetchEventDetailById));
   return events.filter((e): e is Events => Boolean(e));
 }
