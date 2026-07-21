@@ -1,0 +1,85 @@
+import { cookies } from "next/headers";
+import { getTokens } from "next-firebase-auth-edge";
+import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { Section } from "@/app/components/layout/shared/Section";
+import { ContentSection } from "@/app/components/layout/shared/ContentSection";
+import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
+import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
+import { getEventCollections, type CollectionDef } from "@/presentation/events/lib/eventCollections";
+import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCategory";
+import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
+import { fetchUserLiked } from "@/presentation/events/data/eventDetailFetchers";
+
+const EMPTY_INFO = {
+  title: "Todavía no hay eventos en esta colección",
+  description:
+    "Estamos sumando planes nuevos constantemente. Vuelve pronto para descubrir qué hay pa' hacer.",
+};
+
+/**
+ * Hueco dinámico (PPR) de una landing: lee la cookie del usuario para pintar SU
+ * estado de like. Va dentro de un <Suspense> — con Cache Components leer
+ * `cookies()` obliga a un boundary. El shell (h1/meta/SEO) queda estático; esto
+ * se streamea en la misma respuesta (crawlable). Datos de eventos cacheados;
+ * solo el like es por-usuario.
+ */
+export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
+  const events = await fetchCollectionEvents(def);
+
+  const tokens = await getTokens(await cookies(), authConfig);
+  const userId = tokens?.decodedToken?.uid;
+
+  const likedByEventId: Record<string, boolean> = {};
+  if (userId) {
+    const results = await Promise.all(
+      events.map(async (e) => ({ id: e.id, liked: await fetchUserLiked(e.id, userId) })),
+    );
+    for (const { id, liked } of results) likedByEventId[id] = liked;
+  }
+
+  const isCategory = def.kind === "category";
+
+  // Categoría: lista plana. Destacados/fin de semana: agrupados por categoría.
+  if (isCategory) {
+    return (
+      <Section spacing="sm" className="mt-4">
+        <EventCardInteractive
+          events={events.map((e) => EventViewModelMapper.toViewModel(e))}
+          likedByEventId={likedByEventId}
+          info={EMPTY_INFO}
+          variant="vertical"
+        />
+      </Section>
+    );
+  }
+
+  const collections = await getEventCollections();
+  const groups = groupEventsByCategory(events, collections);
+
+  if (groups.length === 0) {
+    return (
+      <Section spacing="sm" className="mt-4">
+        <EventCardInteractive events={[]} info={EMPTY_INFO} variant="vertical" />
+      </Section>
+    );
+  }
+
+  return (
+    <>
+      {groups.map((g) => (
+        <ContentSection
+          key={g.key}
+          title={g.label}
+          action={g.landingSlug ? { href: `/${g.landingSlug}` } : undefined}
+        >
+          <EventCardInteractive
+            events={g.events.map((e) => EventViewModelMapper.toViewModel(e))}
+            likedByEventId={likedByEventId}
+            info={EMPTY_INFO}
+            variant="horizontal"
+          />
+        </ContentSection>
+      ))}
+    </>
+  );
+}
