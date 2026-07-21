@@ -1,10 +1,12 @@
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
+import type { PaginatedEventIds } from "@/domain/repository/events/IEventsRepository";
 
 export interface IEventsFirebaseRepository {
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
     findAllEvents(): Promise<string[]>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
+    findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findLastDraftEventToUser(userId: string): Promise<FirebaseEventsDto | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<FirebaseEventsDto | null>;
     createDraftEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;

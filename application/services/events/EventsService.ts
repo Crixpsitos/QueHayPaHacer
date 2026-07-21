@@ -124,4 +124,9 @@ export class EventsService {
     return this.eventsRepository.findByTopCategory(topCategory);
   }
 
+  /** Página por cursor de una categoría (por docId). Devuelve IDs + nextCursor. */
+  async getEventsByCategoryPaginated(categoryId: string, limit: number, cursor: string | null) {
+    return this.eventsRepository.findByCategoryPaginated(categoryId, limit, cursor);
+  }
+
 }

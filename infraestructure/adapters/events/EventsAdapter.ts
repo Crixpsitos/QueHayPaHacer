@@ -67,6 +67,10 @@ export class EventsAdapter implements IEventsRepository {
     return await this.repository.findByTopCategory(categoryIds);
   }
 
+  async findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null) {
+    return await this.repository.findByCategoryPaginated(categoryId, limit, cursor);
+  }
+
   async findAll(): Promise<Events[]> {
     throw new Error("Use findAllPublished() to get published event IDs.");
   }

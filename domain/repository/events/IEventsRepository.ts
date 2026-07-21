@@ -1,10 +1,19 @@
 import { Events } from "@/domain/entities/events/Events";
 import { IBaseRepository } from "../IBaseRepository";
 
-export interface IEventsRepository extends IBaseRepository<Events>{ 
+/** Página de IDs de eventos + cursor opaco para la siguiente (null = no hay más). */
+export interface PaginatedEventIds {
+    ids: string[];
+    nextCursor: string | null;
+}
+
+export interface IEventsRepository extends IBaseRepository<Events>{
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
+    /** Paginación por cursor de una categoría (por su docId). orderBy score +
+     *  tiebreaker documentId (cursor estable, sin índice extra). Solo próximos. */
+    findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findAllPublished(): Promise<string[]>;
     findLastDraftEventToUser(userId: string): Promise<Events | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<Events | null>;

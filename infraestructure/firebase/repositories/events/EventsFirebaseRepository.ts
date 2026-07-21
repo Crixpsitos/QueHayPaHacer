@@ -1,4 +1,4 @@
-import { FieldValue, Filter, Timestamp, type Firestore } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, Filter, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
 import type { IEventsFirebaseRepository } from "./IEventsFirebaseRepository";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
@@ -175,6 +175,41 @@ export class EventsFirebaseRepository
       .get();
 
     return snapshot.docs.map((doc) => doc.id);
+  }
+
+  async findByCategoryPaginated(
+    categoryId: string,
+    limit: number,
+    cursor: string | null,
+  ): Promise<{ ids: string[]; nextCursor: string | null }> {
+    const now = new Date();
+    let query = this.collection
+      .where("status", "==", "published")
+      .where("categoryInfo.id", "==", categoryId)
+      .where("startDate", ">=", now)
+      .orderBy("analytics.score", "desc")
+      // Tiebreaker por documentId → cursor estable sin índice extra (ver score con ties).
+      .orderBy(FieldPath.documentId(), "desc");
+
+    if (cursor) {
+      const sep = cursor.indexOf("|");
+      const score = Number(cursor.slice(0, sep));
+      const id = cursor.slice(sep + 1);
+      query = query.startAfter(score, id);
+    }
+
+    // limit+1 para saber si hay más sin una query extra.
+    const snapshot = await query.limit(limit + 1).select("analytics.score").get();
+    const docs = snapshot.docs;
+    const hasMore = docs.length > limit;
+    const page = docs.slice(0, limit);
+    const last = page[page.length - 1];
+    const nextCursor =
+      hasMore && last
+        ? `${(last.data() as { analytics?: { score?: number } }).analytics?.score ?? 0}|${last.id}`
+        : null;
+
+    return { ids: page.map((d) => d.id), nextCursor };
   }
 
   async findAllEvents(): Promise<string[]> {

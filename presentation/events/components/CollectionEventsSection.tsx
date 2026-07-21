@@ -4,11 +4,14 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
+import { InfiniteEventList } from "@/presentation/events/components/InfiniteEventList";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { getEventCollections, type CollectionDef } from "@/presentation/events/lib/eventCollections";
 import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCategory";
 import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
+import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
 import { fetchUserLiked } from "@/presentation/events/data/eventDetailFetchers";
+import type { Events } from "@/domain/entities/events/Events";
 
 const EMPTY_INFO = {
   title: "Todavía no hay eventos en esta colección",
@@ -20,28 +23,44 @@ const EMPTY_INFO = {
  * Hueco dinámico (PPR) de una landing: lee la cookie del usuario para pintar SU
  * estado de like. Va dentro de un <Suspense> — con Cache Components leer
  * `cookies()` obliga a un boundary. El shell (h1/meta/SEO) queda estático; esto
- * se streamea en la misma respuesta (crawlable). Datos de eventos cacheados;
- * solo el like es por-usuario.
+ * se streamea en la misma respuesta (crawlable).
  */
 export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
-  const events = await fetchCollectionEvents(def);
-
   const tokens = await getTokens(await cookies(), authConfig);
   const userId = tokens?.decodedToken?.uid;
 
-  const likedByEventId: Record<string, boolean> = {};
-  if (userId) {
-    const results = await Promise.all(
-      events.map(async (e) => ({ id: e.id, liked: await fetchUserLiked(e.id, userId) })),
+  const likesFor = async (events: Events[]): Promise<Record<string, boolean>> => {
+    const map: Record<string, boolean> = {};
+    if (userId) {
+      const results = await Promise.all(
+        events.map(async (e) => ({ id: e.id, liked: await fetchUserLiked(e.id, userId) })),
+      );
+      for (const { id, liked } of results) map[id] = liked;
+    }
+    return map;
+  };
+
+  // Categoría → infinite scroll: primera página por cursor + "Cargar más".
+  if (def.kind === "category" && def.categoryId) {
+    const { events, nextCursor } = await getCategoryEventsPage(def.categoryId, null);
+    const likedByEventId = await likesFor(events);
+    return (
+      <Section spacing="sm" className="mt-4">
+        <InfiniteEventList
+          categoryId={def.categoryId}
+          initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
+          initialCursor={nextCursor}
+          initialLikedByEventId={likedByEventId}
+        />
+      </Section>
     );
-    for (const { id, liked } of results) likedByEventId[id] = liked;
   }
 
-  // Categoría y "todos": lista plana (catálogo). Destacados/fin de semana:
-  // agrupados por categoría con "Ver más" a cada landing.
-  const isFlat = def.kind === "category" || def.kind === "all";
+  const events = await fetchCollectionEvents(def);
+  const likedByEventId = await likesFor(events);
 
-  if (isFlat) {
+  // "Todos": lista plana (catálogo). Destacados/fin de semana: agrupados por categoría.
+  if (def.kind === "all") {
     return (
       <Section spacing="sm" className="mt-4">
         <EventCardInteractive
