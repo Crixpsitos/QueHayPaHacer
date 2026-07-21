@@ -34,6 +34,7 @@ import { UserPreferencesFirebaseRepository } from "../firebase/repositories/User
 import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
 import { ProfileFirebaseRepository } from "../firebase/repositories/profile/ProfileFirebaseRepository";
 import { ProfileAdapter } from "../adapters/profile/ProfileAdapter";
+import { ProfileFirebaseMapper } from "../firebase/mappers/profile/ProfileFirebaseMapper";
 import { ProfileService } from "@/application/services/profile/ProfileService";
 import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFirebaseRepository";
 import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
@@ -122,7 +123,7 @@ export const createServerContainer = () => {
 
   // profile
   const profileFirebaseRepository = new ProfileFirebaseRepository(getFirebaseFirestore(), getEnterpriseFirestore());
-  const profileRepository = new ProfileAdapter(profileFirebaseRepository);
+  const profileRepository = new ProfileAdapter(profileFirebaseRepository, new ProfileFirebaseMapper());
   const profileService = new ProfileService(profileRepository);
 
   // badges
