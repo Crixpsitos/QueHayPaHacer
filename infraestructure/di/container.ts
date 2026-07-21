@@ -36,8 +36,12 @@ import { ProfileFirebaseRepository } from "../firebase/repositories/profile/Prof
 import { ProfileAdapter } from "../adapters/profile/ProfileAdapter";
 import { ProfileService } from "@/application/services/profile/ProfileService";
 import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFirebaseRepository";
+import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
+import { BadgeFirebaseMapper } from "../firebase/mappers/user/BadgeFirebaseMapper";
 import { BadgeService } from "@/application/services/user/BadgeService";
 import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
+import { ProfessionalRequestAdapter } from "../adapters/professional/ProfessionalRequestAdapter";
+import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professional/ProfessionalRequestFirebaseMapper";
 import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
@@ -117,11 +121,16 @@ export const createServerContainer = () => {
 
   // badges
   const badgeFirebaseRepository = new BadgeFirebaseRepository(getFirebaseFirestore());
-  const badgeService = new BadgeService(badgeFirebaseRepository);
+  const badgeRepository = new BadgeAdapter(badgeFirebaseRepository, new BadgeFirebaseMapper());
+  const badgeService = new BadgeService(badgeRepository);
 
   // professional requests
   const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
-  const professionalRequestService = new ProfessionalRequestService(professionalRequestFirebaseRepository, userRepository);
+  const professionalRequestRepository = new ProfessionalRequestAdapter(
+    professionalRequestFirebaseRepository,
+    new ProfessionalRequestFirebaseMapper(),
+  );
+  const professionalRequestService = new ProfessionalRequestService(professionalRequestRepository, userRepository);
 
   // studio (Estudio del Organizador) — repo en stubs por ahora
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
