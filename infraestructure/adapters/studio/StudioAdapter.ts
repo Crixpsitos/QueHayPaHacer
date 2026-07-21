@@ -1,4 +1,6 @@
 import type { IStudioRepository } from "@/domain/repository/studio/IStudioRepository";
+import type { IStudioFirebaseRepository } from "@/infraestructure/firebase/repositories/studio/IStudioFirebaseRepository";
+import type { StudioFirebaseMapper } from "@/infraestructure/firebase/mappers/studio/StudioFirebaseMapper";
 import type {
   OrganizerOverview,
   GetOrganizerEventsParams,
@@ -29,12 +31,16 @@ import type {
 } from "@/domain/entities/studio/Studio";
 
 /**
- * Adapter del Studio: expone el contrato de dominio y delega en el repositorio
- * Firebase. Cuando el repo devuelva DTOs crudos, aquí se aplicaría el
- * `StudioFirebaseMapper` para convertirlos a entidades de dominio.
+ * Adapter del Studio: puerto de dominio. Las LECTURAS DE ENTIDAD llegan como
+ * DTO crudo del repo y se mapean aquí con `StudioFirebaseMapper`. Los agregados
+ * (overview/stats/páginas) y las mutaciones no tienen DTO natural: el repo ya
+ * los devuelve en dominio y el adapter solo delega.
  */
 export class StudioAdapter implements IStudioRepository {
-  constructor(private readonly repository: IStudioRepository) {}
+  constructor(
+    private readonly repository: IStudioFirebaseRepository,
+    private readonly mapper: StudioFirebaseMapper,
+  ) {}
 
   getOrganizerOverview(uid: string): Promise<OrganizerOverview | null> {
     return this.repository.getOrganizerOverview(uid);
@@ -96,17 +102,42 @@ export class StudioAdapter implements IStudioRepository {
     return this.repository.inviteCollaborators(fromUid, invitees);
   }
 
-  getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]> {
-    return this.repository.getReceivedInvitations(uid);
+  // --- Lecturas de entidad: DTO crudo → dominio vía el mapper. ---
+
+  async getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]> {
+    const dtos = await this.repository.getReceivedInvitations(uid);
+    return dtos.map((dto) => this.mapper.toReceivedInvitation(dto));
   }
 
-  getSentInvitations(uid: string): Promise<SentInvitation[]> {
-    return this.repository.getSentInvitations(uid);
+  async getSentInvitations(uid: string): Promise<SentInvitation[]> {
+    const dtos = await this.repository.getSentInvitations(uid);
+    return dtos.map((dto) => this.mapper.toSentInvitation(dto));
   }
 
-  getCollaborators(uid: string): Promise<Collaborator[]> {
-    return this.repository.getCollaborators(uid);
+  async getCollaborators(uid: string): Promise<Collaborator[]> {
+    const raw = await this.repository.getCollaborators(uid);
+    return this.mapper.toCollaborators(raw);
   }
+
+  async getExternalProfile(id: string): Promise<ExternalProfile | null> {
+    const dto = await this.repository.getExternalProfile(id);
+    return dto ? this.mapper.toExternalProfile(dto) : null;
+  }
+
+  async getSupportTickets(uid: string): Promise<SupportTicket[]> {
+    const dtos = await this.repository.getSupportTickets(uid);
+    // ponytail: orden en memoria para no exigir índice compuesto (uid + createdAt).
+    return dtos
+      .map((dto) => this.mapper.toSupportTicket(dto))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getSupportTicketDetail(ticketId: string, uid: string): Promise<SupportTicketDetail | null> {
+    const dto = await this.repository.getSupportTicketDetail(ticketId, uid);
+    return dto ? this.mapper.toSupportTicketDetail(dto) : null;
+  }
+
+  // --- Mutaciones (sin mapeo: el repo ya opera en dominio). ---
 
   respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<void> {
     return this.repository.respondCollaboratorInvitation(inviteId, uid, accept);
@@ -126,10 +157,6 @@ export class StudioAdapter implements IStudioRepository {
     photoURL: string | undefined,
   ): Promise<ExternalProfile> {
     return this.repository.createExternalProfile(managedBy, input, photoURL);
-  }
-
-  getExternalProfile(id: string): Promise<ExternalProfile | null> {
-    return this.repository.getExternalProfile(id);
   }
 
   addCollaboratorToEvent(
@@ -152,14 +179,6 @@ export class StudioAdapter implements IStudioRepository {
 
   getAudienceSummary(uid: string): Promise<AudienceSummary | null> {
     return this.repository.getAudienceSummary(uid);
-  }
-
-  getSupportTickets(uid: string): Promise<SupportTicket[]> {
-    return this.repository.getSupportTickets(uid);
-  }
-
-  getSupportTicketDetail(ticketId: string, uid: string): Promise<SupportTicketDetail | null> {
-    return this.repository.getSupportTicketDetail(ticketId, uid);
   }
 
   createSupportTicket(uid: string, input: CreateSupportTicketInput): Promise<string> {

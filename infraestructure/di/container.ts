@@ -46,6 +46,7 @@ import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professio
 import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
+import { StudioFirebaseMapper } from "../firebase/mappers/studio/StudioFirebaseMapper";
 import { StudioService } from "@/application/services/studio/StudioService";
 import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
@@ -139,9 +140,9 @@ export const createServerContainer = () => {
   );
   const professionalRequestService = new ProfessionalRequestService(professionalRequestRepository, userRepository);
 
-  // studio (Estudio del Organizador) — repo en stubs por ahora
+  // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
-  const studioRepository = new StudioAdapter(studioFirebaseRepository);
+  const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
   const studioService = new StudioService(studioRepository);
 
   // sites
