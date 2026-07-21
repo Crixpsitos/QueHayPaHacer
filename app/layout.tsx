@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
+import { SITE_URL } from "./lib/site";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+};
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { IpLocationProvider } from "./store/Location/IpLocationProvider";

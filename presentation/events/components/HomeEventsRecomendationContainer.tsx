@@ -83,7 +83,10 @@ export const HomeEventsRecomendationContainer = async () => {
 
   return (
     <>
-      <ContentSection title="Los eventos más destacados">
+      <ContentSection
+        title="Los eventos más destacados"
+        action={{ href: "/eventos-destacados-ibague" }}
+      >
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Descubre los eventos más populares y recomendados en tu ciudad. Desde
           conciertos hasta exposiciones, encuentra lo mejor para disfrutar.
@@ -94,7 +97,10 @@ export const HomeEventsRecomendationContainer = async () => {
         <FeaturedEventsContainer featuredEvents={featuredEvents} likedByEventId={likedByEventId} />
       </ContentSection>
 
-      <ContentSection title="Eventos para esta semana">
+      <ContentSection
+        title="Eventos para esta semana"
+        action={{ href: "/eventos-este-fin-de-semana-ibague" }}
+      >
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Explora los eventos que se llevarán a cabo esta semana. Mantente al
           día con las actividades y no te pierdas de nada.
@@ -104,7 +110,10 @@ export const HomeEventsRecomendationContainer = async () => {
         <WeekendEventsContainer weekendEvents={weekendEvents} likedByEventId={likedByEventId} />
       </ContentSection>
 
-      <ContentSection title="Todos los eventos">
+      <ContentSection
+        title="Todos los eventos"
+        action={{ href: "/eventos" }}
+      >
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Explora nuestro catálogo completo de eventos. Encuentra todas las
           actividades y experiencias disponibles en tu ciudad.
