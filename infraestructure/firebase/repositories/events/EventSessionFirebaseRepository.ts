@@ -4,14 +4,15 @@ import {
   Timestamp,
   type Firestore,
 } from "firebase-admin/firestore";
-import type { IEventSessionRepository } from "@/domain/repository/events/IEventSessionRepository";
+import type { IEventSessionFirebaseRepository } from "./IEventSessionFirebaseRepository";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 import { EventSessionFirebaseMapper } from "../../mappers/events/EventSessionFirebaseMapper";
 import type { FirebaseEventSessionDto } from "../../dto/events/FirebaseEventSessionDto";
 
 export class EventSessionFirebaseRepository
-  implements IEventSessionRepository
+  implements IEventSessionFirebaseRepository
 {
+  /** Solo para el lado de escritura (`toDto`); las lecturas devuelven DTO crudo. */
   private readonly mapper = new EventSessionFirebaseMapper();
 
   constructor(private readonly db: Firestore) {}
@@ -27,34 +28,28 @@ export class EventSessionFirebaseRepository
     return this.db.collection("events").doc(eventId).collection("sessions");
   }
 
-  async getByEventId(eventId: string): Promise<EventSession[]> {
+  async getByEventId(eventId: string): Promise<FirebaseEventSessionDto[]> {
     const snapshot = await this.sessionsCollection(eventId)
       .orderBy("startDate", "asc")
       .get();
 
-    return snapshot.docs.map((doc) =>
-      this.mapper.toDomain({
-        id: doc.id,
-        ...doc.data(),
-      } as FirebaseEventSessionDto),
+    return snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as FirebaseEventSessionDto,
     );
   }
 
   async getById(
     eventId: string,
     sessionId: string,
-  ): Promise<EventSession | null> {
+  ): Promise<FirebaseEventSessionDto | null> {
     const doc = await this.sessionsCollection(eventId).doc(sessionId).get();
     if (!doc.exists) return null;
-    return this.mapper.toDomain({
-      id: doc.id,
-      ...doc.data(),
-    } as FirebaseEventSessionDto);
+    return { id: doc.id, ...doc.data() } as FirebaseEventSessionDto;
   }
 
   async create(
     session: Omit<EventSession, "id" | "createdAt" | "updatedAt">,
-  ): Promise<EventSession> {
+  ): Promise<FirebaseEventSessionDto> {
     const col = this.sessionsCollection(session.eventId);
     const ref = col.doc();
     const now = FieldValue.serverTimestamp() as unknown as Timestamp;
@@ -68,14 +63,14 @@ export class EventSessionFirebaseRepository
 
     await ref.set(this.clean({ ...dto, id: ref.id, createdAt: now, updatedAt: now }));
 
-    return this.mapper.toDomain({ ...dto, id: ref.id });
+    return { ...dto, id: ref.id };
   }
 
   async update(
     eventId: string,
     sessionId: string,
     data: Partial<Omit<EventSession, "id" | "eventId" | "createdAt">>,
-  ): Promise<EventSession> {
+  ): Promise<FirebaseEventSessionDto> {
     const ref = this.sessionsCollection(eventId).doc(sessionId);
     const now = FieldValue.serverTimestamp() as unknown as Timestamp;
 
@@ -122,10 +117,7 @@ export class EventSessionFirebaseRepository
     await ref.set(partial, { merge: true });
 
     const updated = await ref.get();
-    return this.mapper.toDomain({
-      id: updated.id,
-      ...updated.data(),
-    } as FirebaseEventSessionDto);
+    return { id: updated.id, ...updated.data() } as FirebaseEventSessionDto;
   }
 
   async delete(eventId: string, sessionId: string): Promise<void> {

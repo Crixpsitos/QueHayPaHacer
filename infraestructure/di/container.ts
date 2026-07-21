@@ -51,6 +51,8 @@ import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
 import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
+import { EventSessionAdapter } from "../adapters/events/EventSessionAdapter";
+import { EventSessionFirebaseMapper } from "../firebase/mappers/events/EventSessionFirebaseMapper";
 import { EventSessionService } from "@/application/services/events/EventSessionService";
 
 
@@ -78,7 +80,11 @@ export const createServerContainer = () => {
   const eventsService = new EventsService(eventsRepository, storageService);
 
   // event sessions (solo para eventos multi-date)
-  const eventSessionRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionFirebaseRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionRepository = new EventSessionAdapter(
+    eventSessionFirebaseRepository,
+    new EventSessionFirebaseMapper(),
+  );
   const eventSessionService = new EventSessionService(eventSessionRepository);
 
   // event interactions
