@@ -18,8 +18,9 @@ export const metadata: Metadata = {
 
 export default async function EventosIndexPage() {
   const collections = await getEventCollections();
-  const featuredDef = collections.find((c) => c.slug === "destacados-ibague");
-  const weekendDef = collections.find((c) => c.slug === "este-fin-de-semana-ibague");
+  // Por kind (no por slug hardcodeado): robusto a cambios de formato de slug.
+  const featuredDef = collections.find((c) => c.kind === "featured");
+  const weekendDef = collections.find((c) => c.kind === "weekend");
   const categoryCollections = collections.filter((c) => c.kind === "category");
 
   const [featuredEvents, weekendEvents] = await Promise.all([
