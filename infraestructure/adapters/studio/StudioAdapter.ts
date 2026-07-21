@@ -158,15 +158,15 @@ export class StudioAdapter implements IStudioRepository {
     return this.repository.getSupportTickets(uid);
   }
 
-  getSupportTicketDetail(ticketId: string): Promise<SupportTicketDetail | null> {
-    return this.repository.getSupportTicketDetail(ticketId);
+  getSupportTicketDetail(ticketId: string, uid: string): Promise<SupportTicketDetail | null> {
+    return this.repository.getSupportTicketDetail(ticketId, uid);
   }
 
-  createSupportTicket(uid: string, input: CreateSupportTicketInput): Promise<void> {
+  createSupportTicket(uid: string, input: CreateSupportTicketInput): Promise<string> {
     return this.repository.createSupportTicket(uid, input);
   }
 
-  closeSupportTicket(ticketId: string, reason: string): Promise<void> {
-    return this.repository.closeSupportTicket(ticketId, reason);
+  closeSupportTicket(ticketId: string, uid: string, reason: string): Promise<void> {
+    return this.repository.closeSupportTicket(ticketId, uid, reason);
   }
 }

@@ -2145,32 +2145,99 @@ export class StudioFirebaseRepository implements IStudioRepository {
     return null;
   }
 
+  /** Resumen de los tickets del usuario, más nuevos primero. */
   async getSupportTickets(uid: string): Promise<SupportTicket[]> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    return [];
+    const snap = await this.db
+      .collection("supportTickets")
+      .where("uid", "==", uid)
+      .get();
+    // ponytail: orden en memoria para no exigir índice compuesto (uid + createdAt).
+    return snap.docs
+      .map((d) => {
+        const t = d.data() as {
+          subject?: string;
+          category?: string;
+          status?: SupportTicket["status"];
+          createdAt?: unknown;
+        };
+        return {
+          id: d.id,
+          subject: t.subject ?? "",
+          category: t.category ?? "",
+          status: t.status ?? "open",
+          createdAt: this.toDateOrNull(t.createdAt) ?? new Date(0),
+        };
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
+  /** Detalle de un ticket. Devuelve null si no existe o no es del usuario. */
   async getSupportTicketDetail(
     ticketId: string,
+    uid: string,
   ): Promise<SupportTicketDetail | null> {
-    // TODO: implementación del repositorio (la hago yo)
-    void ticketId;
-    return null;
+    const doc = await this.db.collection("supportTickets").doc(ticketId).get();
+    if (!doc.exists) return null;
+    const t = doc.data() as {
+      uid?: string;
+      subject?: string;
+      category?: string;
+      status?: SupportTicketDetail["status"];
+      description?: string;
+      attachments?: string[];
+      closeReason?: string;
+      createdAt?: unknown;
+    };
+    if (t.uid !== uid) return null; // no es tu ticket
+    return {
+      id: doc.id,
+      subject: t.subject ?? "",
+      category: t.category ?? "",
+      status: t.status ?? "open",
+      description: t.description ?? "",
+      attachments: Array.isArray(t.attachments) ? t.attachments : [],
+      closeReason: t.closeReason || undefined,
+      createdAt: this.toDateOrNull(t.createdAt) ?? new Date(0),
+    };
   }
 
   async createSupportTicket(
     uid: string,
     input: CreateSupportTicketInput,
-  ): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void uid;
-    void input;
+  ): Promise<string> {
+    const ref = await this.db.collection("supportTickets").add({
+      uid,
+      subject: input.subject,
+      category: input.category,
+      description: input.description,
+      attachments: input.attachments ?? [],
+      status: "open",
+      closeReason: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      closedAt: null,
+    });
+    return ref.id;
   }
 
-  async closeSupportTicket(ticketId: string, reason: string): Promise<void> {
-    // TODO: implementación del repositorio (la hago yo)
-    void ticketId;
-    void reason;
+  async closeSupportTicket(
+    ticketId: string,
+    uid: string,
+    reason: string,
+  ): Promise<void> {
+    const ref = this.db.collection("supportTickets").doc(ticketId);
+    await this.db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) throw new Error("El ticket no existe.");
+      if ((doc.data() as { uid?: string }).uid !== uid) {
+        throw new Error("No autorizado.");
+      }
+      tx.update(ref, {
+        status: "resolved",
+        closeReason: reason,
+        closedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
   }
 }

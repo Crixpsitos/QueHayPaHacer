@@ -114,7 +114,9 @@ export interface IStudioRepository {
 
   // Soporte
   getSupportTickets(uid: string): Promise<SupportTicket[]>;
-  getSupportTicketDetail(ticketId: string): Promise<SupportTicketDetail | null>;
-  createSupportTicket(uid: string, input: CreateSupportTicketInput): Promise<void>;
-  closeSupportTicket(ticketId: string, reason: string): Promise<void>;
+  /** uid: dueño de la sesión — devuelve null si el ticket no es suyo. */
+  getSupportTicketDetail(ticketId: string, uid: string): Promise<SupportTicketDetail | null>;
+  /** Devuelve el id del ticket creado. */
+  createSupportTicket(uid: string, input: CreateSupportTicketInput): Promise<string>;
+  closeSupportTicket(ticketId: string, uid: string, reason: string): Promise<void>;
 }
