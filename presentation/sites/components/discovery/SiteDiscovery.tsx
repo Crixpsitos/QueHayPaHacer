@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, CalendarDays } from "lucide-react";
 import { CATEGORY_OPTIONS } from "@/presentation/sites/lib/constants";
+import { SiteLocalBusinessJsonLd, SiteItemListJsonLd } from "./SiteJsonLd";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 
 const TYPE_LABELS = Object.fromEntries(CATEGORY_OPTIONS.map((o) => [o.value, o.label]));
@@ -13,6 +14,7 @@ export function SiteDiscoveryCard({ site }: { site: SiteDetail }) {
       href={`/sites/${site.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
     >
+      <SiteLocalBusinessJsonLd site={site} />
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {site.coverUrl && (
           <Image
@@ -60,6 +62,7 @@ export function SiteDiscoveryGrid({ sites }: { sites: SiteDetail[] }) {
   if (sites.length === 0) return EMPTY;
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <SiteItemListJsonLd sites={sites} />
       {sites.map((s) => (
         <SiteDiscoveryCard key={s.id} site={s} />
       ))}
