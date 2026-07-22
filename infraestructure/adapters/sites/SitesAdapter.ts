@@ -55,4 +55,24 @@ export class SitesAdapter implements ISiteRepository {
   async deleteRaw(id: string): Promise<void> {
     await this.repo.delete(id)
   }
+
+  // --- Discovery público ---
+
+  findFeaturedSiteIds(): Promise<string[]> {
+    return this.repo.findFeaturedSiteIds()
+  }
+
+  findAllSiteIds(): Promise<string[]> {
+    return this.repo.findAllSiteIds()
+  }
+
+  findSiteIdsByCategory(category: string, limit: number, cursor: string | null) {
+    return this.repo.findSiteIdsByCategory(category, limit, cursor)
+  }
+
+  /** Detalle público de un sitio (read-model SiteDetail). */
+  async getSiteDetailById(id: string): Promise<SiteDetail | null> {
+    const dto = await this.repo.findById(id)
+    return dto ? this.mapper.toSiteDetail(dto) : null
+  }
 }

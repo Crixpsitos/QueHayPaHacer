@@ -70,4 +70,22 @@ export class SitesService {
     if (!dto) throw new Error("Sitio no encontrado")
     if (dto.author?.id !== uid) throw new Error("No autorizado")
   }
+
+  // --- Discovery público (para /donde-ir y landings por tipo) ---
+
+  getFeaturedSites(): Promise<string[]> {
+    return this.adapter.findFeaturedSiteIds()
+  }
+
+  getAllSites(): Promise<string[]> {
+    return this.adapter.findAllSiteIds()
+  }
+
+  getSitesByCategory(category: string, limit: number, cursor: string | null) {
+    return this.adapter.findSiteIdsByCategory(category, limit, cursor)
+  }
+
+  getSiteDetailById(id: string) {
+    return this.adapter.getSiteDetailById(id)
+  }
 }
