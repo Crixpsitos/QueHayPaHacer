@@ -7,7 +7,7 @@ import { EventosIndexSections } from "@/presentation/events/components/EventosIn
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
 
 export const metadata: Metadata = {
-  title: "Eventos en Ibagué | Que Hay Pa Hacer?",
+  title: "Eventos en Ibagué",
   description:
     "Descubre todos los eventos en Ibagué: destacados, planes para este fin de semana y por categoría. Conciertos, cultura, gastronomía y más.",
   alternates: { canonical: "/eventos" },

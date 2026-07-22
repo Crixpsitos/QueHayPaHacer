@@ -7,10 +7,12 @@ import { CategoriesSkeleton } from "@/presentation/categories/components/Categor
 import { HomeEventsRecomendationContainer } from "@/presentation/events/components/HomeEventsRecomendationContainer";
 import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
 
-export const metadata: Metadata  = {
-  title: "Que Hay Pa Hacer?",
+export const metadata: Metadata = {
+  // absolute: evita que el template del root duplique la marca.
+  title: { absolute: "Que Hay Pa Hacer? — Eventos y planes en Ibagué" },
   description:
-    "Una plataforma para descubrir eventos y actividades en tu ciudad.",
+    "Descubre eventos y planes en Ibagué: conciertos, cultura, gastronomía, deporte y más. Encuentra qué hay pa' hacer cerca de ti.",
+  alternates: { canonical: "/" },
 };
 
 export default function HomePage() {

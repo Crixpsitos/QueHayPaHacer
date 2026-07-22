@@ -8,6 +8,7 @@ import {
   getEventCollections,
   getEventCollectionBySlug,
 } from "@/presentation/events/lib/eventCollections";
+import { SITE_NAME } from "@/app/lib/site";
 
 // Con Cache Components no se usa `dynamicParams`: los slugs conocidos se
 // prerenderean vía generateStaticParams; cualquier otro cae en `notFound()`.
@@ -39,6 +40,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: def.metaDescription,
       url,
       type: "website",
+      siteName: SITE_NAME,
+      locale: "es_CO",
     },
   };
 }

@@ -68,7 +68,7 @@ const BASE_COLLECTIONS: {
     title: (c) => `Eventos destacados en ${c}`,
     description: (c) =>
       `Los eventos más populares y recomendados en ${c}: conciertos, cultura, gastronomía y más.`,
-    metaTitle: (c) => `Eventos destacados en ${c} | Que Hay Pa Hacer?`,
+    metaTitle: (c) => `Eventos destacados en ${c}`,
     metaDescription: (c) =>
       `Descubre los eventos más destacados y populares en ${c}. Encuentra los mejores planes cerca de ti.`,
   },
@@ -79,7 +79,7 @@ const BASE_COLLECTIONS: {
     title: (c) => `Eventos este fin de semana en ${c}`,
     description: (c) =>
       `Planes para este fin de semana en ${c}. No te quedes sin qué hacer.`,
-    metaTitle: (c) => `Qué hacer este fin de semana en ${c} | Que Hay Pa Hacer?`,
+    metaTitle: (c) => `Qué hacer este fin de semana en ${c}`,
     metaDescription: (c) =>
       `Los mejores eventos y planes para este fin de semana en ${c}. Conciertos, ferias, cultura y más.`,
   },
@@ -89,7 +89,7 @@ const BASE_COLLECTIONS: {
     shortLabel: "Todos",
     title: (c) => `Todos los eventos en ${c}`,
     description: (c) => `Explora la agenda completa de eventos en ${c}.`,
-    metaTitle: (c) => `Todos los eventos en ${c} | Que Hay Pa Hacer?`,
+    metaTitle: (c) => `Todos los eventos en ${c}`,
     metaDescription: (c) =>
       `La agenda completa de eventos en ${c}: música, cultura, gastronomía, deporte y más. Encuentra tu próximo plan.`,
   },
@@ -142,7 +142,7 @@ export async function getEventCollections(): Promise<CollectionDef[]> {
         shortLabel: cat.title,
         title: `Eventos de ${cat.title} en ${city.label}`,
         description: `Descubre los mejores eventos de ${cat.title} en ${city.label}.`,
-        metaTitle: `Eventos de ${cat.title} en ${city.label} | Que Hay Pa Hacer?`,
+        metaTitle: `Eventos de ${cat.title} en ${city.label}`,
         metaDescription: `Agenda de eventos de ${cat.title} en ${city.label}. Encuentra fechas, lugares y entradas.`,
       });
     }

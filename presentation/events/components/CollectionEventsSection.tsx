@@ -11,6 +11,7 @@ import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCa
 import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
 import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
 import { fetchUserLiked } from "@/presentation/events/data/eventDetailFetchers";
+import { SITE_URL } from "@/app/lib/site";
 import type { Events } from "@/domain/entities/events/Events";
 
 const EMPTY_INFO = {
@@ -18,6 +19,26 @@ const EMPTY_INFO = {
   description:
     "Estamos sumando planes nuevos constantemente. Vuelve pronto para descubrir qué hay pa' hacer.",
 };
+
+/** ItemList JSON-LD → elegibilidad para carrusel de eventos en Google (URLs absolutas). */
+function ItemListJsonLd({ events }: { events: Events[] }) {
+  if (events.length === 0) return null;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: events.map((e, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/eventos/${e.slug || e.id}`,
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
 
 /**
  * Hueco dinámico (PPR) de una landing: lee la cookie del usuario para pintar SU
@@ -46,6 +67,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
     const likedByEventId = await likesFor(events);
     return (
       <Section spacing="sm" className="mt-4">
+        <ItemListJsonLd events={events} />
         <InfiniteEventList
           categoryId={def.categoryId}
           initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
@@ -63,6 +85,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
   if (def.kind === "all") {
     return (
       <Section spacing="sm" className="mt-4">
+        <ItemListJsonLd events={events} />
         <EventCardInteractive
           events={events.map((e) => EventViewModelMapper.toViewModel(e))}
           likedByEventId={likedByEventId}
@@ -86,6 +109,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
 
   return (
     <>
+      <ItemListJsonLd events={events} />
       {groups.map((g) => (
         <ContentSection
           key={g.key}
