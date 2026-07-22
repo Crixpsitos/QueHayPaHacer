@@ -46,6 +46,15 @@ env:
       - BUILD
       - RUNTIME
 
+  # URL canónica del sitio para SEO (canonical, OpenGraph, sitemap, JSON-LD).
+  # ⚠️ CAMBIAR por el dominio REAL de producción (con https, sin barra final).
+  #    Si queda mal, los canonical/og apuntan al dominio equivocado.
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://quehaypahacer-develop.web.app
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     secret: firebaseMessagingSenderId
     availability:
