@@ -47,8 +47,10 @@ env:
       - RUNTIME
 
   # URL canónica del sitio para SEO (canonical, OpenGraph, sitemap, JSON-LD).
-  # ⚠️ CAMBIAR por el dominio REAL de producción (con https, sin barra final).
-  #    Si queda mal, los canonical/og apuntan al dominio equivocado.
+  # Env (no secret): es pública y cambia por entorno.
+  # Este VALUE es el DEFAULT/develop. Producción lo sobrescribe en
+  # apphosting.production.yaml (backend de main con environment "production").
+  # ⚠️ Ajusta al dominio real de develop (con https, sin barra final).
   - variable: NEXT_PUBLIC_SITE_URL
     value: https://quehaypahacer-develop.web.app
     availability:
