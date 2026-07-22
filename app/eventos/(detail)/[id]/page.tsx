@@ -19,9 +19,9 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   if (!event || event.status !== "published") return {};
 
   const url = `/eventos/${event.slug || event.id}`;
-  const image = event.mainImage?.url;
   const description = event.shortDescription || `${event.title} en Ibagué.`;
 
+  // og:image lo provee el archivo opengraph-image.tsx (OG dinámica con el mainImage).
   return {
     title: event.title,
     description,
@@ -33,9 +33,8 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
       type: "website",
       siteName: SITE_NAME,
       locale: "es_CO",
-      ...(image ? { images: [{ url: image }] } : {}),
     },
-    twitter: { card: image ? "summary_large_image" : "summary" },
+    twitter: { card: "summary_large_image" },
   };
 }
 
