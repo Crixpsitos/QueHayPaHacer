@@ -223,14 +223,21 @@ export const EventCard = ({
           "hover:shadow-lg hover:-translate-y-0.5",
           "focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
           variant === "horizontal"
-            ? "flex flex-row max-w-lg"
+            ? "flex flex-row w-full sm:w-[26rem]"
             : "flex flex-col w-full",
           className,
         )}
         aria-label={`Evento: ${event.title}`}
       >
         {/* ── Imagen ── */}
-        <div className={cn("relative shrink-0 overflow-hidden")}>
+        <div
+          className={cn(
+            "relative shrink-0 overflow-hidden",
+            // Horizontal: imagen cuadrada de ancho fijo (si no, la card se mide por
+            // contenido y el flex-wrap queda disparejo). Vertical: full width arriba.
+            variant === "horizontal" ? "w-32 sm:w-40" : "w-full",
+          )}
+        >
           <div className="relative aspect-square w-full">
             <Image
               src={event.mainImage?.url ?? ""}
