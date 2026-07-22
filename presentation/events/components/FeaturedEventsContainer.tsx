@@ -17,7 +17,7 @@ export const FeaturedEventsContainer = ({ featuredEvents, likedByEventId = {} }:
       events={featuredEventsViewModels}
       likedByEventId={likedByEventId}
       info={{ title: "Lamentablemente no hay eventos destacados :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
-      variant="horizontal"
+      variant="vertical"
     />
   );
 };

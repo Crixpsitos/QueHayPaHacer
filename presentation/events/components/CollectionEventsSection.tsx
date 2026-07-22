@@ -96,7 +96,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
             events={g.events.map((e) => EventViewModelMapper.toViewModel(e))}
             likedByEventId={likedByEventId}
             info={EMPTY_INFO}
-            variant="horizontal"
+            variant="vertical"
           />
         </ContentSection>
       ))}
