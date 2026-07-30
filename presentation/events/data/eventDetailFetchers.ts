@@ -52,7 +52,7 @@ export const fetchUserLiked = async (
   userId: string,
 ): Promise<boolean> => {
   "use cache";
-  cacheLife({ expire: 300, stale: 60, revalidate: 60 });
+  cacheLife("hours");
   cacheTag(`event-interaction-${userId}-${eventId}`);
   const { eventInteractionsService } = createServerContainer();
   const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
@@ -65,7 +65,7 @@ export const fetchUserRegistered = async (
   sessionId?: string,
 ): Promise<boolean> => {
   "use cache";
-  cacheLife({ expire: 300, stale: 60, revalidate: 60 });
+  cacheLife("hours");
   cacheTag(
     sessionId
       ? `event-registration-${userId}-${eventId}-${sessionId}`

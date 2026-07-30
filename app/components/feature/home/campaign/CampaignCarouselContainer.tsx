@@ -6,11 +6,7 @@ import { CampaignViewModelMapper } from "@/presentation/campaing/mapper/Campaign
 
 const fetchActiveCampaigns = async () => {
   "use cache";
-  cacheLife({
-    stale: 120,
-    revalidate: 60,
-    expire: 120,
-  }); 
+  cacheLife("hours");
   cacheTag("active-campaigns");
 
   const { campaignService } = createServerContainer();
@@ -24,6 +20,9 @@ const fetchActiveCampaigns = async () => {
 };
 
 export const CampaignCarouselContainer = async () => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("active-campaigns");
   const campaigns = await fetchActiveCampaigns();
 
   return (

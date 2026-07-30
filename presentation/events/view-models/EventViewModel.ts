@@ -74,6 +74,9 @@ export interface EventViewModel {
     string,
     { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
   >;
+  metadata?: {
+    isFirstEvent?: boolean;
+  };
   // Fechas como strings ISO 8601
   startDate: string;
   endDate: string;

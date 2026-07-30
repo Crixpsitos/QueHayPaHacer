@@ -46,8 +46,8 @@ export const Navbar = () => {
   const routes = [
     { name: "Inicio", href: "/" },
     { name: "Eventos", href: "/eventos" },
-    { name: "¿Dónde ir?", href: "/sites" },
-    { name: "Contactanos", href: "/contact" },
+    { name: "¿Dónde ir?", href: "/donde-ir" },
+    { name: "Contactanos", href: "/contactanos" },
   ];
 
   const handleLoginSuccess = async () => {

@@ -9,7 +9,7 @@ import { useAuth } from "@/app/store/auth/AuthContext";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { RotateCcw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, useRef } from "react";
 import { EventCard } from "./EventCard";
 import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { cn } from "@/app/lib/utils/cn";
@@ -21,6 +21,8 @@ interface EventCardInteractiveProps {
   likedByEventId?: Record<string, boolean>;
   info: {title: string, description: string}
   variant?: "horizontal" | "vertical";
+  /** Máximo de columnas en modo vertical (default 4). */
+  columns?: 2 | 3 | 4;
 }
 
 interface PendingLikeState {
@@ -37,7 +39,8 @@ export function EventCardInteractive({
   events,
   likedByEventId = {},
   info,
-  variant = "horizontal"
+  variant = "horizontal",
+  columns = 4,
 }: EventCardInteractiveProps) {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
@@ -46,6 +49,39 @@ export function EventCardInteractive({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<PendingLikeState | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [dynamicLikes, setDynamicLikes] = useState<Record<string, boolean>>({});
+
+  const eventIdsKey = useMemo(() => events.map((e) => e.id).join(","), [events]);
+  // Ref de deduplicación: evita doble fetch cuando el efecto corre dos veces (StrictMode / Suspense)
+  const fetchingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.uid || events.length === 0) {
+      setDynamicLikes({});
+      return;
+    }
+    const key = `${user.uid}:${eventIdsKey}`;
+    if (fetchingRef.current === key) return; // ya en vuelo
+    fetchingRef.current = key;
+
+    fetch("/api/events/likes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: events.map((e) => e.id) }),
+    })
+      .then((r) => r.json())
+      .then((likes: Record<string, boolean>) => {
+        setDynamicLikes(likes);
+        fetchingRef.current = null;
+      })
+      .catch(() => { fetchingRef.current = null; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, eventIdsKey]);
+
+  const effectiveLikes = useMemo(
+    () => ({ ...likedByEventId, ...dynamicLikes }),
+    [likedByEventId, dynamicLikes],
+  );
 
   useEffect(() => {
     if (!toast) return;
@@ -162,7 +198,7 @@ export function EventCardInteractive({
     <>
       <div className={cn(
         variant === "vertical"
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          ? `grid grid-cols-1 sm:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""} gap-6`
           : "flex flex-wrap gap-6"
       )}>
         {events.map((event, index) => (
@@ -172,8 +208,9 @@ export function EventCardInteractive({
             variant={variant}
             attendeeCount={event.analytics?.registrations ?? 0}
             initialLikes={event.analytics?.likes ?? 0}
-            initialLiked={likedByEventId[event.id] ?? false}
+            initialLiked={effectiveLikes[event.id] ?? false}
             viewCount={event.analytics?.views ?? 0}
+            isFirstEvent={event.metadata?.isFirstEvent ?? false}
             onLike={handleLike}
             onShare={(ev) => shareEventAction(ev.id)}
             onViewDetails={handleViewDetails}

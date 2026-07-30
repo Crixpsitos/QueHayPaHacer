@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/app/lib/site";
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
+import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
 
 /**
- * Sitemap: home + índice de eventos + todas las landings SEO (una por colección
- * × ciudad). Las URLs son absolutas (SITE_URL). Cacheada por defecto — solo
- * depende de `getEventCollections` (cacheada) y de la fecha.
+ * Sitemap: home + índices (eventos, sitios) + todas las landings SEO (una por
+ * colección × ciudad, eventos y sitios). URLs absolutas (SITE_URL). Cacheada —
+ * solo depende de las colecciones (cacheadas/estáticas) y de la fecha.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const collections = await getEventCollections();
@@ -14,14 +15,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/eventos`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL}/donde-ir`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
   ];
 
-  const landingRoutes: MetadataRoute.Sitemap = collections.map((c) => ({
+  const eventLandings: MetadataRoute.Sitemap = collections.map((c) => ({
     url: `${SITE_URL}/${c.slug}`,
     lastModified: now,
     changeFrequency: "daily",
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...landingRoutes];
+  const siteLandings: MetadataRoute.Sitemap = getSiteCollections().map((c) => ({
+    url: `${SITE_URL}/donde-ir-${c.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...eventLandings, ...siteLandings];
 }

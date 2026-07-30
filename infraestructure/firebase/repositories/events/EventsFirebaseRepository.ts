@@ -92,8 +92,8 @@ export class EventsFirebaseRepository
             Filter.where("promotion.promotedUntil", ">=", now),
           ),
           // ponytail: umbral bajo para MVP. Con pocos eventos, el score máx es
-          // ~37, así que 55 dejaba "destacados" siempre vacío. Subir con volumen real.
-          Filter.where("analytics.score", ">=", 20),
+          // ~37. Bajar a 5 para que aparezcan eventos en el MVP.
+          Filter.where("analytics.score", ">=", 5),
         ),
       )
       .select()
@@ -138,6 +138,16 @@ export class EventsFirebaseRepository
       "analytics.shares": FieldValue.increment(delta),
       updatedAt: FieldValue.serverTimestamp(),
     });
+  }
+
+  async findPublishedBySiteId(siteId: string, limit = 8): Promise<FirebaseEventsDto[]> {
+    const snap = await this.collection
+      .where("location.siteId", "==", siteId)
+      .where("status", "==", "published")
+      .orderBy("startDate", "desc")
+      .limit(limit)
+      .get();
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as FirebaseEventsDto);
   }
 
   async findById(id: string): Promise<FirebaseEventsDto | null> {

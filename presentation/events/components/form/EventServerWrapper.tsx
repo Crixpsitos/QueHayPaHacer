@@ -16,11 +16,7 @@ interface EventFormServerWrapperProps {
 const findEditableEvent = async (id: string, userId: string) => {
   "use cache";
   cacheTag(`event-${id}`);
-  cacheLife({
-    stale: 60,
-    revalidate: 120,
-    expire: 3600,
-  });
+  cacheLife("hours");
 
   const { eventsService } = createServerContainer();
   const event = await eventsService.getEventById(id);

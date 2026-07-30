@@ -82,5 +82,6 @@ export interface FirebaseEventsDto {
         _meiliNeedsSync?: boolean; // Flag para indicar si el evento necesita ser sincronizado con Meilisearch
         _meiliSyncedAt?: Timestamp; // Fecha de la ultima sincronizacion con Meilisearch
         _meiliSynced?: boolean; // Flag para indicar si el evento ha sido sincronizado con Meilisearch
+        isFirstEvent?: boolean; // Flag: es el primer evento publicado del autor
     };
 }

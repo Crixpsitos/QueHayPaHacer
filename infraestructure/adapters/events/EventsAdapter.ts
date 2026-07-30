@@ -55,6 +55,11 @@ export class EventsAdapter implements IEventsRepository {
     await this.repository.incrementShares(eventId, delta);
   }
 
+  async findPublishedBySiteId(siteId: string, limit = 8): Promise<Events[]> {
+    const dtos = await this.repository.findPublishedBySiteId(siteId, limit);
+    return dtos.map((d) => this.mapper.toDomain(d));
+  }
+
   findById(id: string): Promise<Events | null> {
     return this.repository.findById(id).then(dto => dto ? this.mapper.toDomain(dto) : null);
   }

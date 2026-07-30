@@ -50,4 +50,14 @@ export class Site {
    get markerImageUrl(): string | null {
     return this.cover?.markerUrl ?? null
   }
+
+  /**
+   * Regla de negocio: un sitio es "nuevo" si fue creado hace menos de 7 días.
+   * Vive en la entidad de dominio porque depende exclusivamente del estado
+   * propio (createdAt) y un umbral definido por el negocio.
+   */
+  get isNew(): boolean {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    return Date.now() - this.createdAt.getTime() < SEVEN_DAYS_MS;
+  }
 }

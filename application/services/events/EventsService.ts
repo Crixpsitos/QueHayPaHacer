@@ -129,4 +129,9 @@ export class EventsService {
     return this.eventsRepository.findByCategoryPaginated(categoryId, limit, cursor);
   }
 
+  /** Eventos publicados vinculados a un sitio por location.siteId. */
+  async getEventsBySiteId(siteId: string, limit = 8) {
+    return this.eventsRepository.findPublishedBySiteId(siteId, limit);
+  }
+
 }
