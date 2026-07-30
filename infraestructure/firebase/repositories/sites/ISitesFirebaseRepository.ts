@@ -18,4 +18,6 @@ export interface ISitesFirebaseRepository {
   findAllSiteIds(): Promise<string[]>
   /** Paginación por cursor de un tipo de sitio (category). Tiebreaker documentId. */
   findSiteIdsByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteIds>
+  /** Busca un sitio por su slug único. */
+  findBySlug(slug: string): Promise<FirebaseSiteDto | null>
 }

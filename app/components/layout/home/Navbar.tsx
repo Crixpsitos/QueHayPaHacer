@@ -47,7 +47,7 @@ export const Navbar = () => {
     { name: "Inicio", href: "/" },
     { name: "Eventos", href: "/eventos" },
     { name: "¿Dónde ir?", href: "/donde-ir" },
-    { name: "Contactanos", href: "/contact" },
+    { name: "Contactanos", href: "/contactanos" },
   ];
 
   const handleLoginSuccess = async () => {

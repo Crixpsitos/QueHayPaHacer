@@ -4,14 +4,12 @@ import { notFound } from "next/navigation";
 import { Section } from "@/app/components/layout/shared/Section";
 import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
 import { CollectionEventsSection } from "@/presentation/events/components/CollectionEventsSection";
+import { SiteCollectionContent } from "@/presentation/sites/components/discovery/SiteCollectionContent";
 import { getEventCollectionBySlug } from "@/presentation/events/lib/eventCollections";
+import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
 import { SITE_NAME } from "@/app/lib/site";
 
-// Sin generateStaticParams → ruta dinámica (ƒ). Bajo Cache Components, notFound()
-// en el shell estático de una ruta SSG revienta en prod (E22: revalidate 0 < 1);
-// como ruta dinámica, notFound() sirve la UI de not-found con <meta noindex>. El
-// contenido igual se cachea vía "use cache" en los fetchers (+ hueco PPR que lee
-// la cookie para el like del usuario). Acceso a params dentro de <Suspense>.
+const DONDE_IR_PREFIX = "donde-ir-";
 
 interface PageProps {
   params: Promise<{ coleccion: string }>;
@@ -19,23 +17,30 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { coleccion } = await params;
-  const def = await getEventCollectionBySlug(coleccion);
-  // Slug desconocido → noindex (evita soft-404 indexado).
-  if (!def) return { robots: { index: false, follow: false } };
 
+  // ¿Es una colección de sitios?
+  if (coleccion.startsWith(DONDE_IR_PREFIX)) {
+    const siteSlug = coleccion.slice(DONDE_IR_PREFIX.length);
+    const def = getSiteCollectionBySlug(siteSlug);
+    if (!def) return { robots: { index: false, follow: false } };
+    const url = `/donde-ir-${def.slug}`;
+    return {
+      title: def.metaTitle,
+      description: def.metaDescription,
+      alternates: { canonical: url },
+      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
+    };
+  }
+
+  // ¿Es una colección de eventos?
+  const def = await getEventCollectionBySlug(coleccion);
+  if (!def) return { robots: { index: false, follow: false } };
   const url = `/${def.slug}`;
   return {
     title: def.metaTitle,
     description: def.metaDescription,
     alternates: { canonical: url },
-    openGraph: {
-      title: def.metaTitle,
-      description: def.metaDescription,
-      url,
-      type: "website",
-      siteName: SITE_NAME,
-      locale: "es_CO",
-    },
+    openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
   };
 }
 
@@ -49,6 +54,26 @@ export default async function CollectionLandingPage({ params }: PageProps) {
 
 async function CollectionLanding({ params }: PageProps) {
   const { coleccion } = await params;
+
+  // Colección de sitios: /donde-ir-museos-ibague, /donde-ir-parques-ibague…
+  if (coleccion.startsWith(DONDE_IR_PREFIX)) {
+    const siteSlug = coleccion.slice(DONDE_IR_PREFIX.length);
+    const def = getSiteCollectionBySlug(siteSlug);
+    if (!def) notFound();
+    return (
+      <>
+        <Section spacing="sm" className="mt-4">
+          <h1 className="text-3xl font-bold">{def!.title}</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {def!.description}
+          </p>
+        </Section>
+        <SiteCollectionContent def={def!} />
+      </>
+    );
+  }
+
+  // Colección de eventos
   const def = await getEventCollectionBySlug(coleccion);
   if (!def) notFound();
 

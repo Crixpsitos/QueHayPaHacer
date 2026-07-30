@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 const getCategories = async () => {
   "use cache";
-  cacheLife("hours");
+  cacheLife("days");
   cacheTag("categories");
   const { categoriesService } = createServerContainer();
   return categoriesService.getActiveCategories();

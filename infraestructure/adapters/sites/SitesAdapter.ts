@@ -75,4 +75,10 @@ export class SitesAdapter implements ISiteRepository {
     const dto = await this.repo.findById(id)
     return dto ? this.mapper.toSiteDetail(dto) : null
   }
+
+  /** Detalle público por slug. */
+  async getSiteDetailBySlug(slug: string): Promise<SiteDetail | null> {
+    const dto = await this.repo.findBySlug(slug)
+    return dto ? this.mapper.toSiteDetail(dto) : null
+  }
 }

@@ -100,4 +100,14 @@ export class SitesFirebaseRepository
 
     return { ids: page.map((d) => d.id), nextCursor }
   }
+
+  async findBySlug(slug: string): Promise<FirebaseSiteDto | null> {
+    const snap = await this.collection
+      .where("slug", "==", slug)
+      .limit(1)
+      .get()
+    if (snap.empty) return null
+    const doc = snap.docs[0]
+    return { id: doc.id, ...doc.data() } as FirebaseSiteDto
+  }
 }

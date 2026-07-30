@@ -51,6 +51,7 @@ export class EventViewModelMapper {
       eventType: event.eventType,
       collaborators: event.collaborators,
       collaboratorsData: event.collaboratorsData,
+      metadata: event.metadata,
     };
   }
 
@@ -107,6 +108,7 @@ export class EventViewModelMapper {
       eventType: viewModel.eventType,
       collaborators: viewModel.collaborators,
       collaboratorsData: viewModel.collaboratorsData,
+      metadata: viewModel.metadata,
     } as unknown as Events;
   }
 }

@@ -26,5 +26,7 @@ export interface IEventsRepository extends IBaseRepository<Events>{
     updateEventDateRange(eventId: string, startDate: Date, endDate: Date): Promise<void>;
 
     incrementLikes(eventId: string, delta: number): Promise<void>;    
-    incrementShares(eventId: string, delta: number): Promise<void>;    
+    incrementShares(eventId: string, delta: number): Promise<void>;
+    /** Eventos publicados vinculados a un sitio por location.siteId. */
+    findPublishedBySiteId(siteId: string, limit?: number): Promise<Events[]>;
 }

@@ -95,3 +95,8 @@ export function getSiteCollections(): SiteCollectionDef[] {
 export function getSiteCollectionBySlug(slug: string): SiteCollectionDef | null {
   return getSiteCollections().find((c) => c.slug === slug) ?? null;
 }
+
+/** URL canónica de una colección: /donde-ir-{slug} (raíz, sin subruta). */
+export function siteCollectionHref(slug: string): string {
+  return `/donde-ir-${slug}`;
+}

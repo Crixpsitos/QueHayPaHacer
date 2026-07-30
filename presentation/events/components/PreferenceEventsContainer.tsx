@@ -1,4 +1,7 @@
 import { createServerContainer } from "@/infraestructure/di/container"
+import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
+import { getTokens } from "next-firebase-auth-edge"
+import { cookies } from "next/headers"
 import { cacheLife, cacheTag } from "next/cache"
 import { UserPreferencesViewModelMapper } from "../mapper/UserPreferencesViewModelMapper"
 import { UserPreferencesViewModel } from "../view-models/UserPreferencesViewModel"
@@ -8,17 +11,9 @@ import { ContentSection } from "@/app/components/layout/shared/ContentSection"
 import { Separator } from "@/app/components/ui/separator"
 import type { Events } from "@/domain/entities/events/Events"
 
-interface PreferenceEventsContainerProps {
-  userId?: string;
-}
-
 async function getUserPreferences(userId?: string): Promise<UserPreferencesViewModel | null> {
     "use cache"
-    cacheLife({
-      expire: 120,
-      stale: 60,
-      revalidate: 60
-    })
+    cacheLife("hours")
     cacheTag(`user-preferences-${userId}`)
 
     if (!userId) return null;
@@ -34,11 +29,7 @@ async function getUserPreferences(userId?: string): Promise<UserPreferencesViewM
 async function getPreferenceEventIds(preferences: UserPreferencesViewModel): Promise<string[]> {
     "use cache"
     cacheTag(`preference-events-${preferences.userId}`)
-    cacheLife({
-      expire: 120,
-      stale: 60,
-      revalidate: 60
-    })
+    cacheLife("hours")
 
     const topCategoryIds = Object.entries(preferences.categories)
       .sort(([, a], [, b]) => b.score - a.score)
@@ -59,37 +50,17 @@ const fetchEventDetail = async (id: string): Promise<Events | null> => {
   return await eventsService.getEventById(id);
 };
 
-const fetchUserEventInteraction = async (eventId: string, userId: string): Promise<boolean> => {
-  "use cache";
-  cacheLife({
-    expire: 300,
-    stale: 60,
-    revalidate: 60,
-  });
-  cacheTag(`event-interaction-${userId}-${eventId}`);
-  const { eventInteractionsService } = createServerContainer();
-  const interaction = await eventInteractionsService.getByEventAndUser(eventId, userId);
-  return !!interaction?.liked;
-};
+export const PreferenceEventsContainer = async () => {
+    const tokens = await getTokens(await cookies(), authConfig);
+    const userId = tokens?.decodedToken?.uid;
 
-export const PreferenceEventsContainer = async ({ userId }: PreferenceEventsContainerProps) => {
     const preferences = await getUserPreferences(userId);
 
-    if(!preferences) return <></>;
+    if(!preferences) return null;
 
     const eventIds = await getPreferenceEventIds(preferences);
     const eventsData = await Promise.all(eventIds.map(fetchEventDetail));
     const events = eventsData.filter(Boolean) as Events[];
-
-    const likedByEventId: Record<string, boolean> = {};
-    if (userId) {
-      const likedResults = await Promise.all(
-        eventIds.map(async (id) => ({ id, liked: await fetchUserEventInteraction(id, userId) }))
-      );
-      for (const { id, liked } of likedResults) {
-        likedByEventId[id] = liked;
-      }
-    }
 
     const preferenceEventsViewModels = events.map((event) =>
       EventViewModelMapper.toViewModel(event),
@@ -103,7 +74,6 @@ export const PreferenceEventsContainer = async ({ userId }: PreferenceEventsCont
       <Separator className="my-6" />
     <EventCardInteractive
       events={preferenceEventsViewModels}
-      likedByEventId={likedByEventId}
       info={{ title: "Lamentablemente no hay eventos recomendados :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
       variant="vertical"
     />

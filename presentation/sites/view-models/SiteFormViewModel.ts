@@ -85,6 +85,7 @@ export interface SiteAnalytics {
 
 export interface SiteListItem {
   id: string
+  slug: string
   name: string
   category: SiteCategory
   address: string
@@ -96,6 +97,8 @@ export interface SiteListItem {
   rejectionReason: string | null
   analytics: Pick<SiteAnalytics, "clicks" | "likes" | "shares" | "eventCount">
   updatedAt: string
+  /** Campo computado en el mapper: true si el sitio fue creado hace menos de 7 días. */
+  isNew: boolean
 }
 
 export interface SiteAuthor {
@@ -111,6 +114,8 @@ export interface SiteMediaItem {
   isCover: boolean
   status?: MediaUploadStatus
   path?: string   // storage path — se conserva al editar para no borrar el archivo optimizado
+  thumbnailUrl?: string  // miniatura del video (poster) o imagen optimizada
+  duration?: number      // duración en segundos (solo video)
 }
 
 export interface SiteDetail extends SiteListItem {

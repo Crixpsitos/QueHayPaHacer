@@ -17,7 +17,7 @@ const fetchCollectionEventIds = async (
   categorySlug?: string,
 ): Promise<string[]> => {
   "use cache";
-  cacheLife("hours");
+  cacheLife("days");
   cacheTag("event-list", `collection-${slug}`);
 
   const { eventFeed } = createServerContainer();

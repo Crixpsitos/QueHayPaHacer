@@ -1,4 +1,4 @@
-import { updateTag } from "next/cache"
+import { updateTag, revalidateTag } from "next/cache"
 
 /**
  * Invalida las caches de sitios tras una escritura (read-your-own-writes).
@@ -9,4 +9,5 @@ import { updateTag } from "next/cache"
 export function revalidateSite(uid: string, siteId?: string) {
   updateTag(`sites-${uid}`)
   if (siteId) updateTag(`site-${siteId}`)
+  revalidateTag("explore")
 }

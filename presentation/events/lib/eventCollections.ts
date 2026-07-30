@@ -97,7 +97,7 @@ const BASE_COLLECTIONS: {
 
 const fetchActiveCategories = async () => {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 120, expire: 600 });
+  cacheLife("days");
   cacheTag("active-categories");
   const { categoriesService } = createServerContainer();
   return categoriesService.getActiveCategories();
@@ -110,7 +110,7 @@ const fetchActiveCategories = async () => {
  */
 export async function getEventCollections(): Promise<CollectionDef[]> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 120, expire: 600 });
+  cacheLife("days");
   cacheTag("active-categories");
 
   const categories = await fetchActiveCategories();

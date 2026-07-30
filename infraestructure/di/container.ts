@@ -56,6 +56,14 @@ import { EventSessionFirebaseRepository } from "../firebase/repositories/events/
 import { EventSessionAdapter } from "../adapters/events/EventSessionAdapter";
 import { EventSessionFirebaseMapper } from "../firebase/mappers/events/EventSessionFirebaseMapper";
 import { EventSessionService } from "@/application/services/events/EventSessionService";
+import { ContactFirebaseRepository } from "../firebase/repositories/contact/ContactFirebaseRepository";
+import { ContactAdapter } from "../adapters/contact/ContactAdapter";
+import { ContactFirebaseMapper } from "../firebase/mappers/contact/ContactFirebaseMapper";
+import { ContactService } from "@/application/services/contact/ContactService";
+import { SiteInteractionFirebaseRepository } from "../firebase/repositories/SiteInteraction/SiteInteractionFirebaseRepository";
+import { SiteInteractionAdapter } from "../adapters/SiteInteraction/SiteInteractionAdapter";
+import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteraction/SiteInteractionFirebaseMapper";
+import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
 
 export const createServerContainer = () => {
@@ -150,6 +158,19 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
+  // site interactions
+  const siteInteractionFirebaseRepository = new SiteInteractionFirebaseRepository(getFirebaseFirestore());
+  const siteInteractionAdapter = new SiteInteractionAdapter(
+    siteInteractionFirebaseRepository,
+    new SiteInteractionFirebaseMapper(),
+  );
+  const siteInteractionService = new SiteInteractionService(siteInteractionAdapter);
+
+  // contact
+  const contactFirebaseRepository = new ContactFirebaseRepository(getFirebaseFirestore());
+  const contactAdapter = new ContactAdapter(contactFirebaseRepository, new ContactFirebaseMapper());
+  const contactService = new ContactService(contactAdapter);
+
   return {
     userService,
     campaignService,
@@ -161,11 +182,13 @@ export const createServerContainer = () => {
     eventFeed,
     userPreferencesService,
     sitesService,
+    siteInteractionService,
     storageService,
     profileService,
     badgeService,
     professionalRequestService,
     studioService,
+    contactService,
   };
 };
 

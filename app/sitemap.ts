@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const siteLandings: MetadataRoute.Sitemap = getSiteCollections().map((c) => ({
-    url: `${SITE_URL}/donde-ir/${c.slug}`,
+    url: `${SITE_URL}/donde-ir-${c.slug}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.8,

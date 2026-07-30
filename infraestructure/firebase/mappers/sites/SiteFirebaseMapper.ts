@@ -80,10 +80,13 @@ export class SiteFirebaseMapper {
       isCover: (m as { isCover?: boolean }).isCover === true,
       status: (m as { status?: SiteMediaItem["status"] }).status,
       path: (m as { path?: string }).path,
+      thumbnailUrl: (m as { thumbnailUrl?: string }).thumbnailUrl,
+      duration: (m as { duration?: number }).duration,
     }))
 
     return {
       id: dto.id,
+      slug: dto.slug,
       name: dto.name,
       category: (dto.category as SiteDetail["category"]) ?? "other",
       address: dto.location.address,
@@ -105,6 +108,12 @@ export class SiteFirebaseMapper {
         eventCount: dto.analytics.eventCount ?? 0,
       },
       updatedAt: dto.updatedAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+      // Campo computado: misma regla que Site.isNew (7 días) — este path bypasa la entidad
+      isNew: (() => {
+        const created = dto.createdAt?.toDate?.();
+        if (!created) return false;
+        return Date.now() - created.getTime() < 7 * 24 * 60 * 60 * 1000;
+      })(),
       description: dto.description,
       views: dto.analytics.views ?? 0,
       schedule: {

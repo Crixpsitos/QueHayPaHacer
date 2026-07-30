@@ -65,4 +65,7 @@ export interface Events extends Dates {
     registrations?: number;
     score?: number;
   };
+  metadata?: {
+    isFirstEvent?: boolean;
+  };
 }

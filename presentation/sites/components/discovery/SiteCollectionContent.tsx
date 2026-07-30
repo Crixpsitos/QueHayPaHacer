@@ -4,8 +4,46 @@ import { SiteDiscoveryGrid } from "./SiteDiscovery";
 import { InfiniteSiteList } from "./InfiniteSiteList";
 import { getSiteCollections, type SiteCollectionDef } from "../../lib/siteCollections";
 import { groupSitesByCategory } from "../../lib/groupSitesByCategory";
-import { fetchCollectionSites } from "../../data/siteFetchers";
-import { getSiteCategoryPage } from "../../data/siteCategoryPage";
+import { createServerContainer } from "@/infraestructure/di/container";
+import { cacheLife, cacheTag } from "next/cache";
+import type { SiteDetail } from "../../view-models/SiteFormViewModel";
+import type { SiteCategory } from "../../view-models/SiteFormViewModel";
+
+const fetchSiteDetailById = async (id: string): Promise<SiteDetail | null> => {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`site-${id}`);
+  const { sitesService } = createServerContainer();
+  return sitesService.getSiteDetailById(id);
+};
+
+const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[]> => {
+  "use cache";
+  cacheLife("days");
+  cacheTag("site-list", `site-collection-${def.slug}`);
+  const { sitesService } = createServerContainer();
+  const ids = def.kind === "featured"
+    ? await sitesService.getFeaturedSites()
+    : await sitesService.getAllSites();
+  const sites = await Promise.all(ids.map(fetchSiteDetailById));
+  return sites.filter((s): s is SiteDetail => Boolean(s));
+};
+
+const getSiteCategoryPage = async (
+  category: SiteCategory,
+  cursor: string | null,
+  limit = 12,
+): Promise<{ sites: SiteDetail[]; nextCursor: string | null }> => {
+  "use cache";
+  cacheLife("days");
+  cacheTag("site-list", `site-type-${category}`);
+  const { sitesService } = createServerContainer();
+  const { ids, nextCursor } = await sitesService.getSitesByCategory(category as string, limit, cursor);
+  const sites = (await Promise.all(ids.map(fetchSiteDetailById))).filter(
+    (s): s is SiteDetail => Boolean(s),
+  );
+  return { sites, nextCursor };
+};
 
 /**
  * Contenido de una landing de sitios. Va dentro de un <Suspense> para que la ruta
@@ -46,7 +84,7 @@ export async function SiteCollectionContent({ def }: { def: SiteCollectionDef })
         <ContentSection
           key={g.key}
           title={g.label}
-          action={g.landingSlug ? { href: `/donde-ir/${g.landingSlug}` } : undefined}
+          action={g.landingSlug ? { href: `/donde-ir-${g.landingSlug}` } : undefined}
         >
           <SiteDiscoveryGrid sites={g.sites} />
         </ContentSection>

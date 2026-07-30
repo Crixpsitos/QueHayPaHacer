@@ -17,7 +17,7 @@ const fetchCategoryEventIds = async (
   limit: number,
 ): Promise<{ ids: string[]; nextCursor: string | null }> => {
   "use cache";
-  cacheLife("hours");
+  cacheLife("days");
   cacheTag("event-list", `category-${categoryId}`);
   const { eventsService } = createServerContainer();
   return eventsService.getEventsByCategoryPaginated(categoryId, limit, cursor);

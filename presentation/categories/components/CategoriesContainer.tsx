@@ -6,11 +6,7 @@ import { CategoryItem } from "./CategoryItem";
 
 const fetchActiveCategories = async () => {
   "use cache";
-  cacheLife({
-    stale: 300,
-    revalidate: 120,
-    expire: 600,
-  });
+  cacheLife("days");
   cacheTag("active-categories");
 
   const { categoriesService } = createServerContainer();
@@ -19,6 +15,9 @@ const fetchActiveCategories = async () => {
 };
 
 export const CategoriesContainer = async () => {
+  "use cache";
+  cacheLife("days");
+  cacheTag("active-categories");
   const categories = await fetchActiveCategories();
 
   return (

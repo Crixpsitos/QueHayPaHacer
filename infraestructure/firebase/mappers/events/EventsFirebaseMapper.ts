@@ -109,6 +109,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       createdAt: dto.createdAt?.toDate ? dto.createdAt.toDate() : new Date(),
       updatedAt: dto.updatedAt?.toDate ? dto.updatedAt.toDate() : new Date(),
       publishedAt: dto.publishedAt?.toDate ? dto.publishedAt.toDate() : undefined,
+      metadata: dto.metadata,
     } as unknown as Events;
   }
 
@@ -172,7 +173,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
         domain.publishedAt instanceof Date && !isNaN(domain.publishedAt.getTime())
           ? Timestamp.fromDate(domain.publishedAt)
           : undefined,
-      metadata: {},
+      metadata: domain.metadata ?? {},
     };
     return Object.fromEntries(
       Object.entries(dto).filter(([, value]) => value !== undefined),
@@ -235,7 +236,7 @@ export class EventsFirebaseMapper implements IEventsMapper {
       publishedAt: domain.publishedAt instanceof Date && !isNaN(domain.publishedAt.getTime())
         ? Timestamp.fromDate(domain.publishedAt)
         : undefined,
-      metadata: {},
+      metadata: domain.metadata ?? {},
     } as unknown as FirebaseEventsDto;
   }
 }

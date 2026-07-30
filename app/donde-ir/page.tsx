@@ -4,8 +4,30 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
 import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
-import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
-import { fetchCollectionSites } from "@/presentation/sites/data/siteFetchers";
+import { getSiteCollections, siteCollectionHref, type SiteCollectionDef } from "@/presentation/sites/lib/siteCollections";
+import { createServerContainer } from "@/infraestructure/di/container";
+import { cacheLife, cacheTag } from "next/cache";
+import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
+
+const fetchSiteDetailById = async (id: string): Promise<SiteDetail | null> => {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`site-${id}`);
+  const { sitesService } = createServerContainer();
+  return sitesService.getSiteDetailById(id);
+};
+
+const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[]> => {
+  "use cache";
+  cacheLife("days");
+  cacheTag("site-list", `site-collection-${def.slug}`);
+  const { sitesService } = createServerContainer();
+  const ids = def.kind === "featured"
+    ? await sitesService.getFeaturedSites()
+    : await sitesService.getAllSites();
+  const sites = await Promise.all(ids.map(fetchSiteDetailById));
+  return sites.filter((s): s is SiteDetail => Boolean(s));
+};
 
 export const metadata: Metadata = {
   title: "¿Dónde ir en Ibagué?",
@@ -37,7 +59,7 @@ export default async function DondeIrIndexPage() {
           {typeCollections.map((c) => (
             <Link
               key={c.slug}
-              href={`/donde-ir/${c.slug}`}
+              href={siteCollectionHref(c.slug)}
               className="rounded-full border border-border bg-secondary px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/70"
             >
               {c.shortLabel}
@@ -47,15 +69,15 @@ export default async function DondeIrIndexPage() {
       </Section>
 
       {featuredDef && (
-        <ContentSection title="Destacados" action={{ href: `/donde-ir/${featuredDef.slug}` }}>
-          <SiteDiscoveryGrid sites={featured} />
+        <ContentSection title="Destacados" action={{ href: siteCollectionHref(featuredDef.slug) }}>
+          <SiteDiscoveryGrid sites={featured} showTrending />
         </ContentSection>
       )}
 
       <Separator className="my-6" />
 
       {allDef && (
-        <ContentSection title="Todos los sitios" action={{ href: `/donde-ir/${allDef.slug}` }}>
+        <ContentSection title="Todos los sitios" action={{ href: siteCollectionHref(allDef.slug) }}>
           <SiteDiscoveryGrid sites={all} />
         </ContentSection>
       )}
