@@ -26,25 +26,18 @@ export async function shareEventAction(
   }
 
   const tokens = await getTokens(await cookies(), authConfig);
-  const userId = tokens?.decodedToken?.uid;
-  if (!tokens?.decodedToken?.uid) {
-    return {
-      authRequired: true,
-      error: "Debes iniciar sesion para compartir.",
-    };
-  }
+  const userId = tokens?.decodedToken?.uid ?? "anonymous";
 
   try {
     const { eventInteractionsService } = createServerContainer();
 
     await eventInteractionsService.registerShare(
       eventId.trim(),
-      tokens.decodedToken.uid,
+      userId,
       sessionId,
     );
-    // El share de una fecha cambia el contador de la sesión → refresca su lista.
     if (sessionId) updateTag(`event-sessions-${eventId.trim()}`);
-    revalidateTag(`preference-events-${userId}`, "max");
+    if (userId !== "anonymous") revalidateTag(`preference-events-${userId}`, "max");
 
     revalidatePath("/", "page");
 

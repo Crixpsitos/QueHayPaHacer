@@ -21,18 +21,19 @@ export async function recordSiteInteractionAction(
   if (!siteId?.trim()) return { success: false, error: "ID inválido." };
 
   const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
+  const userId = tokens?.decodedToken?.uid;
+
+  if (type !== "share" && !userId) {
     return { success: false, authRequired: true, error: "Debes iniciar sesión para interactuar." };
   }
 
-  const userId = tokens.decodedToken.uid;
   const { siteInteractionService } = createServerContainer();
 
   try {
     if (type === "like" || type === "unlike") {
-      await siteInteractionService.registerLike(siteId, userId, type === "like");
+      await siteInteractionService.registerLike(siteId, userId!, type === "like");
     } else {
-      await siteInteractionService.registerShare(siteId, userId);
+      await siteInteractionService.registerShare(siteId, userId ?? "anonymous");
     }
 
     updateTag(`site-${siteId}`);
