@@ -168,7 +168,7 @@ export async function publishEventAction(
 
     updateTag("event-list");
     updateTag(`user-events-${userId}`);
-    revalidateTag("explore");
+    revalidateTag("explore", "max");
 
     // revalidateTag (stale-while-revalidate) para las pestanas de Eventos y stats del perfil
     revalidateTag(`profile-events-${userId}`, "max");

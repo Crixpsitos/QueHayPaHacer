@@ -1,4 +1,4 @@
-import type { ISiteRepository } from "@/domain/repository/sites/ISiteRepository"
+import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
 
@@ -17,7 +17,7 @@ function contentFields(data: SiteInput) {
 }
 
 export class SitesService {
-  constructor(private readonly adapter: ISiteRepository) {}
+  constructor(private readonly adapter: SitesAdapter) {}
 
   async getMySites(uid: string): Promise<SiteDetail[]> {
     return this.adapter.findDetailsByAuthorId(uid)

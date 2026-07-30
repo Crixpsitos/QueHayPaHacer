@@ -16,7 +16,7 @@ const ME = { id: "user-1", displayName: "Cristian P.", photoURL: undefined }
 
 export const MOCK_SITES: SiteDetail[] = [
   {
-    id: "1", name: "Café Berlín", category: "cafe", isActive: true,
+    id: "1", slug: "cafe-berlin-ibague", name: "Café Berlín", category: "cafe", isActive: true, isNew: false,
     address: "Calle 60 #5-32, Centro, Ibagué", coverUrl: M.cafe[0],
     coordinates: { latitude: 4.4389, longitude: -75.2322 },
     publicationStatus: "published", moderationStatus: "approved", rejectionReason: null,
@@ -25,7 +25,7 @@ export const MOCK_SITES: SiteDetail[] = [
     views: 890, schedule: structuredClone(DEFAULT_SCHEDULE), author: ME, mediaUrls: M.cafe,
   },
   {
-    id: "2", name: "Mirador Combeima", category: "viewpoint", isActive: false,
+    id: "2", slug: "mirador-combeima-ibague", name: "Mirador Combeima", category: "viewpoint", isActive: false, isNew: false,
     address: "Cañón del Combeima, Ibagué", coverUrl: M.view[0],
     coordinates: { latitude: 4.4605, longitude: -75.2804 },
     publicationStatus: "published", moderationStatus: "pending", rejectionReason: null,
@@ -34,7 +34,7 @@ export const MOCK_SITES: SiteDetail[] = [
     views: 210, schedule: structuredClone(DEFAULT_SCHEDULE), author: ME, mediaUrls: M.view,
   },
   {
-    id: "3", name: "Teatro Tolima", category: "cultural", isActive: false,
+    id: "3", slug: "teatro-tolima-ibague", name: "Teatro Tolima", category: "cultural", isActive: false, isNew: false,
     address: "Carrera 3 #10-35, Centro, Ibagué", coverUrl: M.cultural[0],
     coordinates: { latitude: 4.4360, longitude: -75.2310 },
     publicationStatus: "published", moderationStatus: "rejected",
@@ -44,7 +44,7 @@ export const MOCK_SITES: SiteDetail[] = [
     views: 130, schedule: { ...structuredClone(DEFAULT_SCHEDULE), sunday: { open: "09:00", close: "12:00", closed: false } }, author: ME, mediaUrls: M.cultural,
   },
   {
-    id: "4", name: "Hostal Musical", category: "hostel", isActive: false,
+    id: "4", slug: "hostal-musical-ibague", name: "Hostal Musical", category: "hostel", isActive: false, isNew: false,
     address: "Calle 37 #2-15, Ibagué", coverUrl: "",
     coordinates: { latitude: 4.4420, longitude: -75.2270 },
     publicationStatus: "draft", moderationStatus: "pending", rejectionReason: null,
@@ -53,7 +53,7 @@ export const MOCK_SITES: SiteDetail[] = [
     views: 0, schedule: structuredClone(DEFAULT_SCHEDULE), author: ME, mediaUrls: M.hostel,
   },
   {
-    id: "5", name: "Restaurante Andino", category: "restaurant", isActive: false,
+    id: "5", slug: "restaurante-andino-ibague", name: "Restaurante Andino", category: "restaurant", isActive: false, isNew: false,
     address: "Carrera 5 #22-10, Ibagué", coverUrl: M.rest[0],
     coordinates: { latitude: 4.4350, longitude: -75.2350 },
     publicationStatus: "published", moderationStatus: "approved", rejectionReason: null,
@@ -62,7 +62,7 @@ export const MOCK_SITES: SiteDetail[] = [
     views: 540, schedule: structuredClone(DEFAULT_SCHEDULE), author: ME, mediaUrls: M.rest,
   },
   {
-    id: "6", name: "Parque Centenario", category: "park", isActive: true,
+    id: "6", slug: "parque-centenario-ibague", name: "Parque Centenario", category: "park", isActive: true, isNew: false,
     address: "Calle 40 con Carrera 3, Ibagué", coverUrl: M.park[0],
     coordinates: { latitude: 4.4400, longitude: -75.2295 },
     publicationStatus: "published", moderationStatus: "approved", rejectionReason: null,
