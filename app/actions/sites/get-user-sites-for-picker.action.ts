@@ -8,18 +8,12 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 /**
- * Devuelve los sitios publicados y aprobados del usuario autenticado.
- * Cache muy agresivo: solo se revalida cuando el usuario crea o elimina
- * un sitio (tag `sites-{uid}`, gestionado por _revalidate.ts).
+ * Función cached separada — recibe uid como argumento para que el cache
+ * sea por usuario. No puede usar cookies() directamente porque las
+ * funciones "use cache" deben ser deterministas.
  */
-export async function getUserSitesForPickerAction(): Promise<SiteDetail[]> {
+async function fetchSitesByUid(uid: string): Promise<SiteDetail[]> {
   "use cache";
-
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) return [];
-
-  const uid = tokens.decodedToken.uid;
-
   cacheLife("weeks");
   cacheTag(`sites-${uid}`);
 
@@ -29,4 +23,16 @@ export async function getUserSitesForPickerAction(): Promise<SiteDetail[]> {
   return sites.filter(
     (s) => s.publicationStatus === "published" && s.moderationStatus === "approved",
   );
+}
+
+/**
+ * Server Action pública. Lee la sesión del usuario y delega en la
+ * función cached para que el resultado quede almacenado por semanas.
+ * Se invalida automáticamente cuando se crea/edita/elimina un sitio
+ * (tag `sites-{uid}` en _revalidate.ts).
+ */
+export async function getUserSitesForPickerAction(): Promise<SiteDetail[]> {
+  const tokens = await getTokens(await cookies(), authConfig);
+  if (!tokens?.decodedToken?.uid) return [];
+  return fetchSitesByUid(tokens.decodedToken.uid);
 }
