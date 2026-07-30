@@ -111,7 +111,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
     : `https://www.google.com/maps/search/${encodeURIComponent(site.address)}`;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:max-w-6xl">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:max-w-4xl lg:max-w-6xl">
 
       {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
       <nav className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
@@ -161,47 +161,48 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
       {/* ── Banner de estadísticas (estilo Airbnb) ───────────────────────── */}
       <div className="mb-8 overflow-hidden rounded-2xl border border-border">
-        <div className="flex min-h-18 items-stretch">
+        {/* Siempre flex-row — compacto en móvil, espacioso en desktop */}
+        <div className="flex min-h-16 items-stretch">
 
-          {/* Izquierda: ícono + título corto (como "Favorito entre huéspedes") */}
-          <div className="flex shrink-0 items-center gap-3 px-5 py-4">
-            <div className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-full",
-              trending
-                ? "text-orange-500"
-                : site!.isNew
-                  ? "text-primary"
-                  : openStatus.isOpen
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-muted-foreground",
-            )}>
-              {trending
-                ? <TrendingUp className="size-6" strokeWidth={1.5} />
-                : site!.isNew
-                  ? <Sparkles className="size-6" strokeWidth={1.5} />
-                  : openStatus.isOpen
-                    ? <Clock className="size-6" strokeWidth={1.5} />
-                    : <Clock className="size-6" strokeWidth={1.5} />
-              }
+          {/* Izquierda: ícono + título */}
+          <div className="shrink-0 flex items-center justify-center px-3 py-3 sm:px-5 sm:py-4 min-w-18">
+            <div className="text-center">
+              <div className={cn(
+                "mx-auto mb-1 flex size-8 sm:size-9 items-center justify-center rounded-full",
+                trending
+                  ? "text-orange-500"
+                  : site!.isNew
+                    ? "text-primary"
+                    : openStatus.isOpen
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-muted-foreground",
+              )}>
+                {trending
+                  ? <TrendingUp className="size-5 sm:size-6" strokeWidth={1.5} />
+                  : site!.isNew
+                    ? <Sparkles className="size-5 sm:size-6" strokeWidth={1.5} />
+                    : <Clock className="size-5 sm:size-6" strokeWidth={1.5} />
+                }
+              </div>
+              <p className="text-xs sm:text-sm font-semibold leading-tight">
+                {trending
+                  ? <>Tendencia<br /><span className="font-normal text-muted-foreground">en Ibagué</span></>
+                  : site!.isNew
+                    ? <>Recién llegado<br /><span className="font-normal text-muted-foreground">a la ciudad</span></>
+                    : openStatus.isOpen
+                      ? <>Abierto ahora<br /><span className="font-normal text-muted-foreground">ver horario</span></>
+                      : <>Cerrado ahora<br /><span className="font-normal text-muted-foreground">ver horario</span></>
+                }
+              </p>
             </div>
-            <p className="whitespace-nowrap text-sm font-semibold leading-tight">
-              {trending
-                ? <>Tendencia<br /><span className="font-normal text-muted-foreground">en Ibagué</span></>
-                : site!.isNew
-                  ? <>Recién llegado<br /><span className="font-normal text-muted-foreground">a la ciudad</span></>
-                  : openStatus.isOpen
-                    ? <>Abierto ahora<br /><span className="font-normal text-muted-foreground">ver horario</span></>
-                    : <>Cerrado ahora<br /><span className="font-normal text-muted-foreground">ver horario</span></>
-              }
-            </p>
           </div>
 
-          {/* Separador */}
+          {/* Separador vertical */}
           <div className="w-px self-stretch bg-border" />
 
-          {/* Centro: descripción (como "Según los huéspedes...") */}
-          <div className="flex flex-1 items-center px-5 py-4">
-            <p className="text-sm text-muted-foreground leading-snug">
+          {/* Centro: descripción */}
+          <div className="flex flex-1 items-center px-3 py-3 sm:px-5 sm:py-4">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-snug line-clamp-2">
               {trending
                 ? "Uno de los lugares favoritos de los visitantes de Ibagué."
                 : site!.isNew
@@ -213,33 +214,36 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
             </p>
           </div>
 
-          {/* Derecha: métricas (números grandes con etiqueta, separados) */}
-          {(site!.views ?? 0) > 0 && (
+          {/* Derecha: métricas en línea (no apiladas en móvil) */}
+          {((site!.views ?? 0) > 0 || (site!.analytics.shares ?? 0) > 0) && (
             <>
               <div className="w-px self-stretch bg-border" />
-              <div className="flex shrink-0 flex-col items-center justify-center px-5 py-4 text-center">
-                <span className="text-xl font-bold tabular-nums leading-none">
-                  {(site!.views ?? 0).toLocaleString("es-CO")}
-                </span>
-                <span className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Eye className="size-3" />
-                  vistas
-                </span>
-              </div>
-            </>
-          )}
-
-          {(site!.analytics.shares ?? 0) > 0 && (
-            <>
-              <div className="w-px self-stretch bg-border" />
-              <div className="flex shrink-0 flex-col items-center justify-center px-5 py-4 text-center">
-                <span className="text-xl font-bold tabular-nums leading-none">
-                  {(site!.analytics.shares ?? 0).toLocaleString("es-CO")}
-                </span>
-                <span className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Share2 className="size-3" />
-                  compartidos
-                </span>
+              <div className="flex shrink-0 items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4">
+                {(site!.views ?? 0) > 0 && (
+                  <div className="flex flex-col items-center text-center">
+                    <span className="text-base sm:text-xl font-bold tabular-nums leading-none">
+                      {(site!.views ?? 0).toLocaleString("es-CO")}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
+                      <Eye className="size-3" />
+                      vistas
+                    </span>
+                  </div>
+                )}
+                {(site!.views ?? 0) > 0 && (site!.analytics.shares ?? 0) > 0 && (
+                  <div className="w-px h-6 bg-border" />
+                )}
+                {(site!.analytics.shares ?? 0) > 0 && (
+                  <div className="flex flex-col items-center text-center">
+                    <span className="text-base sm:text-xl font-bold tabular-nums leading-none">
+                      {(site!.analytics.shares ?? 0).toLocaleString("es-CO")}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
+                      <Share2 className="size-3" />
+                      compartidos
+                    </span>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -248,7 +252,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       </div>
 
       {/* ── Layout dos columnas ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
 
         {/* Columna izquierda */}
         <div className="lg:col-span-2 space-y-10">

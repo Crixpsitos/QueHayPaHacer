@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Play, Images } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/app/lib/utils/cn";
 import type { SiteMediaItem } from "@/presentation/sites/view-models/SiteFormViewModel";
+
+const MAX_THUMBNAILS = 10;
 
 interface SiteGalleryModalProps {
   media: SiteMediaItem[];
   siteName: string;
-  /** Índice inicial al abrir (0 = portada) */
   initialIndex?: number;
   open: boolean;
   onClose: () => void;
@@ -23,14 +25,31 @@ export function SiteGalleryModal({
   onClose,
 }: SiteGalleryModalProps) {
   const [current, setCurrent] = useState(initialIndex);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, startIndex: initialIndex });
 
-  // Resetear índice al abrir
+  // Sincronizar índice cuando Embla cambia de slide
   useEffect(() => {
-    if (open) setCurrent(initialIndex);
-  }, [open, initialIndex]);
+    if (!emblaApi) return;
+    const onSelect = () => setCurrent(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi]);
 
-  const prev = useCallback(() => setCurrent((i) => (i - 1 + media.length) % media.length), [media.length]);
-  const next = useCallback(() => setCurrent((i) => (i + 1) % media.length), [media.length]);
+  // Al abrir, saltar al índice inicial
+  useEffect(() => {
+    if (open && emblaApi) {
+      emblaApi.scrollTo(initialIndex, true);
+      setCurrent(initialIndex);
+    }
+  }, [open, initialIndex, emblaApi]);
+
+  const prev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const next = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  const goTo = useCallback((i: number) => {
+    emblaApi?.scrollTo(i);
+    setCurrent(i);
+  }, [emblaApi]);
 
   // Teclado
   useEffect(() => {
@@ -46,7 +65,8 @@ export function SiteGalleryModal({
 
   if (!open || media.length === 0) return null;
 
-  const item = media[current];
+  const visibleThumbs = media.slice(0, MAX_THUMBNAILS);
+  const hiddenCount = media.length - MAX_THUMBNAILS;
 
   return (
     <div
@@ -56,101 +76,109 @@ export function SiteGalleryModal({
       aria-label={`Galería de ${siteName}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 text-white/70">
-        <div className="flex items-center gap-2 text-sm">
-          <Images className="size-4" />
-          <span>{siteName}</span>
+      <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 text-white/80">
+        <div className="flex items-center gap-2 text-sm sm:text-base">
+          <Images className="size-5" />
+          <span className="truncate font-medium">{siteName}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm tabular-nums">
+          <span className="text-sm sm:text-base tabular-nums whitespace-nowrap text-white/60">
             {current + 1} / {media.length}
           </span>
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 hover:bg-white/10 transition-colors"
+            className="flex items-center justify-center size-10 rounded-full hover:bg-white/15 transition-colors active:bg-white/20"
             aria-label="Cerrar galería"
           >
-            <X className="size-5" />
+            <X className="size-6" />
           </button>
         </div>
       </div>
 
-      {/* Vista principal */}
-      <div className="relative flex-1 flex items-center justify-center px-4 pb-2">
-        {/* Anterior */}
-        {media.length > 1 && (
-          <button
-            onClick={prev}
-            className="absolute left-2 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors md:left-4"
-            aria-label="Anterior"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
-        )}
-
-        {/* Media */}
-        <div className="relative flex h-full w-full max-h-[75vh] max-w-5xl items-center justify-center mx-auto">
-          {item.type === "video" ? (
-            <video
-              key={item.url}
-              src={item.url}
-              poster={item.thumbnailUrl}
-              controls
-              autoPlay
-              playsInline
-              className="max-h-[75vh] max-w-full rounded-lg object-contain"
-            />
-          ) : (
-            <div className="relative h-full w-full" style={{ minHeight: "300px" }}>
-              <Image
-                src={item.url}
-                alt={`${siteName} — foto ${current + 1}`}
-                fill
-                className="object-contain rounded-lg"
-                sizes="(max-width: 768px) 100vw, 80vw"
-                priority
-              />
-            </div>
-          )}
+      {/* Carrusel principal con Embla (swipe nativo + animación slide) */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+        <div ref={emblaRef} className="h-full w-full overflow-hidden">
+          <div className="flex h-full">
+            {media.map((item, i) => (
+              <div key={item.id} className="relative flex-none w-full h-full flex items-center justify-center px-10 sm:px-16">
+                {item.type === "video" ? (
+                  <video
+                    src={item.url}
+                    poster={item.thumbnailUrl}
+                    controls
+                    autoPlay={i === current}
+                    playsInline
+                    className="max-h-[68vh] max-w-full rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="relative w-full h-full" style={{ minHeight: 220 }}>
+                    <Image
+                      src={item.url}
+                      alt={`${siteName} — foto ${i + 1}`}
+                      fill
+                      className="object-contain rounded-lg"
+                      sizes="(max-width: 768px) 95vw, 85vw"
+                      priority={i === initialIndex}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Siguiente */}
+        {/* Botones prev/next */}
         {media.length > 1 && (
-          <button
-            onClick={next}
-            className="absolute right-2 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors md:right-4"
-            aria-label="Siguiente"
-          >
-            <ChevronRight className="size-6" />
-          </button>
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-1 sm:left-2 md:left-4 z-10 flex items-center justify-center size-9 sm:size-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="size-5 sm:size-6" />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-1 sm:right-2 md:right-4 z-10 flex items-center justify-center size-9 sm:size-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Siguiente"
+            >
+              <ChevronRight className="size-5 sm:size-6" />
+            </button>
+          </>
         )}
       </div>
 
-      {/* Tira de miniaturas */}
-      <div className="flex gap-2 overflow-x-auto px-4 pb-4 pt-2 scrollbar-none">
-        {media.map((m, i) => (
+      {/* Thumbnails — flex-wrap, máximo 10, luego indicador "+N" */}
+      <div className="flex flex-wrap justify-center gap-1 sm:gap-1.5 px-3 sm:px-4 pb-3 sm:pb-4 pt-2">
+        {visibleThumbs.map((m, i) => (
           <button
             key={m.id}
-            onClick={() => setCurrent(i)}
+            onClick={() => goTo(i)}
             className={cn(
-              "relative shrink-0 size-16 overflow-hidden rounded-lg border-2 transition-all",
-              i === current ? "border-white scale-105" : "border-transparent opacity-60 hover:opacity-100",
+              "relative shrink-0 size-14 sm:size-16 overflow-hidden rounded-lg border-2 transition-all",
+              i === current ? "border-white scale-105" : "border-transparent opacity-50 hover:opacity-90",
             )}
           >
             {m.type === "video" ? (
               <div className="flex h-full items-center justify-center bg-zinc-800">
-                <Play className="size-5 text-white" />
+                <Play className="size-4 text-white" />
               </div>
             ) : (
               <Image src={m.url} alt="" fill className="object-cover" sizes="64px" />
             )}
             {m.isCover && (
-              <span className="absolute bottom-0.5 left-0.5 rounded bg-black/70 px-1 text-[9px] text-white">
+              <span className="absolute bottom-0.5 left-0.5 rounded bg-black/70 px-0.5 text-[9px] text-white leading-tight">
                 portada
               </span>
             )}
           </button>
         ))}
+        {hiddenCount > 0 && (
+          <div className="flex size-14 sm:size-16 shrink-0 flex-col items-center justify-center rounded-lg bg-zinc-800 text-white opacity-70">
+            <Images className="size-4" />
+            <span className="text-[10px] font-semibold mt-0.5">+{hiddenCount}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -186,9 +214,67 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
         onClose={() => setOpen(false)}
       />
 
-      <div className="mb-6 overflow-hidden rounded-2xl border border-border">
+      {/* ── MÓVIL: portada fullwidth + grid 2 columnas debajo ───────────── */}
+      <div className="sm:hidden mb-6 space-y-1">
+        {/* Portada fullwidth */}
+        <div className="overflow-hidden rounded-2xl border border-border">
+          <button onClick={() => openAt(0)} className="relative block aspect-video w-full overflow-hidden bg-muted">
+            {cover && (
+              cover.type === "video" ? (
+                <div className="relative h-full w-full">
+                  {cover.thumbnailUrl
+                    ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+                    : <div className="h-full w-full bg-zinc-900" />}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-9 text-zinc-900" /></div>
+                  </div>
+                </div>
+              ) : <Image src={cover.url} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+            )}
+          </button>
+        </div>
+
+        {/* Miniaturas en grid 2 columnas */}
+        {rest.length > 0 && (
+          <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-2xl border border-border bg-border">
+            {rest.map((m, i) => {
+              const mediaIdx = media.indexOf(m);
+              const isLast = i === rest.length - 1 && remaining > 0;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => openAt(mediaIdx)}
+                  className="relative aspect-video overflow-hidden bg-muted"
+                >
+                  {m.type === "video"
+                    ? (
+                      <div className="relative h-full w-full">
+                        {m.thumbnailUrl
+                          ? <Image src={m.thumbnailUrl} alt={`${siteName} video ${i + 2}`} fill className="object-cover" sizes="50vw" />
+                          : <div className="h-full w-full bg-zinc-800" />}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <div className="rounded-full bg-white/90 p-1"><Play className="size-3 text-zinc-900" /></div>
+                        </div>
+                      </div>
+                    )
+                    : <Image src={m.url} alt={`${siteName} ${i + 2}`} fill className="object-cover" sizes="50vw" />
+                  }
+                  {isLast && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-black/60 text-white">
+                      <Images className="size-4" />
+                      <span className="text-xs font-semibold">+{remaining + 1} más</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── DESKTOP (sm+): bento grid — NO TOCAR ────────────────────────── */}
+      <div className="hidden sm:block mb-6 overflow-hidden rounded-2xl border border-border">
         {rest.length === 0 ? (
-          /* Solo portada */
           <button onClick={() => openAt(0)} className="relative block aspect-video w-full overflow-hidden bg-muted">
             {cover && (
               cover.type === "video" ? (
@@ -204,30 +290,31 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
             )}
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-0.5 bg-border">
-            {/* Portada grande */}
+          /* Bento: flex horizontal — portada izquierda + sub-grid 2×2 derecha */
+          <div className="flex h-85 sm:h-105 md:h-120 gap-0.5 bg-border">
+            {/* Portada — columna izquierda, altura completa */}
             <button
               onClick={() => openAt(0)}
-              className="relative row-span-2 min-h-64 overflow-hidden bg-muted sm:min-h-80"
+              className="relative flex-1 overflow-hidden bg-muted"
             >
               {cover && (
                 cover.type === "video"
-                    ? (
-                      <div className="relative h-full w-full">
-                        {cover.thumbnailUrl
-                          ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="50vw" />
-                          : <div className="h-full w-full bg-zinc-900" />}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-8 text-zinc-900" /></div>
-                        </div>
+                  ? (
+                    <div className="relative h-full w-full">
+                      {cover.thumbnailUrl
+                        ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="50vw" />
+                        : <div className="h-full w-full bg-zinc-900" />}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-8 text-zinc-900" /></div>
                       </div>
-                    )
-                    : <Image src={cover.url} alt={siteName} fill className="object-cover hover:scale-105 transition-transform duration-300" priority loading="eager" fetchPriority="high" sizes="50vw" />
+                    </div>
+                  )
+                  : <Image src={cover.url} alt={siteName} fill className="object-cover hover:scale-105 transition-transform duration-300" priority loading="eager" fetchPriority="high" sizes="50vw" />
               )}
             </button>
 
-            {/* Miniaturas */}
-            <div className="grid grid-cols-2 gap-0.5">
+            {/* Columna derecha — sub-grid 2×2 */}
+            <div className="grid grid-cols-2 grid-rows-2 flex-1 gap-0.5">
               {rest.map((m, i) => {
                 const mediaIdx = media.indexOf(m);
                 const isLast = i === rest.length - 1 && remaining > 0;
@@ -235,7 +322,7 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
                   <button
                     key={m.id}
                     onClick={() => openAt(mediaIdx)}
-                    className="relative aspect-square overflow-hidden bg-muted"
+                    className="relative overflow-hidden bg-muted"
                   >
                     {m.type === "video"
                       ? (
@@ -250,7 +337,6 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
                       )
                       : <Image src={m.url} alt={`${siteName} ${i + 2}`} fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="25vw" />
                     }
-                    {/* Overlay "+N más" en la última miniatura visible */}
                     {isLast && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 text-white">
                         <Images className="size-5" />
