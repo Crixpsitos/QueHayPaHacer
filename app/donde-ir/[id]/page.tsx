@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : [];
 
   return {
-    title: `${site.name} — Que Hay Pa Hacer?`,
+    title: site.name,
     description,
     alternates: { canonical: siteUrl },
     openGraph: {

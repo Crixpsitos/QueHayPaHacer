@@ -63,12 +63,15 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
     ).filter((s) => isOwner || s.status === "published");
 
     return (
-      <MultiDateEventDetailClient
-        event={viewModel}
-        sessions={sessionVMs}
-        initialLiked={initialLiked}
-        isOwner={isOwner}
-      />
+      <>
+        <h1 className="sr-only">{viewModel.title}</h1>
+        <MultiDateEventDetailClient
+          event={viewModel}
+          sessions={sessionVMs}
+          initialLiked={initialLiked}
+          isOwner={isOwner}
+        />
+      </>
     );
   }
 
@@ -82,12 +85,15 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
   }
 
   return (
-    <EventDetailClient
-      event={viewModel}
-      initialLiked={initialLiked}
-      initialRegistered={initialRegistered}
-      isOwner={isOwner}
-      isProfessionalOwner={isProfessionalOwner}
-    />
+    <>
+      <h1 className="sr-only">{viewModel.title}</h1>
+      <EventDetailClient
+        event={viewModel}
+        initialLiked={initialLiked}
+        initialRegistered={initialRegistered}
+        isOwner={isOwner}
+        isProfessionalOwner={isProfessionalOwner}
+      />
+    </>
   );
 };

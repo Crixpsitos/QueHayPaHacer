@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   },
   description: DEFAULT_DESCRIPTION,
   applicationName: SITE_NAME,
+  icons: {
+    icon: "/favicon.ico",
+    apple: [{ url: "/favicon.ico", sizes: "180x180" }],
+  },
   // Defaults heredados por todas las páginas (se completan con su title/description).
   openGraph: {
     siteName: SITE_NAME,
