@@ -9,5 +9,5 @@ import { updateTag, revalidateTag } from "next/cache"
 export function revalidateSite(uid: string, siteId?: string) {
   updateTag(`sites-${uid}`)
   if (siteId) updateTag(`site-${siteId}`)
-  revalidateTag("explore")
+  revalidateTag("explore", "max")
 }
