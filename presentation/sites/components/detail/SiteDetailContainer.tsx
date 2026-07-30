@@ -12,8 +12,10 @@ import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewMode
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
+import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
 import { cn } from "@/app/lib/utils/cn";
+import { SITE_URL } from "@/app/lib/site";
 import type { WeekDay, DaySchedule } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 const SITE_CATEGORY_LABELS: Record<string, string> = {
@@ -158,6 +160,13 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
           initialShares={site!.analytics.shares ?? 0}
         />
       </div>
+
+      {/* ── Compartir en redes sociales ──────────────────────────────────── */}
+      <SocialShareBar
+        url={`${SITE_URL}/donde-ir/${site!.slug || siteId}`}
+        title={site!.name}
+        className="mb-6"
+      />
 
       {/* ── Banner de estadísticas (estilo Airbnb) ───────────────────────── */}
       <div className="mb-8 overflow-hidden rounded-2xl border border-border">

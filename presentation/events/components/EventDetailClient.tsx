@@ -28,6 +28,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/app/components/ui/avatar";
 import { Separator } from "@/app/components/ui/separator";
 import { Section } from "@/app/components/layout/shared/Section";
+import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar";
 import { EventDetailActions } from "./EventDetailActions";
 import { EventCollaboratorsDialog } from "./EventCollaboratorsDialog";
 import {
@@ -663,6 +664,12 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
 
             {/* Like / Share / Analytics */}
             <EventDetailActions event={event} initialLiked={initialLiked} shareUrl={shareUrl} sessionId={sessionId} />
+
+            {/* Compartir en redes sociales */}
+            <SocialShareBar
+              url={typeof window !== "undefined" ? `${window.location.origin}${shareUrl ?? `/eventos/${event.slug || event.id}`}` : `https://quehaypahacerapp.com${shareUrl ?? `/eventos/${event.slug || event.id}`}`}
+              title={event.title}
+            />
 
             <Separator />
 
