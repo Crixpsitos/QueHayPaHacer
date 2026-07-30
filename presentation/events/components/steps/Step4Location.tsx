@@ -14,6 +14,7 @@ import { useEffect } from "react";
 import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
+import { SitePickerWidget } from "../ui/SitePickerWidget";
 
 interface Step4Props {
   form: UseFormReturn<FormEventDto>;
@@ -38,7 +39,11 @@ export const Step4Location = ({ form }: Step4Props) => {
     name: "location.coordinates",
   });
 
-  // Fija Ibagué/Tolima/Colombia en los campos ocultos si aún están vacíos.
+  const watchedSiteId = useWatch({
+    control: form.control,
+    name: "location.siteId",
+  });
+
   useEffect(() => {
     if (!form.getValues("location.country")?.isoCode) {
       form.setValue("location.country", IBAGUE_COUNTRY);
@@ -46,6 +51,16 @@ export const Step4Location = ({ form }: Step4Props) => {
       form.setValue("location.city", IBAGUE_CITY);
     }
   }, [form]);
+
+  const handleSiteSelect = (site: { siteId: string; venue: string; address: string; coordinates: { lat: number; lng: number } }) => {
+    form.setValue("location.venue", site.venue, { shouldValidate: true });
+    form.setValue("location.address", site.address, { shouldValidate: true });
+    form.setValue("location.coordinates", site.coordinates, { shouldValidate: true });
+    form.setValue("location.siteId", site.siteId);
+    form.setValue("location.country", IBAGUE_COUNTRY);
+    form.setValue("location.department", IBAGUE_DEPARTMENT);
+    form.setValue("location.city", IBAGUE_CITY);
+  };
 
   return (
     <div className="space-y-6">
@@ -55,6 +70,11 @@ export const Step4Location = ({ form }: Step4Props) => {
           ¿Dónde se llevará a cabo tu evento?
         </p>
       </div>
+
+      <SitePickerWidget
+        onSelect={handleSiteSelect}
+        selectedSiteId={watchedSiteId}
+      />
 
       <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
         <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
