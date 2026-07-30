@@ -105,5 +105,8 @@ export function createInitialForm() {
     category: "" as const,
     media: [],
     schedule: structuredClone(DEFAULT_SCHEDULE),
+    socialMedia: {},
+    temporarilyClosed: { isClosed: false, reason: "" },
+    bookingUrl: "",
   }
 }

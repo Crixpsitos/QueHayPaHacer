@@ -16,6 +16,19 @@ export type SiteCategory =
   | "other"
 export type WeekDay = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 
+export interface SiteSocialMedia {
+  instagram?: string
+  facebook?: string
+  tiktok?: string
+  twitter?: string
+  website?: string
+}
+
+export interface SiteTemporarilyClosed {
+  isClosed: boolean
+  reason: string
+}
+
 export interface Coordinates {
   latitude: number
   longitude: number
@@ -43,6 +56,9 @@ export interface SiteFormViewModel {
   category: SiteCategory | ""
   media: MediaFormItem[]
   schedule: SiteSchedule
+  socialMedia: SiteSocialMedia
+  temporarilyClosed: SiteTemporarilyClosed
+  bookingUrl: string
 }
 
 // uploading → subiendo deopt (local) · processing → subido, CF optimizando · ready → CF listo
@@ -125,6 +141,9 @@ export interface SiteDetail extends SiteListItem {
   author: SiteAuthor
   mediaUrls: string[]         // imágenes (compat)
   mediaItems?: SiteMediaItem[] // media tipada (image/video) para render y edición
+  socialMedia?: SiteSocialMedia
+  temporarilyClosed?: SiteTemporarilyClosed
+  bookingUrl?: string
 }
 
 export interface MapSiteMarker {

@@ -274,6 +274,9 @@ export function useSiteForm() {
       category: site.category,
       media,
       schedule: structuredClone(site.schedule),
+      socialMedia: site.socialMedia ?? {},
+      temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
+      bookingUrl: site.bookingUrl ?? "",
     })
     setErrors({})
     setSubmitState("idle")

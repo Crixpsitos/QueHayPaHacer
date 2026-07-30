@@ -107,4 +107,17 @@ export interface FirebaseSiteDto {
   reviewedBy: string | null
   rejectedAt: Timestamp | null
   rejectionReason: string | null
+  // Campos opcionales nuevos
+  socialMedia?: {
+    instagram?: string
+    facebook?: string
+    tiktok?: string
+    twitter?: string
+    website?: string
+  }
+  temporarilyClosed?: {
+    isClosed: boolean
+    reason: string
+  }
+  bookingUrl?: string
 }

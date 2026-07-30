@@ -6,6 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
+  Share2, Link, AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -18,7 +19,7 @@ import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import type { SubmitState } from "../../hooks/useSiteForm"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
-  SiteFormViewModel, WeekDay,
+  SiteFormViewModel, SiteSocialMedia, SiteTemporarilyClosed, WeekDay,
 } from "../../view-models/SiteFormViewModel"
 
 // ── Accordion primitivo con motion ──────────────────────────────────────────
@@ -490,13 +491,144 @@ export interface SiteFormDrawerProps {
   onEnsureDraftId: () => Promise<string>
 }
 
-type SectionKey = "location" | "info" | "media" | "schedule"
+// ── Redes sociales ────────────────────────────────────────────────────────────
+
+function SocialMediaContent({
+  socialMedia,
+  onChange,
+}: {
+  socialMedia: SiteSocialMedia
+  onChange: (v: SiteSocialMedia) => void
+}) {
+  const fields: { key: keyof SiteSocialMedia; label: string; placeholder: string }[] = [
+    { key: "instagram", label: "Instagram",  placeholder: "https://instagram.com/tusitio" },
+    { key: "facebook",  label: "Facebook",   placeholder: "https://facebook.com/tusitio" },
+    { key: "tiktok",    label: "TikTok",     placeholder: "https://tiktok.com/@tusitio" },
+    { key: "twitter",   label: "X (Twitter)", placeholder: "https://twitter.com/tusitio" },
+    { key: "website",   label: "Sitio web",  placeholder: "https://tusitio.com" },
+  ]
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">Agrega los perfiles de tu sitio en redes sociales (opcional).</p>
+      {fields.map(({ key, label, placeholder }) => (
+        <div key={key} className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-foreground" htmlFor={`social-${key}`}>{label}</label>
+          <Input
+            id={`social-${key}`}
+            type="url"
+            value={socialMedia[key] ?? ""}
+            onChange={(e) => onChange({ ...socialMedia, [key]: e.target.value })}
+            placeholder={placeholder}
+            className="rounded-lg"
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Botón de reserva ──────────────────────────────────────────────────────────
+
+function BookingContent({
+  bookingUrl,
+  onChange,
+}: {
+  bookingUrl: string
+  onChange: (v: string) => void
+}) {
+  const isWA = bookingUrl.startsWith("https://wa.me") || bookingUrl.includes("whatsapp.com")
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">
+        Pega el enlace de reserva: puede ser tu WhatsApp (<code className="rounded bg-muted px-1 text-[10px]">wa.me/57...</code>), una página externa o tu perfil de red social.
+      </p>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-medium text-foreground" htmlFor="booking-url">Enlace de reserva</label>
+        <Input
+          id="booking-url"
+          type="url"
+          value={bookingUrl}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://wa.me/573001234567"
+          className="rounded-lg"
+        />
+      </div>
+      {bookingUrl && (
+        <p className={cn(
+          "text-xs font-medium",
+          isWA ? "text-green-600" : "text-primary",
+        )}>
+          {isWA ? "✓ Se mostrará como botón de WhatsApp" : "✓ Se mostrará como enlace externo"}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── Cierre temporal ───────────────────────────────────────────────────────────
+
+function TemporarilyClosedContent({
+  value,
+  onChange,
+}: {
+  value: SiteTemporarilyClosed
+  onChange: (v: SiteTemporarilyClosed) => void
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-foreground">Cerrado temporalmente</p>
+          <p className="text-xs text-muted-foreground">Activa esto si tu sitio está cerrado por un tiempo (remodelación, vacaciones, etc.)</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={value.isClosed}
+          onClick={() => onChange({ ...value, isClosed: !value.isClosed })}
+          className={cn(
+            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+            value.isClosed ? "bg-amber-500" : "bg-muted",
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm transition-transform",
+              value.isClosed ? "translate-x-5" : "translate-x-0",
+            )}
+          />
+        </button>
+      </div>
+
+      {value.isClosed && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-foreground" htmlFor="closed-reason">Motivo del cierre</label>
+          <textarea
+            id="closed-reason"
+            value={value.reason}
+            onChange={(e) => onChange({ ...value, reason: e.target.value })}
+            placeholder="Ej. Estamos en remodelación, volvemos en agosto."
+            rows={2}
+            className="w-full resize-none rounded-lg border border-transparent bg-input/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-[color,box-shadow,background-color] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Sections config ───────────────────────────────────────────────────────────
+
+type SectionKey = "location" | "info" | "media" | "schedule" | "social" | "booking" | "status" | "social" | "booking" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
-  { id: "location", title: "Ubicación",          icon: <MapPin className="size-4" /> },
-  { id: "info",     title: "Información básica",  icon: <Info className="size-4" /> },
-  { id: "media",    title: "Fotos y videos",      icon: <ImageIcon className="size-4" /> },
-  { id: "schedule", title: "Horario",             icon: <Clock className="size-4" /> },
+  { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
+  { id: "info",     title: "Información básica",    icon: <Info className="size-4" /> },
+  { id: "media",    title: "Fotos y videos",         icon: <ImageIcon className="size-4" /> },
+  { id: "schedule", title: "Horario",                icon: <Clock className="size-4" /> },
+  { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
+  { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
+  { id: "status",   title: "Estado temporal",        icon: <AlertTriangle className="size-4" /> },
 ]
 
 export function SiteFormDrawer({
@@ -554,6 +686,9 @@ export function SiteFormDrawer({
     info:     !!(errors.name || errors.description || errors.category),
     media:    !!errors.media,
     schedule: false,
+    social:   false,
+    booking:  false,
+    status:   false,
   }
 
   // ── Desktop panel ──────────────────────────────────────────────────────────
@@ -597,6 +732,24 @@ export function SiteFormDrawer({
                 />
               )}
               {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} />}
+              {s.id === "social" && (
+                <SocialMediaContent
+                  socialMedia={form.socialMedia ?? {}}
+                  onChange={(v) => onUpdateField("socialMedia", v)}
+                />
+              )}
+              {s.id === "booking" && (
+                <BookingContent
+                  bookingUrl={form.bookingUrl ?? ""}
+                  onChange={(v) => onUpdateField("bookingUrl", v)}
+                />
+              )}
+              {s.id === "status" && (
+                <TemporarilyClosedContent
+                  value={form.temporarilyClosed ?? { isClosed: false, reason: "" }}
+                  onChange={(v) => onUpdateField("temporarilyClosed", v)}
+                />
+              )}
             </AccordionSection>
           ))}
         </div>
