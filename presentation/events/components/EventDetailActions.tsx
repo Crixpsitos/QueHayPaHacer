@@ -4,13 +4,10 @@ import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
-import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { HeartLikeButton } from "./card/HeartLikeButton";
-import { Button } from "@/app/components/ui/button/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/app/components/ui/tooltip";
-import { Share2, Eye, Users, X, CheckCheck, Link2 } from "lucide-react";
+import { Eye, Users, X, Link2 } from "lucide-react";
 import type { EventViewModel } from "../view-models/EventViewModel";
 
 interface EventDetailActionsProps {
@@ -23,18 +20,12 @@ interface EventDetailActionsProps {
   sessionId?: string;
 }
 
-export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }: EventDetailActionsProps) {
+export function EventDetailActions({ event, initialLiked, sessionId }: EventDetailActionsProps) {
   const router = useRouter();
   const { refreshUser } = useAuth();
   const [, startTransition] = useTransition();
-  const [shared, setShared] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<{ liked: boolean } | null>(null);
-
-  const path = shareUrl ?? `/eventos/${event.slug || event.id}`;
-  const eventUrl = typeof window !== "undefined"
-    ? `${window.location.origin}${path}`
-    : path;
 
   const handleLike = useCallback(async (eventId: string, liked: boolean): Promise<boolean> => {
     const result = await likeEventAction(eventId, liked);
@@ -51,22 +42,6 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
     return true;
   }, []);
 
-  const handleShare = useCallback(async () => {
-    const url = eventUrl;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: event.title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setShared(true);
-        setTimeout(() => setShared(false), 2500);
-      }
-      await shareEventAction(event.id, sessionId);
-    } catch {
-      // user cancelled share — no-op
-    }
-  }, [event.id, event.title, eventUrl, sessionId]);
-
   const handleLoginSuccess = useCallback(async () => {
     await refreshUser();
     if (pendingLike) {
@@ -82,11 +57,8 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
   return (
     <>
       <div className="flex items-center justify-between gap-4">
-        {/* Like + Share */}
+        {/* Like (sin share: el SocialShareBar debajo se encarga) */}
         <div className="flex items-center gap-2">
-          {/* Sin corazón en el detalle de una fecha: el like es del evento, y un
-              corazón aquí haría creer que se le da a esta fecha. Se da like en el
-              evento; compartir sí queda, porque comparte ESTA fecha. */}
           {!sessionId && (
             <HeartLikeButton
               eventId={event.id}
@@ -96,28 +68,6 @@ export function EventDetailActions({ event, initialLiked, shareUrl, sessionId }:
               className="h-10 px-4 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-red-50 hover:border-red-200"
             />
           )}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="default"
-                className="h-10 px-4 gap-2 text-sm font-medium border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                onClick={handleShare}
-                aria-label="Compartir evento"
-              >
-                {shared ? (
-                  <CheckCheck className="size-4 text-green-500" />
-                ) : (
-                  <Share2 className="size-4 text-gray-600" />
-                )}
-                <span className="text-gray-700">{shared ? "¡Copiado!" : "Compartir"}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
-              {shared ? "Enlace copiado" : "Compartir evento"}
-            </TooltipContent>
-          </Tooltip>
         </div>
 
         {/* Analytics counters */}

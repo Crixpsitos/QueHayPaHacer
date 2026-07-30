@@ -12,7 +12,7 @@ import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewMode
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
-import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar";
+import { SiteSocialShare } from "./SiteSocialShare";
 import { BookingButton } from "@/presentation/shared/components/BookingButton";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
 import { cn } from "@/app/lib/utils/cn";
@@ -163,10 +163,11 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       </div>
 
       {/* ── Compartir en redes sociales ──────────────────────────────────── */}
-      <SocialShareBar
+      <SiteSocialShare
+        siteId={siteId}
         url={`${SITE_URL}/donde-ir/${site!.slug || siteId}`}
         title={site!.name}
-        className="mb-6"
+        className="mb-4"
       />
 
       {/* ── Aviso cierre temporal ──────────────────────────────────────── */}
@@ -182,9 +183,11 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </div>
       )}
 
-      {/* ── Redes sociales + botón reserva ─────────────────────────────── */}
+      {/* ── Redes + reserva del sitio (del dueño) ───────────────────────── */}
       {(site!.bookingUrl || Object.values(site!.socialMedia ?? {}).some(Boolean)) && (
-        <div className="mb-8 flex flex-wrap items-center gap-3">
+        <div className="mb-8">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Síguenos en:</p>
+          <div className="flex flex-wrap items-center gap-2">
           {/* Botón de reserva */}
           {site!.bookingUrl && (
             <BookingButton
@@ -233,6 +236,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               <Globe className="size-3.5" />Sitio web
             </a>
           )}
+          </div>
         </div>
       )}
 

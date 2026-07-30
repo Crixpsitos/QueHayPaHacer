@@ -9,6 +9,8 @@ interface SocialShareBarProps {
   url: string;
   /** Título del contenido */
   title: string;
+  /** Callback que se ejecuta al compartir (para registrar el share en analytics) */
+  onShare?: () => Promise<void> | void;
   className?: string;
 }
 
@@ -38,11 +40,15 @@ function FacebookIcon({ className }: { className?: string }) {
   );
 }
 
-export function SocialShareBar({ url, title, className }: SocialShareBarProps) {
+export function SocialShareBar({ url, title, onShare, className }: SocialShareBarProps) {
   const [copied, setCopied] = useState(false);
 
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(title);
+
+  const handleNetworkClick = () => {
+    onShare?.();
+  };
 
   const networks = [
     {
@@ -70,6 +76,7 @@ export function SocialShareBar({ url, title, className }: SocialShareBarProps) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
+      onShare?.();
     } catch { /* noop */ }
   };
 
@@ -85,6 +92,7 @@ export function SocialShareBar({ url, title, className }: SocialShareBarProps) {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={handleNetworkClick}
           aria-label={`Compartir en ${label}`}
           className={cn(
             "flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors",

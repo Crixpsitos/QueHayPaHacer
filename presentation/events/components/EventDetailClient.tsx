@@ -29,6 +29,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/app/components/ui/avatar"
 import { Separator } from "@/app/components/ui/separator";
 import { Section } from "@/app/components/layout/shared/Section";
 import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar";
+import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { EventDetailActions } from "./EventDetailActions";
 import { EventCollaboratorsDialog } from "./EventCollaboratorsDialog";
 import {
@@ -662,13 +663,14 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
               collaboratorsData={event.collaboratorsData}
             />
 
-            {/* Like / Share / Analytics */}
-            <EventDetailActions event={event} initialLiked={initialLiked} shareUrl={shareUrl} sessionId={sessionId} />
+            {/* Like */}
+            <EventDetailActions event={event} initialLiked={initialLiked} sessionId={sessionId} />
 
-            {/* Compartir en redes sociales */}
+            {/* Compartir en redes sociales (registra el share en analytics) */}
             <SocialShareBar
               url={typeof window !== "undefined" ? `${window.location.origin}${shareUrl ?? `/eventos/${event.slug || event.id}`}` : `https://quehaypahacerapp.com${shareUrl ?? `/eventos/${event.slug || event.id}`}`}
               title={event.title}
+              onShare={() => { void shareEventAction(event.id, sessionId); }}
             />
 
             <Separator />
