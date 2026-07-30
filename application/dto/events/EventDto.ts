@@ -156,6 +156,7 @@ export const step4Schema = v.object({
       lat: v.number("La latitud es requerida"),
       lng: v.number("La longitud es requerida"),
     }),
+    siteId: v.optional(v.nullable(v.string())),
   }),
 });
 
@@ -387,6 +388,7 @@ export const FormEventSchema = v.object({
       address: v.optional(v.string()),
       moreInfo: v.optional(v.string()),
       coordinates: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+      siteId: v.optional(v.nullable(v.string())),
     }),
   ),
   author: AuthorDraftSchema,
