@@ -46,6 +46,9 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel):
       },
       media: buildSiteMedia(form.media),
       schedule: form.schedule,
+      socialMedia: form.socialMedia ?? {},
+      temporarilyClosed: form.temporarilyClosed ?? { isClosed: false, reason: "" },
+      bookingUrl: form.bookingUrl ?? "",
     })
     revalidateSite(tokens.decodedToken.uid, siteId)
     return { success: true }

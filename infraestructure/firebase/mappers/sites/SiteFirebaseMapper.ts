@@ -132,6 +132,9 @@ export class SiteFirebaseMapper {
       },
       mediaUrls,
       mediaItems,
+      socialMedia: dto.socialMedia ?? {},
+      temporarilyClosed: dto.temporarilyClosed ?? { isClosed: false, reason: "" },
+      bookingUrl: dto.bookingUrl ?? "",
     }
   }
 

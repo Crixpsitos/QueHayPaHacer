@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { MapPin, Clock, CalendarDays, ExternalLink, Star, Eye, Share2, TrendingUp, Sparkles } from "lucide-react";
+import { MapPin, Clock, CalendarDays, ExternalLink, Star, Eye, Share2, TrendingUp, Sparkles, Globe, AlertTriangle } from "lucide-react";
 import { Separator } from "@/app/components/ui/separator";
 import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
@@ -12,8 +12,11 @@ import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewMode
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
+import { SiteSocialShare } from "./SiteSocialShare";
+import { BookingButton } from "@/presentation/shared/components/BookingButton";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
 import { cn } from "@/app/lib/utils/cn";
+import { SITE_URL } from "@/app/lib/site";
 import type { WeekDay, DaySchedule } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 const SITE_CATEGORY_LABELS: Record<string, string> = {
@@ -37,7 +40,6 @@ function getInitials(name: string): string {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
 
-// ── Indicador abierto/cerrado ────────────────────────────────────────────────
 type DayKey = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
 const DAY_MAP: DayKey[] = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
 
@@ -56,7 +58,6 @@ function getOpenStatus(schedule: Record<string, { open: string; close: string; c
   };
 }
 
-// Sitio es "tendencia" si tiene >= 3 likes O >= 1 evento realizado (MVP)
 function isTrending(analytics: { likes?: number; eventCount?: number }): boolean {
   return (analytics.likes ?? 0) >= 3 || (analytics.eventCount ?? 0) >= 1;
 }
@@ -77,7 +78,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
   const site = await sitesService.getSiteDetailById(siteId);
   if (!site) notFound();
 
-  // Leer like real del usuario desde las cookies (SSR)
   let resolvedLiked = initialLiked;
   try {
     const tokens = await getTokens(await cookies(), authConfig);
@@ -86,7 +86,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       const liked = await siteInteractionService.findLikedByUser([siteId], userId);
       resolvedLiked = liked[siteId] ?? false;
     }
-  } catch { /* no cookies / no auth → resolvedLiked queda false */ }
+  } catch { /* no auth */ }
 
   const linkedEvents = await fetchLinkedEvents(siteId);
 
@@ -113,7 +113,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:max-w-4xl lg:max-w-6xl">
 
-      {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
       <nav className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/donde-ir" className="hover:underline">¿Dónde ir?</Link>
         <span>/</span>
@@ -122,12 +121,10 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         <span className="truncate max-w-50 text-foreground font-medium">{site!.name}</span>
       </nav>
 
-      {/* ── Galería con modal ─────────────────────────────────────────────── */}
       {media.length > 0 && (
         <SiteGalleryTrigger media={media} siteName={site!.name} maxVisible={5} />
       )}
 
-      {/* ── Título + acciones (debajo de la galería) ─────────────────────── */}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold sm:text-3xl">{site!.name}</h1>
@@ -159,12 +156,81 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         />
       </div>
 
-      {/* ── Banner de estadísticas (estilo Airbnb) ───────────────────────── */}
+      <SiteSocialShare
+        siteId={siteId}
+        url={`${SITE_URL}/donde-ir/${site!.slug || siteId}`}
+        title={site!.name}
+        className="mb-4"
+      />
+
+      {site!.temporarilyClosed?.isClosed && (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-950/30">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-500" />
+          <div>
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Cerrado temporalmente</p>
+            {site!.temporarilyClosed.reason && (
+              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">{site!.temporarilyClosed.reason}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(site!.bookingUrl || Object.values(site!.socialMedia ?? {}).some(Boolean)) && (
+        <div className="mb-6 rounded-2xl border border-border bg-muted/40 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Redes del lugar</p>
+          <div className="flex flex-wrap items-center gap-2">
+          {site!.bookingUrl && (
+            <BookingButton
+              url={site!.bookingUrl}
+              disabled={site!.temporarilyClosed?.isClosed}
+            />
+          )}
+          {site!.socialMedia?.instagram && (
+            <a href={site!.socialMedia.instagram} target="_blank" rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-pink-300 hover:bg-pink-50 hover:text-pink-600 dark:hover:bg-pink-950/30">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              Instagram
+            </a>
+          )}
+          {site!.socialMedia?.facebook && (
+            <a href={site!.socialMedia.facebook} target="_blank" rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
+            </a>
+          )}
+          {site!.socialMedia?.tiktok && (
+            <a href={site!.socialMedia.tiktok} target="_blank" rel="noopener noreferrer"
+              aria-label="TikTok"
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>
+              TikTok
+            </a>
+          )}
+          {site!.socialMedia?.twitter && (
+            <a href={site!.socialMedia.twitter} target="_blank" rel="noopener noreferrer"
+              aria-label="X (Twitter)"
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X
+            </a>
+          )}
+          {site!.socialMedia?.website && (
+            <a href={site!.socialMedia.website} target="_blank" rel="noopener noreferrer"
+              aria-label="Sitio web"
+              className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted">
+              <Globe className="size-3.5" />Sitio web
+            </a>
+          )}
+          </div>
+        </div>
+      )}
+
       <div className="mb-8 overflow-hidden rounded-2xl border border-border">
-        {/* Siempre flex-row — compacto en móvil, espacioso en desktop */}
         <div className="flex min-h-16 items-stretch">
 
-          {/* Izquierda: ícono + título */}
           <div className="shrink-0 flex items-center justify-center px-3 py-3 sm:px-5 sm:py-4 min-w-18">
             <div className="text-center">
               <div className={cn(
@@ -197,10 +263,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
             </div>
           </div>
 
-          {/* Separador vertical */}
           <div className="w-px self-stretch bg-border" />
 
-          {/* Centro: descripción */}
           <div className="flex flex-1 items-center px-3 py-3 sm:px-5 sm:py-4">
             <p className="text-xs sm:text-sm text-muted-foreground leading-snug line-clamp-2">
               {trending
@@ -214,7 +278,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
             </p>
           </div>
 
-          {/* Derecha: métricas en línea (no apiladas en móvil) */}
           {((site!.views ?? 0) > 0 || (site!.analytics.shares ?? 0) > 0) && (
             <>
               <div className="w-px self-stretch bg-border" />
@@ -251,10 +314,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </div>
       </div>
 
-      {/* ── Layout dos columnas ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
 
-        {/* Columna izquierda */}
         <div className="lg:col-span-2 space-y-10">
           {site!.description && (
             <section>
@@ -265,7 +326,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
           <Separator />
 
-          {/* Autor */}
           <section>
             <h2 className="mb-4 text-lg font-semibold">Publicado por</h2>
             <Link href={`/profile/${site!.author.displayName}`} className="flex items-center gap-4 group w-fit">
@@ -284,7 +344,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
           <Separator />
 
-          {/* Mapa */}
           <section>
             <h2 className="mb-2 text-lg font-semibold">¿Dónde estamos ubicados?</h2>
             <p className="mb-4 flex items-start gap-2 text-sm text-muted-foreground">
@@ -301,7 +360,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               Ver en Google Maps
             </a>
 
-            {/* Mapa embebido */}
             {site!.coordinates && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-border">
                 <iframe
@@ -318,13 +376,11 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
           </section>
         </div>
 
-        {/* Columna derecha — Horario */}
         <aside>
           <div className="lg:sticky lg:top-24 rounded-2xl border border-border p-5 shadow-sm">
             <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
               <Clock className="size-4 text-primary" /> Horario
             </h2>
-            {/* Indicador abierto/cerrado — aquí es más contextual que en el título */}
             <div className={cn(
               "mb-4 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium",
               openStatus.isOpen
@@ -369,7 +425,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </aside>
       </div>
 
-      {/* ── Itinerario ────────────────────────────────────────────────────── */}
       {linkedEvents.length > 0 && (
         <>
           <Separator className="my-10" />
