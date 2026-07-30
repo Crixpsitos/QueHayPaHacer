@@ -172,7 +172,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
       {/* ── Aviso cierre temporal ──────────────────────────────────────── */}
       {site!.temporarilyClosed?.isClosed && (
-        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-950/30">
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-950/30">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-500" />
           <div>
             <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Cerrado temporalmente</p>
@@ -185,8 +185,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
       {/* ── Redes + reserva del sitio (del dueño) ───────────────────────── */}
       {(site!.bookingUrl || Object.values(site!.socialMedia ?? {}).some(Boolean)) && (
-        <div className="mb-8">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Síguenos en:</p>
+        <div className="mb-6 rounded-2xl border border-border bg-muted/40 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Redes del lugar</p>
           <div className="flex flex-wrap items-center gap-2">
           {/* Botón de reserva */}
           {site!.bookingUrl && (

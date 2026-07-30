@@ -39,17 +39,19 @@ export function SiteDetailActions({
 
   return (
     <Button
-      variant="outline"
-      size="sm"
+      variant={liked ? "default" : "outline"}
+      size="lg"
       onClick={handleLike}
       disabled={loading}
       className={cn(
-        "gap-2 rounded-full px-5",
-        liked && "border-rose-400 bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400",
+        "gap-2.5 rounded-2xl px-6 py-3 text-base font-semibold shadow-sm transition-all",
+        liked
+          ? "bg-rose-500 border-rose-500 text-white hover:bg-rose-600 hover:border-rose-600"
+          : "hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30",
       )}
     >
-      <Heart className={cn("size-4", liked && "fill-current")} />
-      <span className="tabular-nums">{likes.toLocaleString("es-CO")}</span>
+      <Heart className={cn("size-5", liked && "fill-current")} />
+      <span className="tabular-nums">{likes > 0 ? likes.toLocaleString("es-CO") : "Me gusta"}</span>
     </Button>
   );
 }
