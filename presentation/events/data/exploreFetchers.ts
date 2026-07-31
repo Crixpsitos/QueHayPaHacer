@@ -220,15 +220,19 @@ async function fetchEvents(
 
   // Filtros adicionales
   if (filters.free) {
-    stage = stage.where(field("price.isFree").equal(true));
+    // Multi-date events don't have event-level prices; exclude them from price filters
+    stage = stage
+      .where(field("price.isFree").equal(true))
+      .where(field("eventType").notEqual("multi-date"));
   } else if (filters.maxPrice && filters.maxPrice > 0) {
-    // Include free events and paid events within the price range
-    stage = stage.where(
-      pipelineOr(
-        field("price.isFree").equal(true),
-        field("price.amount").lessThanOrEqual(filters.maxPrice),
-      ),
-    );
+    stage = stage
+      .where(
+        pipelineOr(
+          field("price.isFree").equal(true),
+          field("price.amount").lessThanOrEqual(filters.maxPrice),
+        ),
+      )
+      .where(field("eventType").notEqual("multi-date"));
   }
 
   if (filters.promoted) {
@@ -242,6 +246,11 @@ async function fetchEvents(
 
   if (filters.multiDate) {
     stage = stage.where(field("eventType").equal("multi-date"));
+  }
+
+  // Sort chronologically when no text query; text search already sorts by score
+  if (!q) {
+    stage = stage.sort(field("startDate").ascending());
   }
 
   const result = await stage
