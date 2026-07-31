@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getEnterpriseFirestore } from "@/infraestructure/firebase/config/admin/firebase";
-import { Pipelines } from "@google-cloud/firestore";
+import { Pipelines, Timestamp } from "@google-cloud/firestore";
 import { fetchEventDetailById } from "./eventDetailFetchers";
 import { getCategoryEventsPage } from "./categoryEventsPage";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
@@ -11,7 +11,7 @@ import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewMo
 import type { Events } from "@/domain/entities/events/Events";
 import type { SiteCategory } from "@/presentation/sites/view-models/SiteFormViewModel";
 
-const { field, documentMatches, score } = Pipelines;
+const { field, documentMatches, score, or: pipelineOr } = Pipelines;
 
 export const EXPLORE_PAGE_SIZE = 12;
 
@@ -22,6 +22,8 @@ export interface ExploreFilters {
   promoted?: boolean;
   multiDate?: boolean;
   maxPrice?: number;
+  onlyEvents?: boolean;
+  onlySites?: boolean;
 }
 
 export interface ExploreSearchData {
@@ -153,16 +155,21 @@ export async function fetchExploreResults(
 
   const db = getEnterpriseFirestore();
   const trimmed = q.trim();
-  const fromDate = from ? new Date(from) : undefined;
-  const toDate = to ? new Date(to) : undefined;
+  // Append T00:00:00 (no Z) so Date() interprets as local server time, not UTC midnight
+  const fromDate = from ? new Date(`${from}T00:00:00`) : undefined;
+  const toDate   = to   ? new Date(`${to}T00:00:00`)   : undefined;
   const now = new Date();
 
   const [eventIds, siteIds] = await Promise.all([
-    fetchEvents(db, trimmed, fromDate, toDate, now, page, filters),
-    trimmed && page === 0 ? fetchSiteIds(db, trimmed).catch((err) => {
-      console.warn("[explore] sites search index not ready:", (err as Error).message);
-      return [] as string[];
-    }) : Promise.resolve([] as string[]),
+    filters.onlySites
+      ? Promise.resolve([] as string[])
+      : fetchEvents(db, trimmed, fromDate, toDate, now, page, filters),
+    !filters.onlyEvents && trimmed && page === 0
+      ? fetchSiteIds(db, trimmed, filters).catch((err) => {
+          console.warn("[explore] sites search index not ready:", (err as Error).message);
+          return [] as string[];
+        })
+      : Promise.resolve([] as string[]),
   ]);
 
   const [eventDetails, siteDetails] = await Promise.all([
@@ -205,31 +212,50 @@ async function fetchEvents(
     : collection.where(field("status").equal("published"));
 
   if (from) {
-    stage = stage.where(field("startDate").greaterThanOrEqual(from));
+    stage = stage.where(field("startDate").greaterThanOrEqual(Timestamp.fromDate(from)));
   } else if (now) {
-    stage = stage.where(field("endDate").greaterThanOrEqual(now));
+    stage = stage.where(field("endDate").greaterThanOrEqual(Timestamp.fromDate(now)));
   }
 
   if (to) {
-    const toEnd = new Date(to);
-    toEnd.setHours(23, 59, 59, 999);
-    stage = stage.where(field("startDate").lessThanOrEqual(toEnd));
+    const toExclusive = new Date(to);
+    toExclusive.setDate(toExclusive.getDate() + 1);
+    stage = stage.where(field("startDate").lessThan(Timestamp.fromDate(toExclusive)));
   }
 
   // Filtros adicionales
   if (filters.free) {
-    stage = stage.where(field("price.isFree").equal(true));
+    // Multi-date events don't have event-level prices; exclude them from price filters
+    stage = stage
+      .where(field("price.isFree").equal(true))
+      .where(field("eventType").notEqual("multi-date"));
   } else if (filters.maxPrice && filters.maxPrice > 0) {
-    // Incluir eventos gratuitos + eventos con precio <= maxPrice
-    stage = stage.where(field("price.amount").lessThanOrEqual(filters.maxPrice));
+    stage = stage
+      .where(
+        pipelineOr(
+          field("price.isFree").equal(true),
+          field("price.amount").lessThanOrEqual(filters.maxPrice),
+        ),
+      )
+      .where(field("eventType").notEqual("multi-date"));
   }
 
   if (filters.promoted) {
-    stage = stage.where(field("promotion.isPromoted").equal(true));
+    stage = stage.where(
+      pipelineOr(
+        field("promotion.isPromoted").equal(true),
+        field("analytics.score").greaterThanOrEqual(15),
+      ),
+    );
   }
 
   if (filters.multiDate) {
     stage = stage.where(field("eventType").equal("multi-date"));
+  }
+
+  // Sort chronologically when no text query; text search already sorts by score
+  if (!q) {
+    stage = stage.sort(field("startDate").ascending());
   }
 
   const result = await stage
@@ -245,17 +271,21 @@ async function fetchEvents(
 async function fetchSiteIds(
   db: FirebaseFirestore.Firestore,
   q: string,
+  filters: ExploreFilters = {},
 ): Promise<string[]> {
-  const result = await db
+  let stage = db
     .pipeline()
     .collection("sites")
     .search({ query: documentMatches(q), sort: score().descending() })
     .where(field("publicationStatus").equal("published"))
     .where(field("moderationStatus").equal("approved"))
-    .where(field("isActive").equal(true))
-    .limit(EXPLORE_PAGE_SIZE)
-    .execute();
+    .where(field("isActive").equal(true));
 
+  if (filters.promoted) {
+    stage = stage.where(field("analytics.score").greaterThanOrEqual(20));
+  }
+
+  const result = await stage.limit(EXPLORE_PAGE_SIZE).execute();
   return result.results.map((r) => r.ref?.id ?? "").filter(Boolean);
 }
 

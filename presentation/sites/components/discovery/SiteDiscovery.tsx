@@ -28,6 +28,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { SiteLocalBusinessJsonLd, SiteItemListJsonLd } from "./SiteJsonLd";
 import { recordSiteInteractionAction } from "@/app/actions/sites/record-site-interaction.action";
 import type { SiteDetail, SiteSchedule, WeekDay } from "../../view-models/SiteFormViewModel";
@@ -283,8 +284,24 @@ export function SiteDiscoveryCard({
         )}
       </Link>
 
-      {/* Footer: like + share */}
+      {/* Footer: author + like + share */}
       <div className="flex flex-col border-t border-border px-4 py-2.5 gap-1.5">
+        {/* Author */}
+        {'author' in site && site.author && (
+          <div className="flex items-center gap-2">
+            <Avatar size="sm">
+              {site.author.photoURL && (
+                <AvatarImage src={site.author.photoURL} alt={site.author.displayName} />
+              )}
+              <AvatarFallback className="text-[10px]">
+                {site.author.displayName.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join("")}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">
+              @{site.author.displayName}
+            </span>
+          </div>
+        )}
         {authError && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
             Inicia sesión para dar me gusta.

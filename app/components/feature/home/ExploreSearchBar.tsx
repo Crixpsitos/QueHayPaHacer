@@ -9,7 +9,7 @@ import { Calendar } from "@/app/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils/cn";
-import { CalendarIcon, Search, X, Sparkles, CalendarDays, DollarSign } from "lucide-react";
+import { CalendarIcon, Search, X, Sparkles, CalendarDays, DollarSign, Ticket, Building2 } from "lucide-react";
 
 interface ExploreSearchBarProps {
   initialQuery?: string;
@@ -19,6 +19,8 @@ interface ExploreSearchBarProps {
   initialPromoted?: boolean;
   initialMultiDate?: boolean;
   initialMaxPrice?: number;
+  initialOnlyEvents?: boolean;
+  initialOnlySites?: boolean;
 }
 
 export function ExploreSearchBar({
@@ -29,6 +31,8 @@ export function ExploreSearchBar({
   initialPromoted = false,
   initialMultiDate = false,
   initialMaxPrice,
+  initialOnlyEvents = false,
+  initialOnlySites = false,
 }: ExploreSearchBarProps = {}) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -50,6 +54,8 @@ export function ExploreSearchBar({
   const [maxPriceInput, setMaxPriceInput] = useState(
     initialMaxPrice ? String(initialMaxPrice) : "",
   );
+  const [onlyEvents, setOnlyEvents] = useState(initialOnlyEvents);
+  const [onlySites, setOnlySites] = useState(initialOnlySites);
 
   useEffect(() => { setToday(new Date()); }, []);
 
@@ -58,35 +64,54 @@ export function ExploreSearchBar({
     e.stopPropagation();
     setRange(undefined);
     setCalOpen(false);
-  }, []);
+    const params = new URLSearchParams();
+    const trimmed = query.trim();
+    if (trimmed) params.set("q", trimmed);
+    if (free) params.set("free", "1");
+    if (promoted) params.set("promoted", "1");
+    if (multiDate) params.set("type", "multi-date");
+    const parsed = parseInt(maxPriceInput, 10);
+    if (!isNaN(parsed) && parsed > 0) params.set("maxPrice", String(parsed));
+    if (onlyEvents) params.set("content", "events");
+    if (onlySites) params.set("content", "sites");
+    router.push(params.toString() ? `/explorar?${params.toString()}` : "/explorar");
+  }, [free, maxPriceInput, multiDate, onlyEvents, onlySites, promoted, query, router]);
 
   const buildParams = useCallback((overrides: {
     free?: boolean;
     promoted?: boolean;
     multiDate?: boolean;
     maxPrice?: string;
+    onlyEvents?: boolean;
+    onlySites?: boolean;
+    clearRange?: boolean;
   } = {}) => {
     const params = new URLSearchParams();
     const trimmed = query.trim();
     if (trimmed) params.set("q", trimmed);
-    if (range?.from) params.set("from", range.from.toISOString().split("T")[0]);
-    if (range?.to && !isSameDay(range.from!, range.to))
-      params.set("to", range.to.toISOString().split("T")[0]);
+    if (!overrides.clearRange) {
+      if (range?.from) params.set("from", range.from.toISOString().split("T")[0]);
+      if (range?.to && !isSameDay(range.from!, range.to))
+        params.set("to", range.to.toISOString().split("T")[0]);
+    }
 
-    const newFree      = overrides.free      ?? free;
-    const newPromoted  = overrides.promoted  ?? promoted;
-    const newMultiDate = overrides.multiDate ?? multiDate;
-    const newMaxPrice  = overrides.maxPrice  ?? maxPriceInput;
+    const newFree        = overrides.free        ?? free;
+    const newPromoted    = overrides.promoted    ?? promoted;
+    const newMultiDate   = overrides.multiDate   ?? multiDate;
+    const newMaxPrice    = overrides.maxPrice    ?? maxPriceInput;
+    const newOnlyEvents  = overrides.onlyEvents  ?? onlyEvents;
+    const newOnlySites   = overrides.onlySites   ?? onlySites;
 
     if (newFree) params.set("free", "1");
     if (newPromoted) params.set("promoted", "1");
     if (newMultiDate) params.set("type", "multi-date");
     const parsed = parseInt(newMaxPrice, 10);
     if (!isNaN(parsed) && parsed > 0) params.set("maxPrice", String(parsed));
+    if (newOnlyEvents) params.set("content", "events");
+    if (newOnlySites)  params.set("content", "sites");
     return params;
-  }, [query, range, free, promoted, multiDate, maxPriceInput]);
+  }, [query, range, free, promoted, multiDate, maxPriceInput, onlyEvents, onlySites]);
 
-  /** Navega inmediatamente con los overrides dados sin esperar setState. */
   const navigateWith = useCallback((overrides: Parameters<typeof buildParams>[0]) => {
     const params = buildParams(overrides);
     router.push(params.toString() ? `/explorar?${params.toString()}` : "/explorar");
@@ -203,7 +228,7 @@ export function ExploreSearchBar({
           <PopoverTrigger asChild>
             <button type="button" className={chipClass(hasMaxPrice)}>
               <DollarSign className="size-3" />
-              {hasMaxPrice ? `Hasta $${parsedMax.toLocaleString("es-CO")}` : "Precio máx."}
+              {hasMaxPrice ? `Hasta $${parsedMax.toLocaleString("es-CO")}` : "Valor hasta..."}
               {hasMaxPrice && (
                 <X
                   className="size-3"
@@ -217,7 +242,8 @@ export function ExploreSearchBar({
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-3" align="start">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Precio máximo (COP)</p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Mostrar eventos que cuestan hasta...</p>
+            <p className="mb-2 text-[11px] text-muted-foreground/70">(incluye gratuitos)</p>
             <input
               type="number"
               min={0}
@@ -252,7 +278,7 @@ export function ExploreSearchBar({
           </PopoverContent>
         </Popover>
 
-        {/* Destacados */}
+        {/* Promocionados */}
         <button
           type="button"
           onClick={() => { const next = !promoted; setPromoted(next); navigateWith({ promoted: next }); }}
@@ -261,6 +287,38 @@ export function ExploreSearchBar({
           <Sparkles className="size-3" />
           Destacados
           {promoted && <X className="size-3" />}
+        </button>
+
+        {/* Solo eventos */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !onlyEvents;
+            setOnlyEvents(next);
+            if (next) setOnlySites(false);
+            navigateWith({ onlyEvents: next, onlySites: false });
+          }}
+          className={chipClass(onlyEvents)}
+        >
+          <Ticket className="size-3" />
+          Solo eventos
+          {onlyEvents && <X className="size-3" />}
+        </button>
+
+        {/* Solo sitios */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !onlySites;
+            setOnlySites(next);
+            if (next) setOnlyEvents(false);
+            navigateWith({ onlySites: next, onlyEvents: false });
+          }}
+          className={chipClass(onlySites)}
+        >
+          <Building2 className="size-3" />
+          Solo sitios
+          {onlySites && <X className="size-3" />}
         </button>
 
         {/* Multi-fecha */}
@@ -275,7 +333,7 @@ export function ExploreSearchBar({
         </button>
 
         {/* Limpiar todo */}
-        {(free || hasMaxPrice || promoted || multiDate) && (
+        {(free || hasMaxPrice || promoted || multiDate || onlyEvents || onlySites) && (
           <button
             type="button"
             onClick={() => {
@@ -283,7 +341,9 @@ export function ExploreSearchBar({
               setPromoted(false);
               setMultiDate(false);
               setMaxPriceInput("");
-              navigateWith({ free: false, promoted: false, multiDate: false, maxPrice: "" });
+              setOnlyEvents(false);
+              setOnlySites(false);
+              navigateWith({ free: false, promoted: false, multiDate: false, maxPrice: "", onlyEvents: false, onlySites: false });
             }}
             className="text-xs text-muted-foreground underline-offset-2 hover:underline"
           >
