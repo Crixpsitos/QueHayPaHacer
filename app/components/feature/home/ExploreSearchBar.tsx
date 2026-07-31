@@ -64,7 +64,9 @@ export function ExploreSearchBar({
     e.stopPropagation();
     setRange(undefined);
     setCalOpen(false);
-  }, []);
+    // Navigate without range immediately — don't rely on async state update
+    navigateWith({ clearRange: true });
+  }, [navigateWith]);
 
   const buildParams = useCallback((overrides: {
     free?: boolean;
@@ -73,13 +75,16 @@ export function ExploreSearchBar({
     maxPrice?: string;
     onlyEvents?: boolean;
     onlySites?: boolean;
+    clearRange?: boolean;
   } = {}) => {
     const params = new URLSearchParams();
     const trimmed = query.trim();
     if (trimmed) params.set("q", trimmed);
-    if (range?.from) params.set("from", range.from.toISOString().split("T")[0]);
-    if (range?.to && !isSameDay(range.from!, range.to))
-      params.set("to", range.to.toISOString().split("T")[0]);
+    if (!overrides.clearRange) {
+      if (range?.from) params.set("from", range.from.toISOString().split("T")[0]);
+      if (range?.to && !isSameDay(range.from!, range.to))
+        params.set("to", range.to.toISOString().split("T")[0]);
+    }
 
     const newFree        = overrides.free        ?? free;
     const newPromoted    = overrides.promoted    ?? promoted;
@@ -98,7 +103,6 @@ export function ExploreSearchBar({
     return params;
   }, [query, range, free, promoted, multiDate, maxPriceInput, onlyEvents, onlySites]);
 
-  /** Navega inmediatamente con los overrides dados sin esperar setState. */
   const navigateWith = useCallback((overrides: Parameters<typeof buildParams>[0]) => {
     const params = buildParams(overrides);
     router.push(params.toString() ? `/explorar?${params.toString()}` : "/explorar");
