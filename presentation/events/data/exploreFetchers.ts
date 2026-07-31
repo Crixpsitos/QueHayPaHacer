@@ -22,6 +22,8 @@ export interface ExploreFilters {
   promoted?: boolean;
   multiDate?: boolean;
   maxPrice?: number;
+  onlyEvents?: boolean;
+  onlySites?: boolean;
 }
 
 export interface ExploreSearchData {
@@ -158,11 +160,15 @@ export async function fetchExploreResults(
   const now = new Date();
 
   const [eventIds, siteIds] = await Promise.all([
-    fetchEvents(db, trimmed, fromDate, toDate, now, page, filters),
-    trimmed && page === 0 ? fetchSiteIds(db, trimmed).catch((err) => {
-      console.warn("[explore] sites search index not ready:", (err as Error).message);
-      return [] as string[];
-    }) : Promise.resolve([] as string[]),
+    filters.onlySites
+      ? Promise.resolve([] as string[])
+      : fetchEvents(db, trimmed, fromDate, toDate, now, page, filters),
+    !filters.onlyEvents && trimmed && page === 0
+      ? fetchSiteIds(db, trimmed, filters).catch((err) => {
+          console.warn("[explore] sites search index not ready:", (err as Error).message);
+          return [] as string[];
+        })
+      : Promise.resolve([] as string[]),
   ]);
 
   const [eventDetails, siteDetails] = await Promise.all([
@@ -265,17 +271,21 @@ async function fetchEvents(
 async function fetchSiteIds(
   db: FirebaseFirestore.Firestore,
   q: string,
+  filters: ExploreFilters = {},
 ): Promise<string[]> {
-  const result = await db
+  let stage = db
     .pipeline()
     .collection("sites")
     .search({ query: documentMatches(q), sort: score().descending() })
     .where(field("publicationStatus").equal("published"))
     .where(field("moderationStatus").equal("approved"))
-    .where(field("isActive").equal(true))
-    .limit(EXPLORE_PAGE_SIZE)
-    .execute();
+    .where(field("isActive").equal(true));
 
+  if (filters.promoted) {
+    stage = stage.where(field("analytics.score").greaterThanOrEqual(20));
+  }
+
+  const result = await stage.limit(EXPLORE_PAGE_SIZE).execute();
   return result.results.map((r) => r.ref?.id ?? "").filter(Boolean);
 }
 

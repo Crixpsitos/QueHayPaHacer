@@ -41,6 +41,7 @@ interface ExplorarSearchParams {
   promoted?: string;
   type?: string;
   maxPrice?: string;
+  content?: string;
 }
 
 export default function ExplorarPage({
@@ -69,8 +70,10 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
     promoted: sp.promoted === "1",
     multiDate: sp.type === "multi-date",
     maxPrice: sp.maxPrice ? parseInt(sp.maxPrice, 10) : undefined,
+    onlyEvents: sp.content === "events",
+    onlySites: sp.content === "sites",
   };
-  const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice);
+  const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice || filters.onlyEvents || filters.onlySites);
 
   // Siempre cargamos el browse: da las categorías con íconos y eventos base
   const [browseData, categories] = await Promise.all([
@@ -148,7 +151,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           Busca por texto y/o fechas, o descubre por categorías.
         </p>
         <ExploreSearchBar
-          key={`${q}-${from ?? ""}-${to ?? ""}-${filters.free}-${filters.promoted}-${filters.multiDate}-${filters.maxPrice ?? ""}`}
+          key={`${q}-${from ?? ""}-${to ?? ""}-${filters.free}-${filters.promoted}-${filters.multiDate}-${filters.maxPrice ?? ""}-${sp.content ?? ""}`}
           initialQuery={q}
           initialFrom={from}
           initialTo={to}
@@ -156,6 +159,8 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           initialPromoted={filters.promoted}
           initialMultiDate={filters.multiDate}
           initialMaxPrice={filters.maxPrice}
+          initialOnlyEvents={filters.onlyEvents}
+          initialOnlySites={filters.onlySites}
         />
       </div>
 
