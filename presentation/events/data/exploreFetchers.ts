@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getEnterpriseFirestore } from "@/infraestructure/firebase/config/admin/firebase";
-import { Pipelines } from "@google-cloud/firestore";
+import { Pipelines, Timestamp } from "@google-cloud/firestore";
 import { fetchEventDetailById } from "./eventDetailFetchers";
 import { getCategoryEventsPage } from "./categoryEventsPage";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
@@ -212,16 +212,15 @@ async function fetchEvents(
     : collection.where(field("status").equal("published"));
 
   if (from) {
-    stage = stage.where(field("startDate").greaterThanOrEqual(from));
+    stage = stage.where(field("startDate").greaterThanOrEqual(Timestamp.fromDate(from)));
   } else if (now) {
-    stage = stage.where(field("endDate").greaterThanOrEqual(now));
+    stage = stage.where(field("endDate").greaterThanOrEqual(Timestamp.fromDate(now)));
   }
 
   if (to) {
-    // Exclusive next-day boundary covers the full day regardless of timezone
     const toExclusive = new Date(to);
     toExclusive.setDate(toExclusive.getDate() + 1);
-    stage = stage.where(field("startDate").lessThan(toExclusive));
+    stage = stage.where(field("startDate").lessThan(Timestamp.fromDate(toExclusive)));
   }
 
   // Filtros adicionales
