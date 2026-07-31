@@ -205,8 +205,7 @@ async function fetchEvents(
     : collection.where(field("status").equal("published"));
 
   if (from) {
-    // Use endDate so multi-date events with sessions after `from` are included
-    stage = stage.where(field("endDate").greaterThanOrEqual(from));
+    stage = stage.where(field("startDate").greaterThanOrEqual(from));
   } else if (now) {
     stage = stage.where(field("endDate").greaterThanOrEqual(now));
   }
