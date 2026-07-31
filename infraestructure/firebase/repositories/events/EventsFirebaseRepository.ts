@@ -91,9 +91,7 @@ export class EventsFirebaseRepository
             Filter.where("promotion.isPromoted", "==", true),
             Filter.where("promotion.promotedUntil", ">=", now),
           ),
-          // ponytail: umbral bajo para MVP. Con pocos eventos, el score máx es
-          // ~37. Bajar a 5 para que aparezcan eventos en el MVP.
-          Filter.where("analytics.score", ">=", 5),
+          Filter.where("analytics.score", ">=", 15),
         ),
       )
       .select()

@@ -235,7 +235,7 @@ async function fetchEvents(
     stage = stage.where(
       pipelineOr(
         field("promotion.isPromoted").equal(true),
-        field("analytics.score").greaterThanOrEqual(5),
+        field("analytics.score").greaterThanOrEqual(15),
       ),
     );
   }
