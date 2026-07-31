@@ -73,7 +73,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
     onlyEvents: sp.content === "events",
     onlySites: sp.content === "sites",
   };
-  const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice || filters.onlyEvents || filters.onlySites);
+  const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice);
 
   // Siempre cargamos el browse: da las categorías con íconos y eventos base
   const [browseData, categories] = await Promise.all([
@@ -138,6 +138,10 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
       nextCursor: null,
     }));
   }
+
+  // Content-type chips filter the sections regardless of search mode
+  if (filters.onlyEvents) siteSections = [];
+  if (filters.onlySites) eventSections = [];
 
   return (
     <Section spacing="sm" className="mt-6 min-h-[60vh]">
