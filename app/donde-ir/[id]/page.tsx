@@ -102,34 +102,66 @@ async function DondeIrDetail({ params }: PageProps) {
 // ── Skeleton propio del detalle de sitio ────────────────────────────────────
 function SiteDetailSkeleton() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:max-w-6xl">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:max-w-4xl lg:max-w-6xl">
+      {/* Breadcrumb */}
       <div className="mb-4 flex items-center gap-2">
         <div className="h-4 w-16 animate-pulse rounded bg-muted" />
         <div className="h-4 w-2 animate-pulse rounded bg-muted" />
         <div className="h-4 w-24 animate-pulse rounded bg-muted" />
       </div>
-      <div className="mb-6 grid grid-cols-2 gap-0.5 overflow-hidden rounded-2xl border border-border">
-        <div className="min-h-64 animate-pulse bg-muted sm:min-h-80" />
-        <div className="grid grid-cols-2 gap-0.5">
-          {[1,2,3,4].map((i) => (
-            <div key={i} className="aspect-square animate-pulse bg-muted" />
-          ))}
+
+      {/* Gallery — mobile: stack, desktop: bento */}
+      <div className="mb-6">
+        {/* Mobile */}
+        <div className="sm:hidden space-y-1">
+          <div className="aspect-video w-full animate-pulse rounded-2xl bg-muted" />
+          <div className="flex gap-1">
+            {[1,2,3].map((i) => <div key={i} className="aspect-video flex-1 animate-pulse rounded-lg bg-muted" />)}
+          </div>
+        </div>
+        {/* Desktop */}
+        <div className="hidden sm:flex h-105 md:h-120 gap-0.5 overflow-hidden rounded-2xl border border-border bg-border">
+          <div className="flex-1 animate-pulse bg-muted" />
+          <div className="grid grid-cols-2 grid-rows-2 flex-1 gap-0.5">
+            {[1,2,3,4].map((i) => <div key={i} className="animate-pulse bg-muted" />)}
+          </div>
         </div>
       </div>
-      <div className="mb-8 space-y-3">
-        <div className="h-8 w-64 animate-pulse rounded bg-muted" />
-        <div className="flex gap-2">
-          <div className="h-6 w-24 animate-pulse rounded-full bg-muted" />
-          <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+
+      {/* Title + like */}
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-3">
+          <div className="h-8 w-64 animate-pulse rounded bg-muted" />
+          <div className="flex gap-2">
+            <div className="h-6 w-24 animate-pulse rounded-full bg-muted" />
+            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+          </div>
         </div>
+        <div className="h-11 w-32 animate-pulse rounded-2xl bg-muted" />
       </div>
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+
+      {/* Stats banner */}
+      <div className="mb-8 h-16 animate-pulse rounded-2xl bg-muted" />
+
+      {/* 2-column layout */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
+        {/* Content column */}
         <div className="space-y-4 lg:col-span-2">
-          {[80,60,70,50,65].map((w, i) => (
+          {[80,60,90,50,70,65,45].map((w, i) => (
             <div key={i} className="h-4 animate-pulse rounded bg-muted" style={{ width: `${w}%` }} />
           ))}
+          <div className="mt-6 h-px animate-pulse bg-muted" />
+          {/* Author skeleton */}
+          <div className="flex items-center gap-4">
+            <div className="size-12 animate-pulse rounded-full bg-muted" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
         </div>
-        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+        {/* Sidebar */}
+        <div className="h-72 animate-pulse rounded-2xl bg-muted" />
       </div>
     </div>
   );
