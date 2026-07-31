@@ -203,7 +203,7 @@ export function ExploreSearchBar({
           <PopoverTrigger asChild>
             <button type="button" className={chipClass(hasMaxPrice)}>
               <DollarSign className="size-3" />
-              {hasMaxPrice ? `Hasta $${parsedMax.toLocaleString("es-CO")}` : "Precio máx."}
+              {hasMaxPrice ? `Hasta $${parsedMax.toLocaleString("es-CO")}` : "Valor hasta..."}
               {hasMaxPrice && (
                 <X
                   className="size-3"
@@ -217,7 +217,8 @@ export function ExploreSearchBar({
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-3" align="start">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Precio máximo (COP)</p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Mostrar eventos que cuestan hasta...</p>
+            <p className="mb-2 text-[11px] text-muted-foreground/70">(incluye gratuitos)</p>
             <input
               type="number"
               min={0}
