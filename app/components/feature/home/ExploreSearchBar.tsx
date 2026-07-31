@@ -64,9 +64,18 @@ export function ExploreSearchBar({
     e.stopPropagation();
     setRange(undefined);
     setCalOpen(false);
-    // Navigate without range immediately — don't rely on async state update
-    navigateWith({ clearRange: true });
-  }, [navigateWith]);
+    const params = new URLSearchParams();
+    const trimmed = query.trim();
+    if (trimmed) params.set("q", trimmed);
+    if (free) params.set("free", "1");
+    if (promoted) params.set("promoted", "1");
+    if (multiDate) params.set("type", "multi-date");
+    const parsed = parseInt(maxPriceInput, 10);
+    if (!isNaN(parsed) && parsed > 0) params.set("maxPrice", String(parsed));
+    if (onlyEvents) params.set("content", "events");
+    if (onlySites) params.set("content", "sites");
+    router.push(params.toString() ? `/explorar?${params.toString()}` : "/explorar");
+  }, [free, maxPriceInput, multiDate, onlyEvents, onlySites, promoted, query, router]);
 
   const buildParams = useCallback((overrides: {
     free?: boolean;
