@@ -155,8 +155,9 @@ export async function fetchExploreResults(
 
   const db = getEnterpriseFirestore();
   const trimmed = q.trim();
-  const fromDate = from ? new Date(from) : undefined;
-  const toDate = to ? new Date(to) : undefined;
+  // Append T00:00:00 (no Z) so Date() interprets as local server time, not UTC midnight
+  const fromDate = from ? new Date(`${from}T00:00:00`) : undefined;
+  const toDate   = to   ? new Date(`${to}T00:00:00`)   : undefined;
   const now = new Date();
 
   const [eventIds, siteIds] = await Promise.all([
