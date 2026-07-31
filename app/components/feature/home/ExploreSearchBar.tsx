@@ -259,7 +259,7 @@ export function ExploreSearchBar({
           className={chipClass(promoted)}
         >
           <Sparkles className="size-3" />
-          Promocionados
+          Destacados
           {promoted && <X className="size-3" />}
         </button>
 

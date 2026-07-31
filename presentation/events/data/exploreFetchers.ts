@@ -232,7 +232,12 @@ async function fetchEvents(
   }
 
   if (filters.promoted) {
-    stage = stage.where(field("promotion.isPromoted").equal(true));
+    stage = stage.where(
+      pipelineOr(
+        field("promotion.isPromoted").equal(true),
+        field("analytics.score").greaterThanOrEqual(5),
+      ),
+    );
   }
 
   if (filters.multiDate) {
