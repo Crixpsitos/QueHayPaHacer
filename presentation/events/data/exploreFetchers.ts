@@ -11,7 +11,7 @@ import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewMo
 import type { Events } from "@/domain/entities/events/Events";
 import type { SiteCategory } from "@/presentation/sites/view-models/SiteFormViewModel";
 
-const { field, documentMatches, score } = Pipelines;
+const { field, documentMatches, score, or: pipelineOr } = Pipelines;
 
 export const EXPLORE_PAGE_SIZE = 12;
 
@@ -205,23 +205,30 @@ async function fetchEvents(
     : collection.where(field("status").equal("published"));
 
   if (from) {
-    stage = stage.where(field("startDate").greaterThanOrEqual(from));
+    // Use endDate so multi-date events with sessions after `from` are included
+    stage = stage.where(field("endDate").greaterThanOrEqual(from));
   } else if (now) {
     stage = stage.where(field("endDate").greaterThanOrEqual(now));
   }
 
   if (to) {
-    const toEnd = new Date(to);
-    toEnd.setHours(23, 59, 59, 999);
-    stage = stage.where(field("startDate").lessThanOrEqual(toEnd));
+    // Exclusive next-day boundary covers the full day regardless of timezone
+    const toExclusive = new Date(to);
+    toExclusive.setDate(toExclusive.getDate() + 1);
+    stage = stage.where(field("startDate").lessThan(toExclusive));
   }
 
   // Filtros adicionales
   if (filters.free) {
     stage = stage.where(field("price.isFree").equal(true));
   } else if (filters.maxPrice && filters.maxPrice > 0) {
-    // Incluir eventos gratuitos + eventos con precio <= maxPrice
-    stage = stage.where(field("price.amount").lessThanOrEqual(filters.maxPrice));
+    // Include free events and paid events within the price range
+    stage = stage.where(
+      pipelineOr(
+        field("price.isFree").equal(true),
+        field("price.amount").lessThanOrEqual(filters.maxPrice),
+      ),
+    );
   }
 
   if (filters.promoted) {

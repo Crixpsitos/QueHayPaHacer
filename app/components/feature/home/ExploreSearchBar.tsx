@@ -252,14 +252,14 @@ export function ExploreSearchBar({
           </PopoverContent>
         </Popover>
 
-        {/* Destacados */}
+        {/* Promocionados */}
         <button
           type="button"
           onClick={() => { const next = !promoted; setPromoted(next); navigateWith({ promoted: next }); }}
           className={chipClass(promoted)}
         >
           <Sparkles className="size-3" />
-          Destacados
+          Promocionados
           {promoted && <X className="size-3" />}
         </button>
 

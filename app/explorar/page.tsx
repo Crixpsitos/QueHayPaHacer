@@ -148,6 +148,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           Busca por texto y/o fechas, o descubre por categorías.
         </p>
         <ExploreSearchBar
+          key={`${q}-${from ?? ""}-${to ?? ""}-${filters.free}-${filters.promoted}-${filters.multiDate}-${filters.maxPrice ?? ""}`}
           initialQuery={q}
           initialFrom={from}
           initialTo={to}
