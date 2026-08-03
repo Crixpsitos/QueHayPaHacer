@@ -17,6 +17,7 @@ import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
+import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 
 type PublishEventActionResult =
   | {
@@ -149,6 +150,7 @@ export async function publishEventAction(
     // (min inicio / max fin) para que aparezca en los listados por fecha.
     if (event.eventType === "multi-date") {
       await syncEventDateRange(publishedEvent.id || parsedData.id);
+      await syncEventSiteIds(publishedEvent.id || parsedData.id);
     }
 
     // Asignar insignia de "Primer Evento" si es el primer evento publicado

@@ -146,6 +146,8 @@ export class SiteFirebaseMapper {
       description: domain.description,
       location: {
         geo: new GeoPoint(domain.location.coordinates.latitude, domain.location.coordinates.longitude),
+        lat: domain.location.coordinates.latitude,
+        lng: domain.location.coordinates.longitude,
         country: domain.location.country,
         department: domain.location.department,
         city: domain.location.city,

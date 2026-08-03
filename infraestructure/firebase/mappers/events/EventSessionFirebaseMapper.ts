@@ -70,6 +70,8 @@ function toStoredLocation(loc: Location) {
     department: detailWithSlug(loc.department),
     country: detailWithSlug(loc.country),
     coordinates: new GeoPoint(lat, lng),
+    lat,
+    lng,
   };
 }
 

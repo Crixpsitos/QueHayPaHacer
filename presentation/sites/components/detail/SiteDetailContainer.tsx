@@ -9,7 +9,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
-import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
+import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
 import { SiteSocialShare } from "./SiteSocialShare";
@@ -17,6 +17,7 @@ import { BookingButton } from "@/presentation/shared/components/BookingButton";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
 import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
+import { getInitials } from "@/app/lib/utils/getInitials";
 import type { WeekDay, DaySchedule } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 const SITE_CATEGORY_LABELS: Record<string, string> = {
@@ -35,10 +36,6 @@ const WEEK_LABELS: Record<WeekDay, string> = {
 const WEEK_ORDER: WeekDay[] = [
   "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
 ];
-
-function getInitials(name: string): string {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-}
 
 type DayKey = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
 const DAY_MAP: DayKey[] = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
@@ -443,11 +440,9 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
                 {linkedEvents.length} evento{linkedEvents.length !== 1 ? "s" : ""}
               </Badge>
             </div>
-            <EventCardInteractive
+            <SiteItineraryGrid
               events={linkedEvents}
-              info={{ title: "Sin eventos programados", description: "Todavía no hay eventos en este lugar." }}
-              variant="vertical"
-              columns={3}
+              emptyMessage="Todavía no hay eventos en este lugar."
             />
           </section>
         </>

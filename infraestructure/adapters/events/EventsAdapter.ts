@@ -60,6 +60,10 @@ export class EventsAdapter implements IEventsRepository {
     return dtos.map((d) => this.mapper.toDomain(d));
   }
 
+  async updateSiteIds(eventId: string, siteIds: string[]): Promise<void> {
+    await this.repository.updateSiteIds(eventId, siteIds);
+  }
+
   findById(id: string): Promise<Events | null> {
     return this.repository.findById(id).then(dto => dto ? this.mapper.toDomain(dto) : null);
   }

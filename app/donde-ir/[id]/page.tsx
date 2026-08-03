@@ -163,6 +163,30 @@ function SiteDetailSkeleton() {
         {/* Sidebar */}
         <div className="h-72 animate-pulse rounded-2xl bg-muted" />
       </div>
+
+      {/* Itinerary skeleton */}
+      <div className="mt-10 h-px animate-pulse bg-muted" />
+      <div className="mt-10 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="size-10 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-1.5">
+            <div className="h-5 w-44 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-56 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="overflow-hidden rounded-2xl border border-border">
+              <div className="aspect-video w-full animate-pulse bg-muted" />
+              <div className="space-y-2 p-4">
+                <div className="h-3 w-28 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

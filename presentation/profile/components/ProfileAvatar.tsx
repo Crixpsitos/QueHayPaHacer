@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/app/lib/utils/cn";
+import { getInitials } from "@/app/lib/utils/getInitials";
 
 interface ProfileAvatarProps {
   src?: string | null;
@@ -14,32 +15,6 @@ interface ProfileAvatarProps {
   loading?: "eager" | "lazy";
 }
 
-const getInitials = ({
-  firstName,
-  lastName,
-  name,
-}: {
-  firstName?: string | null;
-  lastName?: string | null;
-  name?: string | null;
-}) => {
-  const first = firstName?.trim()?.[0] ?? "";
-  const last = lastName?.trim()?.[0] ?? "";
-
-  if (first || last) {
-    return `${first}${last}`.toUpperCase();
-  }
-
-  const parts = (name ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  if (!parts.length) return "?";
-  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
-};
-
 export const ProfileAvatar = ({
   src,
   alt,
@@ -52,7 +27,7 @@ export const ProfileAvatar = ({
   textClassName,
   loading = "lazy",
 }: ProfileAvatarProps) => {
-  const initials = getInitials({ firstName, lastName, name });
+  const initials = getInitials(name, { firstName, lastName }) || "?";
 
   return (
     <div className={cn("relative overflow-hidden rounded-full", className)}>

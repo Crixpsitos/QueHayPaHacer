@@ -20,7 +20,10 @@ import {
   Clock,
   LayoutDashboard,
   Pencil,
+  ArrowRight,
+  Building2,
 } from "lucide-react";
+import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 import { renderToHTMLString } from "@tiptap/static-renderer";
 import DOMPurify from "dompurify";
 import StarterKit from "@tiptap/starter-kit";
@@ -466,6 +469,17 @@ function DetailRow({
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
+interface LinkedSiteInfo {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  address: string;
+  coverUrl: string;
+  isOpen: boolean;
+  openLabel: string;
+}
+
 interface EventDetailClientProps {
   event: EventViewModel;
   initialLiked: boolean;
@@ -480,11 +494,13 @@ interface EventDetailClientProps {
   backLink?: { href: string; label: string };
   /** Si se pasa, el dueño ve un botón "Editar sesión" que apunta aquí. */
   editSessionHref?: string;
+  /** Si el evento tiene location.siteId, info mínima del sitio para mostrar la card. */
+  linkedSite?: LinkedSiteInfo;
   /** Si se pasa, el like se registra contra la SESIÓN (detalle de sesión). */
   sessionId?: string;
 }
 
-export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false, shareUrl, backLink, editSessionHref, sessionId }: EventDetailClientProps) {
+export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false, shareUrl, backLink, editSessionHref, sessionId, linkedSite }: EventDetailClientProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
@@ -843,6 +859,68 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                 <div className="space-y-3">
                   <h2 className="text-base font-bold text-gray-900">Descripción</h2>
                   <ExpandableDescription html={descriptionHtml} />
+                </div>
+              </>
+            )}
+
+            {/* Sitio vinculado — antes del mapa para dar contexto del lugar */}
+            {linkedSite && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+                    <Building2 className="size-4" /> Sitio del evento
+                  </h2>
+                  <Link
+                    href={`/donde-ir/${linkedSite.slug || linkedSite.id}`}
+                    className="group relative flex items-center gap-3 overflow-visible rounded-2xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    {/* Imagen pequeña izquierda */}
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                      {linkedSite.coverUrl && (
+                        <Image
+                          src={linkedSite.coverUrl}
+                          alt={linkedSite.name}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Sitio vinculado
+                      </p>
+                      <p className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                        {linkedSite.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {siteCategoryLabel(linkedSite.category)} · {linkedSite.address}
+                      </p>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          linkedSite.isOpen
+                            ? "animate-pulse bg-emerald-500"
+                            : "bg-gray-300 dark:bg-gray-600"
+                        )} />
+                        <span className={cn(
+                          "text-[11px] font-medium",
+                          linkedSite.isOpen
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-muted-foreground"
+                        )}>
+                          {linkedSite.openLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Flecha */}
+                    <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
                 </div>
               </>
             )}

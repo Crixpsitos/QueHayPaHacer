@@ -11,7 +11,6 @@ import {
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
-import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { SelectCurrency } from "@/presentation/events/components/ui/SelectCurrency";
 import { AlertTriangle } from "lucide-react";
@@ -72,7 +71,6 @@ const parseDots = (formatted: string): number => {
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
   const registrationType = form.watch("registrationType");
-  const { location } = useLocationInfo();
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
 
   const registrationTypeLabel: Record<string, string> = {
@@ -95,15 +93,6 @@ export function Step7Pricing({ form }: Step7PricingProps) {
       });
     });
   }, []);
-
-  useEffect(() => {
-    if (!location?.country || currencies.length === 0) return;
-
-    const userCountryCode = location.country.isoCode;
-    const initialCurrency = currencies.find((c) => c.countryIsoCode === userCountryCode)?.currencyCode || "COP";
-
-    form.setValue("price.currency", initialCurrency);
-  }, [location?.country, currencies, form]);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">

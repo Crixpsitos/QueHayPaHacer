@@ -84,6 +84,24 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
     isProfessionalOwner = owner?.accountType === "professional";
   }
 
+  // Sitio vinculado (si el evento tiene location.siteId)
+  let linkedSite: { id: string; slug: string; name: string; category: string; address: string; coverUrl: string; isOpen: boolean; openLabel: string } | undefined;
+  const siteId = event.location?.siteId;
+  if (siteId) {
+    const { sitesService } = createServerContainer();
+    const site = await sitesService.getSiteDetailById(siteId);
+    if (site) {
+      const DAY_MAP: Record<number, string> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
+      const now = new Date();
+      const sched = (site.schedule as Record<string, { open: string; close: string; closed: boolean }>)?.[DAY_MAP[now.getDay()]];
+      const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
+      const cur = now.getHours() * 60 + now.getMinutes();
+      const isOpen = !!(sched && !sched.closed && cur >= toMins(sched.open) && cur < toMins(sched.close));
+      const openLabel = !sched ? "Horario no disponible" : sched.closed ? "Cerrado hoy" : isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}`;
+      linkedSite = { id: site.id, slug: site.slug, name: site.name, category: site.category, address: site.address, coverUrl: site.coverUrl, isOpen, openLabel };
+    }
+  }
+
   return (
     <>
       <h1 className="sr-only">{viewModel.title}</h1>
@@ -93,6 +111,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
         initialRegistered={initialRegistered}
         isOwner={isOwner}
         isProfessionalOwner={isProfessionalOwner}
+        linkedSite={linkedSite}
       />
     </>
   );

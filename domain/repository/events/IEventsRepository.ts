@@ -27,6 +27,8 @@ export interface IEventsRepository extends IBaseRepository<Events>{
 
     incrementLikes(eventId: string, delta: number): Promise<void>;    
     incrementShares(eventId: string, delta: number): Promise<void>;
-    /** Eventos publicados vinculados a un sitio por location.siteId. */
+    /** Eventos publicados vinculados a un sitio por location.siteId O siteIds[]. */
     findPublishedBySiteId(siteId: string, limit?: number): Promise<Events[]>;
+    /** Escribe el array siteIds en el documento raz del evento multi-date. */
+    updateSiteIds(eventId: string, siteIds: string[]): Promise<void>;
 }

@@ -129,9 +129,19 @@ export class EventsService {
     return this.eventsRepository.findByCategoryPaginated(categoryId, limit, cursor);
   }
 
-  /** Eventos publicados vinculados a un sitio por location.siteId. */
+  async syncSiteIds(eventId: string, siteIds: string[]): Promise<void> {
+    await this.eventsRepository.updateSiteIds(eventId, siteIds);
+  }
+
+  /** Eventos publicados vinculados a un sitio — solo vigentes (endDate >= hoy), próximos primero. */
   async getEventsBySiteId(siteId: string, limit = 8) {
-    return this.eventsRepository.findPublishedBySiteId(siteId, limit);
+    const now = new Date();
+    // Traer más para compensar los expirados que se filtran en memoria
+    const all = await this.eventsRepository.findPublishedBySiteId(siteId, limit + 20);
+    return all
+      .filter((e) => !e.endDate || e.endDate >= now)
+      .sort((a, b) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0))
+      .slice(0, limit);
   }
 
 }

@@ -551,7 +551,7 @@ export function SessionForm({
             <Field>
               <div className="flex items-center justify-between">
                 <FieldLabel className="text-sm font-medium text-zinc-700">
-                  Título <span className="font-normal text-gray-400">(opcional)</span>
+                  Título
                 </FieldLabel>
                 <span className="font-mono text-xs text-gray-400">{titleVal.length}/80</span>
               </div>
@@ -566,7 +566,7 @@ export function SessionForm({
             <Field>
               <div className="flex items-center justify-between">
                 <FieldLabel className="text-sm font-medium text-zinc-700">
-                  Sinopsis <span className="font-normal text-gray-400">(opcional)</span>
+                  Sinopsis
                 </FieldLabel>
                 <span className="font-mono text-xs text-gray-400">{shortDescVal.length}/150</span>
               </div>
@@ -583,7 +583,7 @@ export function SessionForm({
             {/* Descripción detallada */}
             <Field>
               <FieldLabel className="text-sm font-medium text-zinc-700">
-                Descripción detallada <span className="font-normal text-gray-400">(opcional)</span>
+                Descripción detallada
               </FieldLabel>
               <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-zinc-900">
                 <RichTextEditor

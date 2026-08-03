@@ -6,6 +6,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { updateTag } from "next/cache";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
+import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 
 type DeleteSessionResult =
   | { success: true }
@@ -24,6 +25,7 @@ export async function deleteEventSessionAction(
     const { eventSessionService } = createServerContainer();
     await eventSessionService.deleteSession(eventId, sessionId);
     await syncEventDateRange(eventId);
+    await syncEventSiteIds(eventId);
     updateTag(`event-sessions-${eventId}`);
     return { success: true };
   } catch (error) {

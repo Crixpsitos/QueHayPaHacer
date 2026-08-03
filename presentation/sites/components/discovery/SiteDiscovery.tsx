@@ -29,6 +29,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { getInitials } from "@/app/lib/utils/getInitials";
 import { SiteLocalBusinessJsonLd, SiteItemListJsonLd } from "./SiteJsonLd";
 import { recordSiteInteractionAction } from "@/app/actions/sites/record-site-interaction.action";
 import type { SiteDetail, SiteSchedule, WeekDay } from "../../view-models/SiteFormViewModel";
@@ -294,7 +295,7 @@ export function SiteDiscoveryCard({
                 <AvatarImage src={site.author.photoURL} alt={site.author.displayName} />
               )}
               <AvatarFallback className="text-[10px]">
-                {site.author.displayName.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join("")}
+                {getInitials(site.author.displayName)}
               </AvatarFallback>
             </Avatar>
             <span className="text-xs text-muted-foreground truncate">

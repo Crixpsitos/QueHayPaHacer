@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { updateTag } from "next/cache";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
+import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 import { SessionSchema } from "@/application/dto/events/EventSessionDto";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
 import type { EventSession } from "@/domain/entities/events/EventSession";
@@ -51,6 +52,7 @@ export async function createEventSessionAction(
       eventId,
     });
     await syncEventDateRange(eventId);
+    await syncEventSiteIds(eventId);
     updateTag(`event-sessions-${eventId}`);
     return { success: true, session, hasOverlap };
   } catch (error) {

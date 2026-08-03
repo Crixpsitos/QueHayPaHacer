@@ -93,7 +93,14 @@ export class EventSessionService {
       }
     }
 
-    const session = await this.repo.update(eventId, sessionId, data);
+    // Mientras la sesión es borrador, regenerar el slug cuando cambia el título
+    let updateData: typeof data = data;
+    if (data.title && data.status === "draft" && !data.slug) {
+      const newSlug = await this.buildUniqueSlug(eventId, data.title, sessionId);
+      updateData = { ...data, slug: newSlug };
+    }
+
+    const session = await this.repo.update(eventId, sessionId, updateData);
     return { session, hasOverlap: false };
   }
 

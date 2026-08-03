@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { CampaignCarouselContainer } from "@/app/components/feature/home/campaign/CampaignCarouselContainer";
 import { CampaignCarouselSkeleton } from "@/app/components/feature/home/campaign/CampaignCarouselSkeleton";
-import { ExploreSearchBar } from "@/app/components/feature/home/ExploreSearchBar";
+import { HomeSearchBar } from "@/app/components/feature/home/HomeSearchBar";
 import { Suspense } from "react";
 import { CategoriesContainer } from "@/presentation/categories/components/CategoriesContainer";
 import { CategoriesSkeleton } from "@/presentation/categories/components/CategoriesSkeleton";
@@ -24,7 +24,7 @@ export default function HomePage() {
         <CampaignCarouselContainer />
       </Suspense>
       <Section spacing="sm" className="mt-4">
-        <ExploreSearchBar />
+        <HomeSearchBar />
       </Section>
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
