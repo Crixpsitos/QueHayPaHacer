@@ -23,6 +23,8 @@ interface EventCardInteractiveProps {
   variant?: "horizontal" | "vertical";
   /** Máximo de columnas en modo vertical (default 4). */
   columns?: 2 | 3 | 4;
+  /** Oculta la fila del autor en cada tarjeta. */
+  hideAuthor?: boolean;
 }
 
 interface PendingLikeState {
@@ -41,6 +43,7 @@ export function EventCardInteractive({
   info,
   variant = "horizontal",
   columns = 4,
+  hideAuthor = false,
 }: EventCardInteractiveProps) {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
@@ -211,6 +214,7 @@ export function EventCardInteractive({
             initialLiked={effectiveLikes[event.id] ?? false}
             viewCount={event.analytics?.views ?? 0}
             isFirstEvent={event.metadata?.isFirstEvent ?? false}
+            hideAuthor={hideAuthor}
             onLike={handleLike}
             onShare={(ev) => shareEventAction(ev.id)}
             onViewDetails={handleViewDetails}

@@ -18,4 +18,5 @@ export interface IEventsFirebaseRepository {
     incrementShares(eventId: string, delta: number): Promise<void>;
     createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
     findPublishedBySiteId(siteId: string, limit?: number): Promise<FirebaseEventsDto[]>;
+    updateSiteIds(eventId: string, siteIds: string[]): Promise<void>;
 }

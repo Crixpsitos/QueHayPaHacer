@@ -44,15 +44,17 @@ const CLICKS_ITEM = {
 
 interface EventStatsPanelProps {
   stats: EventStatsViewModel;
+  /** Oculta el contador de Likes (sesiones multi-date: el like es del evento padre). */
+  hideLikes?: boolean;
 }
 
-export function EventStatsPanel({ stats }: EventStatsPanelProps) {
+export function EventStatsPanel({ stats, hideLikes = false }: EventStatsPanelProps) {
   // Para externos, la segunda métrica es "Clicks" (no "Registros", que sería 0).
   const isExternal = stats.registrationType === "external";
   const statItems = [
     VIEWS_ITEM,
     isExternal ? CLICKS_ITEM : REGISTRATIONS_ITEM,
-    LIKES_ITEM,
+    ...(!hideLikes ? [LIKES_ITEM] : []),
     SHARES_ITEM,
     SCORE_ITEM,
   ];

@@ -51,8 +51,6 @@ const SITE_JSONLD = [
 ];
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
-import { IpLocationProvider } from "./store/Location/IpLocationProvider";
-import { ServerLocationHydration } from "@/presentation/events/components/hydrator/ServerLocationHydration";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -90,16 +88,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
         />
         <AuthProvider user={null}>
-          <IpLocationProvider>
-            <Suspense fallback={null}>
-              <ServerLocationHydration />
-            </Suspense>
-
             <Suspense fallback={null}>
               <AuthPathWatcher />
             </Suspense>
             {children}
-          </IpLocationProvider>
         </AuthProvider>
         <Toaster />
       </body>

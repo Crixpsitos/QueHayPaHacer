@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import {
   Field,
@@ -11,51 +11,13 @@ import {
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
-import { useLocationInfo } from "@/app/store/Location/IpLocationContext";
 import { FormEventDto } from "@/application/dto/events/EventDto";
-import { SelectCurrency } from "@/presentation/events/components/ui/SelectCurrency";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/app/components/ui/button/button";
 
 interface Step7PricingProps {
   form: UseFormReturn<FormEventDto>;
 }
-
-interface CurrencyOption {
-  currencyCode: string;
-  symbol: string;
-  countryName: string;
-  countryIsoCode: string;
-}
-
-const loadCurrenciesValues = async (): Promise<CurrencyOption[]> => {
-  const { getAllISOCodes } = await import("iso-country-currency");
-  const allIsoData = getAllISOCodes();
-
-  const uniqueMap = new Map<string, CurrencyOption>();
-
-  allIsoData.forEach((item) => {
-    if (!item.currency || !item.iso) return;
-
-    if (uniqueMap.has(item.currency)) {
-      const existing = uniqueMap.get(item.currency);
-      if (existing && item.countryName && !existing.countryName.includes(item.countryName)) {
-        existing.countryName = `${existing.countryName}, ${item.countryName}`;
-      }
-    } else {
-      uniqueMap.set(item.currency, {
-        currencyCode: item.currency,
-        symbol: item.symbol || "$",
-        countryName: item.countryName || "",
-        countryIsoCode: item.iso,
-      });
-    }
-  });
-
-  return Array.from(uniqueMap.values()).sort((a, b) =>
-    a.currencyCode.localeCompare(b.currencyCode)
-  );
-};
 
 const formatWithDots = (value: number | string): string => {
   const raw = String(value).replace(/\D/g, "");
@@ -72,8 +34,11 @@ const parseDots = (formatted: string): number => {
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
   const registrationType = form.watch("registrationType");
-  const { location } = useLocationInfo();
-  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+  const [displayAmount, setDisplayAmount] = useState<string>(() => {
+    const initial = form.getValues("price.amount");
+    return initial ? formatWithDots(initial) : "";
+  });
+  const [showPaymentWarning, setShowPaymentWarning] = useState(false);
 
   const registrationTypeLabel: Record<string, string> = {
     none: "Sin registro",
@@ -81,29 +46,6 @@ export function Step7Pricing({ form }: Step7PricingProps) {
     external: "Registro externo",
     form: "Formulario personalizado",
   };
-  const [, startTransition] = useTransition();
-  const [displayAmount, setDisplayAmount] = useState<string>(() => {
-    const initial = form.getValues("price.amount");
-    return initial ? formatWithDots(initial) : "";
-  });
-  const [showPaymentWarning, setShowPaymentWarning] = useState(false);
-
-  useEffect(() => {
-    loadCurrenciesValues().then((data) => {
-      startTransition(() => {
-        setCurrencies(data);
-      });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!location?.country || currencies.length === 0) return;
-
-    const userCountryCode = location.country.isoCode;
-    const initialCurrency = currencies.find((c) => c.countryIsoCode === userCountryCode)?.currencyCode || "COP";
-
-    form.setValue("price.currency", initialCurrency);
-  }, [location?.country, currencies, form]);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -245,7 +187,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
               )}
             />
 
-            {/* Campo de Moneda Virtualizado (Simetría de UI Perfecta) */}
+            {/* Campo de Moneda - Solo COP por ahora (MVP) */}
             <Controller
               name="price.currency"
               control={form.control}
@@ -262,21 +204,15 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                       Tipo de moneda para la pasarela de pagos.
                     </FieldDescription>
                   </div>
-                  <SelectCurrency<CurrencyOption>
-                    options={currencies}
-                    value={field.value || ""}
-                    invalid={fieldState.invalid}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    ref={field.ref}
-                    getValue={(option) => option.currencyCode}
-                    getLabel={(option) => 
-                      option.currencyCode === "COP"
-                        ? "COP (CO$)"
-                        : `${option.currencyCode} (${option.symbol}) - PRÓXIMAMENTE`
-                    }
-                    getDisabled={(option) => option.currencyCode !== "COP"}
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-2 rounded-lg bg-gray-100 text-sm font-medium text-gray-700 border border-gray-200">
+                      COP (CO$)
+                    </span>
+                    <span className="text-xs text-gray-400 font-medium">
+                      Única moneda disponible en el MVP
+                    </span>
+                  </div>
+                  <input type="hidden" name="price.currency" value="COP" />
                   {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
                 </Field>
               )}

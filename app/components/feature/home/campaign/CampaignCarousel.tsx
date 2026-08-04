@@ -157,7 +157,7 @@ const CampaignCarouselComponent = ({
   return (
     <div className="relative h-full w-full">
       <Carousel
-        orientation="vertical"
+        orientation="horizontal"
         opts={{ loop: true, align: "start" }}
         setApi={setCarouselApi}
         className="h-full w-full"
@@ -170,16 +170,22 @@ const CampaignCarouselComponent = ({
                 key={campaign.id}
                 className="relative h-full overflow-hidden isolate"
               >
-                <ResponsivePicture
-                  desktop={campaign.images.desktop}
-                  tablet={campaign.images.tablet}
-                  mobile={campaign.images.mobile}
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
+                {/* Imagen absoluta para llenar el container independientemente del height-chain de Embla */}
+                <div className="absolute inset-0">
+                  <ResponsivePicture
+                    desktop={campaign.images.desktop}
+                    tablet={campaign.images.tablet}
+                    mobile={campaign.images.mobile}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    aspectRatio="auto"
+                    pictureClassName="h-full"
+                  />
+                </div>
                 <div className="absolute inset-0 z-10 bg-linear-to-t from-black/95 via-black/50 to-transparent" />
+                {/* Indicador numérico — solo en sm+ */}
                 <div
                   className={cn(
-                    "absolute left-4 top-4 z-20 transition-all duration-500 sm:left-6 sm:top-6 lg:left-8 lg:top-8",
+                    "absolute left-4 top-4 z-20 hidden transition-all duration-500 sm:block sm:left-6 sm:top-6 lg:left-8 lg:top-8",
                     isActive
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 -translate-y-4",
@@ -195,8 +201,8 @@ const CampaignCarouselComponent = ({
                     </span>
                   </div>
                 </div>
-                <div className="absolute inset-x-0 bottom-0 z-20 p-3 pb-5 pr-3 sm:p-5 sm:pb-6 sm:pr-6 lg:p-6 lg:pb-7 lg:pr-8">
-                  <div className="flex min-h-[210px] flex-col justify-end gap-4 sm:min-h-[240px] lg:min-h-0 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+                <div className="absolute inset-x-0 bottom-0 z-20 p-6 pb-14 sm:p-5 sm:pb-6 sm:pr-6 lg:p-6 lg:pb-7 lg:pr-8">
+                  <div className="flex flex-col justify-end gap-3 sm:min-h-[240px] lg:min-h-0 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
                     <div className="max-w-xl sm:max-w-2xl lg:max-w-3xl">
                       {campaign.isSponsored && (
                         <div
@@ -228,7 +234,7 @@ const CampaignCarouselComponent = ({
                       {campaign.description && (
                         <p
                           className={cn(
-                            "mt-2 text-sm leading-relaxed text-white/70 transition-all duration-500 delay-150 sm:text-base lg:max-w-xl",
+                            "mt-2 hidden text-sm leading-relaxed text-white/70 transition-all duration-500 delay-150 sm:block sm:text-base lg:max-w-xl",
                             isActive
                               ? "opacity-100 translate-y-0"
                               : "opacity-0 translate-y-4",
@@ -242,7 +248,7 @@ const CampaignCarouselComponent = ({
                     {campaign?.cta && campaign.cta?.length > 0 && (
                       <div
                         className={cn(
-                          "hidden flex-row gap-3 transition-all duration-500 delay-200 sm:flex lg:gap-4 lg:mt-4",
+                          "flex flex-row gap-3 transition-all duration-500 delay-200 lg:gap-4 lg:mt-4",
                           isActive
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-4",
@@ -280,12 +286,29 @@ const CampaignCarouselComponent = ({
             <Hand className="h-6 w-6 text-white" />
           </div>
           <span className="text-xs font-medium text-white/80">
-            Desliza hacia arriba
+            Desliza hacia los lados
           </span>
         </div>
       </div>
 
-      <div className="absolute right-3 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 sm:right-6 sm:gap-3 lg:right-8">
+      {/* Dots mobile — centro-abajo, horizontal */}
+      <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:hidden">
+        {visibleDots.map(({ campaign, index }) => (
+          <button
+            key={`dot-mobile-${campaign.id}-${index}`}
+            type="button"
+            onClick={() => scrollToIndex(index)}
+            className={cn(
+              "rounded-full bg-white transition-all duration-300",
+              currentIndex === index ? "h-2 w-5" : "h-2 w-2 opacity-60",
+            )}
+            aria-label={`Ir al slide ${index + 1}`}
+          />
+        ))}
+      </div>
+
+      {/* Dots desktop — derecha con flechas */}
+      <div className="absolute right-3 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-center gap-2 sm:flex sm:right-6 sm:gap-3 lg:right-8">
         {/* Up Arrow */}
         <button
           onClick={scrollPrev}

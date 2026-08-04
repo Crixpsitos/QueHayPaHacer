@@ -28,7 +28,7 @@ export const CampaignCarouselContainer = async () => {
   return (
     <Section
       className="overflow-hidden"
-      containerClassName="w-full overflow-hidden rounded-xl aspect-[8/3]"
+      containerClassName="w-full overflow-hidden rounded-xl aspect-video sm:aspect-[8/3]"
       spacing="sm"
     >
       <CampaignCarousel campaings={campaigns} />

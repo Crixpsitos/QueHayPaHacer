@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { updateTag } from "next/cache";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
+import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
 type UpdateSessionResult =
@@ -31,6 +32,7 @@ export async function updateEventSessionAction(
       data,
     );
     await syncEventDateRange(eventId);
+    await syncEventSiteIds(eventId);
     updateTag(`event-sessions-${eventId}`);
     return { success: true, session, hasOverlap };
   } catch (error) {

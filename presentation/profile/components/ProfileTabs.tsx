@@ -3,9 +3,10 @@
 import { useEffect, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, BarChart3, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard } from "lucide-react";
+import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, BarChart3, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard, Building2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 import type {
   UserBadge,
   UserEvent,
@@ -307,10 +308,14 @@ function ProfileTabsInner({
                     const clicks = event.analytics?.clicks ?? 0;
                     const registrations = event.analytics?.registrations ?? 0;
                     const shares = event.analytics?.shares ?? 0;
-                    const interactions = likesCount + clicks + registrations + shares;
+                    const isMultiDate = event.eventType === "multi-date";
+                    // Multi-date: registros y capacity viven en sesiones, no en el evento padre
+                    const interactions = isMultiDate
+                      ? likesCount + shares
+                      : likesCount + clicks + registrations + shares;
                     const engagement = views > 0 ? Math.min(100, (interactions / views) * 100) : 0;
                     const occupancy =
-                      typeof event.capacity === "number" && event.capacity > 0
+                      !isMultiDate && typeof event.capacity === "number" && event.capacity > 0
                         ? Math.min(100, (registrations / event.capacity) * 100)
                         : undefined;
 
@@ -343,6 +348,11 @@ function ProfileTabsInner({
                       >
                         {eventTimeState.label}
                       </span>
+                      {event.eventType === "multi-date" && (
+                        <span className="inline-flex items-center rounded-full border border-purple-400/60 bg-purple-500/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                          Varias fechas
+                        </span>
+                      )}
                     </div>
 
                     <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
@@ -364,25 +374,28 @@ function ProfileTabsInner({
                     <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                       <div className="flex items-center gap-2 text-xs font-medium text-foreground/80">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>Agenda del evento</span>
+                        <span>{event.eventType === "multi-date" ? "Rango de fechas" : "Agenda del evento"}</span>
                       </div>
-
                       <div className="mt-2 grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
                         {event.startDate && (
                           <div className="flex items-center justify-between gap-2">
-                            <span>Inicio</span>
+                            <span>{event.eventType === "multi-date" ? "Desde" : "Inicio"}</span>
                             <span className="font-medium text-foreground/80">{formatDateTime(event.startDate)}</span>
                           </div>
                         )}
                         {event.endDate && (
                           <div className="flex items-center justify-between gap-2">
-                            <span>Fin</span>
+                            <span>{event.eventType === "multi-date" ? "Hasta" : "Fin"}</span>
                             <span className="font-medium text-foreground/80">{formatDateTime(event.endDate)}</span>
                           </div>
+                        )}
+                        {event.eventType === "multi-date" && !event.startDate && (
+                          <p className="text-muted-foreground/60">Fechas por confirmar en sesiones</p>
                         )}
                       </div>
                     </div>
 
+                    {event.eventType !== "multi-date" && (
                     <div className="grid grid-cols-1 gap-2 rounded-xl border border-border/60 bg-background p-3 text-xs text-muted-foreground">
                       {event.location?.venue && (
                         <div className="flex items-center gap-2">
@@ -400,6 +413,13 @@ function ProfileTabsInner({
                         )}
                       </div>
                     </div>
+                    )}
+                    {event.eventType === "multi-date" && (
+                    <div className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-300">
+                      <Sparkles className="size-3.5 shrink-0" />
+                      <span>Precio y ubicación varían por sesión. <Link href={`/eventos/${event.id}`} className="underline">Ver sesiones</Link></span>
+                    </div>
+                    )}
 
                     <div className="rounded-xl border border-border/60 bg-background p-3">
                       <div className="mb-2 flex items-center justify-between">
@@ -430,21 +450,22 @@ function ProfileTabsInner({
                         </div>
                         <div className="rounded-lg bg-muted/40 p-2">
                           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Users className="h-3.5 w-3.5" />
-                            Registros
+                            {isMultiDate ? <Share2 className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
+                            {isMultiDate ? "Compartidos" : "Registros"}
                           </div>
-                          <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(registrations)}</p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(isMultiDate ? shares : registrations)}</p>
                         </div>
                       </div>
 
                       <div className="mt-2 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          {/* "Clicks" solo tiene sentido en eventos con registro externo
-                              (es el único flujo que incrementa analytics.clicks). */}
-                          {event.registrationType === "external" && (
+                          {/* "Clicks" solo tiene sentido en eventos con registro externo */}
+                          {!isMultiDate && event.registrationType === "external" && (
                             <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3" />Clicks: {formatCompactNumber(clicks)}</span>
                           )}
+                          {!isMultiDate && (
                           <span className="inline-flex items-center gap-1"><Share2 className="h-3 w-3" />Compartidos: {formatCompactNumber(shares)}</span>
+                          )}
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
@@ -554,22 +575,146 @@ function ProfileTabsInner({
             ) : (
               <motion.div
                 key="sites-content"
-                className="space-y-3"
+                className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
               >
                 {sites.map((site) => (
-                  <motion.div
+                  <motion.article
                     key={site.id}
                     variants={itemVariants}
-                    className="rounded-lg border border-border p-4"
+                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-xl"
                   >
-                    <p className="font-semibold">{site.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">{formatDate(site.createdAt)}</p>
-                  </motion.div>
+                    {/* Cover image */}
+                    <Link href={`/donde-ir/${site.slug || site.id}`} className="block">
+                      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                        {site.coverUrl ? (
+                          <>
+                            <Image
+                              src={site.coverUrl}
+                              alt={site.name}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
+                          </>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+                            <Building2 className="size-10" />
+                          </div>
+                        )}
+                        {/* Categoría */}
+                        <div className="absolute left-3 top-3">
+                          <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                            {siteCategoryLabel(site.category) || "Sitio"}
+                          </span>
+                        </div>
+                        {/* Estado publicación */}
+                        <div className="absolute right-3 top-3">
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm ${
+                            site.publicationStatus === "published" && site.moderationStatus === "approved"
+                              ? "bg-emerald-500/80 text-white"
+                              : site.moderationStatus === "rejected"
+                                ? "bg-red-500/80 text-white"
+                                : "bg-amber-500/80 text-white"
+                          }`}>
+                            {site.publicationStatus === "draft"
+                              ? "Borrador"
+                              : site.moderationStatus === "approved"
+                                ? "Publicado"
+                                : site.moderationStatus === "rejected"
+                                  ? "Rechazado"
+                                  : "En revisión"}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="space-y-3 p-4">
+                      <div>
+                        <Link href={`/donde-ir/${site.slug || site.id}`}>
+                          <p className="line-clamp-1 text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">{site.name}</p>
+                        </Link>
+                        {site.address && (
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <MapPin className="size-3.5 shrink-0" />
+                            <span className="truncate">{site.address}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Analytics */}
+                      <div className="rounded-xl border border-border/60 bg-background p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/75">
+                            <BarChart3 className="size-3.5" />
+                            Rendimiento
+                          </div>
+                          {(() => {
+                            const siteViews = site.analytics.views;
+                            const siteLikes = site.analytics.likes;
+                            const siteEngagement = siteViews > 0 ? Math.min(100, (siteLikes / siteViews) * 100) : 0;
+                            return (
+                              <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <TrendingUp className="size-3" />
+                                {siteEngagement.toFixed(1)}% engagement
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-lg bg-muted/40 p-2">
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Eye className="size-3.5" />Vistas</div>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(site.analytics.views)}</p>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 p-2">
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Heart className="size-3.5" />Likes</div>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(site.analytics.likes)}</p>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 p-2">
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Calendar className="size-3.5" />Eventos</div>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{site.analytics.eventCount}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-foreground/70" style={{ width: `${Math.max(4, site.analytics.views > 0 ? Math.min(100, (site.analytics.likes / site.analytics.views) * 100) : 0)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      {canEdit && (
+                        <div className="flex gap-2">
+                          {site.publicationStatus === "published" && site.moderationStatus === "approved" && (
+                            <Link
+                              href={`/donde-ir/${site.slug || site.id}`}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                            >
+                              <Eye className="size-4" /> Ver sitio
+                            </Link>
+                          )}
+                          <Link
+                            href={`/sites/${site.id}/edit`}
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-violet/40 bg-brand-violet/5 px-3 py-2 text-sm font-semibold text-brand-violet transition-colors hover:bg-brand-violet/10"
+                          >
+                            <Pencil className="size-4" /> Editar
+                          </Link>
+                          {showStudioLink && (
+                            <Link
+                              href={`/studio/sites/${site.id}`}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+                            >
+                              <LayoutDashboard className="size-4" /> Estudio
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.article>
                 ))}
               </motion.div>
             )}

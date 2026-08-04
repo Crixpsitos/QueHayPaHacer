@@ -60,8 +60,8 @@ function toStoredLocation(loc: Location) {
     city: cityDetail(loc.city),
     department: detailWithSlug(loc.department),
     country: detailWithSlug(loc.country),
-    coordinates: new GeoPoint(lat, lng),
-  };
+    coordinates: new GeoPoint(lat, lng),    lat,
+    lng,  };
 }
 
 export class EventsFirebaseMapper implements IEventsMapper {

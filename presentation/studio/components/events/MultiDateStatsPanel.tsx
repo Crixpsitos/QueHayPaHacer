@@ -61,10 +61,11 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
   const totalItems = [
     { key: "views", label: "Vistas", icon: Eye, value: stats.totals.views },
     {
-      key: "registrations",
-      label: "Registros",
-      icon: Users,
-      value: stats.totals.registrations,
+      key: "likes",
+      label: "Likes",
+      icon: Heart,
+      // Likes solo del evento padre — sumar los de sesiones contaría doble
+      value: stats.event.likes,
     },
     { key: "shares", label: "Compartidos", icon: Share2, value: stats.totals.shares },
     {

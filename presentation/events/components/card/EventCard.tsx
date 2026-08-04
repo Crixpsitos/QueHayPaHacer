@@ -21,8 +21,7 @@ import {
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+
 import {
   ArrowRight,
   Calendar,
@@ -62,16 +61,24 @@ interface EventCardProps {
   viewCount?: number;
   /** Indica si es el primer evento del autor */
   isFirstEvent?: boolean;
+  /** Oculta la fila del autor (ej. en itinerarios donde el contexto ya lo implica) */
+  hideAuthor?: boolean;
 }
 
 function formatDate(date: string): string {
   return new Intl.DateTimeFormat("es-CO", {
+    timeZone: "America/Bogota",
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(date));
+}
+
+/** YYYY-MM-DD en zona Bogota — para comparar si dos ISO caen en el mismo día local. */
+function toBogoDay(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(iso));
 }
 
 
@@ -89,7 +96,8 @@ function getAuthorInitials(displayName: string): string {
  * pero con tokens semánticos para que invierta bien en modo oscuro.
  */
 function DatePill({ iso, label }: { iso: string; label: string }) {
-  const date = new Date(iso);
+  const fmt = (opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", ...opts }).format(new Date(iso));
   return (
     <div
       className="flex w-13 shrink-0 flex-col items-center rounded-lg bg-foreground py-1.5 text-background"
@@ -99,10 +107,10 @@ function DatePill({ iso, label }: { iso: string; label: string }) {
         {label}
       </span>
       <span className="text-lg font-bold leading-tight">
-        {format(date, "d", { locale: es })}
+        {fmt({ day: "numeric" })}
       </span>
       <span className="text-[9px] font-medium uppercase leading-none opacity-70">
-        {format(date, "MMM", { locale: es })}
+        {fmt({ month: "short" })}
       </span>
     </div>
   );
@@ -120,8 +128,7 @@ export const EventCard = ({
   className,
   prioritizeImage = false,
   viewCount = 0,
-  isFirstEvent = false,
-}: EventCardProps) => {
+  isFirstEvent = false,  hideAuthor = false,}: EventCardProps) => {
   const [shared, setShared] = useState(false);
 
 
@@ -149,10 +156,7 @@ export const EventCard = ({
   // El rango sale de las sesiones (primera startDate → última endDate), sincronizado
   // al guardar/publicar. Un multi-date sin sesiones todavía no tiene rango.
   const hasRange = isMultiDate && !!event.startDate && !!event.endDate;
-  const isSingleDay =
-    hasRange &&
-    new Date(event.startDate).toDateString() ===
-      new Date(event.endDate).toDateString();
+  const isSingleDay = hasRange && toBogoDay(event.startDate) === toBogoDay(event.endDate);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -334,8 +338,9 @@ export const EventCard = ({
               className={cn(
                 "flex mb-2",
                 variant === "horizontal"
-                  ? "flex-col items-start gap-0.5" // autor arriba, precio abajo
-                  : "flex-row items-center gap-2", // autor izquierda, precio derecha
+                  ? "flex-col items-start gap-0.5"
+                  : "flex-row items-center gap-2",
+                hideAuthor && "hidden",
               )}
             >
               <div className="flex items-center gap-2 w-full">

@@ -57,7 +57,7 @@ export default async function StudioSessionDetailPage({
         registrationType={stats.registrationType}
       />
 
-      <EventStatsPanel stats={stats} />
+      <EventStatsPanel stats={stats} hideLikes />
 
       {stats.status.toLowerCase() === "draft" ? (
         <DraftEventNotice eventId={id} />

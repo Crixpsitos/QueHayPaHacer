@@ -139,13 +139,35 @@ export class EventsFirebaseRepository
   }
 
   async findPublishedBySiteId(siteId: string, limit = 8): Promise<FirebaseEventsDto[]> {
-    const snap = await this.collection
-      .where("location.siteId", "==", siteId)
-      .where("status", "==", "published")
-      .orderBy("startDate", "desc")
-      .limit(limit)
-      .get();
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as FirebaseEventsDto);
+    const [standardSnap, multiDateSnap] = await Promise.all([
+      this.collection
+        .where("location.siteId", "==", siteId)
+        .where("status", "==", "published")
+        .orderBy("startDate", "desc")
+        .limit(limit)
+        .get(),
+      this.collection
+        .where("siteIds", "array-contains", siteId)
+        .where("status", "==", "published")
+        .orderBy("startDate", "desc")
+        .limit(limit)
+        .get(),
+    ]);
+    const seen = new Set<string>();
+    const results: FirebaseEventsDto[] = [];
+    for (const snap of [standardSnap, multiDateSnap]) {
+      for (const d of snap.docs) {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          results.push({ id: d.id, ...d.data() } as FirebaseEventsDto);
+        }
+      }
+    }
+    return results.slice(0, limit);
+  }
+
+  async updateSiteIds(eventId: string, siteIds: string[]): Promise<void> {
+    await this.collection.doc(eventId).update({ siteIds, updatedAt: FieldValue.serverTimestamp() });
   }
 
   async findById(id: string): Promise<FirebaseEventsDto | null> {

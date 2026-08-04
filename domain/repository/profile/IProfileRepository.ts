@@ -9,6 +9,7 @@ export interface UserEvent {
   title: string;
   description: string;
   status: string;
+  eventType?: "standard" | "multi-date";
   registrationType?: "none" | "internal" | "external" | "form";
   createdAt: Date;
   startDate?: Date;
@@ -35,10 +36,19 @@ export interface UserEvent {
 
 export interface UserSite {
   id: string;
+  slug: string;
   name: string;
   address: string;
+  category: string;
   createdAt: Date;
-  image?: string;
+  coverUrl?: string;
+  publicationStatus: "draft" | "published";
+  moderationStatus: "pending" | "approved" | "rejected";
+  analytics: {
+    views: number;
+    likes: number;
+    eventCount: number;
+  };
 }
 
 export interface UserEventInteraction {

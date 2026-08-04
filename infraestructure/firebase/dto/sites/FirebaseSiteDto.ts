@@ -63,6 +63,8 @@ interface RawCityDetailDto {
 
 interface RawLocationDto {
   geo: GeoPoint                       // GeoPoint nativo de Firebase — SE MANTIENE
+  lat?: number                        // campo plano para consultas cliente
+  lng?: number
   country: RawGeoDetailDto
   department: RawGeoDetailDto
   city: RawCityDetailDto

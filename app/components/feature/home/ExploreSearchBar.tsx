@@ -160,14 +160,14 @@ export function ExploreSearchBar({
         </div>
 
         {/* Date range picker */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Popover open={calOpen} onOpenChange={setCalOpen}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 className={cn(
-                  "h-11 min-w-40 justify-start gap-2 rounded-2xl px-4 text-sm",
+                  "h-11 w-full justify-start gap-2 rounded-2xl px-4 text-sm sm:w-auto sm:min-w-40",
                   hasRange && "border-primary text-primary pr-8",
                 )}
               >
@@ -208,7 +208,8 @@ export function ExploreSearchBar({
 
       {/* Fila de filtros chips */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Gratis */}
+        {/* Gratis — solo visible si no estamos filtrando solo sitios */}
+        {!onlySites && (
         <button
           type="button"
           onClick={() => {
@@ -222,8 +223,10 @@ export function ExploreSearchBar({
           🆓 Gratis
           {free && <X className="size-3" />}
         </button>
+        )}
 
-        {/* Precio máximo */}
+        {/* Precio máximo — solo visible si no estamos filtrando solo sitios */}
+        {!onlySites && (
         <Popover open={priceOpen} onOpenChange={setPriceOpen}>
           <PopoverTrigger asChild>
             <button type="button" className={chipClass(hasMaxPrice)}>
@@ -277,8 +280,9 @@ export function ExploreSearchBar({
             </div>
           </PopoverContent>
         </Popover>
+        )}
 
-        {/* Promocionados */}
+        {/* Destacados */}
         <button
           type="button"
           onClick={() => { const next = !promoted; setPromoted(next); navigateWith({ promoted: next }); }}
@@ -305,14 +309,19 @@ export function ExploreSearchBar({
           {onlyEvents && <X className="size-3" />}
         </button>
 
-        {/* Solo sitios */}
+        {/* Solo sitios — al activar, limpia filtros de eventos */}
         <button
           type="button"
           onClick={() => {
             const next = !onlySites;
             setOnlySites(next);
-            if (next) setOnlyEvents(false);
-            navigateWith({ onlySites: next, onlyEvents: false });
+            if (next) {
+              setOnlyEvents(false);
+              setFree(false);
+              setMultiDate(false);
+              setMaxPriceInput("");
+            }
+            navigateWith({ onlySites: next, onlyEvents: false, free: false, multiDate: false, maxPrice: "" });
           }}
           className={chipClass(onlySites)}
         >
@@ -321,16 +330,18 @@ export function ExploreSearchBar({
           {onlySites && <X className="size-3" />}
         </button>
 
-        {/* Multi-fecha */}
-        <button
-          type="button"
-          onClick={() => { const next = !multiDate; setMultiDate(next); navigateWith({ multiDate: next }); }}
-          className={chipClass(multiDate)}
-        >
-          <CalendarDays className="size-3" />
-          Multi-fecha
-          {multiDate && <X className="size-3" />}
-        </button>
+        {/* Multi-fecha — oculto cuando onlySites está activo */}
+        {!onlySites && (
+          <button
+            type="button"
+            onClick={() => { const next = !multiDate; setMultiDate(next); navigateWith({ multiDate: next }); }}
+            className={chipClass(multiDate)}
+          >
+            <CalendarDays className="size-3" />
+            Multi-fecha
+            {multiDate && <X className="size-3" />}
+          </button>
+        )}
 
         {/* Limpiar todo */}
         {(free || hasMaxPrice || promoted || multiDate || onlyEvents || onlySites) && (

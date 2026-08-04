@@ -6,6 +6,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { updateTag } from "next/cache";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
+import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 import type { FormSessionDto } from "@/application/dto/events/EventSessionDto";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
@@ -62,12 +63,14 @@ export async function saveDraftSessionAction(
     if (data.id) {
       const { session } = await eventSessionService.updateSession(eventId, data.id, payload);
       await syncEventDateRange(eventId);
+      await syncEventSiteIds(eventId);
       updateTag(`event-sessions-${eventId}`);
       return { success: true, session };
     }
 
     const { session } = await eventSessionService.createSession(payload);
     await syncEventDateRange(eventId);
+    await syncEventSiteIds(eventId);
     updateTag(`event-sessions-${eventId}`);
     return { success: true, session };
   } catch (error) {

@@ -133,7 +133,7 @@ export const SessionSchema = v.pipe(
   ),
 );
 
-// ─── Schema para draft (todos los campos opcionales) ──────────────────────────
+// ─── Schema para el formulario de sesión (título/sinopsis/descripción son requeridos al publicar) ──
 
 export const FormSessionSchema = v.pipe(
   v.object({

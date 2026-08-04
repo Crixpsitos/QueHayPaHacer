@@ -18,6 +18,7 @@ export class ProfileFirebaseMapper {
       title: data.title ?? "Evento sin titulo",
       description: data.shortDescription ?? "Sin descripcion",
       status: data.status ?? "draft",
+      eventType: data.eventType === "multi-date" ? "multi-date" : "standard",
       registrationType: data.registrationType ?? "none",
       createdAt: this.toDate(data.createdAt),
       startDate: this.toOptionalDate(data.startDate ?? data.start),
@@ -45,12 +46,23 @@ export class ProfileFirebaseMapper {
 
   toUserSite(doc: FirestoreDoc): UserSite {
     const data = doc.data;
+    const media = (data.media ?? []) as Array<{ url?: string; isCover?: boolean }>;
+    const coverUrl = media.find((m) => m.isCover)?.url ?? media[0]?.url ?? undefined;
     return {
       id: doc.id,
+      slug: data.slug ?? doc.id,
       name: data.name ?? "Sitio sin nombre",
-      address: data.address ?? "Sin direccion",
+      address: data.location?.address ?? data.address ?? "Sin dirección",
+      category: data.category ?? "",
       createdAt: this.toDate(data.createdAt),
-      image: data.image,
+      coverUrl,
+      publicationStatus: data.publicationStatus ?? "draft",
+      moderationStatus: data.moderationStatus ?? "pending",
+      analytics: {
+        views: data.analytics?.views ?? 0,
+        likes: data.analytics?.likes ?? 0,
+        eventCount: data.analytics?.eventCount ?? 0,
+      },
     };
   }
 
