@@ -10,4 +10,7 @@ export function revalidateSite(uid: string, siteId?: string) {
   updateTag(`sites-${uid}`)
   if (siteId) updateTag(`site-${siteId}`)
   revalidateTag("explore", "max")
+  // Invalida los listados públicos (donde-ir, home sitios populares)
+  revalidateTag("site-list", "max")
+  revalidateTag("featured-sites", "max")
 }

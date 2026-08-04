@@ -2,10 +2,13 @@
 
 import { useEffect, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Activity, MapPin, Award, Calendar } from "lucide-react";
+import { Loader2, Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import Image from "next/image";
+import Link from "next/link";
 import type { UserBadge, UserEvent, UserSite } from "@/domain/repository/profile/IProfileRepository";
 import { PublicEventCard } from "./PublicEventCard";
+import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 
 interface PublicProfileTabsProps {
   uid: string;
@@ -142,21 +145,60 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
             ) : (
               <motion.div
                 key="sites-content"
-                className="grid gap-3 sm:grid-cols-2"
+                className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
               >
                 {sites.map((site) => (
-                  <motion.div
+                  <motion.article
                     key={site.id}
                     variants={itemVariants}
-                    className="rounded-xl border border-border bg-background p-4"
+                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                   >
-                    <p className="font-semibold text-foreground">{site.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
-                  </motion.div>
+                    <Link href={`/donde-ir/${site.slug || site.id}`} className="block">
+                      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                        {site.coverUrl ? (
+                          <>
+                            <Image
+                              src={site.coverUrl}
+                              alt={site.name}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
+                          </>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+                            <Building2 className="size-10" />
+                          </div>
+                        )}
+                        <div className="absolute left-3 top-3">
+                          <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                            {siteCategoryLabel(site.category) || "Sitio"}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="space-y-2 p-4">
+                      <Link href={`/donde-ir/${site.slug || site.id}`}>
+                        <p className="line-clamp-1 font-semibold text-foreground transition-colors group-hover:text-primary">{site.name}</p>
+                      </Link>
+                      {site.address && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="size-3.5 shrink-0" />
+                          <span className="truncate">{site.address}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1"><Eye className="size-3.5" />{site.analytics.views.toLocaleString("es-CO")}</div>
+                        <div className="flex items-center gap-1"><Heart className="size-3.5" />{site.analytics.likes.toLocaleString("es-CO")}</div>
+                        <div className="flex items-center gap-1"><Calendar className="size-3.5" />{site.analytics.eventCount} eventos</div>
+                      </div>
+                    </div>
+                  </motion.article>
                 ))}
               </motion.div>
             )}

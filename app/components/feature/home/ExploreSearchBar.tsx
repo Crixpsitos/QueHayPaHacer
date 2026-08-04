@@ -160,14 +160,14 @@ export function ExploreSearchBar({
         </div>
 
         {/* Date range picker */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Popover open={calOpen} onOpenChange={setCalOpen}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 className={cn(
-                  "h-11 min-w-40 justify-start gap-2 rounded-2xl px-4 text-sm",
+                  "h-11 w-full justify-start gap-2 rounded-2xl px-4 text-sm sm:w-auto sm:min-w-40",
                   hasRange && "border-primary text-primary pr-8",
                 )}
               >

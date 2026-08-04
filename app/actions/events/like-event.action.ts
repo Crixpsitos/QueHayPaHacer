@@ -36,6 +36,8 @@ export async function likeEventAction(
     updateTag(`event-${id}`);
     updateTag(`event-interaction-${userId}-${id}`);
     updateTag(`preference-events-${userId}`);
+    // Invalida el acumulado del estudio multi-date (event.likes vive ahí)
+    updateTag(`studio-multidate-${id}`);
     // revalidateTag (stale-while-revalidate) para el tab de Likes del perfil: una pequeña demora es aceptable
     revalidateTag(`profile-likes-${userId}`, "max");
 
