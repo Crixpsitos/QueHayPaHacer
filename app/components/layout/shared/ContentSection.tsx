@@ -14,7 +14,7 @@ export const ContentSection = ({ title, children, action }: ContentSectionProps)
   return (
     <Section spacing="sm" className="mt-4">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h2>
         {action && (
           <Link
             href={action.href}

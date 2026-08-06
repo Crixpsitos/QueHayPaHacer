@@ -185,11 +185,12 @@ export function SiteDiscoveryCard({
   );
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover">
       <SiteLocalBusinessJsonLd site={site} />
 
-      {/* Image + status overlay */}
-      <Link href={`/donde-ir/${site.slug || site.id}`} className="block relative aspect-4/3 w-full overflow-hidden bg-muted">
+      {/* Image wrapper — relative para el like button absoluto */}
+      <div className="relative">
+        <Link href={`/donde-ir/${site.slug || site.id}`} className="block relative aspect-4/3 w-full overflow-hidden bg-muted">
         {site.coverUrl ? (
           <Image
             src={site.coverUrl}
@@ -205,12 +206,23 @@ export function SiteDiscoveryCard({
           </div>
         )}
 
-        {/* Trending + New badges (top-right) */}
-        {(isTrending || site.isNew) && (
-          <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
+        {/* Trending + Open badges — top-left, apiladas verticalmente */}
+        {(isTrending || site.isNew || statusLabel) && (
+          <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+            {statusLabel && (
+              <span
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shadow backdrop-blur-sm transition-opacity duration-200",
+                  isOpen ? "bg-emerald-500/90 text-white" : "bg-zinc-800/80 text-zinc-200",
+                )}
+              >
+                {isOpen ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
+                {statusLabel}
+              </span>
+            )}
             {isTrending && (
               <span className="flex items-center gap-1 rounded-full bg-amber-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow backdrop-blur-sm">
-                <Flame className="size-3.5" aria-hidden="true" />
+                <Flame className="size-3.5" />
                 Tendencia
               </span>
             )}
@@ -221,34 +233,40 @@ export function SiteDiscoveryCard({
             )}
           </div>
         )}
+      </Link>
 
-        {/* Open / closed badge (top-left) */}
-        {openStatus === null ? (
-          <span
-            className="absolute left-3 top-3 h-6.5 w-32 animate-pulse rounded-full bg-zinc-300/70 dark:bg-zinc-700/70 backdrop-blur-sm"
+      {/* Like button — top-right, grande estilo Airbnb */}
+      <button
+        type="button"
+        onClick={(e) => { handleLike(e); }}
+        disabled={likeLoading || isLikesLoading}
+        aria-label={liked ? "Quitar me gusta" : "Me gusta"}
+        aria-pressed={liked}
+        className={cn(
+          "absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full shadow-dark-float transition-all",
+          isLikesLoading ? "animate-pulse bg-white/60" :
+          liked ? "bg-white" : "bg-white/80 hover:bg-white",
+        )}
+      >
+        {likeLoading ? (
+          <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
+        ) : (
+          <Heart
+            className={cn(
+              "size-5 transition-all",
+              liked ? "fill-[#E63946] text-[#E63946]" : "text-[#09090B]",
+              "group-hover:scale-110",
+            )}
             aria-hidden="true"
           />
-        ) : statusLabel ? (
-          <span
-            className={cn(
-              "absolute left-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shadow backdrop-blur-sm transition-opacity duration-200 opacity-100",
-              isOpen ? "bg-emerald-500/90 text-white" : "bg-zinc-800/80 text-zinc-200",
-            )}
-          >
-            {isOpen ? (
-              <CheckCircle2 className="size-3.5" aria-hidden="true" />
-            ) : (
-              <XCircle className="size-3.5" aria-hidden="true" />
-            )}
-            {statusLabel}
-          </span>
-        ) : null}
-      </Link>
+        )}
+      </button>
+      </div>
 
       {/* Body */}
       <Link href={`/donde-ir/${site.slug || site.id}`} className="flex flex-1 flex-col gap-2 px-4 pt-3 pb-2">
         {/* Category chip */}
-        <span className={cn("flex w-fit items-center gap-1 text-xs font-medium", cat.color)}>
+        <span className={cn("flex w-fit items-center gap-1 rounded-full bg-[#FDF2F4] px-2.5 py-1 text-xs font-semibold text-[#E63946]")}>
           <cat.Icon className="size-3.5" aria-hidden="true" />
           {cat.label}
         </span>
@@ -285,81 +303,36 @@ export function SiteDiscoveryCard({
         )}
       </Link>
 
-      {/* Footer: author + like + share */}
-      <div className="flex flex-col border-t border-border px-4 py-2.5 gap-1.5">
-        {/* Author */}
-        {'author' in site && site.author && (
-          <div className="flex items-center gap-2">
-            <Avatar size="sm">
-              {site.author.photoURL && (
-                <AvatarImage src={site.author.photoURL} alt={site.author.displayName} />
-              )}
-              <AvatarFallback className="text-[10px]">
-                {getInitials(site.author.displayName)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground truncate">
-              @{site.author.displayName}
-            </span>
-          </div>
-        )}
         {authError && (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            Inicia sesión para dar me gusta.
-          </p>
+          <p className="px-4 pb-1 text-xs text-amber-600">Inicia sesión para dar me gusta.</p>
         )}
-        <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {likes > 0 && (
-            <span className="flex items-center gap-1">
-              <Heart className="size-3.5 fill-rose-400 text-rose-400" aria-hidden="true" />
-              {likes.toLocaleString("es-CO")}
-            </span>
+        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+          {'author' in site && site.author && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Avatar size="sm">
+                {site.author.photoURL && (
+                  <AvatarImage src={site.author.photoURL} alt={site.author.displayName} />
+                )}
+                <AvatarFallback className="text-[10px]">
+                  {getInitials(site.author.displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate text-xs text-muted-foreground">@{site.author.displayName}</span>
+            </div>
           )}
-        </span>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={handleLike}
-            disabled={likeLoading || isLikesLoading}
-            aria-label={liked ? "Quitar me gusta" : "Me gusta"}
-            aria-pressed={liked}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-              isLikesLoading
-                ? "text-muted-foreground animate-pulse cursor-wait"
-                : liked
-            )}
-          >
-          {likeLoading ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Heart
-                className={cn("size-3.5 transition-all", liked && "fill-current scale-110")}
-                aria-hidden="true"
-              />
-            )}
-            {liked ? "Te gustó" : "Me gusta"}
-          </button>
-
           <button
             type="button"
             onClick={handleShare}
             aria-label="Compartir sitio"
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-              shared
-                ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted",
+              "ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+              shared ? "bg-emerald-50 text-emerald-600" : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <Share2 className="size-3.5" aria-hidden="true" />
             {shared ? "¡Copiado!" : "Compartir"}
           </button>
         </div>
-        </div>
-      </div>
     </article>
   );
 }
@@ -392,8 +365,11 @@ export function SiteDiscoveryGrid({
     const ids = sites.map((s) => s.id);
     if (ids.length === 0) return;
     setIsLikesLoading(true);
-    fetch(`/api/sites/likes?ids=${ids.join(",")}`)
-      .then((r) => r.json())
+    fetch(`/api/sites/likes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })      .then((r) => r.json())
       .then((likes: Record<string, boolean>) => {
         setLikedBySite(likes);
         setIsLikesLoading(false);

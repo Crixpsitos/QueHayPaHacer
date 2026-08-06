@@ -1,41 +1,26 @@
 "use client";
 
-import { AnimatedGradientText } from "@/app/components/ui/animated-gradient-text";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/app/components/ui/avatar";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button/button";
-import { CardContent, CardFooter, CardHeader } from "@/app/components/ui/card";
-import { EventCredits } from "../EventCredits";
-import { MagicCard } from "@/app/components/ui/magic-card";
 import Image from "next/image";
-import { Separator } from "@/app/components/ui/separator";
-import { ShimmerButton } from "@/app/components/ui/shimmer-button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
-
 import {
   ArrowRight,
   Calendar,
   Eye,
+  Heart,
   MapPin,
   Share2,
   Sparkles,
-  Tag,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { EventViewModel } from "../../view-models/EventViewModel";
-import { HeartLikeButton } from "./HeartLikeButton";
 
 interface EventCardProps {
   event: EventViewModel;
@@ -81,6 +66,32 @@ function toBogoDay(iso: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(iso));
 }
 
+/** Fecha compacta: "sáb, 9 ago · 8:00 p. m." */
+function formatDateCompact(iso: string): string {
+  return new Intl.DateTimeFormat("es-CO", {
+    timeZone: "America/Bogota",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+/** Rango de fechas para multi-date: "Del 11 al 15 de ago" */
+function formatDateRange(startIso: string, endIso: string): string {
+  const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", ...opts }).format(new Date(iso));
+  const sameDay = toBogoDay(startIso) === toBogoDay(endIso);
+  const startDay = fmt(startIso, { day: "numeric" });
+  const endDay = fmt(endIso, { day: "numeric" });
+  const endMonth = fmt(endIso, { month: "short" });
+  const startMonth = fmt(startIso, { month: "short" });
+  if (sameDay) return `El ${startDay} de ${endMonth}`;
+  if (startMonth === endMonth) return `Del ${startDay} al ${endDay} de ${endMonth}`;
+  return `Del ${startDay} de ${startMonth} al ${endDay} de ${endMonth}`;
+}
+
 
 function getAuthorInitials(displayName: string): string {
   return displayName
@@ -100,7 +111,7 @@ function DatePill({ iso, label }: { iso: string; label: string }) {
     new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", ...opts }).format(new Date(iso));
   return (
     <div
-      className="flex w-13 shrink-0 flex-col items-center rounded-lg bg-foreground py-1.5 text-background"
+      className="flex w-13 shrink-0 flex-col items-center rounded-xl bg-primary py-1.5 text-white"
       suppressHydrationWarning
     >
       <span className="text-[9px] font-medium uppercase leading-none opacity-70">
@@ -130,6 +141,19 @@ export const EventCard = ({
   viewCount = 0,
   isFirstEvent = false,  hideAuthor = false,}: EventCardProps) => {
   const [shared, setShared] = useState(false);
+  const [liked, setLiked] = useState(initialLiked ?? false);
+  const [likesCount, setLikesCount] = useState(initialLikes ?? event.analytics?.likes ?? 0);
+
+  const handleLike = useCallback(async () => {
+    const next = !liked;
+    setLiked(next);
+    setLikesCount((n) => n + (next ? 1 : -1));
+    const accepted = await onLike?.(event.id, next);
+    if (accepted === false) {
+      setLiked(!next);
+      setLikesCount((n) => n + (next ? -1 : 1));
+    }
+  }, [liked, event.id, onLike]);
 
 
   const handleShare = useCallback(async () => {
@@ -221,440 +245,217 @@ export const EventCard = ({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <MagicCard
+      <div
         className={cn(
-          "group overflow-hidden transition-all duration-300 h-full",
-          "hover:shadow-lg hover:-translate-y-0.5",
-          "focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
-          variant === "horizontal"
-            ? "flex flex-row w-full sm:w-[26rem]"
-            : "flex flex-col w-full",
+          "group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-card transition-all duration-300 h-full hover:-translate-y-1 hover:shadow-hover",
+          "focus-within:ring-2 focus-within:ring-primary/30 focus-within:ring-offset-2",
           className,
         )}
         aria-label={`Evento: ${event.title}`}
       >
-        {/* ── Imagen ── */}
-        <div
-          className={cn(
-            "relative shrink-0 overflow-hidden",
-            // Horizontal: imagen cuadrada de ancho fijo (si no, la card se mide por
-            // contenido y el flex-wrap queda disparejo). Vertical: full width arriba.
-            variant === "horizontal" ? "w-32 sm:w-40" : "w-full",
-          )}
+        {/* ── 1. CABECERA — imagen 16:9 ── */}
+        {/* Wrapper relative para el like button flotante */}
+        <div className="relative">
+        <Link
+          href={detailUrl}
+          onClick={() => onViewDetails?.(event)}
+          className="relative block w-full overflow-hidden rounded-t-2xl"
         >
-          <div className="relative aspect-square w-full">
-            <Image
-              src={event.mainImage?.url ?? ""}
-              alt={`Imagen principal de ${event.title}`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              loading={prioritizeImage ? "eager" : "lazy"}
-              fetchPriority={prioritizeImage ? "high" : "auto"}
-              priority={prioritizeImage}
-            />
-          </div>
+          <div className="relative aspect-video">
+            {event.mainImage?.url ? (
+              <>
+                <Image
+                  src={event.mainImage.url}
+                  alt={event.title}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  loading={prioritizeImage ? "eager" : "lazy"}
+                  priority={prioritizeImage}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <Calendar className="size-10 text-muted-foreground/20" />
+              </div>
+            )}
 
-          {/* Overlay para legibilidad de badges */}
-          <div
-            className="absolute inset-0 bg-linear-to-b from-black/20 to-transparent pointer-events-none"
-            aria-hidden="true"
-          />
-
-          {/* Badges top-left: categoría + destacado + primer evento */}
-          <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
-            <div
-              className="inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm px-2 py-0.5"
-              aria-label={`Categoría: ${event.categoryInfo.title}`}
-            >
-              <Tag
-                className="size-3 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <AnimatedGradientText className="text-[10px] font-medium">
+            {/* Badges top-left: categoría (Brand badge) + varias fechas */}
+            <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+              {/* Badge Marca/Categoría — bg-surface blanco, texto primary-vibrant */}
+              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#E63946] shadow-sm">
                 {event.categoryInfo.title}
-              </AnimatedGradientText>
-            </div>
-
-            {isMultiDate && (
-              <Badge
-                className="text-[10px] py-0.5 px-2 font-medium bg-violet-500/90 text-white backdrop-blur-sm border-0"
-                aria-label="Evento con varias fechas"
-              >
-                <Calendar className="size-3 mr-1" aria-hidden="true" />
-                Varias fechas
-              </Badge>
-            )}
-
-            {event.promotion.isPromoted && (
-              <Badge
-                className="text-[10px] py-0.5 px-2 font-medium bg-amber-500/90 text-amber-950 backdrop-blur-sm border-0"
-                aria-label="Evento destacado / promocionado"
-              >
-                <Sparkles className="size-3 mr-1" aria-hidden="true" />
-                Destacado
-              </Badge>
-            )}
-
-            {isFirstEvent && (
-              <Badge
-                className="text-[10px] py-0.5 px-2 font-medium bg-yellow-500/90 text-yellow-950 backdrop-blur-sm border-2 border-yellow-400"
-                aria-label="Primer evento del autor"
-              >
-                <Sparkles className="size-3 mr-1" aria-hidden="true" />
-                Primer Evento
-              </Badge>
-            )}
-          </div>
-
-          {/* Badge top-right: asistentes + vistas */}
-          <div className="absolute top-2 right-2 flex flex-col gap-1.5">
-            {attendeeCount > 0 && (
-              <div
-                className="flex items-center gap-1 rounded-md bg-background/90 backdrop-blur-sm px-2 py-1 text-xs font-medium shadow-sm"
-                aria-label={`${attendeeCount.toLocaleString("es-CO")} personas asistirán a este evento`}
-              >
-                <Users className="size-3" aria-hidden="true" />
-                <span>{attendeeCount.toLocaleString("es-CO")}</span>
-              </div>
-            )}
-            {viewCount > 0 && (
-              <div
-                className="flex items-center gap-1 rounded-md bg-background/90 backdrop-blur-sm px-2 py-1 text-xs font-medium shadow-sm"
-                aria-label={`${viewCount.toLocaleString("es-CO")} personas han visto este evento`}
-              >
-                <Eye className="size-3" aria-hidden="true" />
-                <span>{viewCount.toLocaleString("es-CO")}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Cuerpo ── */}
-        <div className="flex flex-col flex-1 min-w-0">
-          <CardHeader className="pb-2 pt-3 px-4">
-            {/* Autor + precio */}
-            <div
-              className={cn(
-                "flex mb-2",
-                variant === "horizontal"
-                  ? "flex-col items-start gap-0.5"
-                  : "flex-row items-center gap-2",
-                hideAuthor && "hidden",
+              </span>
+              {isMultiDate && (
+                <span className="rounded-full bg-[#09090B]/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                  Varias fechas
+                </span>
               )}
-            >
-              <div className="flex items-center gap-2 w-full">
-                <Link
-                  href={buildProfileHref(event.author)}
-                  className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
-                  aria-label={`Ver perfil de ${event.author.displayName}`}
-                >
-                  <Avatar className="size-6 shrink-0">
-                    <AvatarImage
-                      src={event.author.photoURL}
-                      alt={`Foto de ${event.author.displayName}`}
-                    />
-                    <AvatarFallback className="text-[10px]">
-                      {getAuthorInitials(event.author.displayName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs text-foreground/70 truncate">
-                    Por{" "}
-                    <span className="font-medium text-foreground">
-                      {event.author.displayName}
-                    </span>
-                  </span>
-                </Link>
-
-                {/* Precio inline solo en variante vertical (no multi-date: el precio vive en las sesiones) */}
-                {variant === "vertical" && !isMultiDate && (
-                  <span
-                    className={cn(
-                      "ml-auto text-xs font-semibold shrink-0",
-                      isFree
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-foreground",
-                    )}
-                    aria-label={
-                      isFree
-                        ? "Evento gratuito"
-                        : `Precio: ${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`
-                    }
-                  >
-                    {isFree
-                      ? "Gratis"
-                      : `${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`}
-                  </span>
-                )}
-              </div>
-
-              {/* Precio debajo del nombre solo en variante horizontal (no multi-date) */}
-              {variant === "horizontal" && !isMultiDate && (
-                <span
-                  className={cn(
-                    "ml-8 text-xs font-semibold shrink-0",
-                    isFree
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-foreground",
-                  )}
-                  aria-label={
-                    isFree
-                      ? "Evento gratuito"
-                      : `Precio: ${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`
-                  }
-                >
-                  {isFree
-                    ? "Gratis"
-                    : `${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`}
+              {event.promotion?.isPromoted && (
+                <span className="flex items-center gap-1 rounded-full bg-[#FFF8E7] px-2.5 py-1 text-[11px] font-semibold text-[#E09F00] shadow-sm">
+                  <Sparkles className="size-3" />Destacado
+                </span>
+              )}
+              {isFirstEvent && (
+                <span className="rounded-full bg-[#FFF8E7] px-2.5 py-1 text-[11px] font-semibold text-[#E09F00] shadow-sm">
+                  ✨ Primer evento
                 </span>
               )}
             </div>
 
-            {/* Colaboradores acreditados (compacto) */}
-            <EventCredits collaboratorsData={event.collaboratorsData} compact className="mt-1" />
+            {/* Vistas top-right — movidas al body */}
+          </div>
+        </Link>
 
-            {/* Título */}
-            {/* break-words: sin esto un título sin espacios desborda la card. */}
-            <h2 className="text-lg font-semibold leading-snug text-foreground line-clamp-2 break-words">
-              {event.title}
-            </h2>
-          </CardHeader>
-
-          <CardContent
+        {/* Like button — flotante Airbnb, top-right sobre la imagen, min 44px */}
+        <button
+          type="button"
+          onClick={handleLike}
+          aria-label={liked ? "Quitar me gusta" : "Me gusta"}
+          aria-pressed={liked}
+          className={cn(
+            "absolute right-2 top-2 z-10 flex size-11 items-center justify-center rounded-full shadow-dark-float transition-all",
+            liked ? "bg-white" : "bg-white/80 hover:bg-white",
+          )}
+        >
+          <Heart
             className={cn(
-              "pb-2 space-y-3",
-              variant === "horizontal" ? "px-5" : "px-4",
+              "size-5 transition-all",
+              liked ? "fill-[#E63946] text-[#E63946] scale-110" : "text-[#09090B]",
             )}
-          >
-            {/* Descripción corta */}
-            <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2 break-words">
-              {event.shortDescription}
-            </p>
-
-            {/* Tags / etiquetas */}
-            {event.categoryInfo.tags.length > 0 && (
-              <div
-                className="flex flex-wrap gap-1.5"
-                role="list"
-                aria-label="Etiquetas del evento"
-              >
-                {event.categoryInfo.tags.slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    role="listitem"
-                    className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-foreground/70 hover:border-foreground/30 transition-colors cursor-default"
-                  >
-                    {tag}
-                  </span>
-                ))}
-                {event.categoryInfo.tags.length > 4 && (
-                  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] text-foreground/60">
-                    +{event.categoryInfo.tags.length - 4}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Multi-date: sin lugar ni precio únicos (viven en cada sesión) —
-                mostramos el rango que cubren las sesiones. */}
-            {isMultiDate ? (
-              hasRange ? (
-                <div
-                  className="flex items-center gap-2 rounded-xl border bg-muted/30 p-2"
-                  aria-label={
-                    isSingleDay
-                      ? `Varias sesiones el ${formatDate(event.startDate)}`
-                      : `Varias fechas, del ${formatDate(event.startDate)} al ${formatDate(event.endDate)}`
-                  }
-                  suppressHydrationWarning
-                >
-                  <DatePill
-                    iso={event.startDate}
-                    label={isSingleDay ? "El" : "Desde"}
-                  />
-
-                  {/* Mismo día → una pastilla y texto: "14 jul → 14 jul" parecería un bug.
-                      No repetimos "varias fechas": ya es un badge sobre la imagen. */}
-                  {isSingleDay ? (
-                    <span className="min-w-0 flex-1 text-xs text-foreground/70">
-                      Todas las sesiones este día
-                    </span>
-                  ) : (
-                    <>
-                      <div
-                        className="flex min-w-0 flex-1 items-center gap-1"
-                        aria-hidden="true"
-                      >
-                        <span className="h-px flex-1 bg-border" />
-                        <ArrowRight className="size-3.5 shrink-0 text-foreground/40" />
-                      </div>
-                      <DatePill iso={event.endDate} label="Hasta" />
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-xl border border-dashed p-2.5 text-xs text-foreground/60">
-                  <Calendar className="size-4 shrink-0" aria-hidden="true" />
-                  Fechas por confirmar
-                </div>
-              )
-            ) : (
-              /* Fecha + Ubicación — grid en horizontal, columna en vertical */
-              <div
-                className={cn(
-                  "gap-3",
-                  variant === "horizontal" ? "grid grid-cols-2" : "flex flex-col",
-                )}
-              >
-                {/* Fecha */}
-                <div
-                  className="flex items-start gap-2 text-sm text-foreground/70"
-                  aria-label={`Evento del ${formatDate(event.startDate)} al ${formatDate(event.endDate)}`}
-                  suppressHydrationWarning
-                >
-                  <Calendar
-                    className="size-4 mt-0.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <div className="leading-snug">
-                    <div
-                      className="font-medium text-foreground text-xs"
-                      suppressHydrationWarning
-                    >
-                      {formatDate(event.startDate)}
-                    </div>
-                    <div className="text-xs" suppressHydrationWarning>
-                      hasta {formatDate(event.endDate)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ubicación */}
-                <address
-                  className="not-italic flex items-start gap-2 text-sm text-foreground/70"
-                  aria-label={`Ubicación: ${event.location.venue}, ${event.location.address}, ${event.location.city.name}, ${event.location.department.name}, ${event.location.country.name}`}
-                >
-                  <MapPin
-                    className="size-4 mt-0.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <div className="leading-snug min-w-0">
-                    <div className="font-medium text-foreground text-xs truncate">
-                      {event.location.venue}
-                    </div>
-                    <div className="text-xs truncate">
-                      {event.location.address}
-                    </div>
-                    <div className="text-xs text-foreground/55 truncate">
-                      {event.location.city.name}, {event.location.department.name} ·{" "}
-                      {event.location.country.name}
-                    </div>
-                  </div>
-                </address>
-              </div>
-            )}
-
-            {/* Barra de capacidad */}
-            {event.capacity !== undefined && event.capacity > 0 && attendeeCount > 0 && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-foreground/70">
-                  <span
-                    aria-label={`${attendeeCount} de ${event.capacity} lugares ocupados`}
-                  >
-                    <span className="font-medium text-foreground">
-                      {attendeeCount.toLocaleString("es-CO")}
-                    </span>{" "}
-                    / {event.capacity.toLocaleString("es-CO")} asistentes
-                  </span>
-                  <span>
-                    {Math.round((attendeeCount / event.capacity) * 100)}%
-                  </span>
-                </div>
-                <div
-                  className="w-full h-1.5 rounded-full bg-muted overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={attendeeCount}
-                  aria-valuemin={0}
-                  aria-valuemax={event.capacity}
-                  aria-label={`${Math.round((attendeeCount / event.capacity) * 100)}% de capacidad ocupada`}
-                >
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      attendeeCount / event.capacity > 0.9
-                        ? "bg-destructive"
-                        : attendeeCount / event.capacity > 0.7
-                          ? "bg-amber-500"
-                          : "bg-primary",
-                    )}
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        Math.round((attendeeCount / event.capacity) * 100),
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="px-4 pt-0 pb-3 flex flex-col gap-2 mt-auto">
-            <Separator className="mb-1" />
-
-            <div className="flex items-center gap-1.5 w-full">
-              {/* Botón Like */}
-              <HeartLikeButton
-                key={`${event.id}:${initialLiked ? "1" : "0"}:${initialLikes ?? 0}`}
-                eventId={event.id}
-                initialLiked={initialLiked}
-                initialLikes={initialLikes}
-                onLike={onLike}
-              />
-
-              {/* Botón Compartir */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2.5 gap-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
-                    onClick={handleShare}
-                    aria-label={
-                      shared ? "¡Enlace copiado!" : "Compartir evento"
-                    }
-                  >
-                    <Share2 className="size-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">
-                      {shared ? "¡Copiado!" : "Compartir"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  {shared ? "¡Enlace copiado!" : "Compartir evento"}
-                </TooltipContent>
-              </Tooltip>
-
-              {/* CTA — Ver detalles: siempre navega a la página interna del evento */}
-              <Link
-                href={detailUrl}
-                className="ml-auto"
-                aria-label={`Ver detalles del evento: ${event.title}`}
-                onClick={() => onViewDetails?.(event)}
-              >
-                <ShimmerButton
-                  shimmerColor="#ffffff"
-                  background="black"
-                  className="h-8 px-3 gap-1.5 text-xs font-medium"
-                >
-                  {isMultiDate ? "Ver fechas" : "Ver detalles"}
-                  <ArrowRight className="size-3.5" aria-hidden="true" />
-                </ShimmerButton>
-              </Link>
-            </div>
-          </CardFooter>
+            aria-hidden="true"
+          />
+        </button>
         </div>
-      </MagicCard>
+
+        {/* ── 2. CUERPO ── */}
+        <div className="flex flex-1 flex-col gap-2 px-4 pt-3 pb-0">
+          {/* Fila 1: Autor + Precio */}
+          {!hideAuthor && (
+            <div className="flex items-center justify-between gap-2">
+              <Link
+                href={buildProfileHref(event.author)}
+                className="flex min-w-0 items-center gap-1.5 py-1 hover:opacity-80"
+                aria-label={`Ver perfil de ${event.author.displayName}`}
+              >
+                <Avatar className="size-6 shrink-0">
+                  <AvatarImage src={event.author.photoURL} alt={event.author.displayName} />
+                  <AvatarFallback className="text-[9px] font-bold">
+                    {getAuthorInitials(event.author.displayName)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate text-[13px] text-[#71717A]">
+                  Por <span className="font-medium text-[#09090B]">{event.author.displayName}</span>
+                </span>
+              </Link>
+              {!isMultiDate ? (
+                <span
+                  className={cn(
+                    "shrink-0 text-sm font-bold",
+                    isFree ? "text-emerald-600" : "text-[#09090B]",
+                  )}
+                >
+                  {isFree
+                    ? "Gratis"
+                    : `$${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`}
+                </span>
+              ) : (
+                <span className="shrink-0 text-[11px] text-[#71717A] italic">Precios variados</span>
+              )}
+            </div>
+          )}
+
+          {/* Fila 2: T\u00edtulo */}
+          <h2 className="text-base font-bold leading-snug text-[#09090B] line-clamp-2">
+            {event.title}
+          </h2>
+
+          {/* Fila 3: Descripci\u00f3n corta, 1 l\u00ednea (sin chips de tags) */}
+          <p className="text-[13px] text-[#71717A] line-clamp-1">{event.shortDescription}</p>
+
+          {/* Indicadores extra: vistas, inscripciones y apertura */}
+          {viewCount > 0 && (
+            <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
+              <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+              <span>{viewCount.toLocaleString("es-CO")} vistas</span>
+            </div>
+          )}
+          {attendeeCount > 0 && (event.registrationType === "internal" || event.registrationType === "form") && (
+            <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
+              <Users className="size-3.5 shrink-0 text-[#E63946]" aria-hidden="true" />
+              <span>{attendeeCount.toLocaleString("es-CO")} inscritos</span>
+            </div>
+          )}
+          {event.registrationType === "none" && (
+            <span className="flex w-fit items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              🎉 Abierto al público
+            </span>
+          )}
+          {isMultiDate ? (
+            <div className="space-y-1.5">
+              <div
+                className="flex items-center justify-between gap-2 rounded-lg bg-[#F4F4F5] px-3 py-2"
+                suppressHydrationWarning
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Calendar className="size-3.5 shrink-0 text-[#09090B]" />
+                  <span className="truncate text-[13px] font-semibold text-[#09090B]">
+                    {hasRange
+                      ? formatDateRange(event.startDate, event.endDate)
+                      : "Fechas por confirmar"}
+                  </span>
+                </div>
+                {hasRange && (
+                  <span className="shrink-0 rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold text-[#71717A]">
+                    {isSingleDay ? "Varias sesiones" : "Varios horarios"}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5" suppressHydrationWarning>
+              {event.startDate && (
+                <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
+                  <Calendar className="size-3.5 shrink-0" />
+                  <span suppressHydrationWarning>{formatDateCompact(event.startDate)}</span>
+                </div>
+              )}
+              {hasLocation && event.location?.venue && (
+                <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
+                  <MapPin className="size-3.5 shrink-0" />
+                  <span className="truncate">{event.location.venue}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── 3. FOOTER ── */}
+        <div className="mt-auto flex items-center gap-2 border-t border-[#F4F4F5] px-4 py-3">
+          {/* Compartir — min 44px touch target */}
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label={shared ? "¡Enlace copiado!" : "Compartir evento"}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl text-[13px] text-[#71717A] transition-colors hover:bg-muted hover:text-[#09090B]"
+          >
+            <Share2 className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{shared ? "\u00a1Copiado!" : "Compartir"}</span>
+          </button>
+
+          {/* CTA — min 44px height para mobile */}
+          <Link
+            href={detailUrl}
+            onClick={() => onViewDetails?.(event)}
+            className="ml-auto flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#09090B] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#18181B]"
+            aria-label={isMultiDate ? "Ver fechas del evento" : "Ver detalles del evento"}
+          >
+            {isMultiDate ? "Ver fechas" : "Ver detalles"}
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
     </>
   );
 };

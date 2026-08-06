@@ -95,14 +95,15 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="border-b border-zinc-200 bg-background/95 text-foreground backdrop-blur dark:border-zinc-800">
+    <header className="border-b border-border bg-background/95 text-foreground backdrop-blur">
       <Container as="nav" aria-label="Principal" className="text-sm font-medium">
         <div className="flex h-16 items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr]">
           <div className="justify-self-start">
             <Link
               href="/"
               aria-label="Ir al inicio"
-              className="font-semibold tracking-tight text-zinc-800 transition-colors hover:text-zinc-950 dark:text-zinc-100 dark:hover:text-white"
+              className="font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
+              style={{ fontFamily: 'var(--font-heading)' }}
             >
               Que Hay Pa Hacer?
             </Link>
@@ -113,8 +114,8 @@ export const Navbar = () => {
               <li key={route.name}>
                 <NavLink
                   href={route.href}
-                  className="rounded-full px-3 py-2 text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-300 dark:hover:text-zinc-100"
-                  activeClassName="bg-zinc-100 text-zinc-950 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="rounded-full px-3 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  activeClassName="bg-[#FDF2F4] text-primary font-semibold"
                 >
                   {route.name}
                 </NavLink>
@@ -151,13 +152,13 @@ export const Navbar = () => {
             </DropdownMenu>
 
             {isHydrating ? (
-              <Skeleton className="hidden h-10 w-36 bg-zinc-200 dark:bg-zinc-800 md:inline-flex rounded-lg" />
+              <Skeleton className="hidden h-10 w-36 md:inline-flex rounded-xl" />
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="outline"
-                    className="hidden! border-transparent bg-zinc-900 text-white shadow-sm hover:bg-zinc-700 hover:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 md:inline-flex!"
+                    variant="dark"
+                    className="hidden! md:inline-flex!"
                   >
                     <Plus className="size-4" aria-hidden="true" />
                     Crear

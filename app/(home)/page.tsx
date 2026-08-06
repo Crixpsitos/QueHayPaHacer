@@ -32,9 +32,7 @@ export default function HomePage() {
       <Suspense fallback={<EventsSectionsSkeleton />}>
         <HomeEventsRecomendationContainer />
       </Suspense>
-      <Suspense fallback={null}>
-        <PreferenceEventsContainer />
-      </Suspense>
+      <PreferenceEventsContainer />
     </>
   );
 }
