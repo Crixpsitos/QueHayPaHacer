@@ -9,7 +9,7 @@ import { Calendar } from "@/app/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils/cn";
-import { CalendarIcon, Search, X, Sparkles, CalendarDays, DollarSign, Ticket, Building2 } from "lucide-react";
+import { CalendarIcon, Search, X, Sparkles, CalendarDays, DollarSign, Ticket, Building2, Tag } from "lucide-react";
 
 interface ExploreSearchBarProps {
   initialQuery?: string;
@@ -138,24 +138,33 @@ export function ExploreSearchBar({
 
   const chipClass = (active: boolean) =>
     cn(
-      "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer select-none",
+      "flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer select-none",
       active
-        ? "border-primary bg-primary text-primary-foreground"
-        : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground",
+        ? "border-transparent bg-[#09090B] text-white shadow-dark-float"
+        : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#09090B]/30 hover:text-[#09090B] hover:shadow-subtle",
     );
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-3">
+    <form onSubmit={handleSubmit} className="w-full">
+      {/* Card container con shadow para dar profundidad */}
+      <div className="rounded-2xl bg-white shadow-card p-4 sm:p-5 space-y-4">
+      {/* Título dentro del card */}
+      <div>
+        <h2 className="text-2xl font-bold text-[#09090B]" style={{ fontFamily: 'var(--font-heading)' }}>
+          ¿Qué hay pa&apos; hacer hoy?
+        </h2>
+        <p className="mt-0.5 text-sm text-[#71717A]">Eventos, sitios y planes en Ibagué.</p>
+      </div>
       {/* Fila principal: input + fechas + buscar */}
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             placeholder="Buscar eventos, sitios, artistas…"
-            className="h-11 w-full rounded-2xl border border-border bg-background pl-9 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+            className="h-12 w-full rounded-xl border border-[#E4E4E7] bg-[#FAFAFC] pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
 
@@ -167,7 +176,7 @@ export function ExploreSearchBar({
                 type="button"
                 variant="outline"
                 className={cn(
-                  "h-11 w-full justify-start gap-2 rounded-2xl px-4 text-sm sm:w-auto sm:min-w-40",
+                  "h-12 w-full justify-start gap-2 rounded-xl px-4 text-sm bg-[#FAFAFC] border-[#E4E4E7] sm:w-auto sm:min-w-44",
                   hasRange && "border-primary text-primary pr-8",
                 )}
               >
@@ -200,7 +209,7 @@ export function ExploreSearchBar({
           )}
         </div>
 
-        <Button type="submit" className="h-11 rounded-2xl px-6 font-semibold">
+        <Button type="submit" className="h-12 rounded-xl px-6 font-semibold">
           <Search className="size-4" />
           <span className="ml-2">Buscar</span>
         </Button>
@@ -220,8 +229,9 @@ export function ExploreSearchBar({
           }}
           className={chipClass(free)}
         >
-          🆓 Gratis
-          {free && <X className="size-3" />}
+          <Tag className="size-3.5" />
+          Gratis
+          {free && <X className="size-3.5" />}
         </button>
         )}
 
@@ -230,11 +240,11 @@ export function ExploreSearchBar({
         <Popover open={priceOpen} onOpenChange={setPriceOpen}>
           <PopoverTrigger asChild>
             <button type="button" className={chipClass(hasMaxPrice)}>
-              <DollarSign className="size-3" />
+              <DollarSign className="size-3.5" />
               {hasMaxPrice ? `Hasta $${parsedMax.toLocaleString("es-CO")}` : "Valor hasta..."}
               {hasMaxPrice && (
                 <X
-                  className="size-3"
+                  className="size-3.5"
                   onClick={(e) => {
                     e.stopPropagation();
                     setMaxPriceInput("");
@@ -288,9 +298,9 @@ export function ExploreSearchBar({
           onClick={() => { const next = !promoted; setPromoted(next); navigateWith({ promoted: next }); }}
           className={chipClass(promoted)}
         >
-          <Sparkles className="size-3" />
+          <Sparkles className="size-3.5" />
           Destacados
-          {promoted && <X className="size-3" />}
+          {promoted && <X className="size-3.5" />}
         </button>
 
         {/* Solo eventos */}
@@ -304,9 +314,9 @@ export function ExploreSearchBar({
           }}
           className={chipClass(onlyEvents)}
         >
-          <Ticket className="size-3" />
+          <Ticket className="size-3.5" />
           Solo eventos
-          {onlyEvents && <X className="size-3" />}
+          {onlyEvents && <X className="size-3.5" />}
         </button>
 
         {/* Solo sitios — al activar, limpia filtros de eventos */}
@@ -325,9 +335,9 @@ export function ExploreSearchBar({
           }}
           className={chipClass(onlySites)}
         >
-          <Building2 className="size-3" />
+          <Building2 className="size-3.5" />
           Solo sitios
-          {onlySites && <X className="size-3" />}
+          {onlySites && <X className="size-3.5" />}
         </button>
 
         {/* Multi-fecha — oculto cuando onlySites está activo */}
@@ -337,9 +347,9 @@ export function ExploreSearchBar({
             onClick={() => { const next = !multiDate; setMultiDate(next); navigateWith({ multiDate: next }); }}
             className={chipClass(multiDate)}
           >
-            <CalendarDays className="size-3" />
+            <CalendarDays className="size-3.5" />
             Multi-fecha
-            {multiDate && <X className="size-3" />}
+            {multiDate && <X className="size-3.5" />}
           </button>
         )}
 
@@ -361,6 +371,7 @@ export function ExploreSearchBar({
             Limpiar filtros
           </button>
         )}
+      </div>
       </div>
     </form>
   );

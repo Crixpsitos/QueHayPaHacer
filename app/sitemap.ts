@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import { SITE_URL } from "@/app/lib/site";
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
 import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
 
-/**
- * Sitemap: home + índices (eventos, sitios) + todas las landings SEO (una por
- * colección × ciudad, eventos y sitios). URLs absolutas (SITE_URL). Cacheada —
- * solo depende de las colecciones (cacheadas/estáticas) y de la fecha.
- */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("sitemap");
+
   const collections = await getEventCollections();
   const now = new Date();
 

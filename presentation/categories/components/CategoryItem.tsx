@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/app/components/ui/hover-card";
 import type { CategoryViewModel } from "../view-models/CategoryViewModel";
-import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "../lib/categoryIconMap";
+import { CATEGORY_ICON_MAP } from "../lib/categoryIconMap";
 
 interface CategoryItemProps {
   category: CategoryViewModel;
@@ -11,26 +10,26 @@ interface CategoryItemProps {
 
 export const CategoryItem = ({ category }: CategoryItemProps) => {
   const Icon = CATEGORY_ICON_MAP[category.icon] ?? CATEGORY_ICON_MAP.music;
-  const color = CATEGORY_COLOR_MAP[category.icon] ?? CATEGORY_FALLBACK_COLOR;
 
   return (
-    <HoverCard openDelay={10} closeDelay={100}>
-      <HoverCardTrigger asChild>
-        <Link href={category.href} className="flex flex-col items-center gap-3 group w-20 sm:w-24 md:w-28">
-          <div
-            className={`size-16 sm:size-20 md:size-24 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 ${color.bg}`}
-          >
-            <Icon className={`size-8 sm:size-10 md:size-12 ${color.icon}`} />
-          </div>
-          <h3 className="text-sm sm:text-base font-medium text-center leading-tight group-hover:underline">
-            {category.title}
-          </h3>
-        </Link>
-      </HoverCardTrigger>
-      <HoverCardContent side="bottom" className="w-56">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{category.description}</p>
-      </HoverCardContent>
-    </HoverCard>
+    <Link
+      href={category.href}
+      title={category.description}
+      className="group flex flex-col items-center gap-2.5 rounded-2xl border border-[#F4F4F5] bg-white p-4 text-center shadow-subtle transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-[#FDF2F4]"
+    >
+      {/* Icono design system: primary-light bg + primary-vibrant icon */}
+      <div className="flex size-14 sm:size-16 items-center justify-center rounded-full bg-[#FDF2F4] transition-transform group-hover:scale-110">
+        <Icon className="size-7 sm:size-8 text-[#E63946]" />
+      </div>
+      <span className="text-sm font-semibold text-[#09090B] leading-tight">
+        {category.title}
+      </span>
+      {category.description && (
+        <p className="hidden sm:block text-[11px] text-[#71717A] line-clamp-2 leading-snug">
+          {category.description}
+        </p>
+      )}
+    </Link>
   );
 };
 

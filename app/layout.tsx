@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
 import { SITE_URL, SITE_NAME } from "./lib/site";
 import "./globals.css";
@@ -55,6 +55,8 @@ import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-heading", weight: ["400", "500", "600", "700"] });
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -78,6 +80,7 @@ export default function RootLayout({
         "antialiased",
         geistSans.variable,
         geistMono.variable,
+        outfit.variable,
         "font-sans",
         inter.variable,
       )}

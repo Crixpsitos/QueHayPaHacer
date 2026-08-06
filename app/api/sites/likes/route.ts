@@ -5,18 +5,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
 
 /**
- * GET /api/sites/likes?ids=id1,id2,id3
- *
- * Reemplaza getSiteLikesAction: las Server Actions son POST y disparan una
- * petición en cada montaje. Un GET route es semánticamente correcto para lectura.
+ * POST /api/sites/likes
+ * Body: { ids: string[] }
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const tokens = await getTokens(await cookies(), authConfig);
   if (!tokens?.decodedToken?.uid) return NextResponse.json({});
 
   const userId = tokens.decodedToken.uid;
-  const idsParam = request.nextUrl.searchParams.get("ids") ?? "";
-  const siteIds = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+  const body = await request.json().catch(() => ({}));
+  const siteIds: string[] = Array.isArray(body.ids) ? body.ids : [];
 
   if (siteIds.length === 0) return NextResponse.json({});
 

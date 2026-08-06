@@ -78,7 +78,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
   }, [event]);
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-xl">
+    <article className="group overflow-hidden rounded-2xl border border-border bg-white shadow-card transition-all hover:-translate-y-1 hover:shadow-hover">
       <div className="flex flex-col sm:flex-row">
         {/* Imagen izquierda — aspect-video en mobile, altura flexible en desktop */}
         <Link
@@ -159,12 +159,12 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
               <button
                 type="button"
                 onClick={handleLike}
-                disabled={!user || isPending}
+                disabled={isPending}
                 aria-label={liked ? "Quitar like" : "Dar like"}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
                   liked
-                    ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+                    ? "bg-[#FDF2F4] text-[#E63946]"
                     : "border border-border text-muted-foreground hover:bg-muted",
                 )}
               >
@@ -181,7 +181,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
               </button>
               <Link
                 href={href}
-                className="ml-auto flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foreground/80"
+                className="ml-auto flex items-center gap-2 rounded-full bg-grad-primary px-5 py-2.5 text-sm font-semibold text-white shadow-primary-glow transition-all hover:shadow-hover"
               >
                 Ver evento <ArrowRight className="size-4" />
               </Link>
