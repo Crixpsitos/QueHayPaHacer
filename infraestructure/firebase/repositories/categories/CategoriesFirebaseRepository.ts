@@ -17,7 +17,7 @@ export class CategoriesFirebaseRepository extends FirebaseBaseRepository impleme
             .orderBy("createdAt", "desc")
             .get();
 
-        return snapshot.docs.map(doc => doc.data() as FirebaseCategoriesDto);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as FirebaseCategoriesDto);
     }
 
 }

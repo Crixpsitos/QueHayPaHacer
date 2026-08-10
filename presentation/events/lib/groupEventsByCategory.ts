@@ -22,11 +22,13 @@ export function groupEventsByCategory(
   collections: CollectionDef[],
 ): EventCategoryGroup[] {
   const catByKey = new Map<string, { label: string; slug: string }>();
+  const catByTitle = new Map<string, { label: string; slug: string }>();
   for (const c of collections) {
     if (c.kind !== "category") continue;
     const entry = { label: c.shortLabel, slug: c.slug };
     if (c.categoryId) catByKey.set(c.categoryId, entry);
     if (c.categorySlug) catByKey.set(c.categorySlug, entry);
+    catByTitle.set(c.shortLabel.toLowerCase(), entry);
   }
 
   const groups = new Map<string, EventCategoryGroup>();
@@ -34,7 +36,8 @@ export function groupEventsByCategory(
     const ci = ev.categoryInfo;
     const resolved =
       (ci?.id ? catByKey.get(ci.id) : undefined) ??
-      (ci?.slug ? catByKey.get(ci.slug) : undefined);
+      (ci?.slug ? catByKey.get(ci.slug) : undefined) ??
+      (ci?.title ? catByTitle.get(ci.title.toLowerCase()) : undefined);
 
     const label = resolved?.label ?? ci?.title ?? "Otros";
     const key = resolved?.slug ?? label;

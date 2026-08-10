@@ -101,34 +101,42 @@ export function ExternalProfileForm({
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-gray-200 bg-slate-50/60 p-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-600">
-          Crear perfil externo (solo acreditado, sin login).
-        </p>
+    <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card space-y-4">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[#09090B]">Crear perfil externo</p>
+          <p className="mt-0.5 text-xs text-[#71717A]">
+            Crea un perfil para acreditar a una persona que no tiene cuenta.
+          </p>
+        </div>
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600"
-            aria-label="Contraer"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-[#E4E4E7] text-[#71717A] transition-colors hover:bg-[#FAFAFC]"
+            aria-label="Cancelar"
           >
-            <X className="h-4 w-4" />
+            <X className="size-3.5" />
           </button>
         )}
       </div>
+
+      {/* Nombre */}
       <input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Nombre a acreditar"
-        className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-indigo-400"
+        placeholder="Nombre a acreditar *"
+        className="h-11 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946]"
       />
+
+      {/* Tipo + Imagen */}
       <div className="flex flex-col gap-2 sm:flex-row">
         <select
           value={type}
           onChange={(e) => setType(e.target.value as ExternalProfileType)}
-          className="h-10 flex-1 rounded-lg border border-gray-200 bg-white px-2 text-sm outline-none focus:border-indigo-400"
+          className="h-11 flex-1 rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] outline-none transition-colors focus:border-[#E63946]"
         >
           {(Object.keys(EXTERNAL_TYPE_LABEL) as ExternalProfileType[]).map((t) => (
             <option key={t} value={t}>
@@ -136,8 +144,8 @@ export function ExternalProfileForm({
             </option>
           ))}
         </select>
-        <label className="inline-flex h-10 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 text-sm text-slate-500 hover:border-indigo-400">
-          <ImagePlus className="h-4 w-4" />
+        <label className="inline-flex h-11 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#E4E4E7] px-3 text-sm text-[#71717A] transition-colors hover:border-[#A1A1AA]">
+          <ImagePlus className="size-4 shrink-0" />
           <span className="truncate">{file ? file.name : "Imagen (opcional)"}</span>
           <input
             type="file"
@@ -147,13 +155,17 @@ export function ExternalProfileForm({
           />
         </label>
       </div>
+
+      {/* Bio */}
       <textarea
         value={bio}
         onChange={(e) => setBio(e.target.value)}
         placeholder="Bio (opcional)"
         rows={2}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        className="w-full rounded-lg border border-[#E4E4E7] bg-white px-3 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946] resize-none"
       />
+
+      {/* Redes sociales */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {SOCIALS.map(({ key, placeholder }) => (
           <input
@@ -162,17 +174,19 @@ export function ExternalProfileForm({
             value={socials[key]}
             onChange={(e) => setSocials((prev) => ({ ...prev, [key]: e.target.value }))}
             placeholder={placeholder}
-            className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-indigo-400"
+            className="h-10 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946]"
           />
         ))}
       </div>
+
+      {/* Acción */}
       <button
         type="button"
         onClick={() => void handleCreate()}
         disabled={creating || !name.trim()}
-        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#E63946] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#9B0A26] disabled:opacity-50 shadow-primary-glow"
       >
-        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+        {creating ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
         Crear{eventId ? " y acreditar" : ""}
       </button>
     </div>

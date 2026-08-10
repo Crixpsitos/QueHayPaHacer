@@ -13,6 +13,7 @@ export const CATEGORY_PAGE_SIZE = 12;
  */
 const fetchCategoryEventIds = async (
   categoryId: string,
+  categorySlug: string | null,
   cursor: string | null,
   limit: number,
 ): Promise<{ ids: string[]; nextCursor: string | null }> => {
@@ -20,7 +21,7 @@ const fetchCategoryEventIds = async (
   cacheLife("days");
   cacheTag("event-list", `category-${categoryId}`);
   const { eventsService } = createServerContainer();
-  return eventsService.getEventsByCategoryPaginated(categoryId, limit, cursor);
+  return eventsService.getEventsByCategoryPaginated(categoryId, categorySlug, limit, cursor);
 };
 
 /**
@@ -31,8 +32,9 @@ export async function getCategoryEventsPage(
   categoryId: string,
   cursor: string | null,
   limit: number = CATEGORY_PAGE_SIZE,
+  categorySlug?: string,
 ): Promise<{ events: Events[]; nextCursor: string | null }> {
-  const { ids, nextCursor } = await fetchCategoryEventIds(categoryId, cursor, limit);
+  const { ids, nextCursor } = await fetchCategoryEventIds(categoryId, categorySlug ?? null, cursor, limit);
   const events = (await Promise.all(ids.map(fetchEventDetailById))).filter(
     (e): e is Events => Boolean(e),
   );

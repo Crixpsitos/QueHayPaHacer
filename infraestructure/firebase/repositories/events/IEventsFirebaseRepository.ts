@@ -6,7 +6,7 @@ export interface IEventsFirebaseRepository {
     findWeekendEvents(): Promise<string[]>;
     findAllEvents(): Promise<string[]>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
-    findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
+    findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findLastDraftEventToUser(userId: string): Promise<FirebaseEventsDto | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<FirebaseEventsDto | null>;
     createDraftEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
@@ -19,4 +19,5 @@ export interface IEventsFirebaseRepository {
     createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
     findPublishedBySiteId(siteId: string, limit?: number): Promise<FirebaseEventsDto[]>;
     updateSiteIds(eventId: string, siteIds: string[]): Promise<void>;
+    deleteEvent(id: string): Promise<void>;
 }

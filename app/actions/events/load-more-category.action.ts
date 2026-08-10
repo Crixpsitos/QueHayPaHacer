@@ -22,8 +22,9 @@ interface LoadMoreResult {
 export async function loadMoreCategoryEventsAction(
   categoryId: string,
   cursor: string | null,
+  categorySlug?: string,
 ): Promise<LoadMoreResult> {
-  const { events, nextCursor } = await getCategoryEventsPage(categoryId, cursor);
+  const { events, nextCursor } = await getCategoryEventsPage(categoryId, cursor, undefined, categorySlug);
 
   const tokens = await getTokens(await cookies(), authConfig);
   const userId = tokens?.decodedToken?.uid;

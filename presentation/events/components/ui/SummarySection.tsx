@@ -1,4 +1,3 @@
-import { Button } from "@/app/components/ui/button";
 import { Pencil } from "lucide-react";
 
 export function SummarySection({
@@ -11,21 +10,19 @@ export function SummarySection({
   onEdit: () => void;
 }) {
   return (
-    <div className="rounded border border-gray-200 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="font-medium text-gray-900">{title}</h4>
-        <Button
+    <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
+      <div className="mb-4 flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-[#09090B]">{title}</h4>
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={onEdit}
-          className="h-8 text-gray-600 hover:text-black"
+          className="flex items-center gap-1 rounded-lg border border-[#E4E4E7] px-2.5 py-1.5 text-xs font-medium text-[#71717A] transition-colors hover:border-[#A1A1AA] hover:text-[#09090B]"
         >
-          <Pencil className="mr-1 h-3 w-3" />
+          <Pencil className="size-3" />
           Editar
-        </Button>
+        </button>
       </div>
-      <div className="space-y-2">{children}</div>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }

@@ -63,6 +63,9 @@ export class EventsAdapter implements IEventsRepository {
   async updateSiteIds(eventId: string, siteIds: string[]): Promise<void> {
     await this.repository.updateSiteIds(eventId, siteIds);
   }
+  async deleteEvent(id: string): Promise<void> {
+    await this.repository.deleteEvent(id);
+  }
 
   findById(id: string): Promise<Events | null> {
     return this.repository.findById(id).then(dto => dto ? this.mapper.toDomain(dto) : null);
@@ -76,8 +79,8 @@ export class EventsAdapter implements IEventsRepository {
     return await this.repository.findByTopCategory(categoryIds);
   }
 
-  async findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null) {
-    return await this.repository.findByCategoryPaginated(categoryId, limit, cursor);
+  async findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null) {
+    return await this.repository.findByCategoryPaginated(categoryId, categorySlug, limit, cursor);
   }
 
   async findAll(): Promise<Events[]> {

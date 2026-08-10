@@ -19,8 +19,22 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EventViewModel } from "../../view-models/EventViewModel";
+
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  musica:          { bg: "#EFF6FF", text: "#1D4ED8" },
+  arte:            { bg: "#F5F3FF", text: "#7C3AED" },
+  gastronomia:     { bg: "#FFF7ED", text: "#C2410C" },
+  deportes:        { bg: "#F0FDF4", text: "#15803D" },
+  educacion:       { bg: "#EFF6FF", text: "#1E40AF" },
+  tecnologia:      { bg: "#F0F9FF", text: "#0369A1" },
+  bienestar:       { bg: "#FDF2F4", text: "#E63946" },
+  familia:         { bg: "#FFFBEB", text: "#B45309" },
+  entretenimiento: { bg: "#FDF4FF", text: "#9333EA" },
+  naturaleza:      { bg: "#F0FDF4", text: "#166534" },
+};
+const DEFAULT_CAT = { bg: "#F4F4F5", text: "#52525B" };
 
 interface EventCardProps {
   event: EventViewModel;
@@ -143,6 +157,9 @@ export const EventCard = ({
   const [shared, setShared] = useState(false);
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [likesCount, setLikesCount] = useState(initialLikes ?? event.analytics?.likes ?? 0);
+
+  // Sincroniza el estado local cuando EventCardInteractive resuelve el fetch de likes
+  useEffect(() => { setLiked(initialLiked ?? false); }, [initialLiked]);
 
   const handleLike = useCallback(async () => {
     const next = !liked;
@@ -283,10 +300,18 @@ export const EventCard = ({
 
             {/* Badges top-left: categoría (Brand badge) + varias fechas */}
             <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-              {/* Badge Marca/Categoría — bg-surface blanco, texto primary-vibrant */}
-              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#E63946] shadow-sm">
-                {event.categoryInfo.title}
-              </span>
+              {/* Badge de categoría con color propio por slug */}
+              {(() => {
+                const col = CATEGORY_COLORS[event.categoryInfo.slug] ?? DEFAULT_CAT;
+                return (
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm"
+                    style={{ background: col.bg, color: col.text }}
+                  >
+                    {event.categoryInfo.title}
+                  </span>
+                );
+              })()}
               {isMultiDate && (
                 <span className="rounded-full bg-[#09090B]/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
                   Varias fechas
@@ -366,8 +391,8 @@ export const EventCard = ({
             </div>
           )}
 
-          {/* Fila 2: T\u00edtulo */}
-          <h2 className="text-base font-bold leading-snug text-[#09090B] line-clamp-2">
+          {/* Fila 2: T00edtulo con underline crimson on hover */}
+          <h2 className="text-base font-bold leading-snug text-[#09090B] line-clamp-2 group-hover:underline group-hover:decoration-[#E63946] group-hover:underline-offset-2">
             {event.title}
           </h2>
 
@@ -399,7 +424,7 @@ export const EventCard = ({
                 suppressHydrationWarning
               >
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Calendar className="size-3.5 shrink-0 text-[#09090B]" />
+                  <Calendar className="size-3.5 shrink-0 text-[#E63946]" />
                   <span className="truncate text-[13px] font-semibold text-[#09090B]">
                     {hasRange
                       ? formatDateRange(event.startDate, event.endDate)
@@ -417,13 +442,13 @@ export const EventCard = ({
             <div className="space-y-1.5" suppressHydrationWarning>
               {event.startDate && (
                 <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
-                  <Calendar className="size-3.5 shrink-0" />
+                  <Calendar className="size-3.5 shrink-0 text-[#E63946]" />
                   <span suppressHydrationWarning>{formatDateCompact(event.startDate)}</span>
                 </div>
               )}
               {hasLocation && event.location?.venue && (
                 <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
-                  <MapPin className="size-3.5 shrink-0" />
+                  <MapPin className="size-3.5 shrink-0 text-[#E63946]" />
                   <span className="truncate">{event.location.venue}</span>
                 </div>
               )}
@@ -444,11 +469,11 @@ export const EventCard = ({
             <span className="hidden sm:inline">{shared ? "\u00a1Copiado!" : "Compartir"}</span>
           </button>
 
-          {/* CTA — min 44px height para mobile */}
+          {/* CTA — crimson sólido, gradient solo para destacados y carousel */}
           <Link
             href={detailUrl}
             onClick={() => onViewDetails?.(event)}
-            className="ml-auto flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#09090B] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#18181B]"
+            className="ml-auto flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#9B0A26]"
             aria-label={isMultiDate ? "Ver fechas del evento" : "Ver detalles del evento"}
           >
             {isMultiDate ? "Ver fechas" : "Ver detalles"}

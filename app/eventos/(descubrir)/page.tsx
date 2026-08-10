@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
+import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
-import { EventosIndexSections } from "@/presentation/events/components/EventosIndexSections";
+import { EventosRestSections } from "@/presentation/events/components/EventosRestSections";
+import { FeaturedEventsContainer } from "@/presentation/events/components/FeaturedEventsContainer";
+import { EventsCategoryChips } from "@/presentation/events/components/EventsCategoryChips";
+import { ExploreSearchBar } from "@/app/components/feature/home/ExploreSearchBar";
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
+import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
 
 export const metadata: Metadata = {
   title: "Eventos en Ibagué",
@@ -14,37 +19,54 @@ export const metadata: Metadata = {
 };
 
 export default async function EventosIndexPage() {
-  // Chips de categoría: estáticas (sin cookies). Las secciones de eventos —que
-  // leen la cookie para el like— van en un hueco PPR (<Suspense>).
   const collections = await getEventCollections();
   const categoryCollections = collections.filter((c) => c.kind === "category");
+  const featuredDef = collections.find((c) => c.kind === "featured");
+  const featuredEvents = featuredDef ? await fetchCollectionEvents(featuredDef) : [];
 
   return (
     <>
       <Section spacing="sm" className="mt-4">
-        <h1 className="text-3xl font-bold">Eventos en Ibagué</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Todo lo que hay pa&apos; hacer en la ciudad: lo más destacado, planes de fin
-          de semana y eventos por categoría.
+        <div className="flex items-center gap-1.5 text-sm font-medium text-[#71717A]">
+          <MapPin className="size-4 text-[#E63946]" />
+          <span>Ibagué, Tolima</span>
+        </div>
+
+        <h1
+          className="mt-2 text-4xl font-bold tracking-tight text-[#09090B]"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          Eventos en <span className="text-[#E63946]">Ibagué</span>
+        </h1>
+        <p className="mt-2 max-w-xl text-base leading-relaxed text-[#71717A]">
+          Lo más destacado, planes de fin de semana y eventos por categoría.
         </p>
 
+        <div className="mt-6">
+          <ExploreSearchBar />
+        </div>
+
         {categoryCollections.length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-2">
-            {categoryCollections.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/${c.slug}`}
-                className="rounded-full border border-border bg-secondary px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/70"
-              >
-                {c.shortLabel}
-              </Link>
-            ))}
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+              Explorar por categoría
+            </p>
+            <EventsCategoryChips collections={categoryCollections} />
           </div>
         )}
       </Section>
 
+      {/* Featured fuera del Suspense: la imagen LCP queda en el HTML inicial con priority */}
+      <ContentSection
+        title="Eventos destacados"
+        action={{ href: "/eventos-destacados-ibague" }}
+      >
+        <FeaturedEventsContainer featuredEvents={featuredEvents} />
+      </ContentSection>
+
+      {/* Fin de semana + todos: streaming cuando estén listos */}
       <Suspense fallback={<EventsSectionsSkeleton />}>
-        <EventosIndexSections />
+        <EventosRestSections />
       </Suspense>
     </>
   );

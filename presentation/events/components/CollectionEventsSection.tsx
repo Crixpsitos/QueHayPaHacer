@@ -10,7 +10,8 @@ import { getEventCollections, type CollectionDef } from "@/presentation/events/l
 import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCategory";
 import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
 import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
-import { fetchUserLiked } from "@/presentation/events/data/eventDetailFetchers";
+import { fetchUserLiked, fetchEventDetailById } from "@/presentation/events/data/eventDetailFetchers";
+import { createServerContainer } from "@/infraestructure/di/container";
 import { SITE_URL } from "@/app/lib/site";
 import type { Events } from "@/domain/entities/events/Events";
 
@@ -61,15 +62,16 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
     return map;
   };
 
-  // Categoría → infinite scroll: primera página por cursor + "Cargar más".
+  // Categoría: query por slug del evento (cubre slugs en español e inglés).
   if (def.kind === "category" && def.categoryId) {
-    const { events, nextCursor } = await getCategoryEventsPage(def.categoryId, null);
+    const { events, nextCursor } = await getCategoryEventsPage(def.categoryId, null, undefined, def.categorySlug);
     const likedByEventId = await likesFor(events);
     return (
       <Section spacing="sm" className="mt-4">
         <ItemListJsonLd events={events} />
         <InfiniteEventList
           categoryId={def.categoryId}
+          categorySlug={def.categorySlug}
           initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
           initialCursor={nextCursor}
           initialLikedByEventId={likedByEventId}

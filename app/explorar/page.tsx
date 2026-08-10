@@ -163,8 +163,8 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           initialPromoted={filters.promoted}
           initialMultiDate={filters.multiDate}
           initialMaxPrice={filters.maxPrice}
-          initialOnlyEvents={filters.onlyEvents}
-          initialOnlySites={filters.onlySites}
+          initialOnlyEvents={false}
+          initialOnlySites={false}
         />
       </div>
 
@@ -280,7 +280,7 @@ function EventCategorySection({
         </div>
         {!isSearch && (
           <Link
-            href={`/eventos?categoria=${section.categoryId}`}
+            href={`/${section.collectionSlug}`}
             className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
           >
             Ver todos <ArrowRight className="size-4" />

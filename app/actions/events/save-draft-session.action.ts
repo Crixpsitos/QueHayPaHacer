@@ -30,11 +30,14 @@ export async function saveDraftSessionAction(
   const payload = {
     eventId,
     title: data.title || "Borrador",
-    shortDescription: data.shortDescription,
-    description: data.description,
+    description: data.description !== undefined
+      ? JSON.parse(JSON.stringify(data.description))
+      : undefined,
     coverSource: (data.coverSource ?? "parent") as EventSession["coverSource"],
-    mainImage: data.mainImage,
-    media: (data.media ?? []) as EventSession["media"],
+    mainImage: data.mainImage !== undefined
+      ? JSON.parse(JSON.stringify(data.mainImage))
+      : undefined,
+    media: JSON.parse(JSON.stringify(data.media ?? [])) as EventSession["media"],
     location: (data.location ?? {
       country: { isoCode: "", name: "", slug: "" },
       department: { isoCode: "", name: "", slug: "" },

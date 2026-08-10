@@ -32,7 +32,9 @@ export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
 
   const handleSelect = (type: "standard" | "multi-date") => {
     if (type === "multi-date" && !isProfessional) return;
-    router.push(`/eventos/create?type=${type}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set("type", type);
+    router.push(`/eventos/create?${params.toString()}`);
   };
 
   return (

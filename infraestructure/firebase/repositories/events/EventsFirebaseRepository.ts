@@ -15,6 +15,9 @@ export class EventsFirebaseRepository
   async updateEvent(event: FirebaseEventsDto): Promise<void> {
     await this.collection.doc(event.id).set(event, { merge: true });
   }
+  async deleteEvent(id: string): Promise<void> {
+    await this.collection.doc(id).delete();
+  }
   async updateEventDateRange(
     eventId: string,
     startDate: Date,
@@ -209,35 +212,26 @@ export class EventsFirebaseRepository
 
   async findByCategoryPaginated(
     categoryId: string,
+    categorySlug: string | null,
     limit: number,
     cursor: string | null,
   ): Promise<{ ids: string[]; nextCursor: string | null }> {
     const now = new Date();
+    const slug = categorySlug ?? categoryId;
     let query = this.collection
       .where("status", "==", "published")
-      .where("categoryInfo.id", "==", categoryId)
-      .where("startDate", ">=", now)
-      .orderBy("analytics.score", "desc")
-      // Tiebreaker por documentId → cursor estable sin índice extra (ver score con ties).
-      .orderBy(FieldPath.documentId(), "desc");
+      .where("categoryInfo.slug", "==", slug)
+      .where("endDate", ">=", now)
+      .orderBy("analytics.score", "desc");
 
-    if (cursor) {
-      const sep = cursor.indexOf("|");
-      const score = Number(cursor.slice(0, sep));
-      const id = cursor.slice(sep + 1);
-      query = query.startAfter(score, id);
-    }
+    if (cursor) query = query.startAfter(Number(cursor));
 
-    // limit+1 para saber si hay más sin una query extra.
     const snapshot = await query.limit(limit + 1).select("analytics.score").get();
     const docs = snapshot.docs;
-    const hasMore = docs.length > limit;
     const page = docs.slice(0, limit);
-    const last = page[page.length - 1];
-    const nextCursor =
-      hasMore && last
-        ? `${(last.data() as { analytics?: { score?: number } }).analytics?.score ?? 0}|${last.id}`
-        : null;
+    const nextCursor = docs.length > limit && page.length > 0
+      ? String((page[page.length - 1].data() as { analytics?: { score?: number } }).analytics?.score ?? 0)
+      : null;
 
     return { ids: page.map((d) => d.id), nextCursor };
   }

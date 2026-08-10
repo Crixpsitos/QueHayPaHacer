@@ -23,8 +23,8 @@ export const CategoriesContainer = async () => {
   return (
     <Section spacing="sm" className="mt-4">
       <h2 className="mb-4 text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Explorar las categorías</h2>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-        {categories.map((category) => (
+      <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10">
+        {categories.slice(0, 10).map((category) => (
           <CategoryItem key={category.id} category={category} />
         ))}
       </div>

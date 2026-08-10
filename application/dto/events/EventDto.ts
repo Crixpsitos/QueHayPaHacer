@@ -206,18 +206,38 @@ const step6Object = v.object({
 
 export const step6Schema = v.pipe(
   step6Object,
-  v.check(
-    (data) =>
-      data.registrationType !== "external" ||
-      (!!data.externalUrl && data.externalUrl.trim().length > 0),
-    "La URL externa es obligatoria cuando el tipo de registro es externo.",
+  // URL requerida cuando el registro es externo
+  v.forward(
+    v.check(
+      (data) =>
+        data.registrationType !== "external" ||
+        (!!data.externalUrl && data.externalUrl.trim().length > 0),
+      "Agrega el enlace donde las personas podrán registrarse.",
+    ),
+    ["externalUrl"],
   ),
-  v.check(
-    (data) =>
-      data.registrationType !== "form" ||
-      (!!data.registrationEventForm &&
-        data.registrationEventForm.fields.length > 0),
-    "Debes agregar al menos un campo si seleccionas formulario personalizado.",
+  // Formato de URL válido (solo cuando hay valor, para no duplicar el error anterior)
+  v.forward(
+    v.check(
+      (data) => {
+        if (data.registrationType !== "external" || !data.externalUrl?.trim()) return true;
+        try { new URL(data.externalUrl.trim()); return true; } catch { return false; }
+      },
+      "Ingresa una URL válida.",
+    ),
+    ["externalUrl"],
+  ),
+  // Formulario personalizado: al menos un campo con etiqueta no vacía
+  v.forward(
+    v.check(
+      (data) =>
+        data.registrationType !== "form" ||
+        (!!data.registrationEventForm &&
+          data.registrationEventForm.fields.length > 0 &&
+          data.registrationEventForm.fields.every((f) => !!f.label?.trim())),
+      "Agrega al menos una pregunta al formulario.",
+    ),
+    ["registrationEventForm"],
   ),
 );
 const step7Object = v.object({
@@ -315,31 +335,41 @@ export const CreateEventSchema = v.omit(EventSchema, [
   "updatedAt",
 ]);
 
-export const publishEventSchema = v.object({
-  id: v.optional(v.string()),
-  slug: v.optional(v.string()),
-  ...step1Schema.entries,
-  ...step2Schema.entries,
-  author: AuthorSchema,
-  ...step3Schema.entries,
-  ...step4Schema.entries,
-  ...step5Object.entries,
-  ...step6Object.entries,
-  ...step7Object.entries,
-  ...step8Schema.entries,
-  ...collaboratorEntries,
-  startDate: v.string(),
-  endDate: v.string(),
-  createdAt: v.optional(v.string()),
-  updatedAt: v.optional(v.string()),
-  publishedAt: v.string(),
-});
+export const publishEventSchema = v.pipe(
+  v.object({
+    id: v.optional(v.string()),
+    slug: v.optional(v.string()),
+    ...step1Schema.entries,
+    ...step2Schema.entries,
+    author: AuthorSchema,
+    ...step3Schema.entries,
+    ...step4Schema.entries,
+    ...step5Object.entries,
+    ...step6Object.entries,
+    ...step7Object.entries,
+    ...step8Schema.entries,
+    ...collaboratorEntries,
+    startDate: v.string(),
+    endDate: v.string(),
+    createdAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
+    publishedAt: v.string(),
+  }),
+  // Los eventos pagados solo se pueden publicar con registro externo.
+  v.check(
+    (data) => data.price.isFree || data.registrationType === "external",
+    "Los eventos pagados requieren registro externo. Configura el tipo de registro en el paso anterior.",
+  ),
+  // Si el registro es externo, la URL es obligatoria.
+  v.check(
+    (data) =>
+      data.registrationType !== "external" ||
+      (!!data.externalUrl && data.externalUrl.trim().length > 0),
+    "La URL del sitio externo es obligatoria para el registro externo.",
+  ),
+);
 
-/**
- * Publicación de eventos multi-fecha: solo campos del encabezado.
- * fecha / lugar / precio / registro viven en cada sesión, no en el evento padre.
- * (v.object ignora claves desconocidas, así que un payload completo se recorta solo.)
- */
+
 export const publishEventMultiDateSchema = v.object({
   id: v.optional(v.string()),
   slug: v.optional(v.string()),

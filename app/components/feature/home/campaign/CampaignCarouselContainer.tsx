@@ -26,12 +26,13 @@ export const CampaignCarouselContainer = async () => {
   const campaigns = await fetchActiveCampaigns();
 
   return (
-    <Section
-      className="overflow-hidden"
-      containerClassName="w-full overflow-hidden rounded-3xl aspect-video sm:aspect-[8/3]"
-      spacing="sm"
-    >
-      <CampaignCarousel campaings={campaigns} />
-    </Section>
+    <div className="overflow-hidden py-6 sm:py-8">
+      {/* Margen de página → div externo; rounded-3xl solo en el wrapper interno sin padding */}
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 lg:px-12">
+        <div className="w-full overflow-hidden rounded-3xl shadow-card aspect-video sm:aspect-[8/3]">
+          <CampaignCarousel campaings={campaigns} />
+        </div>
+      </div>
+    </div>
   );
 };

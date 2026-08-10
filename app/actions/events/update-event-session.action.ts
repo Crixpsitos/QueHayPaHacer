@@ -26,10 +26,23 @@ export async function updateEventSessionAction(
 
   try {
     const { eventSessionService } = createServerContainer();
+    // Sanitizar campos que pueden llegar con proxies del cliente Firestore.
+    const safeData: typeof data = {
+      ...data,
+      ...(data.description !== undefined && {
+        description: JSON.parse(JSON.stringify(data.description)),
+      }),
+      ...(data.media !== undefined && {
+        media: JSON.parse(JSON.stringify(data.media)),
+      }),
+      ...(data.mainImage !== undefined && {
+        mainImage: JSON.parse(JSON.stringify(data.mainImage)),
+      }),
+    };
     const { session, hasOverlap } = await eventSessionService.updateSession(
       eventId,
       sessionId,
-      data,
+      safeData,
     );
     await syncEventDateRange(eventId);
     await syncEventSiteIds(eventId);

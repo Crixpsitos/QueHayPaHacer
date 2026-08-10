@@ -22,6 +22,7 @@ export const FormRemoteDataSyncer = ({ recordId, subscribeToChanges }: RemoteDat
     if (!recordId || !user?.uid) return;
 
     const unsubscribe = subscribeRef.current(recordId, (remoteData) => {
+        if (!remoteData) return;
 
         // remoteData.mainImage may be a string (legacy) or an object {url,path} or legacy object with status
       if (remoteData.mainImage) {

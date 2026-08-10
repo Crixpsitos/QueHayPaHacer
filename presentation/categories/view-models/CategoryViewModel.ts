@@ -1,5 +1,6 @@
 export interface CategoryViewModel {
   id: string;
+  slug: string;
   title: string;
   description: string;
   icon: string;

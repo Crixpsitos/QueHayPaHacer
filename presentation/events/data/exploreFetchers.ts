@@ -6,6 +6,7 @@ import { getCategoryEventsPage } from "./categoryEventsPage";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { CategoryViewModelMapper } from "@/presentation/categories/mapper/CategoryViewModelMapper";
+import type { CategoryViewModel } from "@/presentation/categories/view-models/CategoryViewModel";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
 import type { Events } from "@/domain/entities/events/Events";
@@ -38,6 +39,7 @@ export interface ExploreBrowseEventSection {
   categoryId: string;
   title: string;
   icon: string;
+  collectionSlug: string;
   events: EventViewModel[];
   nextCursor: string | null;
 }
@@ -111,27 +113,69 @@ export async function fetchBrowseData(): Promise<ExploreBrowseData> {
 
   const categories = await fetchActiveCategories();
 
-  const [eventResults, siteResults] = await Promise.all([
-    Promise.all(
-      categories.map(async (cat) => {
-        const { events, nextCursor } = await getCategoryEventsPage(cat.id, null, BROWSE_SECTION_SIZE);
-        return { categoryId: cat.id, title: cat.title, icon: cat.icon, events, nextCursor };
-      }),
-    ),
-    Promise.all(
-      BROWSE_SITE_CATEGORIES.map(async ({ category, label, slug }) => {
-        const { sites, nextCursor } = await getSiteCategoryPage(category, null, BROWSE_SECTION_SIZE);
-        return { category, label, collectionSlug: slug, sites, nextCursor };
-      }),
-    ),
-  ]);
+  const catBySlug = new Map<string, CategoryViewModel>();
+  const catById = new Map<string, CategoryViewModel>();
+  for (const cat of categories) {
+    catBySlug.set(cat.slug, cat);
+    catById.set(cat.id, cat);
+  }
 
-  const eventSections: ExploreBrowseEventSection[] = eventResults
-    .filter((s) => s.events.length > 0)
-    .map((s) => ({
-      ...s,
-      events: s.events.map((e) => EventViewModelMapper.toViewModel(e)),
-    }));
+  const { eventsService } = createServerContainer();
+
+  // Query simple: todos los publicados con endDate >= now (misma query que home).
+  // Se agrupa por categoría en memoria — no requiere compound query ni índice extra.
+  const allIds = await eventsService.getAllEvents();
+  const allEvents = (
+    await Promise.all(allIds.map(fetchEventDetailById))
+  ).filter((e): e is Events => Boolean(e));
+
+  const grouped = new Map<string, Events[]>();
+  for (const event of allEvents) {
+    // Agrupa por id; si no coincide con ninguna categoría activa, usa el slug como fallback
+    const key = event.categoryInfo?.id ?? event.categoryInfo?.slug ?? "other";
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(event);
+  }
+
+  const eventSections: ExploreBrowseEventSection[] = [];
+  for (const [key, evts] of grouped.entries()) {
+    const firstCatInfo = evts[0].categoryInfo;
+    // Busca en categorías activas: por id, luego por slug del evento
+    const activeMeta =
+      catById.get(key) ??
+      catBySlug.get(key) ??
+      catBySlug.get(firstCatInfo?.slug ?? "") ??
+      catById.get(firstCatInfo?.id ?? "");
+
+    const meta = activeMeta ?? (firstCatInfo
+      ? { id: key, title: firstCatInfo.title, icon: firstCatInfo.slug ?? "music" }
+      : null);
+
+    if (!meta) continue;
+
+    const collectionSlug = activeMeta
+      ? `eventos-${activeMeta.slug}-ibague`
+      : "explorar";
+
+    eventSections.push({
+      categoryId: meta.id,
+      title: meta.title,
+      icon: meta.icon,
+      collectionSlug,
+      events: evts
+        .sort((a, b) => (b.analytics?.score ?? 0) - (a.analytics?.score ?? 0))
+        .slice(0, BROWSE_SECTION_SIZE)
+        .map((e) => EventViewModelMapper.toViewModel(e)),
+      nextCursor: null,
+    });
+  }
+
+  const siteResults = await Promise.all(
+    BROWSE_SITE_CATEGORIES.map(async ({ category, label, slug }) => {
+      const { sites, nextCursor } = await getSiteCategoryPage(category, null, BROWSE_SECTION_SIZE);
+      return { category, label, collectionSlug: slug, sites, nextCursor };
+    }),
+  );
 
   const siteSections: ExploreBrowseSiteSection[] = siteResults.filter(
     (s) => s.sites.length > 0,

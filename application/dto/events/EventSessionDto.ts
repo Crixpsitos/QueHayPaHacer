@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { RichTextWithLengthSchema, getTiptapPlainText } from "./EventDto";
+import { getTiptapPlainText } from "./EventDto";
 
 /**
  * Duración máxima de una sesión. Una sesión = una ocurrencia continua (máx. un día).
@@ -9,6 +9,13 @@ import { RichTextWithLengthSchema, getTiptapPlainText } from "./EventDto";
 export const MAX_SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 const MAX_SESSION_DURATION_MSG =
   "Una sesión no puede durar más de 24 horas. Crea otra fecha para días adicionales.";
+
+const SessionDescriptionSchema = v.pipe(
+  v.any(),
+  v.check((d) => getTiptapPlainText(d).trim().length > 0, "La descripción es obligatoria."),
+  v.check((d) => getTiptapPlainText(d).trim().length >= 10, "La descripción debe tener al menos 10 caracteres."),
+  v.check((d) => getTiptapPlainText(d).trim().length <= 1000, "La descripción no debe exceder los 1000 caracteres."),
+);
 
 // ─── Schemas compartidos ───────────────────────────────────────────────────────
 
@@ -54,15 +61,11 @@ const SessionPriceSchema = v.object({
 const sessionBodyObject = v.object({
   title: v.pipe(
     v.string(),
-    v.nonEmpty("El título es requerido"),
-    v.maxLength(80, "Máximo 80 caracteres"),
+    v.nonEmpty("El título es obligatorio."),
+    v.minLength(3, "El título debe tener al menos 3 caracteres."),
+    v.maxLength(60, "El título no puede superar los 60 caracteres."),
   ),
-  shortDescription: v.pipe(
-    v.string(),
-    v.nonEmpty("La sinopsis es requerida"),
-    v.maxLength(150, "Máximo 150 caracteres"),
-  ),
-  description: RichTextWithLengthSchema,
+  description: SessionDescriptionSchema,
   coverSource: SessionCoverSourceSchema,
   mainImage: v.optional(
     v.object({
@@ -140,23 +143,12 @@ export const FormSessionSchema = v.pipe(
   id: v.optional(v.string()),
   eventId: v.optional(v.string()),
   title: v.pipe(
-    v.string("El título es requerido"),
-    v.nonEmpty("El título es requerido"),
-    v.maxLength(80, "Máximo 80 caracteres"),
+    v.string("El título es obligatorio."),
+    v.nonEmpty("El título es obligatorio."),
+    v.minLength(3, "El título debe tener al menos 3 caracteres."),
+    v.maxLength(60, "El título no puede superar los 60 caracteres."),
   ),
-  shortDescription: v.pipe(
-    v.string("La sinopsis es requerida"),
-    v.nonEmpty("La sinopsis es requerida"),
-    v.maxLength(150, "Máximo 150 caracteres"),
-  ),
-  // description tolerante al tipo (undefined / doc vacío) con mensaje limpio.
-  description: v.pipe(
-    v.any(),
-    v.check(
-      (d) => getTiptapPlainText(d).trim().length > 0,
-      "La descripción es requerida",
-    ),
-  ),
+  description: SessionDescriptionSchema,
   coverSource: v.optional(SessionCoverSourceSchema),
   mainImage: v.optional(v.any()),
   media: v.optional(v.array(v.any())),
