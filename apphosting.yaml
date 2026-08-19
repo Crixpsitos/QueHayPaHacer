@@ -15,19 +15,7 @@ env:
       - BUILD
       - RUNTIME
 
-  - variable: FIREBASE_API_KEY
-    secret: firebaseApiKey
-    availability:
-      - BUILD
-      - RUNTIME
-
-  # Firebase client SDK public variables
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: firebaseApiKey
-    availability:
-      - BUILD
-      - RUNTIME
-
+  # Firebase client SDK public variables — resto se configura en Firebase Console > App Hosting > Environment variables
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     value: quehaypahacer-develop.firebaseapp.com
     availability:
@@ -51,31 +39,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
-  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    secret: firebaseMessagingSenderId
-    availability:
-      - BUILD
-      - RUNTIME
-
-  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    secret: firebaseAppId
-    availability:
-      - BUILD
-      - RUNTIME
-
-  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    secret: firebaseMeasurementId
-    availability:
-      - BUILD
-      - RUNTIME
-
-  # Optional: Multi-tenancy tenant ID
-  # - variable: NEXT_PUBLIC_FIREBASE_AUTH_TENANT_ID
-  #   value: your-tenant-id
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
 
   # Cookie secrets for next-firebase-auth-edge
   - variable: COOKIE_SECRET_CURRENT

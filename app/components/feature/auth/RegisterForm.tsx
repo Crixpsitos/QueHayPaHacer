@@ -161,26 +161,26 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       />
 
       <div className="flex flex-col gap-1">
-        <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-600">
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
           <input
             {...register("acceptPersonalData")}
             type="checkbox"
             id="acceptPersonalData"
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-foreground"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
           />
           <span>
             Acepto el uso de mis datos personales conforme a la politica de privacidad.
           </span>
         </label>
         {errors.acceptPersonalData && (
-          <p role="alert" className="text-xs text-red-500">
+          <p role="alert" className="text-xs text-primary">
             <span className="font-medium">{errors.acceptPersonalData.message}</span>
           </p>
         )}
       </div>
 
       {submitError && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p role="alert" className="rounded-xl border border-primary/20 bg-primary-light px-3 py-2 text-sm text-primary">
           {submitError}
         </p>
       )}
@@ -189,10 +189,10 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors",
+          "w-full rounded-full bg-gradient-to-br from-[#E63946] to-[#9B0A26] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
           !isValid || isPending
             ? "cursor-not-allowed opacity-50"
-            : "hover:bg-[#383838] dark:hover:bg-[#ccc]",
+            : "hover:from-[#FF4D5A] hover:to-[#B30E30]",
         )}
       >
         {isPending ? "Creando cuenta..." : "Crear cuenta"}

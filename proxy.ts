@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  authMiddleware,
-  redirectToHome,
-  redirectToLogin,
-} from "next-firebase-auth-edge";
+import { authMiddleware } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
 const PRIVATE_PATHS = ["/profile", "/sites"];
@@ -32,9 +28,8 @@ export async function proxy(request: NextRequest) {
     tenantId: authConfig.tenantId,
     dynamicCustomClaimsKeys: authConfig.dynamicCustomClaimsKeys,
     handleValidToken: async (_tokens, headers) => {
-      // Authenticated user should not be able to access /login, /register and /reset-password routes
       if (PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
-        return redirectToHome(request);
+        return NextResponse.redirect(new URL("/", request.url));
       }
 
       return NextResponse.next({
@@ -44,18 +39,19 @@ export async function proxy(request: NextRequest) {
       });
     },
     handleInvalidToken: async () => {
-      return redirectToLogin(request, {
-        path: "/login",
-        privatePaths: PRIVATE_PATHS,
-      });
+      const isPrivate = PRIVATE_PATHS.some((p) =>
+        request.nextUrl.pathname.startsWith(p),
+      );
+      if (!isPrivate) return NextResponse.next();
+
+      const redirectTo = encodeURIComponent(request.nextUrl.pathname);
+      return NextResponse.redirect(
+        new URL(`/login?redirect_to=${redirectTo}`, request.url),
+      );
     },
     handleError: async (error) => {
       console.error("Unhandled authentication error", { error });
-
-      return redirectToLogin(request, {
-        path: "/login",
-        privatePaths: PRIVATE_PATHS,
-      });
+      return NextResponse.redirect(new URL("/login", request.url));
     },
     getMetadata: authConfig.getMetadata,
   });

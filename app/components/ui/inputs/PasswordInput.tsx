@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import type { FieldValues } from "react-hook-form";
 
 import { cn } from "@/app/lib/utils/cn";
@@ -27,10 +28,10 @@ export const PasswordInput = <TFieldValues extends FieldValues>({
           aria-describedby={error ? `${id}_help` : undefined}
           aria-invalid={Boolean(error)}
           className={cn(
-            "peer block w-full appearance-none rounded-md border bg-transparent px-2.5 pb-2.5 pt-4 pr-20 text-sm text-foreground outline-none transition-colors focus:ring-0",
+            "peer block w-full appearance-none rounded-xl border bg-transparent px-2.5 pb-2.5 pt-4 pr-12 text-sm text-foreground outline-none transition-colors focus:ring-0",
             error
-              ? "border-red-500 focus:border-red-500"
-              : "border-zinc-300 focus:border-foreground",
+              ? "border-primary focus:border-primary"
+              : "border-border focus:border-primary",
             className,
           )}
           placeholder=" "
@@ -41,8 +42,8 @@ export const PasswordInput = <TFieldValues extends FieldValues>({
           className={cn(
             "absolute start-1 top-2 z-10 origin-[0] -translate-y-4 scale-75 bg-background px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-75 peer-focus:px-2 rtl:peer-focus:left-auto rtl:peer-focus:translate-x-1/4",
             error
-              ? "text-red-500 peer-focus:text-red-500"
-              : "text-zinc-500 peer-focus:text-foreground",
+              ? "text-primary peer-focus:text-primary"
+              : "text-muted-foreground peer-focus:text-foreground",
           )}
         >
           {label}
@@ -51,11 +52,13 @@ export const PasswordInput = <TFieldValues extends FieldValues>({
         <button
           type="button"
           onClick={() => setShowPassword((currentValue) => !currentValue)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-500 transition-colors hover:text-foreground focus:outline-none"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none"
           aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
           aria-pressed={showPassword}
         >
-          {showPassword ? "Ocultar" : "Ver"}
+          {showPassword
+            ? <EyeOff size={16} strokeWidth={1.75} />
+            : <Eye size={16} strokeWidth={1.75} />}
         </button>
       </div>
 
@@ -63,7 +66,7 @@ export const PasswordInput = <TFieldValues extends FieldValues>({
         <p
           id={`${id}_help`}
           role="alert"
-          className="mt-2 text-xs text-red-500"
+          className="mt-2 text-xs text-primary"
         >
           <span className="font-medium">{error.message}</span>
         </p>

@@ -4,10 +4,10 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
-import { redirect, unstable_rethrow } from "next/navigation"
 
 interface GoogleAuthActionResult {
     error?: string;
+    success?: boolean;
 }
 
 interface GoogleUserData {
@@ -54,10 +54,8 @@ export async function googleAuthAction(
             })
         }
 
-        // Redirigir al home
-        redirect("/")
+        return { success: true }
     } catch (error) {
-        unstable_rethrow(error)
         console.error("Error al autenticar con Google", error)
         return { error: "No fue posible iniciar sesion con Google. Intenta nuevamente." }
     }

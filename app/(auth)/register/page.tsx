@@ -17,9 +17,9 @@ export default function RegisterPage() {
       </div>
 
       <div className="mb-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
-        <span className="text-xs text-zinc-400">o registrate con correo</span>
-        <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">o registrate con correo</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <RegisterForm registerAction={registerAction} />
