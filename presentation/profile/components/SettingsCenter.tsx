@@ -9,6 +9,8 @@ import {
   DrawerTitle,
 } from "@/app/components/ui/drawer";
 import {
+  AtSign,
+  ChevronDown,
   ChevronLeft,
   Settings,
   X,
@@ -20,6 +22,11 @@ import {
   AlertTriangle,
   Globe,
   EyeOff,
+  Award,
+  Landmark,
+  Loader2,
+  Plus,
+  ShieldCheck,
   // Bell, // reactivar junto con la sección de Notificaciones
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -30,6 +37,10 @@ import { useProfileConfigStore } from "@/app/store/profile/profileConfig.store";
 import { useMediaQuery } from "@/app/lib/hooks/useMediaQuery";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { updateProfileAction } from "@/app/actions/profile/update-profile.action";
+import { checkUsernameAvailabilityAction } from "@/app/actions/professional/check-username-availability.action";
+import { generateUsername } from "@/app/lib/utils/generateUsername";
+import { cn } from "@/app/lib/utils/cn";
+import type { SocialLinkEntry } from "@/domain/entities/user/User";
 import { updateProfileVisibilityAction } from "@/app/actions/profile/update-profile-visibility.action";
 import { updateAvatarAction } from "@/app/actions/profile/update-avatar.action";
 import { changePasswordAction } from "@/app/actions/auth/change-password.action";
@@ -37,6 +48,8 @@ import { deleteAccountAction } from "@/app/actions/auth/delete-account.action";
 import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage";
 import { notify } from "@/presentation/shared/lib/notify";
 import { ProfessionalRequestSection } from "./professional/ProfessionalRequestSection";
+import type { OrganizerDetails, BusinessDetails, GovernmentDetails } from "@/domain/entities/professional/ProfessionalRequest";
+import { BUSINESS_CATEGORY_LABEL, isProfessionalType, PROFESSIONAL_TYPE_LABEL } from "../lib/professionalType";
 
 type selectedSectionSetting =
   | "main"
@@ -45,6 +58,20 @@ type selectedSectionSetting =
   | "professional"
   | "delete";
 
+const SOCIAL_PLATFORMS = [
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "youtube", label: "YouTube" },
+  { value: "twitter", label: "X / Twitter" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "other", label: "Otro enlace" },
+] as const;
+
+const PLATFORM_LABEL: Record<string, string> = Object.fromEntries(
+  SOCIAL_PLATFORMS.map((p) => [p.value, p.label]),
+);
+
 interface UserData {
   firstName: string;
   lastName: string;
@@ -52,9 +79,23 @@ interface UserData {
   phone: string;
   bio: string;
   username: string;
+  isUsernameCustomized: boolean;
   avatarUrl: string;
   imagePath: string;
   isProfessional: boolean;
+  website: string;
+  mapsLink: string;
+  socialLinks: SocialLinkEntry[];
+  professionalDescription: string;
+  brandName: string;
+  // Campos editables exclusivos de cuentas gobierno
+  governmentDepartment: string;
+  governmentEmail: string;
+  governmentPhone: string;
+  governmentNit: string;
+  // Campos editables exclusivos de cuentas negocio
+  businessNit: string;
+  businessPhone: string;
 }
 
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
@@ -76,7 +117,7 @@ const getSectionTitle = (section: selectedSectionSetting) => {
   }
 };
 
-export const SettingsCenter = () => {
+export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean } = {}) => {
   const { user, refreshUser } = useAuth();
   const { openSettings, onOpenSettings, selectedSectionSetting, onSelectSectionSetting } = useProfileConfigStore();
   const closeResetTimeoutRef = useRef<number | null>(null);
@@ -109,13 +150,26 @@ export const SettingsCenter = () => {
     phone: "",
     bio: "",
     username: "",
+    isUsernameCustomized: false,
     avatarUrl: "",
     imagePath: "",
     isProfessional: false,
+    website: "",
+    mapsLink: "",
+    socialLinks: [],
+    professionalDescription: "",
+    brandName: "",
+    governmentDepartment: "",
+    governmentEmail: "",
+    governmentPhone: "",
+    governmentNit: "",
+    businessNit: "",
+    businessPhone: "",
   });
   const [initialProfileData, setInitialProfileData] = useState<UserData | null>(null);
 
   const getUserDataFromAuth = useCallback((): UserData => {
+    const emptySocialLinks: SocialLinkEntry[] = [];
     if (!user) {
       return {
         firstName: "",
@@ -124,15 +178,36 @@ export const SettingsCenter = () => {
         phone: "",
         bio: "",
         username: "",
+        isUsernameCustomized: false,
         avatarUrl: "",
         imagePath: "",
         isProfessional: false,
+        website: "",
+        mapsLink: "",
+        socialLinks: emptySocialLinks,
+        professionalDescription: "",
+        brandName: "",
+        governmentDepartment: "",
+        governmentEmail: "",
+        governmentPhone: "",
+        governmentNit: "",
+        businessNit: "",
+        businessPhone: "",
       };
     }
-
-    const fullName = user.displayName?.trim() ?? "";
+    const fullName = user.displayName ?? "";
     const [first = "", ...rest] = fullName.split(" ");
     const last = rest.join(" ");
+
+    // Backward compat: convert legacy single socialLink to socialLinks array
+    const rawSocialLinks = user.profile?.socialLinks as SocialLinkEntry[] | undefined;
+    const legacySocialLink = user.profile?.socialLink as string | undefined;
+    const resolvedSocialLinks: SocialLinkEntry[] =
+      rawSocialLinks?.length
+        ? rawSocialLinks
+        : legacySocialLink
+          ? [{ platform: "other" as const, url: legacySocialLink }]
+          : [];
 
     return {
       firstName: user.profile?.firstName ?? first,
@@ -141,9 +216,33 @@ export const SettingsCenter = () => {
       phone: user.phoneNumber ?? user.profile?.phoneNumber ?? "",
       bio: user.profile?.bio ?? "",
       username: user.profile?.username ?? fullName.toLowerCase().replace(/\s+/g, "") ?? "",
+      isUsernameCustomized: (user.profile?.isUsernameCustomized as boolean | undefined) ?? false,
       avatarUrl: user.profile?.photoURL ?? user.photoURL ?? "",
       imagePath: user.profile?.imagePath ?? "",
-      isProfessional: Boolean(user.customClaims?.isProfessional),
+      isProfessional: user.profile?.accountType === "professional",
+      website: user.profile?.website ?? "",
+      mapsLink: (user.profile?.mapsLink as string | undefined) ?? "",
+      socialLinks: resolvedSocialLinks,
+      professionalDescription: user.profile?.professionalDescription ?? "",
+      brandName: user.profile?.brandName ?? "",
+      governmentDepartment: user.profile?.professionalType === "government"
+        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.department ?? "")
+        : "",
+      governmentEmail: user.profile?.professionalType === "government"
+        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.institutionalEmail ?? "")
+        : "",
+      governmentPhone: user.profile?.professionalType === "government"
+        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.institutionalPhone ?? "")
+        : "",
+      governmentNit: user.profile?.professionalType === "government"
+        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.nit ?? "")
+        : "",
+      businessNit: user.profile?.professionalType === "business"
+        ? ((user.profile?.professionalDetails as BusinessDetails | undefined)?.nit ?? "")
+        : "",
+      businessPhone: user.profile?.professionalType === "business"
+        ? ((user.profile?.professionalDetails as BusinessDetails | undefined)?.businessPhone ?? "")
+        : "",
     };
   }, [user]);
 
@@ -155,10 +254,25 @@ export const SettingsCenter = () => {
     const userData = getUserDataFromAuth();
     setEditedUser(userData);
     setInitialProfileData(userData);
-    setIsProfessional(Boolean(user.customClaims?.isProfessional));
+    setIsProfessional(user.profile?.accountType === "professional");
     // Obtener isPublic del usuario (por defecto true si no existe)
     setIsPublic(user.profile?.isPublic !== false);
+    // Resetear estado de acordeones al reabrir
+    setOpenEditSections(new Set(["personal"]));
+    setAddingSocialLink(null);
   }, [getUserDataFromAuth, user]);
+
+  // Estado para acordeones y UI del formulario de edición
+  const [openEditSections, setOpenEditSections] = useState<Set<string>>(new Set(["personal"]));
+  const toggleEditSection = useCallback((id: string) => {
+    setOpenEditSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const [addingSocialLink, setAddingSocialLink] = useState<{ platform: string; url: string } | null>(null);
 
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -180,6 +294,18 @@ export const SettingsCenter = () => {
   });
 
   const [changePasswordMessage, setChangePasswordMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Estado para verificación de disponibilidad del @username
+  const [usernameCheckResult, setUsernameCheckResult] = useState<"available" | "taken" | null>(null);
+  const [usernameCheckedValue, setUsernameCheckedValue] = useState<string>("");
+
+  const usernameCheckStatus = useMemo<"idle" | "checking" | "available" | "taken">(() => {
+    const trimmed = editedUser.username.trim();
+    if (!trimmed || trimmed.length < 3) return "idle";
+    if (trimmed === initialProfileData?.username.trim()) return "idle";
+    if (trimmed !== usernameCheckedValue || usernameCheckResult === null) return "checking";
+    return usernameCheckResult;
+  }, [editedUser.username, initialProfileData?.username, usernameCheckedValue, usernameCheckResult]);
 
   const normalizePhoneToColombia = (phone: string): string | undefined => {
     const rawPhone = phone.trim();
@@ -207,11 +333,23 @@ export const SettingsCenter = () => {
   const buildComparableProfilePayload = useCallback(
     (data: UserData) => ({
       username: data.username.trim(),
+      isUsernameCustomized: data.isUsernameCustomized,
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       bio: data.bio.trim(),
       phoneNumber: normalizePhoneToColombia(data.phone) ?? "",
       avatarUrl: data.avatarUrl,
+      website: data.website.trim(),
+      mapsLink: data.mapsLink.trim(),
+      socialLinks: data.socialLinks,
+      professionalDescription: data.professionalDescription.trim(),
+      brandName: data.brandName.trim(),
+      governmentDepartment: data.governmentDepartment.trim(),
+      governmentEmail: data.governmentEmail.trim(),
+      governmentPhone: data.governmentPhone.trim(),
+      governmentNit: data.governmentNit.trim(),
+      businessNit: data.businessNit.trim(),
+      businessPhone: data.businessPhone.trim(),
     }),
     [],
   );
@@ -222,7 +360,6 @@ export const SettingsCenter = () => {
     
     if (!data.firstName.trim()) incomplete.push("firstName");
     if (!data.lastName.trim()) incomplete.push("lastName");
-    if (!data.username.trim()) incomplete.push("username");
     if (!data.phone.trim()) incomplete.push("phone");
     if (!data.bio.trim()) incomplete.push("bio");
     
@@ -266,6 +403,7 @@ export const SettingsCenter = () => {
           contentType: selectedFile.type,
           isPublic: true,
           subFolder: "avatar",
+          cacheControl: "public, max-age=31536000, immutable",
         });
 
         const updateResult = await updateAvatarAction({
@@ -330,6 +468,42 @@ export const SettingsCenter = () => {
 
     const normalizedPhone = normalizePhoneToColombia(editedUser.phone);
 
+    if (usernameCheckStatus === "taken") {
+      setSaveProfileMessage({ type: "error", message: "El identificador público no está disponible. Elige otro." });
+      setIsSavingProfile(false);
+      return;
+    }
+
+    const isUsernameChanged =
+      editedUser.username.trim() !== (initialProfileData?.username.trim() ?? "");
+
+    // Construir professionalDetails actualizado según el tipo
+    const isGovType = user.profile?.professionalType === "government";
+    const isBizType = user.profile?.professionalType === "business";
+    const existingGovDetails = isGovType
+      ? (user.profile?.professionalDetails as GovernmentDetails | undefined)
+      : undefined;
+    const existingBizDetails = isBizType
+      ? (user.profile?.professionalDetails as BusinessDetails | undefined)
+      : undefined;
+
+    const updatedProfessionalDetails =
+      isGovType && existingGovDetails
+        ? ({
+            ...existingGovDetails,
+            department: editedUser.governmentDepartment.trim(),
+            institutionalEmail: editedUser.governmentEmail.trim(),
+            institutionalPhone: editedUser.governmentPhone.trim(),
+            nit: editedUser.governmentNit.trim() || existingGovDetails.nit || null,
+          } as Record<string, unknown>)
+        : isBizType && existingBizDetails
+          ? ({
+              ...existingBizDetails,
+              nit: editedUser.businessNit.trim() || existingBizDetails.nit || null,
+              businessPhone: editedUser.businessPhone.trim() || null,
+            } as Record<string, unknown>)
+          : undefined;
+
     const result = await updateProfileAction({
       uid: user.uid,
       username: editedUser.username.trim(),
@@ -337,6 +511,13 @@ export const SettingsCenter = () => {
       lastName: editedUser.lastName.trim(),
       bio: editedUser.bio.trim(),
       phoneNumber: editedUser.phone,
+      website: editedUser.website.trim(),
+      mapsLink: isProfessional ? editedUser.mapsLink.trim() : undefined,
+      socialLinks: editedUser.socialLinks,
+      isUsernameCustomized: isUsernameChanged ? true : editedUser.isUsernameCustomized,
+      professionalDescription: isProfessional ? editedUser.professionalDescription.trim() : undefined,
+      brandName: isProfessional ? editedUser.brandName.trim() : undefined,
+      professionalDetails: updatedProfessionalDetails,
     });
 
     if (!result.success) {
@@ -352,10 +533,22 @@ export const SettingsCenter = () => {
     const updatedUserData: UserData = {
       ...editedUser,
       username: editedUser.username.trim(),
+      isUsernameCustomized: isUsernameChanged ? true : editedUser.isUsernameCustomized,
       firstName: editedUser.firstName.trim(),
       lastName: editedUser.lastName.trim(),
       bio: editedUser.bio.trim(),
       phone: normalizedPhone ?? "",
+      website: editedUser.website.trim(),
+      mapsLink: editedUser.mapsLink.trim(),
+      socialLinks: editedUser.socialLinks,
+      professionalDescription: editedUser.professionalDescription.trim(),
+      brandName: editedUser.brandName.trim(),
+      governmentDepartment: editedUser.governmentDepartment.trim(),
+      governmentEmail: editedUser.governmentEmail.trim(),
+      governmentPhone: editedUser.governmentPhone.trim(),
+      governmentNit: editedUser.governmentNit.trim(),
+      businessNit: editedUser.businessNit.trim(),
+      businessPhone: editedUser.businessPhone.trim(),
     };
     setEditedUser(updatedUserData);
     setInitialProfileData(updatedUserData);
@@ -461,6 +654,22 @@ export const SettingsCenter = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [openSettings, selectedSectionSetting, syncUserData, user]);
+
+  // Verifica disponibilidad del @username con debounce de 500 ms
+  useEffect(() => {
+    const trimmed = editedUser.username.trim();
+    if (!trimmed || trimmed.length < 3) return;
+    if (trimmed === usernameCheckedValue) return;
+    // El username inicial ya le pertenece al usuario — no necesita verificarse
+    if (trimmed === initialProfileData?.username.trim()) return;
+    const timer = setTimeout(() => {
+      void checkUsernameAvailabilityAction(trimmed, user?.uid ?? "").then((res) => {
+        setUsernameCheckedValue(trimmed);
+        setUsernameCheckResult(res.available ? "available" : "taken");
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [editedUser.username, initialProfileData?.username, user?.uid, usernameCheckedValue]);
 
   const renderMainMenu = () => (
     <div className="space-y-8">
@@ -583,168 +792,580 @@ export const SettingsCenter = () => {
     </div>
   );
 
-  const renderEditProfile = () => (
-    <div className="space-y-6">
-      {/* Indicador de perfil incompleto */}
-      {hasIncompleteProfile && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div>
-              <p className="font-medium text-amber-900 dark:text-amber-300">
-                Tu perfil está incompleto
-              </p>
-              <p className="mt-1 text-sm text-amber-800 dark:text-amber-400">
-                Completa los siguientes campos para tener un perfil más visible en la comunidad
-              </p>
+  const renderEditProfile = () => {
+    // Firestore es fuente de verdad; customClaims puede estar desactualizado (JWT stale)
+    const rawType = (user?.profile?.professionalType as string | undefined)
+      ?? (user?.customClaims?.professionalType as string | undefined);
+    const professionalType = isProfessionalType(rawType) ? rawType : null;
+    const isOrganizer = professionalType === "organizer";
+    const isBusiness = professionalType === "business";
+    const isGovernment = professionalType === "government";
+
+    const organizerDetails = isOrganizer
+      ? (user?.profile?.professionalDetails as OrganizerDetails | undefined)
+      : null;
+    const businessDetails = isBusiness
+      ? (user?.profile?.professionalDetails as BusinessDetails | undefined)
+      : null;
+    const governmentDetails = isGovernment
+      ? (user?.profile?.professionalDetails as GovernmentDetails | undefined)
+      : null;
+
+    const nit = organizerDetails?.nit ?? businessDetails?.nit ?? governmentDetails?.nit ?? null;
+    const professionalTypeLabel = professionalType
+      ? PROFESSIONAL_TYPE_LABEL[professionalType]
+      : "Profesional";
+    const professionalDescriptionLabel = isBusiness
+      ? "Descripción del negocio"
+      : isGovernment
+        ? "Descripción institucional"
+        : "Descripción profesional";
+
+    const ProfTypeIcon = isOrganizer ? Award : isBusiness ? Briefcase : Landmark;
+
+    // Summaries shown when each accordion is closed
+    const personalSummary =
+      [editedUser.firstName.trim(), editedUser.lastName.trim()].filter(Boolean).join(" ") ||
+      "Sin datos";
+    const professionalSummary =
+      isProfessional && professionalType
+        ? `${professionalTypeLabel}${editedUser.brandName.trim() ? ` · ${editedUser.brandName.trim()}` : ""}`
+        : "";
+    const digitalParts: string[] = [];
+    if (editedUser.website.trim()) {
+      try {
+        digitalParts.push(new URL(editedUser.website.trim()).hostname);
+      } catch {
+        digitalParts.push("sitio web");
+      }
+    }
+    if (editedUser.socialLinks.length > 0) {
+      digitalParts.push(
+        `${editedUser.socialLinks.length} red${editedUser.socialLinks.length !== 1 ? "es" : ""}`,
+      );
+    }
+    const digitalSummary = digitalParts.join(" · ") || "Sin configurar";
+
+    return (
+      <div className="space-y-3 pb-2">
+        {/* Indicador de perfil incompleto */}
+        {hasIncompleteProfile && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div>
+                <p className="font-medium text-amber-900 dark:text-amber-300">
+                  Tu perfil está incompleto
+                </p>
+                <p className="mt-1 text-sm text-amber-800 dark:text-amber-400">
+                  Completa los campos marcados para mejorar tu visibilidad.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <ProfileAvatar
-            src={editedUser.avatarUrl}
-            alt="Foto de perfil"
-            sizes="96px"
-            firstName={editedUser.firstName}
-            lastName={editedUser.lastName}
-            loading="eager"
-            className="h-24 w-24 border border-border bg-muted"
-            textClassName="text-2xl"
-          />
-          <button
-            type="button"
-            aria-label="Cambiar foto de perfil"
-            onClick={() => avatarInputRef.current?.click()}
-            disabled={isUploadingAvatar}
-            className="absolute bottom-0 right-0 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-background bg-foreground text-background shadow-md transition-transform hover:scale-105"
-          >
-            <Camera className="h-4 w-4" />
-          </button>
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(event) => {
-              void handleAvatarFileChange(event);
-            }}
-          />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {isUploadingAvatar ? "Subiendo foto..." : "Toca para cambiar la foto (máximo 5MB)"}
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <Field
-          label="Nombre"
-          value={editedUser.firstName}
-          onChange={(v) => setEditedUser({ ...editedUser, firstName: v })}
-          isIncomplete={incompleteFields.includes("firstName")}
-        />
-        <Field
-          label="Apellidos"
-          value={editedUser.lastName}
-          onChange={(v) => setEditedUser({ ...editedUser, lastName: v })}
-          isIncomplete={incompleteFields.includes("lastName")}
-        />
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-sm font-medium">Nombre de usuario</label>
-            {incompleteFields.includes("username") && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                <AlertCircle className="h-3 w-3" />
-                Completar
-              </span>
-            )}
+        {/* ── 1. PERFIL PERSONAL ── */}
+        <EditAccordionSection
+          id="personal"
+          icon={User}
+          title="Perfil personal"
+          summary={personalSummary}
+          isOpen={openEditSections.has("personal")}
+          onToggle={() => toggleEditSection("personal")}
+        >
+          {/* Avatar */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <ProfileAvatar
+                src={editedUser.avatarUrl}
+                alt="Foto de perfil"
+                sizes="96px"
+                firstName={editedUser.firstName}
+                lastName={editedUser.lastName}
+                loading="eager"
+                className="h-24 w-24 border border-border bg-muted"
+                textClassName="text-2xl"
+              />
+              <button
+                type="button"
+                aria-label="Cambiar foto de perfil"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute bottom-0 right-0 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-background bg-foreground text-background shadow-md transition-transform hover:scale-105"
+              >
+                <Camera className="h-4 w-4" />
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  void handleAvatarFileChange(event);
+                }}
+              />
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              {isUploadingAvatar ? "Subiendo foto..." : "Toca para cambiar (máx. 5 MB)"}
+            </p>
           </div>
-          <div className="relative">
-            <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${incompleteFields.includes("username") ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-              @
-            </span>
-            <input
-              type="text"
-              value={editedUser.username}
-              onChange={(e) =>
-                setEditedUser({ ...editedUser, username: e.target.value })
-              }
-              className={`h-11 w-full rounded-lg border pl-8 pr-10 text-sm outline-none transition-colors ${
-                incompleteFields.includes("username")
+
+          <Field
+            label="Nombre"
+            value={editedUser.firstName}
+            onChange={(v) => setEditedUser({ ...editedUser, firstName: v })}
+            isIncomplete={incompleteFields.includes("firstName")}
+          />
+          <Field
+            label="Apellidos"
+            value={editedUser.lastName}
+            onChange={(v) => setEditedUser({ ...editedUser, lastName: v })}
+            isIncomplete={incompleteFields.includes("lastName")}
+          />
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-sm font-medium">Bio</label>
+              {incompleteFields.includes("bio") && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="h-3 w-3" />
+                  Completar
+                </span>
+              )}
+            </div>
+            <textarea
+              value={editedUser.bio}
+              onChange={(e) => setEditedUser({ ...editedUser, bio: e.target.value })}
+              rows={3}
+              className={cn(
+                "w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors",
+                incompleteFields.includes("bio")
                   ? "border-amber-300 bg-amber-50/50 focus:border-amber-400 dark:border-amber-600/50 dark:bg-amber-950/20"
-                  : "border-border bg-background focus:border-brand-violet"
-              }`}
+                  : "border-border bg-background focus:border-primary",
+              )}
+              placeholder="Cuéntanos sobre ti"
             />
-            {incompleteFields.includes("username") && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-400">
-                <AlertCircle className="h-4 w-4" />
+          </div>
+          <Field
+            label="Teléfono"
+            type="tel"
+            value={editedUser.phone}
+            onChange={(v) => setEditedUser({ ...editedUser, phone: v })}
+            isIncomplete={incompleteFields.includes("phone")}
+            placeholder="+57 300 0000000"
+          />
+          <Field
+            label="Correo electrónico"
+            type="email"
+            value={editedUser.email}
+            onChange={() => {}}
+            disabled
+          />
+        </EditAccordionSection>
+
+        {/* ── 2. CUENTA PROFESIONAL ── */}
+        {isProfessional && (
+          <EditAccordionSection
+            id="professional"
+            icon={ProfTypeIcon}
+            title="Cuenta profesional"
+            summary={professionalSummary}
+            isOpen={openEditSections.has("professional")}
+            onToggle={() => toggleEditSection("professional")}
+          >
+            {/* Type badge */}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                <ProfTypeIcon className="h-3 w-3" aria-hidden />
+                {professionalTypeLabel}
+              </span>
+            </div>
+
+            {/* Nombre / identidad profesional → genera @username */}
+            <Field
+              label={
+                isBusiness
+                  ? "Nombre comercial"
+                  : isGovernment
+                    ? "Nombre oficial de la entidad"
+                    : "Nombre / identidad profesional"
+              }
+              value={editedUser.brandName}
+              onChange={(v) => {
+                const newUsername = generateUsername(v.trim());
+                setEditedUser({
+                  ...editedUser,
+                  brandName: v,
+                  username: newUsername,
+                  isUsernameCustomized: false,
+                });
+              }}
+              placeholder={
+                isBusiness
+                  ? "Nombre público de tu negocio"
+                  : isGovernment
+                    ? "Ej. Alcaldía de Ibagué"
+                    : "Tu nombre como organizador"
+              }
+            />
+
+            {/* Preview de @identificador derivado */}
+            {editedUser.brandName.trim() && (
+              <div
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors",
+                  usernameCheckStatus === "taken"
+                    ? "border-destructive/40 bg-destructive/[0.03]"
+                    : usernameCheckStatus === "available"
+                      ? "border-emerald-300/60 bg-emerald-50/30"
+                      : "border-border bg-muted/30",
+                )}
+              >
+                <AtSign
+                  className={cn(
+                    "mt-0.5 h-4 w-4 shrink-0",
+                    usernameCheckStatus === "taken"
+                      ? "text-destructive"
+                      : usernameCheckStatus === "available"
+                        ? "text-emerald-600"
+                        : "text-muted-foreground",
+                  )}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-bold text-foreground" aria-label="Identificador público generado">
+                      @{editedUser.username || generateUsername(editedUser.brandName.trim())}
+                    </span>
+                    {usernameCheckStatus === "checking" && (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-hidden />
+                    )}
+                    {usernameCheckStatus === "available" && (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600">
+                        <CheckCircle className="h-3 w-3" aria-hidden />
+                        Disponible
+                      </span>
+                    )}
+                    {usernameCheckStatus === "taken" && (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-destructive">
+                        <AlertCircle className="h-3 w-3" aria-hidden />
+                        No disponible
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Identificador público generado automáticamente.
+                  </p>
+                  {usernameCheckStatus === "taken" && (
+                    <p className="mt-1 text-xs font-medium text-destructive">
+                      Este identificador ya está en uso. Modifica el nombre para generar uno diferente.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Descripción profesional */}
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                {professionalDescriptionLabel}
+              </label>
+              <p className="mb-1.5 text-xs text-muted-foreground">
+                Aparece en tu perfil público
+                {!editedUser.professionalDescription
+                  ? " — si está vacío, se mostrará tu bio."
+                  : "."}
+              </p>
+              <textarea
+                value={editedUser.professionalDescription}
+                onChange={(e) =>
+                  setEditedUser({ ...editedUser, professionalDescription: e.target.value })
+                }
+                rows={3}
+                maxLength={500}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary"
+                placeholder="Describe tu actividad profesional..."
+              />
+            </div>
+
+            {/* Categoría del negocio (read-only) */}
+            {isBusiness && businessDetails?.businessCategory && (
+              <VerifiedField
+                label="Categoría del negocio"
+                value={BUSINESS_CATEGORY_LABEL[businessDetails.businessCategory]}
+                note="Categoría definida durante la verificación de tu cuenta."
+              />
+            )}
+
+            {/* Tipo de organizador (read-only) */}
+            {isOrganizer && organizerDetails?.organizerType && (
+              <VerifiedField
+                label="Tipo de organizador"
+                value={
+                  organizerDetails.organizerType === "organization"
+                    ? "Empresa u organización"
+                    : "Persona natural"
+                }
+                note="Para modificar este dato, gestiona tu cuenta profesional."
+              />
+            )}
+
+            {/* Categorías del organizador (informativo) */}
+            {isOrganizer &&
+              organizerDetails?.eventCategories &&
+              organizerDetails.eventCategories.length > 0 && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                    Categorías de eventos
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {organizerDetails.eventCategories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Nombre oficial verificado (government) */}
+            {isGovernment && governmentDetails?.entityName && governmentDetails.entityName !== editedUser.brandName.trim() && (
+              <VerifiedField
+                label="Nombre registrado en verificación"
+                value={governmentDetails.entityName}
+                note="Nombre original registrado al momento de la verificación."
+              />
+            )}
+
+            {/* Dependencia editable (government) */}
+            {isGovernment && (
+              <Field
+                label="Dependencia / área"
+                value={editedUser.governmentDepartment}
+                onChange={(v) => setEditedUser({ ...editedUser, governmentDepartment: v })}
+                placeholder="Ej. Secretaría de Cultura"
+                helperText="Dependencia o área responsable de esta cuenta."
+              />
+            )}
+
+            {/* Contacto institucional editable (government) */}
+            {isGovernment && (
+              <>
+                <Field
+                  label="Correo institucional"
+                  type="email"
+                  value={editedUser.governmentEmail}
+                  onChange={(v) => setEditedUser({ ...editedUser, governmentEmail: v })}
+                  placeholder="contacto@entidad.gov.co"
+                  helperText="Correo oficial de la entidad, visible en el perfil público."
+                />
+                <Field
+                  label="Teléfono institucional"
+                  type="tel"
+                  value={editedUser.governmentPhone}
+                  onChange={(v) => setEditedUser({ ...editedUser, governmentPhone: v })}
+                  placeholder="+57 608 000 0000"
+                  helperText="Teléfono oficial de la entidad."
+                />
+              </>
+            )}
+
+            {/* NIT — government y business: editable; organizer: verificado enmascarado */}
+            {isGovernment ? (
+              <Field
+                label="NIT de la entidad"
+                value={editedUser.governmentNit}
+                onChange={(v) => setEditedUser({ ...editedUser, governmentNit: v })}
+                placeholder="900.123.456-7"
+                helperText="Número de identificación tributaria de la entidad (opcional)."
+              />
+            ) : isBusiness ? (
+              <>
+                <Field
+                  label="NIT del negocio"
+                  value={editedUser.businessNit}
+                  onChange={(v) => setEditedUser({ ...editedUser, businessNit: v })}
+                  placeholder="900.123.456-7"
+                  helperText="Identificación tributaria del negocio (opcional)."
+                />
+                <Field
+                  label="Teléfono comercial"
+                  type="tel"
+                  value={editedUser.businessPhone}
+                  onChange={(v) => setEditedUser({ ...editedUser, businessPhone: v })}
+                  placeholder="+57 310 000 0000"
+                  helperText="Teléfono público del negocio. Opcional — distinto del teléfono personal."
+                />
+              </>
+            ) : (
+              nit && (
+                <VerifiedField
+                  label="NIT / Identificación fiscal"
+                  value="••••••••••"
+                  note="Asociado a la verificación de tu cuenta. No modificable directamente."
+                />
+              )
+            )}
+          </EditAccordionSection>
+        )}
+
+        {/* ── 4. PRESENCIA DIGITAL ── */}
+        <EditAccordionSection
+          id="digital"
+          icon={Globe}
+          title="Presencia digital"
+          summary={digitalSummary}
+          isOpen={openEditSections.has("digital")}
+          onToggle={() => toggleEditSection("digital")}
+        >
+          <Field
+            label="Sitio web"
+            type="url"
+            value={editedUser.website}
+            onChange={(v) => setEditedUser({ ...editedUser, website: v })}
+            placeholder="https://tuweb.com"
+            helperText="Aparece como enlace de contacto en tu perfil público."
+          />
+
+          {isProfessional && (
+            <Field
+              label="Enlace de ubicación (Google Maps)"
+              type="url"
+              value={editedUser.mapsLink}
+              onChange={(v) => setEditedUser({ ...editedUser, mapsLink: v })}
+              placeholder="https://maps.app.goo.gl/..."
+              helperText="Aparece como tile de mapa en tu perfil público."
+            />
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Redes sociales</label>
+
+            {editedUser.socialLinks.length > 0 && (
+              <div className="mb-3 divide-y divide-border overflow-hidden rounded-xl border border-border">
+                {editedUser.socialLinks.map((link, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-foreground">
+                        {PLATFORM_LABEL[link.platform] ?? link.platform}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{link.url}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditedUser({
+                          ...editedUser,
+                          socialLinks: editedUser.socialLinks.filter((_, j) => j !== i),
+                        })
+                      }
+                      className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Eliminar ${PLATFORM_LABEL[link.platform] ?? link.platform}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!addingSocialLink ? (
+              <button
+                type="button"
+                onClick={() => setAddingSocialLink({ platform: "instagram", url: "" })}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Agregar red social
+              </button>
+            ) : (
+              <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/[0.02] p-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Plataforma</label>
+                  <select
+                    value={addingSocialLink.platform}
+                    onChange={(e) =>
+                      setAddingSocialLink({ ...addingSocialLink, platform: e.target.value })
+                    }
+                    className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+                  >
+                    {SOCIAL_PLATFORMS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Field
+                  label="URL"
+                  type="url"
+                  value={addingSocialLink.url}
+                  onChange={(url) => setAddingSocialLink({ ...addingSocialLink, url })}
+                  placeholder="https://..."
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    disabled={!addingSocialLink.url.trim()}
+                    onClick={() => {
+                      if (!addingSocialLink.url.trim()) return;
+                      setEditedUser({
+                        ...editedUser,
+                        socialLinks: [
+                          ...editedUser.socialLinks,
+                          addingSocialLink as SocialLinkEntry,
+                        ],
+                      });
+                      setAddingSocialLink(null);
+                    }}
+                    className="h-9 flex-1 text-sm"
+                  >
+                    Agregar
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setAddingSocialLink(null)}
+                    className="h-9 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/40"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             )}
           </div>
-        </div>
-        <Field
-          label="Correo electrónico"
-          type="email"
-          value={editedUser.email}
-          onChange={(v) => setEditedUser({ ...editedUser, email: v })}
-          disabled
-        />
-        <Field
-          label="Teléfono"
-          type="tel"
-          value={editedUser.phone}
-          onChange={(v) => setEditedUser({ ...editedUser, phone: v })}
-          isIncomplete={incompleteFields.includes("phone")}
-        />
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-sm font-medium">Bio</label>
-            {incompleteFields.includes("bio") && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                <AlertCircle className="h-3 w-3" />
-                Completar
-              </span>
-            )}
-          </div>
-          <textarea
-            value={editedUser.bio}
-            onChange={(e) => setEditedUser({ ...editedUser, bio: e.target.value })}
-            rows={4}
-            className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors ${
-              incompleteFields.includes("bio")
-                ? "border-amber-300 bg-amber-50/50 focus:border-amber-400 dark:border-amber-600/50 dark:bg-amber-950/20"
-                : "border-border bg-background focus:border-brand-violet"
-            }`}
-            placeholder="Cuéntanos sobre ti"
-          />
-        </div>
-      </div>
+        </EditAccordionSection>
 
-      <div className="sticky bottom-0 z-10 -mx-4 mt-2 border-t border-border bg-background/95 px-4 pb-1 pt-3 backdrop-blur">
-        <Button
-          onClick={() => void handleSaveProfile()}
-          disabled={isSavingProfile || !hasProfileChanges}
-          className="h-11 w-full font-semibold"
-        >
-          {isSavingProfile ? "Aplicando cambios..." : "Aplicar cambios"}
-        </Button>
-        {!hasProfileChanges && !isSavingProfile && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">No hay cambios pendientes</p>
-        )}
-        {saveProfileMessage && (
-          <p
-            className={`mt-2 text-center text-sm font-medium ${
-              saveProfileMessage.type === "success" ? "text-green-600" : "text-destructive"
-            }`}
+        {/* Footer */}
+        <div className="sticky bottom-0 z-10 -mx-4 mt-2 border-t border-border bg-background/95 px-4 pb-1 pt-3 backdrop-blur">
+          <Button
+            onClick={() => void handleSaveProfile()}
+            disabled={isSavingProfile || !hasProfileChanges || usernameCheckStatus === "taken"}
+            className="h-11 w-full font-semibold"
           >
-            {saveProfileMessage.message}
-          </p>
-        )}
+            {isSavingProfile ? "Aplicando cambios..." : "Aplicar cambios"}
+          </Button>
+          {!hasProfileChanges && !isSavingProfile && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              No hay cambios pendientes
+            </p>
+          )}
+          {saveProfileMessage && (
+            <p
+              className={cn(
+                "mt-2 text-center text-sm font-medium",
+                saveProfileMessage.type === "success" ? "text-emerald-600" : "text-destructive",
+              )}
+            >
+              {saveProfileMessage.message}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderChangePassword = () => {
     const newPassword = watchPassword("new");
@@ -894,6 +1515,7 @@ export const SettingsCenter = () => {
         uid={user.uid}
         defaultUsername={editedUser.username}
         defaultPhone={editedUser.phone}
+        defaultWebsite={user.profile?.website ?? ""}
       />
     );
   };
@@ -986,21 +1608,23 @@ export const SettingsCenter = () => {
 
   return (
     <>
-      <Button
-        aria-label="Abrir configuración"
-        variant="outline"
-        className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
-        onClick={() => {
-          const nextOpen = !openSettings;
-          if (nextOpen) {
-            syncUserData();
-          }
-          onOpenSettings(nextOpen);
-        }}
-      >
-        <Settings className="size-5 shrink-0" />
-        <span className="truncate">Ajustes</span>
-      </Button>
+      {!hideTrigger && (
+        <Button
+          aria-label="Abrir configuración"
+          variant="outline"
+          className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+          onClick={() => {
+            const nextOpen = !openSettings;
+            if (nextOpen) {
+              syncUserData();
+            }
+            onOpenSettings(nextOpen);
+          }}
+        >
+          <Settings className="size-5 shrink-0" />
+          <span className="truncate">Ajustes</span>
+        </Button>
+      )}
       <Drawer
         direction={drawerDirection}
         open={openSettings}
@@ -1134,6 +1758,70 @@ function ToggleRow({
   );
 }
 
+function EditAccordionSection({
+  id,
+  icon: Icon,
+  title,
+  summary,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  summary?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("rounded-xl border transition-colors", isOpen ? "border-primary/25" : "border-border")}>
+      <button
+        type="button"
+        id={`edit-section-btn-${id}`}
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls={`edit-section-${id}`}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-xl p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isOpen ? "rounded-b-none bg-primary/[0.02] hover:bg-primary/[0.04]" : "hover:bg-muted/40",
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+            isOpen ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+          )}
+          aria-hidden
+        >
+          <Icon className="size-3.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          {!isOpen && summary && (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{summary}</p>
+          )}
+        </div>
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      {isOpen && (
+        <div
+          id={`edit-section-${id}`}
+          role="region"
+          aria-labelledby={`edit-section-btn-${id}`}
+          className="space-y-4 rounded-b-xl border-t border-border p-4"
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Field({
   label,
   value,
@@ -1141,6 +1829,8 @@ function Field({
   type = "text",
   disabled = false,
   isIncomplete = false,
+  placeholder,
+  helperText,
 }: {
   label: string;
   value: string;
@@ -1148,6 +1838,8 @@ function Field({
   type?: string;
   disabled?: boolean;
   isIncomplete?: boolean;
+  placeholder?: string;
+  helperText?: string;
 }) {
   return (
     <div>
@@ -1166,10 +1858,11 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
+          placeholder={placeholder}
           className={`h-11 w-full rounded-lg border px-4 pr-10 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground ${
             isIncomplete
               ? "border-amber-300 bg-amber-50/50 focus:border-amber-400 dark:border-amber-600/50 dark:bg-amber-950/20"
-              : "border-border bg-background focus:border-brand-violet"
+              : "border-border bg-background focus:border-primary"
           }`}
         />
         {isIncomplete && (
@@ -1178,6 +1871,50 @@ function Field({
           </div>
         )}
       </div>
+      {helperText && (
+        <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>
+      )}
+    </div>
+  );
+}
+
+function ProfileSectionDivider({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-3 pb-1 pt-4">
+      <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </span>
+      <div className="h-px flex-1 bg-border/60" />
+    </div>
+  );
+}
+
+function VerifiedField({
+  label,
+  value,
+  note,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <label className="text-sm font-medium">{label}</label>
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+          <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
+          Verificado
+        </span>
+      </div>
+      <input
+        type="text"
+        value={value}
+        disabled
+        readOnly
+        className="h-11 w-full cursor-not-allowed rounded-lg border border-border bg-muted/40 px-4 text-sm text-muted-foreground"
+      />
+      {note && <p className="mt-1 text-xs text-muted-foreground/80">{note}</p>}
     </div>
   );
 }

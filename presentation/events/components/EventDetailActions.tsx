@@ -7,7 +7,7 @@ import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { HeartLikeButton } from "./card/HeartLikeButton";
-import { Eye, Users, X, Link2 } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import type { EventViewModel } from "../view-models/EventViewModel";
 
 interface EventDetailActionsProps {
@@ -53,44 +53,34 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
   }, [event.id, pendingLike, refreshUser, router]);
 
   const analytics = event.analytics;
+  const views = analytics?.views ?? 0;
 
   return (
     <>
-      <div className="flex items-center justify-between gap-4">
-        {/* Like (sin share: el SocialShareBar debajo se encarga) */}
-        <div className="flex items-center gap-2">
-          {!sessionId && (
-            <HeartLikeButton
-              eventId={event.id}
-              initialLiked={initialLiked}
-              initialLikes={analytics?.likes ?? 0}
-              onLike={handleLike}
-              className="h-10 px-4 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-red-50 hover:border-red-200"
-            />
-          )}
-        </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+        {/* Like — botón grande estilo Airbnb */}
+        {!sessionId && (
+          <HeartLikeButton
+            eventId={event.id}
+            initialLiked={initialLiked}
+            initialLikes={analytics?.likes ?? 0}
+            onLike={handleLike}
+            className="h-11 gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-5 text-sm font-semibold text-[#09090B] shadow-card transition-all hover:border-[#E63946] hover:bg-[#FDF2F4] hover:text-[#E63946]"
+          />
+        )}
 
-        {/* Analytics counters */}
-        <div className="flex items-center gap-3 text-xs text-gray-400">
-          {(analytics?.views ?? 0) > 0 && (
-            <span className="flex items-center gap-1">
-              <Eye className="size-3.5" />
-              {(analytics?.views ?? 0).toLocaleString("es-CO")}
-            </span>
-          )}
-          {(analytics?.registrations ?? 0) > 0 && (
-            <span className="flex items-center gap-1">
-              <Users className="size-3.5" />
-              {(analytics?.registrations ?? 0).toLocaleString("es-CO")}
-            </span>
-          )}
-          {(analytics?.clicks ?? 0) > 0 && (
-            <span className="flex items-center gap-1">
-              <Link2 className="size-3.5" />
-              {(analytics?.clicks ?? 0).toLocaleString("es-CO")}
-            </span>
-          )}
+        {/* Vistas — pill solo en el evento padre, no en sesiones */}
+        {!sessionId && (
+        <div className="flex h-11 items-center gap-2 rounded-xl border border-[#E4E4E7] bg-white px-4 shadow-card">
+          <Eye className="size-4 text-[#A1A1AA]" />
+          <span className="text-sm font-semibold text-[#09090B]">
+            {views.toLocaleString("es-CO")}
+          </span>
+          <span className="text-xs text-[#A1A1AA]">
+            {views === 1 ? "vista" : "vistas"}
+          </span>
         </div>
+        )}
       </div>
 
       {/* Login modal */}

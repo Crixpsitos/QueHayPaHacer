@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
 import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
+import { SiteCategoryChips } from "@/presentation/sites/components/discovery/SiteCategoryChips";
 import { getSiteCollections, siteCollectionHref, type SiteCollectionDef } from "@/presentation/sites/lib/siteCollections";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
@@ -50,33 +51,40 @@ export default async function DondeIrIndexPage() {
   return (
     <>
       <Section spacing="sm" className="mt-4">
-        <h1 className="text-3xl font-bold">¿Dónde ir en Ibagué?</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Descubre los mejores lugares de la ciudad: dónde comer, tomar algo, pasear y más.
+        <div className="flex items-center gap-1.5 text-sm font-medium text-[#71717A]">
+          <MapPin className="size-4 text-[#E63946]" />
+          <span>Ibagué, Tolima</span>
+        </div>
+
+        <h1
+          className="mt-2 text-4xl font-bold tracking-tight text-[#09090B]"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          ¿Dónde ir en <span className="text-[#E63946]">Ibagué</span>?
+        </h1>
+        <p className="mt-2 max-w-xl text-base leading-relaxed text-[#71717A]">
+          Los mejores lugares de la ciudad: cafeterías, restaurantes, bares, parques y más.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {typeCollections.map((c) => (
-            <Link
-              key={c.slug}
-              href={siteCollectionHref(c.slug)}
-              className="rounded-full border border-border bg-secondary px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/70"
-            >
-              {c.shortLabel}
-            </Link>
-          ))}
-        </div>
+        {typeCollections.length > 0 && (
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+              Explorar por tipo de lugar
+            </p>
+            <SiteCategoryChips collections={typeCollections} />
+          </div>
+        )}
       </Section>
 
-      {featuredDef && (
+      {featuredDef && featured.length > 0 && (
         <ContentSection title="Destacados" action={{ href: siteCollectionHref(featuredDef.slug) }}>
-          <SiteDiscoveryGrid sites={featured} showTrending />
+          <SiteDiscoveryGrid sites={featured} showTrending layout="featured" />
         </ContentSection>
       )}
 
       <Separator className="my-6" />
 
-      {allDef && (
+      {allDef && all.length > 0 && (
         <ContentSection title="Todos los sitios" action={{ href: siteCollectionHref(allDef.slug) }}>
           <SiteDiscoveryGrid sites={all} />
         </ContentSection>

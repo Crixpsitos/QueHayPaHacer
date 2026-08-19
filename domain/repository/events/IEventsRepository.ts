@@ -11,9 +11,9 @@ export interface IEventsRepository extends IBaseRepository<Events>{
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
-    /** Paginación por cursor de una categoría (por su docId). orderBy score +
-     *  tiebreaker documentId (cursor estable, sin índice extra). Solo próximos. */
-    findByCategoryPaginated(categoryId: string, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
+    /** Paginación por cursor de una categoría. Acepta docId y slug (algunos eventos
+     *  fueron seeded con categoryInfo.id = slug). orderBy score + tiebreaker documentId. */
+    findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findAllPublished(): Promise<string[]>;
     findLastDraftEventToUser(userId: string): Promise<Events | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<Events | null>;
@@ -31,4 +31,6 @@ export interface IEventsRepository extends IBaseRepository<Events>{
     findPublishedBySiteId(siteId: string, limit?: number): Promise<Events[]>;
     /** Escribe el array siteIds en el documento raz del evento multi-date. */
     updateSiteIds(eventId: string, siteIds: string[]): Promise<void>;
+    /** Elimina el documento del evento. Usar solo en migraciones controladas. */
+    deleteEvent(id: string): Promise<void>;
 }

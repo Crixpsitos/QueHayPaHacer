@@ -7,6 +7,7 @@ import {
   FieldLabel,
 } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import dynamic from "next/dynamic";
 import { Controller, type UseFormReturn } from "react-hook-form";
@@ -28,82 +29,73 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
   const shortDescriptionValue = form.watch("shortDescription") || "";
 
   return (
-    <div className="space-y-6">
-      {/* Cabecera optimizada con jerarquía tipográfica */}
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Información básica del evento
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Cuéntanos un poco más sobre los detalles principales de tu parche.
-        </p>
-      </div>
+    <div className="space-y-4">
 
-      <FieldGroup className="space-y-5">
-        {/* Campo: Título */}
+      {/* ── Card 1: Título + Gancho corto ─── */}
+      <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card space-y-5">
+        {/* Título */}
         <Controller
           name="title"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Field  data-invalid={fieldState.invalid.toString()} className="w-full">
-              <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <Field data-invalid={fieldState.invalid.toString()} className="w-full">
+              <div className="flex items-center justify-between mb-1.5">
+                <FieldLabel htmlFor="title" className="text-sm font-semibold text-[#09090B]">
                   Título del evento
                 </FieldLabel>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-                  {titleValue.length}/60
-                </span>
+                <span className="text-xs text-[#A1A1AA] tabular-nums">{titleValue.length}/60</span>
               </div>
-              <Input 
-                {...field} 
+              <Input
+                {...field}
                 id="title"
                 maxLength={60}
-                placeholder="Ej: Gran Concierto de Rock Local o Noche de Techno"
-                className="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-sm transition-all"
+                placeholder="Ej: Gran Concierto de Rock Local"
+                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 shadow-none transition-all"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
         />
 
-        {/* Campo: Descripción Corta con Contador UX */}
+        {/* Gancho corto */}
         <Controller
           name="shortDescription"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()} className="w-full">
-              <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="shortDescription" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Descripción corta
+              <div className="flex items-center justify-between mb-1.5">
+                <FieldLabel htmlFor="shortDescription" className="text-sm font-semibold text-[#09090B]">
+                  Gancho corto
                 </FieldLabel>
-                {/* Contador sutil que alerta visualmente los caracteres */}
-                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-                  {shortDescriptionValue.length}/150
-                </span>
+                <span className="text-xs text-[#A1A1AA] tabular-nums">{shortDescriptionValue.length}/150</span>
               </div>
-              <Input 
-                {...field} 
+              <Textarea
+                {...field}
                 id="shortDescription"
                 maxLength={150}
-                placeholder="Resume el gancho o la esencia de tu evento en una sola frase llamativa..."
-                className="w-full bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-sm transition-all"
+                placeholder="¿Por qué no te lo puedes perder?"
+                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 min-h-16 resize-none transition-all"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              <p className="mt-1.5 text-xs text-[#71717A]">
+                Una frase que se lee de un vistazo. Aparece bajo el título en las tarjetas.
+              </p>
             </Field>
           )}
         />
+      </div>
 
-        {/* Campo: Editor Enriquecido Largo */}
+      {/* ── Card 2: Descripción detallada ─── */}
+      <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
         <Controller
           name="description"
           control={form.control}
           render={({ field: { value, onChange, onBlur }, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()} className="w-full">
-              <FieldLabel htmlFor="description" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <FieldLabel htmlFor="description" className="text-sm font-semibold text-[#09090B] mb-2 block">
                 Descripción detallada
               </FieldLabel>
-              {/* Contenedor estético para aislar el editor */}
-              <div className="rounded-lg overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-all shadow-sm">
+              <div className="rounded-lg overflow-hidden border border-[#E4E4E7] bg-white focus-within:border-[#E63946] transition-colors">
                 <RichTextEditor
                   value={value as JSONContent}
                   onChange={onChange}
@@ -114,7 +106,8 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
             </Field>
           )}
         />
-      </FieldGroup>
+      </div>
+
     </div>
   );
 };

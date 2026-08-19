@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useForm } from "react-hook-form";
@@ -34,9 +35,11 @@ interface LoginFormProps {
   loginAction: (email: string, password: string) => Promise<LoginActionResult | void>;
   onSuccess?: () => void;
   onError?: (message: string) => void;
+  redirectTo?: string;
 }
 
-export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) => {
+export const LoginForm = ({ loginAction, onSuccess, onError, redirectTo }: LoginFormProps) => {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -65,6 +68,7 @@ export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) =
       }
 
       onSuccess?.();
+      router.push(safeRedirect(redirectTo));
     });
   });
 
@@ -89,7 +93,7 @@ export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) =
       {submitError && (
         <p
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+          className="rounded-xl border border-primary/20 bg-primary-light px-3 py-2 text-sm text-primary"
         >
           {submitError}
         </p>
@@ -99,8 +103,10 @@ export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) =
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "rounded-md bg-foreground px-4 py-3 text-sm font-medium text-background transition-opacity",
-          (!isValid || isPending) && "cursor-not-allowed opacity-50",
+          "w-full rounded-full bg-gradient-to-br from-[#E63946] to-[#9B0A26] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
+          (!isValid || isPending)
+            ? "cursor-not-allowed opacity-50"
+            : "hover:from-[#FF4D5A] hover:to-[#B30E30]",
         )}
       >
         {isPending ? "Ingresando..." : "Iniciar sesion"}
@@ -108,3 +114,8 @@ export const LoginForm = ({ loginAction, onSuccess, onError }: LoginFormProps) =
     </form>
   );
 };
+
+function safeRedirect(to?: string): string {
+  if (!to || !to.startsWith("/") || to.startsWith("//")) return "/";
+  return to;
+}

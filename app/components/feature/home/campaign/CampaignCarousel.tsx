@@ -8,7 +8,7 @@ import {
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ResponsivePicture } from "@/app/components/ui/ResponsivePicture";
 import { Button } from "@/app/components/ui/button/button";
-import { ChevronLeft, ChevronRight, Hand, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Hand, Sparkles } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { ctaRegistry } from "@/application/cta/cta-registry";
 import { CTA } from "@/application/cta/types";
@@ -282,7 +282,7 @@ const CampaignCarouselComponent = ({
         )}
       >
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-          <div className="animate-bounce">
+          <div className="animate-bounce-x">
             <Hand className="h-6 w-6 text-white" />
           </div>
           <span className="text-xs font-medium text-white/80">
@@ -315,7 +315,7 @@ const CampaignCarouselComponent = ({
           className="group hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/50 active:scale-95 sm:flex lg:h-12 lg:w-12"
           aria-label="Slide anterior"
         >
-          <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5 lg:h-6 lg:w-6" />
+          <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 lg:h-6 lg:w-6" />
         </button>
 
         <div className="flex flex-col items-center gap-2 rounded-full bg-black/25 px-2 py-2.5 backdrop-blur-sm sm:px-2.5 sm:py-3">
@@ -339,7 +339,7 @@ const CampaignCarouselComponent = ({
           className="group hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/50 active:scale-95 sm:flex lg:h-12 lg:w-12"
           aria-label="Siguiente slide"
         >
-          <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5 lg:h-6 lg:w-6" />
+          <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5 lg:h-6 lg:w-6" />
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
 
 export const CreateUserSchema = v.object({
     uid: v.pipe(v.string(), v.nonEmpty("uid is required")),
@@ -31,6 +32,15 @@ export const UpdateUserSchema = v.partial(
         website: v.string(),
         mapsLink: v.string(),
         socialLink: v.string(),
+        socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
+        isUsernameCustomized: v.boolean(),
+        professionalDescription: v.string(),
+        professionalDetails: v.optional(v.pipe(
+            v.looseObject({}),
+            v.transform((val) => val as unknown as ProfessionalRequestDetails),
+        )),
+        bannerUrl: v.nullable(v.string()),
+        bannerPath: v.nullable(v.string()),
     })
 );
 

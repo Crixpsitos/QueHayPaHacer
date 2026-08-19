@@ -2,10 +2,8 @@
 
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldLabel,
-  FieldGroup,
 } from "@/app/components/ui/field";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
@@ -63,40 +61,42 @@ export const Step4Location = ({ form }: Step4Props) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-medium text-black">Ubicación</h2>
-        <p className="text-sm text-gray-500">
-          ¿Dónde se llevará a cabo tu evento?
-        </p>
-      </div>
+    <div className="space-y-4">
 
-      <SitePickerWidget
-        onSelect={handleSiteSelect}
-        selectedSiteId={watchedSiteId}
-      />
+      {/* ── Card principal: campos de ubicación ── */}
+      <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card space-y-4">
 
-      <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-        <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
-        <span>
-          <span className="font-medium text-black">Ibagué</span>, Tolima —
-          Colombia
-        </span>
-      </div>
+        {/* Sitios creados del usuario */}
+        <SitePickerWidget
+          onSelect={handleSiteSelect}
+          selectedSiteId={watchedSiteId}
+        />
 
-      <FieldGroup>
+        {/* Ciudad fija — MVP Ibagué */}
+        <div className="flex items-center gap-2 rounded-lg border border-[#E4E4E7] bg-[#FAFAFC] px-3 h-12 text-sm text-[#09090B]">
+          <MapPin className="size-4 shrink-0 text-[#E63946]" />
+          <span>
+            <span className="font-semibold">Ibagué</span>
+            <span className="text-[#71717A]">, Tolima — Colombia</span>
+          </span>
+        </div>
+
+        <div className="border-t border-[#F4F4F5]" />
+
+        {/* Espacio específico */}
         <Controller
           name="location.venue"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>
-                Espacio especifico donde se hara el evento
-              </FieldLabel>
-              <FieldDescription>
-                Especifica el nombre del espacio donde se llevará a cabo el
-                evento, como un parque, un bar, un teatro, etc.
-              </FieldDescription>
+              <div className="mb-1.5">
+                <FieldLabel className="text-sm font-semibold text-[#09090B]">
+                  Espacio específico
+                </FieldLabel>
+                <p className="text-xs text-[#71717A] mt-0.5">
+                  Nombre del lugar: parque, teatro, bar, etc.
+                </p>
+              </div>
               <SearchLocationInput
                 {...field}
                 cityCoords={IBAGUE_CITY_COORDS}
@@ -106,91 +106,84 @@ export const Step4Location = ({ form }: Step4Props) => {
                 countryIsoCode={IBAGUE_COUNTRY.isoCode}
                 onChange={(value, coords, address) => {
                   field.onChange(value);
-
-                  form.setValue("location.address", address, {
-                    shouldValidate: true,
-                  });
-                  form.setValue(
-                    "location.coordinates",
-                    {
-                      lat: coords[1],
-                      lng: coords[0],
-                    },
-                    { shouldValidate: true },
-                  );
+                  form.setValue("location.address", address, { shouldValidate: true });
+                  form.setValue("location.coordinates", { lat: coords[1], lng: coords[0] }, { shouldValidate: true });
                 }}
               />
-              {fieldState.invalid && (
-                <FieldError>{fieldState.error?.message}</FieldError>
-              )}
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
           )}
         />
+
+        {/* Dirección */}
         <Controller
           name="location.address"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>Dirección</FieldLabel>
-              <FieldDescription>
-                Especifica la dirección exacta donde se llevará a cabo el
-                evento.
-              </FieldDescription>
+              <div className="mb-1.5">
+                <FieldLabel className="text-sm font-semibold text-[#09090B]">Dirección</FieldLabel>
+                <p className="text-xs text-[#71717A] mt-0.5">Dirección exacta del evento.</p>
+              </div>
               <Input
-                className="bg-transparent border border-gray-200"
                 {...field}
                 value={field.value ?? ""}
+                placeholder="Cra 3 #10-52"
+                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 h-11"
               />
-              {fieldState.invalid && (
-                <FieldError>{fieldState.error?.message}</FieldError>
-              )}
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
           )}
         />
+
+        {/* Más información */}
         <Controller
           name="location.moreInfo"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>Más información (Opcional)</FieldLabel>
-              <FieldDescription>
-                Especifica más información sobre el lugar donde se llevará a cabo
-                el evento.
-              </FieldDescription>
+              <div className="mb-1.5 flex items-center gap-2">
+                <FieldLabel className="text-sm font-semibold text-[#09090B]">Más información</FieldLabel>
+                <span className="rounded-full bg-[#F4F4F5] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#71717A]">Opcional</span>
+              </div>
               <Input
-                className="bg-transparent border border-gray-200"
                 {...field}
                 value={field.value ?? ""}
+                placeholder="Ej: Entrada por la puerta lateral, piso 2"
+                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 h-11"
               />
-              {fieldState.invalid && (
-                <FieldError>{fieldState.error?.message}</FieldError>
-              )}
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
           )}
         />
+      </div>
+
+      {/* ── Card mapa ── */}
+      <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-[#09090B]">Ubicación exacta en el mapa</p>
+          <p className="text-xs text-[#71717A] mt-0.5">Arrastra el marcador para ajustar la ubicación exacta.</p>
+        </div>
         <Controller
           name="location.coordinates"
           control={form.control}
           render={({ fieldState }) => (
             <Field data-invalid={fieldState.invalid.toString()}>
-              <FieldLabel>Ubicación en el mapa</FieldLabel>
-              <FieldDescription>
-                Arrastra el marcador para ajustar la ubicación exacta.
-              </FieldDescription>
-              <MapZone
-                cityCoords={IBAGUE_CITY_COORDS}
-                pointCoords={watchedCoordinates}
-                onMarkerDrag={(lat, lng) => {
-                  form.setValue("location.coordinates", {
-                    lat,
-                    lng,
-                  });
-                }}
-              />
+              <div className="overflow-hidden rounded-xl border border-[#E4E4E7]">
+                <MapZone
+                  cityCoords={IBAGUE_CITY_COORDS}
+                  pointCoords={watchedCoordinates}
+                  onMarkerDrag={(lat, lng) => {
+                    form.setValue("location.coordinates", { lat, lng });
+                  }}
+                />
+              </div>
+              {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
           )}
         />
-      </FieldGroup>
+      </div>
+
     </div>
   );
 };

@@ -17,7 +17,27 @@ interface ProfileStatsResponse {
   likesCount: number;
 }
 
+export interface MyProfileData {
+  events: UserEvent[];
+  sites: UserSite[];
+  likes: UserEventInteraction[];
+  badges: UserBadge[];
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+/** Obtiene todos los datos del perfil propio en una sola petición autenticada por cookie. */
+export async function fetchMyProfileData(): Promise<MyProfileData> {
+  const response = await fetch(`${API_BASE}/api/profile/me`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch profile data: ${response.statusText}`);
+  }
+
+  return response.json();
+}
 
 export async function fetchUserStats(uid: string): Promise<ProfileStatsResponse> {
   const response = await fetch(`${API_BASE}/api/profile/stats?uid=${uid}`, {

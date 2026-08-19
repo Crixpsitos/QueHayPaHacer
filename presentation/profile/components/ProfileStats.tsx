@@ -16,29 +16,23 @@ export function ProfileStats({ statsPromise }: ProfileStatsProps) {
   const stats = use(statsPromise);
 
   return (
-    <div className="flex items-center gap-6 sm:gap-8">
-      <Stat value={stats.eventsCount} label="eventos" centered />
-      <Stat value={stats.sitesCount} label="sitios" centered />
-      <Stat value={stats.badgesCount} label="insignias" centered />
+    <div className="grid grid-cols-3 divide-x divide-border">
+      <StatItem value={stats.eventsCount} label="Eventos" />
+      <StatItem value={stats.sitesCount} label="Sitios" />
+      <StatItem value={stats.badgesCount} label="Insignias" />
     </div>
   );
 }
 
-function Stat({
-  value,
-  label,
-  centered = false,
-}: {
-  value: number;
-  label: string;
-  centered?: boolean;
-}) {
+function StatItem({ value, label }: { value: number; label: string }) {
   return (
-    <div
-      className={`flex items-baseline gap-1.5 ${centered ? "flex-col items-center gap-0.5" : ""}`}
-    >
-      <span className="text-base font-bold text-brand-violet">{value}</span>
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="group flex flex-col items-center gap-1 py-5 transition-colors hover:bg-muted/30">
+      <span className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
+        {value}
+      </span>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60">
+        {label}
+      </span>
     </div>
   );
 }

@@ -8,6 +8,27 @@ import { SiteCollectionContent } from "@/presentation/sites/components/discovery
 import { getEventCollectionBySlug } from "@/presentation/events/lib/eventCollections";
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
 import { SITE_NAME } from "@/app/lib/site";
+import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
+import { MapPin } from "lucide-react";
+
+function CollectionSkeleton({ kind }: { kind: CollectionKind }) {
+  if (kind === "category") {
+    return (
+      <Section spacing="sm" className="mt-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-3 rounded-2xl border border-[#F4F4F5] bg-white p-4">
+              <div className="aspect-video w-full animate-pulse rounded-xl bg-muted" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </Section>
+    );
+  }
+  return <EventsSectionsSkeleton />;
+}
 
 const DONDE_IR_PREFIX = "donde-ir-";
 
@@ -86,7 +107,7 @@ async function CollectionLanding({ params }: PageProps) {
         </p>
       </Section>
 
-      <Suspense fallback={<EventsSectionsSkeleton />}>
+      <Suspense fallback={<CollectionSkeleton kind={def.kind} />}>
         <CollectionEventsSection def={def} />
       </Suspense>
     </>

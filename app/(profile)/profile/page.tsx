@@ -15,10 +15,8 @@ const fetchUserBadges = async (uid: string) => {
 
 export default function ProfilePage() {
     return (
-        <Container aria-label="Profile page" className="flex h-full flex-col justify-center gap-6 p-4">
-            <div className="space-y-6">
-                <ProfileHeader statsPromise={fetchStats} badgesPromise={fetchUserBadges} />
-            </div>
+        <Container aria-label="Profile page" className="flex flex-col gap-6 py-6 sm:py-8">
+            <ProfileHeader statsPromise={fetchStats} badgesPromise={fetchUserBadges} />
             <ProfileTabsWrapper />
         </Container>
     );

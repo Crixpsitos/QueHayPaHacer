@@ -110,6 +110,7 @@ export function SessionManager({
             >
               <SessionCard
                 session={session}
+                sessionIndex={i}
                 parentCoverUrl={parentCoverUrl}
                 allSessions={sessions}
                 hasOverlap={overlappingIds.has(session.id)}

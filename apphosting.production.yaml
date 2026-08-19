@@ -1,15 +1,36 @@
-# Overrides del entorno "production" (backend de la rama main).
-# Firebase App Hosting mergea apphosting.yaml (base) + este archivo cuando el
-# backend está configurado con el environment name "production".
-# Ver: https://firebase.google.com/docs/app-hosting/configure#environment-specific
-#
-# Solo va lo que CAMBIA respecto al base. El resto (secrets de Firebase, etc.)
-# se hereda de apphosting.yaml.
 env:
-  # URL canónica real de PRODUCCIÓN (con https, sin barra final).
-  # ⚠️ Cambia por tu dominio de producción.
   - variable: NEXT_PUBLIC_SITE_URL
     value: https://quehaypahacer.web.app
     availability:
       - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: quehaypahacer-prod.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: quehaypahacer-prod
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: quehaypahacer-prod.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
+    secret: firebaseServiceAccountJson
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: COOKIE_SECRET_CURRENT
+    secret: cookieSecretCurrent
+    availability:
+      - RUNTIME
+
+  - variable: COOKIE_SECRET_PREVIOUS
+    secret: cookieSecretPrevious
+    availability:
       - RUNTIME

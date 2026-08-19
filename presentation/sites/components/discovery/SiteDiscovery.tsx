@@ -101,6 +101,126 @@ function getOpenStatus(schedule: SiteSchedule | null | undefined) {
   };
 }
 
+// ─── Editorial card (featured) ───────────────────────────────────────────────
+
+export function SiteDiscoveryCardEditorial({
+  site,
+  initialLiked = false,
+  isLikesLoading = false,
+  prioritize = false,
+  isTrending = false,
+}: {
+  site: SiteDetail;
+  initialLiked?: boolean;
+  isLikesLoading?: boolean;
+  prioritize?: boolean;
+  isTrending?: boolean;
+}) {
+  const cat = CATEGORY_CONFIG[site.category] ?? CATEGORY_CONFIG.other;
+  const [openStatus, setOpenStatus] = useState<ReturnType<typeof getOpenStatus> | null>(null);
+  useEffect(() => { setOpenStatus(getOpenStatus(site.schedule)); }, [site.schedule]);
+
+  const isOpen = openStatus?.isOpen ?? false;
+  const statusLabel = openStatus?.label ?? null;
+  const [liked, setLiked] = useState(initialLiked);
+  const [likes, setLikes] = useState(site.analytics?.likes ?? 0);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  useEffect(() => { setLiked(initialLiked); }, [initialLiked]);
+
+  const handleLike = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    if (likeLoading) return;
+    const next = !liked;
+    setLiked(next); setLikes((n) => n + (next ? 1 : -1)); setLikeLoading(true);
+    const result = await recordSiteInteractionAction(site.id, next ? "like" : "unlike");
+    if (!result.success) { setLiked(!next); setLikes((n) => n + (next ? -1 : 1)); }
+    setLikeLoading(false);
+  }, [liked, likeLoading, site.id]);
+
+  return (
+    <article className="group relative overflow-hidden rounded-2xl shadow-card">
+      <Link href={`/donde-ir/${site.slug || site.id}`} className="block relative aspect-3/4 sm:aspect-4/5">
+        {site.coverUrl ? (
+          <Image
+            src={site.coverUrl}
+            alt={site.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, 50vw"
+            loading={prioritize ? "eager" : "lazy"}
+          />
+        ) : (
+          <div className={cn("flex h-full items-center justify-center bg-[#09090B]")}>
+            <cat.Icon className="size-16 opacity-10 text-white" />
+          </div>
+        )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent" />
+
+        {/* Badges top-left */}
+        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+          {isTrending && (
+            <span className="flex items-center gap-1 rounded-full bg-[#FFB703]/90 px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow backdrop-blur-sm">
+              <Flame className="size-3.5" /> Tendencia
+            </span>
+          )}
+          {site.isNew && (
+            <span className="rounded-full bg-sky-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow backdrop-blur-sm">
+              ✨ Nuevo
+            </span>
+          )}
+        </div>
+
+        {/* Content overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          <span className="mb-2 flex w-fit items-center gap-1.5 rounded-full bg-[#FDF2F4] px-2.5 py-1 text-xs font-semibold text-[#E63946]">
+            <cat.Icon className="size-3.5" />
+            {cat.label}
+          </span>
+          <h3 className="mt-1 text-xl font-bold leading-tight text-white group-hover:underline decoration-white/60">
+            {site.name}
+          </h3>
+          {site.address && (
+            <p className="mt-1.5 flex items-center gap-1 text-sm text-white/75 line-clamp-1">
+              <MapPin className="size-3.5 shrink-0" />
+              {site.address}
+            </p>
+          )}
+          {statusLabel && (
+            <p className={cn(
+              "mt-1.5 flex items-center gap-1 text-xs font-semibold",
+              isOpen ? "text-emerald-400" : "text-white/60",
+            )}>
+              {isOpen ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
+              {statusLabel}
+            </p>
+          )}
+        </div>
+      </Link>
+
+      {/* Like button */}
+      <button
+        type="button"
+        onClick={handleLike}
+        disabled={likeLoading || isLikesLoading}
+        aria-label={liked ? "Quitar me gusta" : "Me gusta"}
+        aria-pressed={liked}
+        className={cn(
+          "absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full shadow-dark-float transition-all",
+          isLikesLoading ? "animate-pulse bg-white/60" : liked ? "bg-white" : "bg-white/80 hover:bg-white",
+        )}
+      >
+        {likeLoading
+          ? <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          : <Heart className={cn("size-5 transition-all", liked ? "fill-[#E63946] text-[#E63946]" : "text-[#09090B]")} />
+        }
+      </button>
+    </article>
+  );
+}
+
 // ─── Card ────────────────────────────────────────────────────────────────────
 
 export function SiteDiscoveryCard({
@@ -353,12 +473,13 @@ const EMPTY = (
 export function SiteDiscoveryGrid({
   sites,
   showTrending = false,
+  layout = "grid",
 }: {
   sites: SiteDetail[];
   showTrending?: boolean;
+  layout?: "grid" | "featured";
 }) {
   const [likedBysite, setLikedBySite] = useState<Record<string, boolean>>({});
-  // Inicia en false para evitar hydration mismatch (disabled SSR vs cliente)
   const [isLikesLoading, setIsLikesLoading] = useState(false);
 
   useEffect(() => {
@@ -379,6 +500,43 @@ export function SiteDiscoveryGrid({
   }, [sites.map((s) => s.id).join(",")]);
 
   if (sites.length === 0) return EMPTY;
+
+  if (layout === "featured") {
+    return (
+      <div className="space-y-6">
+        <SiteItemListJsonLd sites={sites} />
+        {/* Primeros 2: editorial card con imagen de fondo y contenido overlay */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {sites.slice(0, 2).map((s, i) => (
+            <SiteDiscoveryCardEditorial
+              key={s.id}
+              site={s}
+              initialLiked={likedBysite[s.id] ?? false}
+              isLikesLoading={isLikesLoading}
+              prioritize={i < 2}
+              isTrending={showTrending}
+            />
+          ))}
+        </div>
+        {/* Resto en 3 columnas */}
+        {sites.length > 2 && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sites.slice(2).map((s) => (
+              <SiteDiscoveryCard
+                key={s.id}
+                site={s}
+                initialLiked={likedBysite[s.id] ?? false}
+                isLikesLoading={isLikesLoading}
+                prioritize={false}
+                isTrending={false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <SiteItemListJsonLd sites={sites} />

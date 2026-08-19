@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, memo } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
@@ -46,12 +47,25 @@ const LoadingState = ({ text }: { text: string }) => (
 );
 
 function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUserBadges }: PublicProfileTabsProps) {
-  const [activeTab, setActiveTab] = useState("events");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [sites, setSites] = useState<UserSite[]>([]);
   const [badges, setBadges] = useState<UserBadge[]>([]);
+
+  // Tab state driven by URL query param; likes is not available on public profiles
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const PUBLIC_VALID_TABS = ["events", "sites", "badges"];
+  const rawTab = searchParams.get("tab") ?? "";
+  const activeTab = PUBLIC_VALID_TABS.includes(rawTab) ? rawTab : "events";
+
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -88,26 +102,37 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
 
   return (
     <motion.div
-      className="w-full rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6"
-      initial={{ opacity: 0, y: 12 }}
+      className="w-full"
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid h-11 w-full grid-cols-3 bg-muted/60">
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Eventos</span>
-          </TabsTrigger>
-          <TabsTrigger value="sites" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span className="hidden sm:inline">Sitios</span>
-          </TabsTrigger>
-          <TabsTrigger value="badges" className="flex items-center gap-2">
-            <Award className="h-4 w-4" />
-            <span className="hidden sm:inline">Insignias</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <div className="border-b border-border">
+          <TabsList className="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsTrigger
+              value="events"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <Activity className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Eventos</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="sites"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Sitios</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="badges"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <Award className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Insignias</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="events" className="mt-6">
           <AnimatePresence mode="wait">
@@ -126,9 +151,9 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                 animate="visible"
                 exit="exit"
               >
-                {events.map((event) => (
+                {events.map((event, eventIndex) => (
                   <motion.div key={event.id} variants={itemVariants}>
-                    <PublicEventCard event={event} />
+                    <PublicEventCard event={event} priority={eventIndex === 0} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -151,7 +176,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                 animate="visible"
                 exit="exit"
               >
-                {sites.map((site) => (
+                {sites.map((site, siteIndex) => (
                   <motion.article
                     key={site.id}
                     variants={itemVariants}
@@ -167,6 +192,8 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                               className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading={siteIndex === 0 ? "eager" : "lazy"}
+                              priority={siteIndex === 0}
                             />
                             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
                           </>

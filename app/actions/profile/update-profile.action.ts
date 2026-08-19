@@ -3,6 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
 import { revalidateTag } from "next/cache";
+import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
 
 interface UpdateProfileInput {
   uid: string;
@@ -11,6 +12,14 @@ interface UpdateProfileInput {
   lastName?: string;
   bio?: string;
   phoneNumber?: string;
+  website?: string;
+  mapsLink?: string;
+  socialLink?: string;
+  socialLinks?: Array<{ platform: string; url: string }>;
+  isUsernameCustomized?: boolean;
+  professionalDescription?: string;
+  brandName?: string;
+  professionalDetails?: Record<string, unknown>;
 }
 
 interface UpdateProfileResult {
@@ -130,6 +139,14 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       lastName?: string;
       bio?: string;
       phoneNumber?: string;
+      website?: string;
+      mapsLink?: string;
+      socialLink?: string;
+      socialLinks?: Array<{ platform: string; url: string }>;
+      isUsernameCustomized?: boolean;
+      professionalDescription?: string;
+      brandName?: string;
+      professionalDetails?: ProfessionalRequestDetails;
     } = {};
 
     // Solo incluir campos que realmente cambiaron
@@ -151,6 +168,16 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
     } else if (!normalizedNewPhone && normalizedCurrentPhone) {
       dbPayload.phoneNumber = "";
     }
+
+    // Campos de presencia pública y cuenta profesional
+    if (input.website !== undefined) dbPayload.website = input.website;
+    if (input.mapsLink !== undefined) dbPayload.mapsLink = input.mapsLink;
+    if (input.socialLink !== undefined) dbPayload.socialLink = input.socialLink;
+    if (input.socialLinks !== undefined) dbPayload.socialLinks = input.socialLinks;
+    if (input.isUsernameCustomized !== undefined) dbPayload.isUsernameCustomized = input.isUsernameCustomized;
+    if (input.professionalDescription !== undefined) dbPayload.professionalDescription = input.professionalDescription;
+    if (input.brandName !== undefined) dbPayload.brandName = input.brandName;
+    if (input.professionalDetails !== undefined) dbPayload.professionalDetails = input.professionalDetails as unknown as ProfessionalRequestDetails;
 
     await userService.updateUser(input.uid, dbPayload);
 

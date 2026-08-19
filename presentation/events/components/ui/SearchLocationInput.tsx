@@ -69,6 +69,8 @@ export const SearchLocationInput = ({
   const [options, setOptions] = useState<LocationOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,10 +95,13 @@ export const SearchLocationInput = ({
         setOptions([]);
         setOpen(false);
         setLoading(false);
+        setHasSearched(false);
+        setHasError(false);
         return;
       }
 
       setLoading(true);
+      setHasError(false);
       setOpen(true);
 
       if (debounceTimeoutRef.current) {
@@ -156,9 +161,12 @@ export const SearchLocationInput = ({
           });
 
           setOptions(formattedOptions);
+          setHasSearched(true);
         } catch (error) {
           console.error("Error fetching places:", error);
           setOptions([]);
+          setHasError(true);
+          setHasSearched(true);
         } finally {
           setLoading(false);
         }
@@ -173,12 +181,14 @@ export const SearchLocationInput = ({
     onChange(option.name, option.coordinates, option.subtext);
   };
 
+  const showDropdown = open && (loading || options.length > 0 || (hasSearched && !loading));
+
   return (
     <div ref={containerRef} className="w-full relative">
-      <Popover open={open && (options.length > 0 || loading)} onOpenChange={setOpen}>
+      <Popover open={showDropdown} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <div className="relative flex items-center w-full">
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-3 size-4 text-[#A1A1AA] pointer-events-none z-10" />
             <Input
               placeholder={cityName ? `Buscar en ${cityName}...` : "Buscar un lugar específico..."}
               value={search}
@@ -186,48 +196,71 @@ export const SearchLocationInput = ({
               onChange={handleSearchChange}
               onFocus={() => search.trim().length >= 3 && setOpen(true)}
               className={cn(
-                "pl-9 pr-10 w-full bg-background border-input font-normal text-foreground shadow-sm transition-all",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-                open && "rounded-b-none border-b-transparent"
+                "pl-9 pr-10 h-12 w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] shadow-none",
+                "focus-visible:ring-1 focus-visible:ring-[#E63946]/20 focus-visible:border-[#E63946]",
+                "transition-colors",
               )}
               aria-label="Buscar un lugar"
             />
             {loading && (
-              <Loader2 className="absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />
+              <Loader2 className="absolute right-3 size-4 animate-spin text-[#A1A1AA]" />
             )}
           </div>
         </PopoverTrigger>
 
-        <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] p-1 bg-background border border-input rounded-b-md rounded-t-none shadow-md"
+        <PopoverContent
+          className="w-(--radix-popover-trigger-width) p-1 bg-white border border-[#E4E4E7] rounded-xl shadow-card z-200"
           align="start"
+          sideOffset={4}
           style={{ width: containerRef.current?.offsetWidth }}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="max-h-[240px] overflow-y-auto flex flex-col gap-0.5">
-            {options.map((option) => (
+          <div className="max-h-80 overflow-y-auto">
+            {/* Loading */}
+            {loading && (
+              <div className="flex items-center gap-2.5 px-4 py-3 text-sm text-[#71717A]">
+                <Loader2 className="size-4 animate-spin shrink-0" />
+                Buscando lugares...
+              </div>
+            )}
+
+            {/* Resultados */}
+            {!loading && options.length > 0 && options.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => handleSelectOption(option)}
-                className={cn(
-                  "w-full flex items-start gap-3 px-3 py-2.5 text-left rounded-md transition-colors",
-                  "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground outline-none group"
-                )}
+                className="w-full flex items-start gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-[#FDF2F4] focus:bg-[#FDF2F4] outline-none group"
               >
-                <MapPin className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
+                <MapPin className="size-4 text-[#A1A1AA] group-hover:text-[#E63946] shrink-0 mt-0.5 transition-colors" />
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-medium text-sm text-foreground truncate">
+                  <span className="font-semibold text-sm text-[#09090B] leading-snug">
                     {option.name}
                   </span>
                   {option.subtext && (
-                    <span className="text-xs text-muted-foreground truncate">
+                    <span className="text-xs text-[#71717A] leading-snug">
                       {option.subtext}
                     </span>
                   )}
                 </div>
               </button>
             ))}
+
+            {/* Sin resultados */}
+            {!loading && hasSearched && !hasError && options.length === 0 && (
+              <div className="px-4 py-4 text-center">
+                <p className="text-sm font-medium text-[#09090B]">No encontramos lugares</p>
+                <p className="text-xs text-[#71717A] mt-1">Prueba con otro nombre o dirección.</p>
+              </div>
+            )}
+
+            {/* Error */}
+            {!loading && hasError && (
+              <div className="px-4 py-4 text-center">
+                <p className="text-sm font-medium text-[#09090B]">No pudimos buscar lugares</p>
+                <p className="text-xs text-[#71717A] mt-1">Intenta nuevamente.</p>
+              </div>
+            )}
           </div>
         </PopoverContent>
       </Popover>

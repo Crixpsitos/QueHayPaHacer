@@ -78,6 +78,7 @@ export class EventSessionFirebaseRepository
     const partial: Record<string, unknown> = { updatedAt: now };
 
     if (data.title !== undefined) partial.title = data.title;
+    if (data.description !== undefined) partial.description = data.description;
     if (data.coverSource !== undefined) partial.coverSource = data.coverSource;
     if (data.mainImage !== undefined) partial.mainImage = data.mainImage;
     if (data.media !== undefined) partial.media = data.media;

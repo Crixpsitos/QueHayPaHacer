@@ -4,7 +4,7 @@ export type ProfessionalType = "organizer" | "business" | "government";
 
 export const PROFESSIONAL_TYPE_LABEL: Record<ProfessionalType, string> = {
   organizer: "Organizador",
-  business: "Empresa",
+  business: "Negocio",
   government: "Entidad gubernamental",
 };
 

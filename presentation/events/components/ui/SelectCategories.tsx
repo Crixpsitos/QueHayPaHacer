@@ -65,7 +65,7 @@ export const SelectCategories = ({
       <FieldLabel>Categoria principal</FieldLabel>
       <Select value={currentSelectId} onValueChange={handleValueChange} disabled={disabled}>
         <SelectTrigger onBlur={onBlur} ref={ref}>
-          <SelectValue placeholder="Selecciona un estado" />
+          <SelectValue placeholder="Elige una categoría" />
         </SelectTrigger>
         <SelectContent position="popper">
           <SelectGroup>

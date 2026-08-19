@@ -10,12 +10,14 @@ import { setSessionStatusAction } from "@/app/actions/events/set-session-status.
 import { SessionCard } from "../session/SessionCard";
 import { SessionForm } from "../session/SessionForm";
 import { Button } from "@/app/components/ui/button";
-import { PlusIcon } from "lucide-react";
+import { CalendarDaysIcon, PlusIcon, XIcon } from "lucide-react";
 import { notify } from "@/presentation/shared/lib/notify";
 
 interface StepSessionsManagerProps {
   form: UseFormReturn<FormEventDto>;
   onSaveDraft: () => Promise<void>;
+  /** Notifica al padre el número de sesiones actuales (para el checklist de publicación). */
+  onSessionsChange?: (count: number) => void;
 }
 
 function sortByDate(sessions: EventSession[]) {
@@ -27,6 +29,7 @@ function sortByDate(sessions: EventSession[]) {
 export function StepSessionsManager({
   form,
   onSaveDraft,
+  onSessionsChange,
 }: StepSessionsManagerProps) {
   const eventId = useWatch({ control: form.control, name: "id" }) as
     | string
@@ -56,6 +59,11 @@ export function StepSessionsManager({
   useEffect(() => {
     if (eventId) loadSessions(eventId);
   }, [eventId, loadSessions]);
+
+  // Notificar al padre cuando cambia el número de sesiones.
+  useEffect(() => {
+    onSessionsChange?.(sessions.length);
+  }, [sessions.length, onSessionsChange]);
 
   const handleAdd = async () => {
     // Siempre persiste el encabezado (título, clasificación, descripción…) antes de
@@ -155,54 +163,68 @@ export function StepSessionsManager({
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Encabezado del paso */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-medium text-black">Sesiones</h2>
-            <p className="text-sm text-gray-500">
-              Agrega cada fecha y lugar en que se realizará tu evento.
-            </p>
-          </div>
+      <div className="space-y-5">
+        {/* Barra de acción: contador + botón "Nueva sesión" */}
+        <div className="flex items-center gap-3">
+          {sessions.length > 0 && (
+            <>
+              <span className="rounded-full bg-[#F4F4F5] px-2.5 py-1 text-xs font-semibold text-[#71717A]">
+                {sessions.length} {sessions.length === 1 ? "sesión" : "sesiones"}
+              </span>
+              {sessions.length >= 2 && (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                  ✓ Listo para publicar
+                </span>
+              )}
+            </>
+          )}
+          <div className="flex-1" />
           <Button
             type="button"
             onClick={handleAdd}
             disabled={isPending || isLoading}
-            className="shrink-0 bg-black text-white hover:bg-gray-800"
+            size="sm"
+            className="shrink-0 gap-1.5 bg-[#E63946] text-white hover:bg-[#9B0A26] shadow-primary-glow"
           >
-            <PlusIcon className="mr-1.5 h-4 w-4" />
+            <PlusIcon className="size-4" />
             Nueva sesión
           </Button>
         </div>
 
-        {/* Lista de sesiones */}
+        {/* Lista de sesiones / empty state */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-10 text-sm text-gray-400">
-            Cargando sesiones...
+          <div className="flex items-center justify-center py-12 text-sm text-[#71717A]">
+            <span className="animate-pulse">Cargando sesiones…</span>
           </div>
         ) : sessions.length === 0 ? (
-          <div
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-200 py-14 text-center transition-colors hover:border-gray-400 hover:bg-gray-50"
+          <button
+            type="button"
             onClick={handleAdd}
+            className="group flex w-full flex-col items-center gap-4 rounded-2xl border border-dashed border-[#E4E4E7] bg-[#FAFAFC] px-6 py-14 text-center transition-all hover:border-[#E63946]/40 hover:bg-[#FDF2F4]/40"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-              <PlusIcon className="h-6 w-6 text-gray-400" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">
-                Agrega tu primera sesión
+            <span className="flex size-12 items-center justify-center rounded-xl border border-[#F4F4F5] bg-white shadow-sm group-hover:border-[#E63946]/20 transition-colors">
+              <CalendarDaysIcon className="size-5 text-[#A1A1AA] group-hover:text-[#E63946] transition-colors" />
+            </span>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-[#09090B]">
+                Crea tu primera sesión
               </p>
-              <p className="mt-0.5 text-xs text-gray-400">
-                Cada sesión tiene su propia fecha, lugar y configuración.
+              <p className="text-xs text-[#71717A]">
+                Necesitas al menos 2 sesiones activas para publicar el evento.
               </p>
             </div>
-          </div>
+            <span className="flex items-center gap-1.5 rounded-lg border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-semibold text-[#09090B] shadow-sm group-hover:border-[#E63946]/30 transition-colors">
+              <PlusIcon className="size-3.5" />
+              Crear primera sesión
+            </span>
+          </button>
         ) : (
           <div className="flex flex-col gap-3">
-            {sessions.map((session) => (
+            {sessions.map((session, index) => (
               <SessionCard
                 key={session.id}
                 session={session}
+                sessionIndex={index}
                 parentCoverUrl={mainImage?.url}
                 allSessions={sessions}
                 hasOverlap={false}
@@ -213,27 +235,45 @@ export function StepSessionsManager({
             ))}
           </div>
         )}
+
+        {/* Aviso mínimo de sesiones cuando hay exactamente 1 */}
+        {sessions.length === 1 && (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-[#FFF8E7] px-4 py-3">
+            <span className="text-sm text-[#E09F00]">⚠</span>
+            <p className="text-xs text-amber-800">
+              Agrega una sesión más. Un evento multi-fecha requiere mínimo 2 sesiones para publicarse.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Modal del formulario de sesión */}
+      {/* Modal wizard de sesión */}
       {isFormOpen && eventId && (
         <div
           role="dialog"
           aria-modal
           className="fixed inset-0 z-50 flex flex-col bg-white"
         >
-          <div className="mx-auto flex h-full w-full max-w-5xl flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-lg font-semibold">
-                {editingSession ? "Editar sesión" : "Nueva sesión"}
-              </h2>
+          <div className="mx-auto flex h-full w-full max-w-screen-2xl flex-col">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between border-b border-[#F4F4F5] px-6 py-4">
+              <div>
+                <h2 className="text-base font-bold text-[#09090B]">
+                  {editingSession ? "Editar sesión" : "Nueva sesión"}
+                </h2>
+                <p className="text-xs text-[#71717A]">
+                  {editingSession
+                    ? "Actualiza la configuración de esta sesión."
+                    : "Configura los detalles de esta fecha."}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                className="flex size-8 items-center justify-center rounded-lg border border-[#E4E4E7] text-[#71717A] transition-colors hover:bg-[#FAFAFC] hover:text-[#09090B]"
                 aria-label="Cerrar"
               >
-                ✕
+                <XIcon className="size-4" />
               </button>
             </div>
 

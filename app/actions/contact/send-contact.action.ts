@@ -7,8 +7,9 @@ import { createServerContainer } from "@/infraestructure/di/container";
 
 export interface ContactActionInput {
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   message: string;
+  contactReason: string;
 }
 
 export type ContactActionResult =
@@ -28,6 +29,7 @@ export async function sendContactAction(
       email: input.email,
       phoneNumber: input.phoneNumber,
       message: input.message,
+      contactReason: input.contactReason,
       uid,
     });
 

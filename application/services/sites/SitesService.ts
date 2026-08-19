@@ -1,6 +1,7 @@
 import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
+import { GeoPoint } from "firebase-admin/firestore"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
 
@@ -92,4 +93,69 @@ export class SitesService {
   getSiteDetailBySlug(slug: string) {
     return this.adapter.getSiteDetailBySlug(slug)
   }
+
+  /**
+   * Crea un sitio borrador (draft) a partir de la información de la solicitud
+   * profesional aprobada de un negocio. Llámalo justo después de aprobar
+   * una cuenta de tipo "business".
+   */
+  async createBusinessDraftFromRequest(input: {
+    uid: string;
+    authorDisplayName: string;
+    authorPhotoURL?: string;
+    brandName: string;
+    description: string;
+    siteCategory: string;
+    website?: string | null;
+  }): Promise<string> {
+    const slug = slugify(input.brandName) + "-" + Date.now().toString(36);
+    const closed = { open: "09:00", close: "21:00", closed: true };
+
+    return this.adapter.createRaw({
+      name: input.brandName,
+      slug,
+      category: input.siteCategory,
+      description: input.description,
+      location: {
+        geo: new GeoPoint(0, 0),
+        country: { isoCode: "CO", name: "Colombia", slug: "colombia" },
+        department: { isoCode: "", name: "", slug: "" },
+        city: { name: "", slug: "" },
+        address: "",
+        venue: "",
+        moreInfo: "",
+      },
+      media: [],
+      schedule: {
+        monday: closed, tuesday: closed, wednesday: closed, thursday: closed,
+        friday: closed, saturday: closed, sunday: closed,
+      },
+      author: {
+        id: input.uid,
+        displayName: input.authorDisplayName,
+        photoURL: input.authorPhotoURL,
+      },
+      publicationStatus: "draft",
+      moderationStatus: "pending",
+      isActive: true,
+      analytics: { clicks: 0, views: 0, likes: 0, shares: 0, eventCount: 0, score: 0 },
+      publishedAt: null,
+      reviewedAt: null,
+      reviewedBy: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      ...(input.website ? { socialMedia: { website: input.website } } : {}),
+    });
+  }
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
 }

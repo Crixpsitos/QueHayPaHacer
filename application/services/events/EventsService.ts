@@ -34,6 +34,9 @@ export class EventsService {
   async updateEvent(event: Partial<Events>): Promise<void> {
     await this.eventsRepository.updateEvent(event as Events);
   }
+  async deleteEvent(id: string): Promise<void> {
+    await this.eventsRepository.deleteEvent(id);
+  }
 
   /** Sincroniza el rango de fechas del evento (multi-date) con sus sesiones:
    *  startDate = inicio más temprano, endDate = fin más tardío. Sin esto, las
@@ -125,8 +128,8 @@ export class EventsService {
   }
 
   /** Página por cursor de una categoría (por docId). Devuelve IDs + nextCursor. */
-  async getEventsByCategoryPaginated(categoryId: string, limit: number, cursor: string | null) {
-    return this.eventsRepository.findByCategoryPaginated(categoryId, limit, cursor);
+  async getEventsByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null) {
+    return this.eventsRepository.findByCategoryPaginated(categoryId, categorySlug, limit, cursor);
   }
 
   async syncSiteIds(eventId: string, siteIds: string[]): Promise<void> {

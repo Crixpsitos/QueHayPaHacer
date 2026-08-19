@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { googleAuthAction } from "@/app/actions/auth/google-auth.action";
@@ -8,9 +9,11 @@ import { cn } from "@/app/lib/utils/cn";
 
 interface GoogleAuthButtonProps {
   label?: string;
+  redirectTo?: string;
 }
 
-export const GoogleAuthButton = ({ label = "Continuar con Google" }: GoogleAuthButtonProps) => {
+export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }: GoogleAuthButtonProps) => {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +37,9 @@ export const GoogleAuthButton = ({ label = "Continuar con Google" }: GoogleAuthB
 
         if (result?.error) {
           setError(result.error);
+          return;
         }
+        router.push(safeRedirect(redirectTo));
       } catch (err) {
         const code =
           typeof err === "object" && err !== null && "code" in err
@@ -54,10 +59,10 @@ export const GoogleAuthButton = ({ label = "Continuar con Google" }: GoogleAuthB
         onClick={handleClick}
         disabled={isPending}
         className={cn(
-          "flex h-11 w-full items-center justify-center gap-3 rounded-full border border-zinc-300 bg-white px-5 text-sm font-medium text-zinc-800 transition-colors dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
+          "flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors",
           isPending
             ? "cursor-not-allowed opacity-50"
-            : "hover:bg-zinc-50 dark:hover:bg-zinc-800",
+            : "hover:bg-secondary",
         )}
       >
         {isPending ? (
@@ -69,7 +74,7 @@ export const GoogleAuthButton = ({ label = "Continuar con Google" }: GoogleAuthB
       </button>
 
       {error && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p role="alert" className="rounded-xl bg-primary-light px-3 py-2 text-sm text-primary">
           {error}
         </p>
       )}
@@ -97,3 +102,8 @@ const GoogleIcon = () => (
     />
   </svg>
 );
+
+function safeRedirect(to?: string): string {
+  if (!to || !to.startsWith("/") || to.startsWith("//")) return "/";
+  return to;
+}

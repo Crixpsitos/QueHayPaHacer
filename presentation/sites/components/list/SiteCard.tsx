@@ -70,13 +70,15 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover }: SiteCardProp
       onMouseLeave={() => onHover(null)}
       onClick={() => onOpen(site.id)}
       className={cn(
-        "group cursor-pointer rounded-xl border bg-card p-3 text-left shadow-xs transition-all",
-        active ? "border-primary/60 ring-2 ring-primary/15" : "border-border hover:border-primary/30",
+        "group cursor-pointer rounded-2xl border bg-card p-3.5 text-left shadow-card transition-all duration-200",
+        active
+          ? "border-[#E63946]/40 shadow-hover ring-2 ring-[#E63946]/12"
+          : "border-[#E4E4E7] hover:border-[#E63946]/25 hover:shadow-hover",
       )}
     >
       <div className="flex gap-3">
         {/* Thumbnail */}
-        <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+        <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted">
           {site.coverUrl ? (
             <img src={site.coverUrl} alt={`Portada de ${site.name}`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
           ) : (
@@ -87,7 +89,12 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover }: SiteCardProp
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="truncate text-sm font-semibold text-foreground">{site.name}</h3>
+            <h3
+              className="truncate text-sm font-semibold text-[#09090B]"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {site.name}
+            </h3>
             <span className={cn("flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold", color.badge)}>
               <span className={cn("size-1.5 rounded-full", color.dotBg)} aria-hidden />
               {label}
@@ -146,7 +153,11 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover }: SiteCardProp
           <Button
             size="sm"
             variant={status === "rejected" ? "default" : "outline"}
-            className="h-8 gap-1.5 text-xs"
+            className={cn(
+              "h-8 gap-1.5 text-xs",
+              status !== "rejected" && "border-[#E4E4E7] hover:border-[#E63946]/30 hover:text-[#E63946]",
+              status === "rejected" && "bg-[#E63946] text-white hover:bg-[#9B0A26]",
+            )}
             onClick={(e) => { e.stopPropagation(); onEdit(site.id) }}
           >
             <Pencil className="size-3.5" aria-hidden />

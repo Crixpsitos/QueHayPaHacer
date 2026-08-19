@@ -8,6 +8,7 @@ import { loadMoreCategoryEventsAction } from "@/app/actions/events/load-more-cat
 
 interface InfiniteEventListProps {
   categoryId: string;
+  categorySlug?: string;
   initialEvents: EventViewModel[];
   initialCursor: string | null;
   initialLikedByEventId: Record<string, boolean>;
@@ -19,6 +20,7 @@ interface InfiniteEventListProps {
  */
 export function InfiniteEventList({
   categoryId,
+  categorySlug,
   initialEvents,
   initialCursor,
   initialLikedByEventId,
@@ -32,7 +34,7 @@ export function InfiniteEventList({
     if (!cursor || loading) return;
     setLoading(true);
     try {
-      const res = await loadMoreCategoryEventsAction(categoryId, cursor);
+      const res = await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug);
       setEvents((prev) => [...prev, ...res.events]);
       setLikedByEventId((prev) => ({ ...prev, ...res.likedByEventId }));
       setCursor(res.nextCursor);

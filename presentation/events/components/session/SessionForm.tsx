@@ -19,6 +19,7 @@ import {
 } from "@/application/dto/events/EventSessionDto";
 import type { FormEventDto } from "@/application/dto/events/EventDto";
 import type { MediaItem } from "@/application/dto/events/EventDto";
+import { getTiptapPlainText } from "@/application/dto/events/EventDto";
 
 import { SessionCoverSelector } from "./SessionCoverSelector";
 import { Step4Location } from "../steps/Step4Location";
@@ -63,7 +64,6 @@ const FIELD_STEP: Record<string, number> = {
   mainImage: 1,
   media: 2,
   title: 3,
-  shortDescription: 3,
   description: 3,
   location: 4,
   startDate: 5,
@@ -97,9 +97,28 @@ export function SessionForm({
 }: SessionFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isPending, startTransition] = useTransition();
-  // Al editar una sesión existente, todos los pasos ya tienen datos: se pueden
-  // navegar libremente y se muestran como completados (excepto el actual).
+  // Al editar una sesión existente, se puede navegar libremente a cualquier paso.
+  // La completitud depende del contenido real, no de si existe el ID.
   const isEditingExisting = Boolean(session?.id);
+
+  /**
+   * Para sesiones existentes: el paso está "hecho" si sus campos obligatorios tienen valor.
+   * Para sesiones nuevas: el paso está "hecho" si ya se pasó por él (step.number < currentStep).
+   */
+  function isStepDone(stepNumber: number, title: string, description: FormSessionDto["description"], location: FormSessionDto["location"], startDate: string | undefined): boolean {
+    if (!isEditingExisting) return stepNumber < currentStep;
+    if (stepNumber === currentStep) return false;
+    switch (stepNumber) {
+      case 1: return true;
+      case 2: return true;
+      case 3: return !!(title.trim()) && getTiptapPlainText(description).trim().length >= 10;
+      case 4: return !!(location?.venue?.trim() && location?.city?.name?.trim());
+      case 5: return !!startDate;
+      case 6: return true;
+      case 7: return true;
+      default: return false;
+    }
+  }
 
   // El sessionId puede obtenerse antes de llegar al paso final (para uploads)
   const savedSessionIdRef = useRef<string | null>(session?.id ?? null);
@@ -109,7 +128,6 @@ export function SessionForm({
       id: session?.id,
       eventId: event.id,
       title: session?.title ?? "",
-      shortDescription: session?.shortDescription ?? "",
       description: session?.description,
       coverSource: session?.coverSource ?? "parent",
       mainImage: session?.mainImage,
@@ -159,6 +177,12 @@ export function SessionForm({
   });
 
   const formAsEvent = form as unknown as UseFormReturn<FormEventDto>;
+
+  // Campos para calcular completitud de pasos (leídos aquí, después de useForm)
+  const stepTitle = form.watch("title") ?? "";
+  const stepDescription = form.watch("description");
+  const stepLocation = form.watch("location");
+  const stepStartDate = form.watch("startDate");
 
   const coverSource =
     useWatch({ control: form.control, name: "coverSource" }) ?? "parent";
@@ -418,7 +442,6 @@ export function SessionForm({
 
       const payload = {
         title: values.title || undefined,
-        shortDescription: values.shortDescription,
         description: values.description,
         coverSource: values.coverSource ?? "parent",
         mainImage: values.mainImage,
@@ -476,10 +499,10 @@ export function SessionForm({
       /* ── Paso 1: Portada ─────────────────────────────────────────────── */
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
-              <h3 className="text-base font-medium text-gray-900">Portada de la sesión</h3>
-              <p className="text-sm text-gray-500">¿Qué imagen usará esta sesión como portada?</p>
+              <p className="text-sm font-semibold text-[#09090B]">Portada de la sesión</p>
+              <p className="mt-0.5 text-xs text-[#71717A]">¿Qué imagen usará esta sesión como portada?</p>
             </div>
 
             <SessionCoverSelector
@@ -496,10 +519,10 @@ export function SessionForm({
               onUploadOwn={() => {/* el dropzone de abajo maneja el upload */}}
             />
 
-            {/* Solo mostrar el uploader de portada propia cuando aplica */}
+            {/* Uploader de portada propia */}
             {coverSource === "own" && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Subir portada propia</p>
+                <p className="text-xs font-semibold text-[#71717A] uppercase tracking-wide">Subir portada propia</p>
                 <ImageMainDropzone
                   value={
                     mainImage?.url
@@ -523,8 +546,8 @@ export function SessionForm({
         return (
           <div className="space-y-4">
             <div>
-              <h3 className="text-base font-medium text-gray-900">Medios de la sesión</h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm font-semibold text-[#09090B]">Medios de la sesión</p>
+              <p className="mt-0.5 text-xs text-[#71717A]">
                 Agrega fotos y videos que muestren esta sesión.
               </p>
             </div>
@@ -539,7 +562,8 @@ export function SessionForm({
       /* ── Paso 3: Información ─────────────────────────────────────────── */
       case 3: {
         const titleVal = form.watch("title") ?? "";
-        const shortDescVal = form.watch("shortDescription") ?? "";
+        const descContent = form.watch("description");
+        const descCharCount = getTiptapPlainText(descContent ?? { type: "doc", content: [] }).length;
         return (
           <div className="space-y-5">
             <div>
@@ -553,45 +577,37 @@ export function SessionForm({
                 <FieldLabel className="text-sm font-medium text-zinc-700">
                   Título
                 </FieldLabel>
-                <span className="font-mono text-xs text-gray-400">{titleVal.length}/80</span>
+                <span className="font-mono text-xs text-gray-400">{titleVal.length}/60</span>
               </div>
               <Input
                 {...form.register("title")}
-                maxLength={80}
+                maxLength={60}
                 placeholder="Ej: Noche del 7 de diciembre"
               />
-            </Field>
-
-            {/* Sinopsis */}
-            <Field>
-              <div className="flex items-center justify-between">
-                <FieldLabel className="text-sm font-medium text-zinc-700">
-                  Sinopsis
-                </FieldLabel>
-                <span className="font-mono text-xs text-gray-400">{shortDescVal.length}/150</span>
-              </div>
-              <Input
-                {...form.register("shortDescription")}
-                maxLength={150}
-                placeholder="Resumen breve de lo que pasará en esta sesión..."
-              />
-              {form.formState.errors.shortDescription && (
-                <FieldError errors={[form.formState.errors.shortDescription]} />
+              {form.formState.errors.title && (
+                <FieldError errors={[form.formState.errors.title]} />
               )}
             </Field>
 
             {/* Descripción detallada */}
             <Field>
-              <FieldLabel className="text-sm font-medium text-zinc-700">
-                Descripción detallada
-              </FieldLabel>
+              <div className="flex items-center justify-between">
+                <FieldLabel className="text-sm font-medium text-zinc-700">
+                  Descripción detallada
+                </FieldLabel>
+                <span className="font-mono text-xs text-gray-400">{descCharCount}/1000</span>
+              </div>
               <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-zinc-900">
                 <RichTextEditor
                   value={form.watch("description") as JSONContent}
-                  onChange={(val) => form.setValue("description", val)}
+                  onChange={(val) => form.setValue("description", val, { shouldValidate: true })}
                   onBlur={() => {}}
                 />
               </div>
+              {form.formState.errors.description && (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <FieldError errors={[form.formState.errors.description as any]} />
+              )}
             </Field>
           </div>
         );
@@ -633,68 +649,98 @@ export function SessionForm({
   return (
     <LazyMotion features={domAnimation}>
     <div className="flex h-full min-h-0 flex-col">
-      {/* Mini stepper */}
-      <div className="flex gap-1.5 overflow-x-auto px-6 pt-5 pb-2">
-        {SESSION_STEPS.map((step) => {
-          const isCurrent = step.number === currentStep;
-          const canGo = isEditingExisting || step.number <= currentStep;
-          const isDone = isEditingExisting
-            ? !isCurrent
-            : step.number < currentStep;
-          return (
-            <button
-              key={step.number}
-              type="button"
-              onClick={() => canGo && setCurrentStep(step.number)}
-              disabled={!canGo}
-              className={`flex min-w-16 flex-1 flex-col items-center gap-1 rounded-lg py-2 text-center text-xs font-medium transition-colors ${
-                isCurrent
-                  ? "bg-gray-100 text-black"
-                  : isDone
-                    ? "cursor-pointer text-gray-500 hover:bg-gray-50"
-                    : "cursor-not-allowed text-gray-300"
-              }`}
-            >
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs ${
-                  isDone
-                    ? "border-black bg-black text-white"
-                    : isCurrent
-                      ? "border-black bg-white text-black"
-                      : "border-gray-200 text-gray-300"
-                }`}
-              >
-                {isDone ? <CheckIcon className="h-3 w-3" /> : step.number}
-              </span>
-              {step.label}
-            </button>
-          );
-        })}
+      {/* Stepper de pasos */}
+      <div className="border-b border-[#F4F4F5] bg-white px-4 pt-3 pb-0">
+        <div className="flex items-start overflow-x-auto">
+          {SESSION_STEPS.map((step, idx) => {
+            const isCurrent = step.number === currentStep;
+            const canGo = isEditingExisting || step.number <= currentStep;
+            const isDone = isStepDone(step.number, stepTitle, stepDescription, stepLocation, stepStartDate);
+            const isLast = idx === SESSION_STEPS.length - 1;
+            return (
+              <div key={step.number} className="flex flex-1 flex-col items-center">
+                {/* Fila: línea izquierda + círculo + línea derecha */}
+                <div className="flex w-full items-center">
+                  {/* Línea izquierda */}
+                  {idx > 0 ? (
+                    <div className={`h-0.5 flex-1 transition-colors ${isDone || isCurrent ? "bg-[#09090B]" : "bg-[#E4E4E7]"}`} />
+                  ) : (
+                    <div className="flex-1" />
+                  )}
+                  {/* Círculo */}
+                  <button
+                    type="button"
+                    onClick={() => canGo && setCurrentStep(step.number)}
+                    disabled={!canGo}
+                    className={`relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                      isCurrent
+                        ? "bg-[#E63946] text-white shadow-primary-glow scale-110"
+                        : isDone
+                          ? "cursor-pointer bg-[#09090B] text-white hover:scale-105"
+                          : canGo
+                            ? "cursor-pointer border-2 border-[#E4E4E7] bg-white text-[#A1A1AA] hover:border-[#09090B] hover:text-[#09090B]"
+                            : "cursor-not-allowed border-2 border-[#F4F4F5] bg-white text-[#D4D4D8]"
+                    }`}
+                  >
+                    {isDone ? <CheckIcon className="size-4" /> : step.number}
+                  </button>
+                  {/* Línea derecha */}
+                  {!isLast ? (
+                    <div className={`h-0.5 flex-1 transition-colors ${isDone ? "bg-[#09090B]" : "bg-[#E4E4E7]"}`} />
+                  ) : (
+                    <div className="flex-1" />
+                  )}
+                </div>
+                {/* Label */}
+                <button
+                  type="button"
+                  onClick={() => canGo && setCurrentStep(step.number)}
+                  disabled={!canGo}
+                  className={`mt-1.5 mb-2.5 hidden text-center text-[11px] leading-tight transition-colors sm:block ${
+                    isCurrent
+                      ? "font-semibold text-[#E63946]"
+                      : isDone
+                        ? "font-medium text-[#71717A] hover:text-[#09090B]"
+                        : "font-medium text-[#D4D4D8]"
+                  }`}
+                >
+                  {step.label}
+                </button>
+                {/* Versión mobile: solo número de paso activo */}
+                <span className={`mb-2 text-[10px] font-medium sm:hidden ${isCurrent ? "text-[#E63946]" : "text-transparent"}`}>
+                  {isCurrent ? `${step.number}/${SESSION_STEPS.length}` : "."}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Contenido del paso actual (llena el espacio, scroll propio) */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-        <AnimatePresence mode="wait">
-          <m.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-          >
-            {renderStep()}
-          </m.div>
-        </AnimatePresence>
+      {/* Contenido del paso — scroll propio, ancho contenido */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-2xl px-6 py-5">
+          <AnimatePresence mode="wait">
+            <m.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              {renderStep()}
+            </m.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Navegación (fija abajo) */}
-      <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-6 py-4">
+      <div className="flex items-center justify-between gap-3 border-t border-[#F4F4F5] bg-white px-6 py-4">
         <Button
           type="button"
           variant="outline"
           onClick={currentStep === 1 ? onCancel : handleBack}
           disabled={isPending}
-          className="gap-1"
+          className="gap-1 border-[#E4E4E7] text-[#09090B] hover:bg-[#FAFAFC]"
         >
           {currentStep === 1 ? (
             "Cancelar"
@@ -713,6 +759,7 @@ export function SessionForm({
               variant="outline"
               onClick={() => submitSession("draft")}
               disabled={isPending}
+              className="border-[#E4E4E7] text-[#09090B] hover:bg-[#FAFAFC]"
             >
               {isPending ? "Guardando…" : "Guardar borrador"}
             </Button>
@@ -720,7 +767,7 @@ export function SessionForm({
               type="button"
               onClick={() => submitSession("published")}
               disabled={isPending}
-              className="gap-1 bg-black text-white hover:bg-gray-800"
+              className="gap-1 bg-[#E63946] text-white hover:bg-[#9B0A26] shadow-primary-glow"
             >
               <CheckIcon className="h-4 w-4" />
               Publicar sesión
@@ -731,7 +778,7 @@ export function SessionForm({
             type="button"
             onClick={handleNext}
             disabled={isPending}
-            className="gap-1 bg-black text-white hover:bg-gray-800"
+            className="gap-1 bg-[#09090B] text-white hover:bg-[#27272A]"
           >
             Siguiente
             <ChevronRightIcon className="h-4 w-4" />

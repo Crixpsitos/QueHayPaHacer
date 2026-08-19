@@ -140,23 +140,26 @@ export const createServerContainer = () => {
   const badgeRepository = new BadgeAdapter(badgeFirebaseRepository, new BadgeFirebaseMapper());
   const badgeService = new BadgeService(badgeRepository);
 
+  // sites
+  const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
+  const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
+  const sitesService = new SitesService(sitesAdapter);
+
   // professional requests
   const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
   const professionalRequestRepository = new ProfessionalRequestAdapter(
     professionalRequestFirebaseRepository,
     new ProfessionalRequestFirebaseMapper(),
   );
-  const professionalRequestService = new ProfessionalRequestService(professionalRequestRepository, userRepository);
+  const professionalRequestService = new ProfessionalRequestService(
+    professionalRequestRepository,
+    userRepository,
+  );
 
   // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
   const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
   const studioService = new StudioService(studioRepository);
-
-  // sites
-  const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
-  const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
-  const sitesService = new SitesService(sitesAdapter);
 
   // site interactions
   const siteInteractionFirebaseRepository = new SiteInteractionFirebaseRepository(getFirebaseFirestore());

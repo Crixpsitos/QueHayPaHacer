@@ -33,6 +33,10 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-dark: var(--brand-gold-dark);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -146,6 +150,15 @@
 }
 
 @layer utilities {
+  /* Bounce horizontal para el swipe hint del carousel en mobile */
+  .animate-bounce-x {
+    animation: bounce-x 1s ease-in-out infinite;
+  }
+  @keyframes bounce-x {
+    0%, 100% { transform: translateX(-6px); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+    50%       { transform: translateX(0);   animation-timing-function: cubic-bezier(0,0,0.2,1); }
+  }
+
   .bg-grad-primary {    background: var(--grad-primary);
   }
   .bg-grad-primary-hover {

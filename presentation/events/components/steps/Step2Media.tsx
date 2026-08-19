@@ -58,12 +58,12 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
   const processFile = async () => {
     const imageData = await getImageData(file);
     const isValidMainResolution =
-      imageData.width >= 1920 && imageData.height >= 1080;
+      imageData.width >= 1280 && imageData.height >= 720;
 
     if (!isValidMainResolution) {
       form.setError("mainImage", {
         type: "validate",
-        message: "La imagen principal debe tener una resolución mínima de 1920x1080 píxeles.",
+        message: "La imagen principal debe tener una resolución mínima de 1280x720 píxeles.",
       });
       throw new Error("invalid-main-image-resolution");
     }
@@ -96,7 +96,7 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     success: () => "Imagen subida.",
     error: (error) => {
       if (error instanceof Error && error.message === "invalid-main-image-resolution") {
-        return "Resolución inválida. La imagen principal debe tener al menos 1920x1080.";
+        return "Resolución inválida. La imagen principal debe tener al menos 1280x720.";
       }
       console.error("Error:", error);
       return "Error al subir la imagen principal.";
@@ -187,50 +187,35 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     });
   };
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {hideMedia ? "Portada principal" : "Medios de tu evento"}
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {hideMedia
-            ? "Elige la imagen principal que identificará tu evento."
-            : "Selecciona las piezas gráficas que le darán identidad a tu evento."}
-        </p>
-      </div>
+    <div className="space-y-4">
+      <Controller
+        name="mainImage"
+        control={form.control}
+        render={({ fieldState }) => {
+          const imageValue = (mainImage && (mainImage as any).url)
+            ? { status: mainImageStatus ?? "ready", temporaryUrl: mainImageTemporaryUrl, desktop: { url: (mainImage as any).url } }
+            : {
+                status: (mainImage as any)?.status ?? mainImageStatus,
+                temporaryUrl: (mainImage as any)?.temporaryUrl ?? mainImageTemporaryUrl,
+                desktop: (mainImage as any)?.desktop,
+              };
 
-      <FieldGroup className="space-y-8">
-        <Controller
-          name="mainImage"
-          control={form.control}
-          render={({ fieldState }) => {
-            const imageValue = (mainImage && (mainImage as any).url)
-              ? { status: mainImageStatus ?? "ready", temporaryUrl: mainImageTemporaryUrl, desktop: { url: (mainImage as any).url } }
-              : {
-                  status: (mainImage as any)?.status ?? mainImageStatus,
-                  temporaryUrl: (mainImage as any)?.temporaryUrl ?? mainImageTemporaryUrl,
-                  desktop: (mainImage as any)?.desktop,
-                };
-
-            return (
-              <ImageMainDropzone
-                value={imageValue}
-                onChange={saveMainImage}
-                // focal point isn't persisted with the single-URL schema
-                removeMainImage={removeMainImage}
-                error={
-                  hasMainImagePreview
-                    ? undefined
-                    : fieldState.error?.message ??
-                      (fieldState.invalid
-                        ? "Por favor selecciona una imagen principal"
-                        : undefined)
-                }
-              />
-            );
-          }}
-        />
-        {!hideMedia && (
+          return (
+            <ImageMainDropzone
+              value={imageValue}
+              onChange={saveMainImage}
+              removeMainImage={removeMainImage}
+              error={
+                hasMainImagePreview
+                  ? undefined
+                  : fieldState.error?.message ??
+                    (fieldState.invalid ? "Por favor selecciona una imagen principal" : undefined)
+              }
+            />
+          );
+        }}
+      />
+      {!hideMedia && (
         <Controller
           name="media"
           control={form.control}
@@ -241,15 +226,12 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
               removeMediaFile={removeMediaFile}
               error={
                 fieldState.error?.message ??
-                (fieldState.invalid
-                  ? "Por favor revisa los archivos cargados"
-                  : undefined)
+                (fieldState.invalid ? "Por favor revisa los archivos cargados" : undefined)
               }
             />
           )}
         />
-        )}
-      </FieldGroup>
+      )}
     </div>
   );
 };

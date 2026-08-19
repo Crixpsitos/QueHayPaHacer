@@ -116,10 +116,6 @@ export function EventCardInteractive({
       return false;
     }
 
-    startTransition(() => {
-      router.refresh();
-    });
-
     return true;
   };
 

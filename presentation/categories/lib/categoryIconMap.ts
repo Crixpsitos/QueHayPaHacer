@@ -9,6 +9,16 @@ import {
   TreePine,
   Heart,
   GraduationCap,
+  Drama,
+  Laugh,
+  Theater,
+  Cpu,
+  PartyPopper,
+  Shirt,
+  Briefcase,
+  Baby,
+  Camera,
+  Wine,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +33,16 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   nature: TreePine,
   health: Heart,
   education: GraduationCap,
+  dance: Drama,
+  comedy: Laugh,
+  theater: Theater,
+  tech: Cpu,
+  party: PartyPopper,
+  fashion: Shirt,
+  business: Briefcase,
+  family: Baby,
+  photography: Camera,
+  gastronomy: Wine,
 };
 
 export const CATEGORY_COLOR_MAP: Record<string, { bg: string; icon: string }> = {

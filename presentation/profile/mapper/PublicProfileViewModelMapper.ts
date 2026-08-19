@@ -19,7 +19,10 @@ export class PublicProfileViewModelMapper {
       website: user.website,
       mapsLink: user.mapsLink,
       socialLink: user.socialLink,
+      socialLinks: user.socialLinks,
+      isUsernameCustomized: user.isUsernameCustomized,
       professionalDetails: user.professionalDetails,
+      bannerUrl: user.bannerUrl,
     };
   }
 }

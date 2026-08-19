@@ -1,12 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Heart, ImageOff, MapPin, MousePointerClick, Pencil, Play, Share2, X } from "lucide-react"
+import {
+  AlertTriangle, CalendarDays, ChevronLeft, ChevronRight,
+  Clock, Eye, EyeOff, ExternalLink, Globe, Heart,
+  ImageOff, Loader2, MapPin, Pencil, Play, Share2, X,
+} from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplayStatus } from "../lib/constants"
-import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
+import type { SiteDetail, SiteMediaItem, WeekDay } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
+import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
+import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
+import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
 
 interface DetailModalProps {
   site: SiteDetail | null
@@ -19,6 +26,22 @@ const CATEGORY_LABELS = Object.fromEntries(CATEGORY_OPTIONS.map((c) => [c.value,
 
 export function DetailModal({ site, onClose, onEdit }: DetailModalProps) {
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const [siteEvents, setSiteEvents] = useState<EventViewModel[]>([])
+  const [eventsLoading, setEventsLoading] = useState(false)
+
+  // Fetch events for the selected site; resets when site changes to avoid stale data.
+  useEffect(() => {
+    if (!site?.id) { setSiteEvents([]); return }
+    let cancelled = false
+    setEventsLoading(true)
+    setSiteEvents([])
+    getEventsBySiteAction(site.id).then((res) => {
+      if (cancelled) return
+      setSiteEvents(res.success ? res.events : [])
+      setEventsLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [site?.id])
 
   useEffect(() => {
     if (!site) return
@@ -74,7 +97,7 @@ export function DetailModal({ site, onClose, onEdit }: DetailModalProps) {
 
             <div className="overflow-y-auto overscroll-contain">
               <BentoMedia items={media} name={site.name} onOpen={setLightbox} />
-              <Body site={site} onEdit={onEdit} />
+              <Body site={site} onEdit={onEdit} siteEvents={siteEvents} eventsLoading={eventsLoading} />
             </div>
           </motion.div>
 
@@ -196,7 +219,7 @@ function MediaLightbox({ items, index, onClose, onIndex }: {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       onClick={onClose}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/90"
     >
       <button
         type="button"
@@ -245,66 +268,178 @@ function MediaLightbox({ items, index, onClose, onIndex }: {
   )
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const DAY_ORDER: WeekDay[] = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]
+
+function getTodayKey(): WeekDay {
+  return DAY_ORDER[new Date().getDay()]
+}
+
+function getOpenStatus(schedule: SiteDetail["schedule"]): { isOpen: boolean; label: string } {
+  const key = getTodayKey()
+  const sched = schedule?.[key]
+  if (!sched || sched.closed) return { isOpen: false, label: "Cerrado hoy" }
+  const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0) }
+  const cur = new Date().getHours() * 60 + new Date().getMinutes()
+  const isOpen = cur >= toMins(sched.open) && cur < toMins(sched.close)
+  return { isOpen, label: isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}` }
+}
+
 // ── Body ───────────────────────────────────────────────────────────────────────
 
-function Body({ site, onEdit }: { site: SiteDetail; onEdit: (id: string) => void }) {
-  const status = getDisplayStatus(site.publicationStatus, site.moderationStatus)
-  const color  = STATUS_COLORS[status]
-  const label  = STATUS_LABELS[status]
+function Body({ site, onEdit, siteEvents, eventsLoading }: {
+  site: SiteDetail
+  onEdit: (id: string) => void
+  siteEvents: EventViewModel[]
+  eventsLoading: boolean
+}) {
+  const status     = getDisplayStatus(site.publicationStatus, site.moderationStatus)
+  const color      = STATUS_COLORS[status]
+  const label      = STATUS_LABELS[status]
+  const openStatus = useMemo(() => getOpenStatus(site.schedule), [site.schedule])
+  const todayKey   = getTodayKey()
+  const isApproved = status === "approved"
+
+  const hasSocial = !!(
+    site.bookingUrl ||
+    site.socialMedia?.instagram ||
+    site.socialMedia?.facebook ||
+    site.socialMedia?.tiktok ||
+    site.socialMedia?.twitter ||
+    site.socialMedia?.website
+  )
 
   return (
-    <div className="flex flex-col gap-5 p-5 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-semibold text-foreground text-balance">{site.name}</h2>
-          <span className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold", color.badge)}>
-            <span className={cn("size-2 rounded-full", color.dotBg)} aria-hidden />
-            {label}
+    <div className="flex flex-col gap-0 p-5 sm:p-6">
+
+      {/* ── Badges ──────────────────────────────────────────────── */}
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center rounded-full bg-[#F4F4F5] px-2.5 py-1 text-xs font-medium text-[#52525B]">
+          {CATEGORY_LABELS[site.category] ?? site.category}
+        </span>
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold", color.badge)}>
+          <span className={cn("size-1.5 rounded-full", color.dotBg)} aria-hidden />
+          {label}
+        </span>
+        {isApproved && (
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
+            site.isActive
+              ? "bg-emerald-500/10 text-emerald-700"
+              : "bg-[#F4F4F5] text-[#71717A]",
+          )}>
+            {site.isActive
+              ? <Eye className="size-3" aria-hidden />
+              : <EyeOff className="size-3" aria-hidden />
+            }
+            {site.isActive ? "Activo" : "Inactivo"}
           </span>
+        )}
+      </div>
+
+      {/* ── Alerta cierre temporal ──────────────────────────────── */}
+      {site.temporarilyClosed?.isClosed && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-amber-700">Cerrado temporalmente</p>
+            {site.temporarilyClosed.reason && (
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-600">{site.temporarilyClosed.reason}</p>
+            )}
+          </div>
         </div>
-        <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-          <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
-          <span className="truncate">
-            <span className="font-medium text-foreground">{CATEGORY_LABELS[site.category]}</span>
-            {" · "}{site.address}
-          </span>
-        </p>
+      )}
+
+      {/* ── Nombre ──────────────────────────────────────────────── */}
+      <h2
+        className="text-2xl font-bold leading-tight text-[#09090B] sm:text-[1.65rem]"
+        style={{ fontFamily: "var(--font-heading)" }}
+      >
+        {site.name}
+      </h2>
+
+      {/* ── Dirección + estado de apertura ──────────────────────── */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="flex items-center gap-1.5 text-sm text-[#71717A]">
+          <MapPin className="size-3.5 shrink-0 text-[#E63946]" aria-hidden />
+          {site.address}
+        </span>
+        <span className={cn(
+          "flex items-center gap-1.5 text-xs font-medium",
+          openStatus.isOpen ? "text-emerald-700" : "text-[#71717A]",
+        )}>
+          <Clock className="size-3.5 shrink-0" aria-hidden />
+          {openStatus.label}
+        </span>
       </div>
 
-      {/* Description */}
-      <p className="text-sm leading-relaxed text-foreground/80">{site.description}</p>
+      {/* ── Separador ───────────────────────────────────────────── */}
+      <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
 
-      {/* Metrics */}
+      {/* ── Sobre este lugar ────────────────────────────────────── */}
+      <section>
+        <h3 className="mb-2 text-sm font-semibold text-[#09090B]" style={{ fontFamily: "var(--font-heading)" }}>
+          Sobre este lugar
+        </h3>
+        {site.description ? (
+          <p className="text-sm leading-relaxed text-[#52525B]">{site.description}</p>
+        ) : (
+          <p className="text-sm italic text-[#A1A1AA]">Sin descripción disponible.</p>
+        )}
+      </section>
+
+      {/* ── Separador ───────────────────────────────────────────── */}
+      <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+
+      {/* ── Métricas ─────────────────────────────────────────────  */}
       <div className="grid grid-cols-4 gap-2">
-        <Metric icon={MousePointerClick} label="Clics"       value={fmt(site.analytics.clicks)} />
-        <Metric icon={Heart}             label="Likes"        value={fmt(site.analytics.likes)} />
-        <Metric icon={Share2}            label="Compartidos"  value={fmt(site.analytics.shares)} />
-        <Metric icon={CalendarDays}      label="Eventos"      value={fmt(site.analytics.eventCount)} />
+        <Metric icon={Eye}          label="Visitas"      value={fmt(site.views ?? 0)} />
+        <Metric icon={Heart}        label="Likes"        value={fmt(site.analytics.likes)} />
+        <Metric icon={Share2}       label="Compartidos"  value={fmt(site.analytics.shares)} />
+        <Metric icon={CalendarDays} label="Eventos"      value={fmt(site.analytics.eventCount)} />
       </div>
 
-      {/* Schedule */}
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Horario</h3>
-        <div className="overflow-hidden rounded-xl border border-border">
-          {WEEK_DAYS.map(({ key, label }, i) => {
-            const day = site.schedule[key]
+      {/* ── Separador ───────────────────────────────────────────── */}
+      <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+
+      {/* ── Horario ──────────────────────────────────────────────── */}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-[#09090B]" style={{ fontFamily: "var(--font-heading)" }}>
+          Horario
+        </h3>
+        <div className="overflow-hidden rounded-xl border border-[#E4E4E7]">
+          {WEEK_DAYS.map(({ key, label: dayLabel }, i) => {
+            const day     = site.schedule?.[key]
+            const isToday = key === todayKey
             return (
-              <div key={key} className={cn("flex items-center justify-between px-3 py-2 text-sm", i !== WEEK_DAYS.length - 1 && "border-b border-border")}>
-                <span className="text-muted-foreground">{label}</span>
-                {day.closed
-                  ? <span className="font-medium text-destructive">Cerrado</span>
-                  : <span className="font-medium tabular-nums text-foreground">{day.open} – {day.close}</span>
+              <div
+                key={key}
+                className={cn(
+                  "flex items-center justify-between px-3.5 py-2.5 text-sm",
+                  i !== WEEK_DAYS.length - 1 && "border-b border-[#F4F4F5]",
+                  isToday && "bg-[#FDF2F4]",
+                )}
+              >
+                <span className={cn("font-medium", isToday ? "text-[#E63946]" : "text-[#52525B]")}>
+                  {dayLabel}
+                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">hoy</span>}
+                </span>
+                {!day || day.closed
+                  ? <span className="text-xs font-semibold text-[#E63946]">Cerrado</span>
+                  : <span className={cn("tabular-nums text-xs font-semibold", isToday ? "text-[#E63946]" : "text-[#09090B]")}>
+                      {day.open} – {day.close}
+                    </span>
                 }
               </div>
             )
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Rejection reason */}
+      {/* ── Motivo de rechazo ────────────────────────────────────── */}
       {status === "rejected" && site.rejectionReason && (
-        <div className="flex gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+        <div className="mt-5 flex gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
           <div>
             <p className="text-sm font-semibold text-destructive">Motivo del rechazo</p>
@@ -313,33 +448,140 @@ function Body({ site, onEdit }: { site: SiteDetail; onEdit: (id: string) => void
         </div>
       )}
 
-      {/* Author + actions */}
-      <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+      {/* ── Redes y reservas ─────────────────────────────────────── */}
+      {hasSocial && (
+        <>
+          <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-[#09090B]" style={{ fontFamily: "var(--font-heading)" }}>
+              Redes y reservas
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {site.bookingUrl && (
+                <a
+                  href={site.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E63946] bg-[#FDF2F4] px-3 py-1.5 text-xs font-semibold text-[#E63946] transition-colors hover:bg-[#E63946] hover:text-white"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden />
+                  Reservar
+                </a>
+              )}
+              {site.socialMedia?.website && (
+                <SocialLink href={site.socialMedia.website} label="Sitio web" icon={<Globe className="size-3.5" />} />
+              )}
+              {site.socialMedia?.instagram && (
+                <SocialLink href={site.socialMedia.instagram} label="Instagram"
+                  icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>}
+                />
+              )}
+              {site.socialMedia?.facebook && (
+                <SocialLink href={site.socialMedia.facebook} label="Facebook"
+                  icon={<svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>}
+                />
+              )}
+              {site.socialMedia?.tiktok && (
+                <SocialLink href={site.socialMedia.tiktok} label="TikTok"
+                  icon={<svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.83a8.16 8.16 0 004.77 1.52V6.87a4.85 4.85 0 01-1-.18z"/></svg>}
+                />
+              )}
+              {site.socialMedia?.twitter && (
+                <SocialLink href={site.socialMedia.twitter} label="X (Twitter)"
+                  icon={<svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5" aria-hidden><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
+                />
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ── Separador ───────────────────────────────────────────── */}
+      <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+
+      {/* ── Itinerario del sitio ─────────────────────────────────── */}
+      <section>
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-[#FDF2F4]">
+            <CalendarDays className="size-4 text-[#E63946]" aria-hidden />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[#09090B]" style={{ fontFamily: "var(--font-heading)" }}>
+              Itinerario del sitio
+            </h3>
+            <p className="text-xs text-[#71717A]">Eventos que se realizan en {site.name}</p>
+          </div>
+          {siteEvents.length > 0 && (
+            <span className="ml-auto rounded-full bg-[#F4F4F5] px-2.5 py-0.5 text-xs font-semibold text-[#71717A]">
+              {siteEvents.length}
+            </span>
+          )}
+        </div>
+
+        {eventsLoading ? (
+          <div className="flex items-center justify-center py-10 text-[#A1A1AA]">
+            <Loader2 className="size-5 animate-spin" aria-hidden />
+          </div>
+        ) : (
+          <SiteItineraryGrid
+            events={siteEvents}
+            emptyMessage="No hay eventos programados en este sitio."
+          />
+        )}
+      </section>
+
+      {/* ── Separador ───────────────────────────────────────────── */}
+      <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+
+      {/* ── Autor + acciones ─────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           {site.author.photoURL
-            ? <img src={site.author.photoURL} alt={site.author.displayName} className="size-9 rounded-full object-cover" />
-            : <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">{site.author.displayName.charAt(0)}</span>
+            ? <img src={site.author.photoURL} alt={site.author.displayName} className="size-9 rounded-full object-cover ring-2 ring-[#F4F4F5]" />
+            : (
+              <span className="flex size-9 items-center justify-center rounded-full bg-[#FDF2F4] text-sm font-bold text-[#E63946]">
+                {site.author.displayName.charAt(0).toUpperCase()}
+              </span>
+            )
           }
-          <div className="text-xs">
-            <p className="text-muted-foreground">Creado por</p>
-            <p className="font-semibold text-foreground">{site.author.displayName}</p>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#A1A1AA]">Creado por</p>
+            <p className="text-sm font-semibold text-[#09090B]">{site.author.displayName}</p>
           </div>
         </div>
-        <Button onClick={() => onEdit(site.id)} className="gap-1.5">
+        <Button
+          onClick={() => onEdit(site.id)}
+          className="gap-1.5 bg-[#E63946] text-white shadow-primary-glow hover:bg-[#9B0A26]"
+        >
           <Pencil className="size-4" aria-hidden />
-          {status === "rejected" ? "Editar y reenviar" : "Editar"}
+          {status === "rejected" ? "Editar y reenviar" : "Editar sitio"}
         </Button>
       </div>
     </div>
   )
 }
 
+function SocialLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="inline-flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:text-[#09090B]"
+    >
+      {icon}
+      {label}
+    </a>
+  )
+}
+
 function Metric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-muted/40 py-3">
-      <Icon className="size-4 text-primary" aria-hidden />
-      <span className="text-base font-semibold tabular-nums text-foreground">{value}</span>
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-[#E4E4E7] bg-[#FAFAFC] py-3 shadow-card">
+      <Icon className="size-4 text-[#E63946]" aria-hidden />
+      <span className="text-base font-bold tabular-nums text-[#09090B]">{value}</span>
+      <span className="text-[11px] text-[#71717A]">{label}</span>
     </div>
   )
 }

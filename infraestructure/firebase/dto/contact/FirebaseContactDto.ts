@@ -6,5 +6,7 @@ export interface FirebaseContactDto {
   phoneNumber: string;
   message: string;
   uid: string | null;
+  /** Añadido en 2026-08. Ausente en documentos históricos. */
+  contactReason?: string | null;
   createdAt: Timestamp | FieldValue;
 }

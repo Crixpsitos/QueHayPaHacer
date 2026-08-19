@@ -22,6 +22,8 @@ import {
   Pencil,
   ArrowRight,
   Building2,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 import { renderToHTMLString } from "@tiptap/static-renderer";
@@ -48,6 +50,8 @@ import type { MediaItem, MediaImageItem, MediaVideoItem } from "@/domain/entitie
 import { registerEventAction } from "@/app/actions/events/register-event.action";
 import { recordExternalRegistrationClickAction } from "@/app/actions/studio/record-external-registration-click.action";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
+import { PastEventState } from "./PastEventState";
+import { isEventPast } from "../utils/eventTemporalUtils";
 
 // Lazy — solo se carga si el usuario abre el modal
 const EventRegistrationModal = lazy(() =>
@@ -141,7 +145,7 @@ function ExpandableDescription({ html }: { html: string }) {
         ref={ref}
         className={cn(
           "relative overflow-hidden transition-all duration-300",
-          expanded ? "max-h-[2000px]" : "max-h-60",
+          expanded ? "max-h-500" : "max-h-60",
         )}
       >
         <div
@@ -149,7 +153,7 @@ function ExpandableDescription({ html }: { html: string }) {
           dangerouslySetInnerHTML={{ __html: html }}
         />
         {!expanded && overflows && (
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-white to-transparent pointer-events-none" />
         )}
       </div>
       {overflows && (
@@ -245,7 +249,7 @@ function Lightbox({
           opts={{ loop: true, dragFree: false }}
           className="w-full h-full"
         >
-          <CarouselContent className="h-full -ml-0">
+          <CarouselContent className="h-full ml-0">
             {slides.map((slide, i) => (
               <CarouselItem key={i} className="pl-0 flex items-center justify-center h-full px-14 sm:px-20 py-4">
                 {slide.type === "image" ? (
@@ -342,7 +346,7 @@ function Gallery({
       {/* Main image */}
       {mainImage?.url && (
         <button
-          className="relative w-full overflow-hidden rounded-2xl aspect-[4/3] group focus:outline-none block"
+          className="relative w-full overflow-hidden rounded-2xl aspect-4/3 group focus:outline-none block"
           onClick={() => onOpen(0)}
           aria-label="Ver imagen principal"
         >
@@ -372,8 +376,8 @@ function Gallery({
                 key={i}
                 className={`relative overflow-hidden rounded-xl group focus:outline-none min-w-0 ${
                   singleThumb
-                    ? "w-[200px] h-[200px] shrink-0"
-                    : "flex-1 h-[200px]"
+                    ? "w-50 h-50 shrink-0"
+                    : "flex-1 h-50"
                 }`}
                 onClick={() => onOpen(thumb.slideIndex)}
                 aria-label={thumb.type === "video" ? "Ver video" : "Ver imagen"}
@@ -454,13 +458,13 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-        <Icon className="h-4 w-4 text-gray-600" />
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FDF2F4]">
+        <Icon className="h-4 w-4 text-[#E63946]" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</p>
-        <p className="font-semibold text-gray-900 text-sm leading-snug">{value}</p>
-        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">{label}</p>
+        <p className="font-semibold text-[#09090B] text-sm leading-snug">{value}</p>
+        {sub && <p className="text-xs text-[#71717A] mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -506,6 +510,8 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
   const [isRegistered, setIsRegistered] = useState(initialRegistered);
 
+  const isPast = isEventPast(event.endDate);
+
   const registrations = event.analytics?.registrations ?? 0;
   const capacity = event.capacity ?? 0;
   const isOverCapacity = capacity > 0 && registrations >= capacity;
@@ -520,6 +526,13 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
   };
 
   const [descriptionHtml, setDescriptionHtml] = useState("");
+
+  // Inicializa igual en servidor y cliente; useEffect actualiza al origin real.
+  const resolvedPath = shareUrl ?? `/eventos/${event.slug || event.id}`;
+  const [socialShareUrl, setSocialShareUrl] = useState(`https://quehaypahacerapp.com${resolvedPath}`);
+  useEffect(() => {
+    setSocialShareUrl(`${window.location.origin}${resolvedPath}`);
+  }, [resolvedPath]);
 
   useEffect(() => {
     if (!event.description) return;
@@ -608,88 +621,138 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
             )}
 
             {/* Header: categoría + badges */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {event.categoryInfo?.title && (
-                <Badge variant="secondary" className="text-xs">
+                <span className="inline-flex items-center rounded-full bg-[#F4F4F5] px-3 py-1 text-xs font-medium text-[#52525B]">
                   {event.categoryInfo.title}
-                </Badge>
+                </span>
               )}
               {isFree ? (
-                <Badge className="bg-emerald-100 text-emerald-800 border-0 text-xs">Gratis</Badge>
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Gratis</span>
               ) : (
-                <Badge className="bg-blue-50 text-blue-700 border-0 text-xs">
+                <span className="inline-flex items-center rounded-full bg-[#F4F4F5] px-3 py-1 text-xs font-semibold text-[#09090B]">
                   {formatPrice(event.price)}
-                </Badge>
+                </span>
+              )}
+              {event.metadata?.isFirstEvent && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                  <Sparkles className="size-3" />
+                  Primer evento
+                </span>
+              )}
+              {event.promotion?.isPromoted && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF8E7] px-3 py-1 text-xs font-semibold text-[#E09F00]">
+                  <Star className="size-3 fill-current" />
+                  Destacado
+                </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight tracking-tight">
+            <h1
+              className="text-3xl font-bold leading-tight text-[#09090B] sm:text-4xl"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
               {event.title}
             </h1>
+
+            {/* Date summary — quick scan below the title */}
+            <div className="flex items-center gap-2 text-sm text-[#52525B]" suppressHydrationWarning>
+              <CalendarDays className="size-4 shrink-0 text-[#E63946]" />
+              <span className="font-medium">
+                {(() => {
+                  const s = new Date(event.startDate);
+                  const e = new Date(event.endDate);
+                  const sameDay = s.toDateString() === e.toDateString();
+                  return sameDay
+                    ? `${format(s, "d 'de' MMMM yyyy", { locale: es })} \u00b7 ${format(s, "HH:mm", { locale: es })} \u2014 ${format(e, "HH:mm", { locale: es })}`
+                    : `${format(s, "d 'de' MMMM", { locale: es })} ${format(s, "HH:mm", { locale: es })} \u2014 ${format(e, "d 'de' MMMM yyyy", { locale: es })} ${format(e, "HH:mm", { locale: es })}`;
+                })()}
+              </span>
+            </div>
 
             {/* Tags */}
             {event.categoryInfo?.tags && event.categoryInfo.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {event.categoryInfo.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs text-gray-500 border-gray-200">
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[#E4E4E7] bg-white px-2.5 py-0.5 text-xs text-[#71717A]"
+                  >
                     #{tag}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             )}
 
-            {/* Author */}
-            {event.author?.id ? (
-              <Link
-                href={buildProfileHref(event.author)}
-                className="flex items-center gap-3 hover:underline"
-                aria-label={`Ver perfil de ${event.author.displayName || "el organizador"}`}
-              >
-                <Avatar size="sm">
-                  {event.author?.photoURL && (
-                    <AvatarImage src={event.author.photoURL} alt={event.author.displayName} />
-                  )}
-                  <AvatarFallback>
-                    <User className="h-4 w-4 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-xs text-gray-500">Organizado por</p>
-                  <p className="text-sm font-semibold text-gray-900">{event.author?.displayName || "Organizador"}</p>
+            {/* Autor + colaboradores — fila horizontal compacta */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              {event.author?.id ? (
+                <Link
+                  href={buildProfileHref(event.author)}
+                  className="group flex items-center gap-2.5 transition-opacity hover:opacity-75"
+                  aria-label={`Ver perfil de ${event.author.displayName || "el organizador"}`}
+                >
+                  <Avatar size="sm">
+                    {event.author?.photoURL && (
+                      <AvatarImage src={event.author.photoURL} alt={event.author.displayName} />
+                    )}
+                    <AvatarFallback>
+                      <User className="h-4 w-4 text-gray-400" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Organizado por</p>
+                    <p className="text-sm font-semibold text-[#09090B] transition-colors group-hover:text-[#E63946]">
+                      {event.author?.displayName || "Organizador"}
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <Avatar size="sm">
+                    <AvatarFallback>
+                      <User className="h-4 w-4 text-gray-400" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Organizado por</p>
+                    <p className="text-sm font-semibold text-[#09090B]">Organizador</p>
+                  </div>
                 </div>
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Avatar size="sm">
-                  <AvatarFallback>
-                    <User className="h-4 w-4 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-xs text-gray-500">Organizado por</p>
-                  <p className="text-sm font-semibold text-gray-900">Organizador</p>
-                </div>
-              </div>
-            )}
-
-            {/* Colaboradores acreditados */}
-            <EventCollaboratorsDialog
-              collaborators={event.collaborators}
-              collaboratorsData={event.collaboratorsData}
-            />
+              )}
+              {/* Colaboradores acreditados */}
+              <EventCollaboratorsDialog
+                collaborators={event.collaborators}
+                collaboratorsData={event.collaboratorsData}
+              />
+            </div>
 
             {/* Like */}
             <EventDetailActions event={event} initialLiked={initialLiked} sessionId={sessionId} />
 
             {/* Compartir en redes sociales (registra el share en analytics) */}
             <SocialShareBar
-              url={typeof window !== "undefined" ? `${window.location.origin}${shareUrl ?? `/eventos/${event.slug || event.id}`}` : `https://quehaypahacerapp.com${shareUrl ?? `/eventos/${event.slug || event.id}`}`}
+              url={socialShareUrl}
               title={event.title}
               onShare={() => { void shareEventAction(event.id, sessionId); }}
             />
 
             <Separator />
+
+            {/* Descripción — antes de los detalles operativos */}
+            {descriptionHtml && (
+              <div className="space-y-3">
+                <h2
+                  className="text-xl font-bold text-[#09090B]"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Descripción
+                </h2>
+                <ExpandableDescription html={descriptionHtml} />
+              </div>
+            )}
+            {descriptionHtml && <Separator />}
 
             {/* Fechas y lugar */}
             <div className="space-y-4">
@@ -747,11 +810,17 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
               ) : null}
 
               {/* Registration box — always shown, behavior depends on registrationType */}
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 space-y-3 mt-2">
+              {isPast && !isOwner && !isRegistered ? (
+                <PastEventState
+                  variant={sessionId ? "session" : "event"}
+                  parentEventHref={backLink?.href}
+                />
+              ) : (
+              <div className="rounded-xl border border-[#E4E4E7] bg-[#FAFAFC] p-5 space-y-3 mt-2">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-0.5">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Registro</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Registro</p>
+                    <p className="text-sm text-[#52525B]">
                       {registrationLabel[event.registrationType] || event.registrationType}
                     </p>
                   </div>
@@ -850,18 +919,11 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                   </>
                 )}
               </div>
+              )}
             </div>
 
             {/* Description */}
-            {descriptionHtml && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h2 className="text-base font-bold text-gray-900">Descripción</h2>
-                  <ExpandableDescription html={descriptionHtml} />
-                </div>
-              </>
-            )}
+            {/* (moved above the registration section) */}
 
             {/* Sitio vinculado — antes del mapa para dar contexto del lugar */}
             {linkedSite && (
