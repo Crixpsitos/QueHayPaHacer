@@ -28,9 +28,17 @@ export class UserService {
         const existingByEmail = await this.userRepository.findByEmail(input.email);
         if (existingByEmail) throw new Error("Email already in use");
 
+        const lowercaseDisplayName = input.displayName.toLowerCase();
+        const existingByUsername = await this.userRepository.findByUsername(lowercaseDisplayName);
+        if (existingByUsername) throw new Error("Username already in use");
+
         const now = new Date();
         const user: User = {
             ...input,
+            displayName: lowercaseDisplayName,
+            accountType: input.accountType ?? "personal",
+            professionalType: null,
+            professionalStatus: "none",
             acceptedTermsAt: now,
             createdAt: now,
             updatedAt: now,
@@ -47,7 +55,7 @@ export class UserService {
 
         const updated: User = {
             ...existing,
-            ...input,
+            ...(input as Partial<User>),
             updatedAt: new Date(),
         };
 

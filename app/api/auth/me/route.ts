@@ -1,5 +1,5 @@
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens, Tokens } from "next-firebase-auth-edge";
 import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { cacheLife, cacheTag } from "next/cache";
@@ -46,11 +46,18 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
+  const auth = getFirebaseAdminAuth();
+
   const baseUser = toAuthUser(tokens);
-  const dbUser = await fetchUserProfile(baseUser.uid);
+
+  const [dbUser, customToken] = await Promise.all([
+    fetchUserProfile(baseUser.uid),
+    auth.createCustomToken(baseUser.uid), 
+  ]);
 
   const user = {
     ...baseUser,
+    photoURL: dbUser?.photoURL ?? baseUser.photoURL,
     profile: dbUser
       ? {
           firstName: dbUser.firstName,
@@ -58,9 +65,25 @@ export async function GET() {
           username: dbUser.displayName,
           phoneNumber: dbUser.phoneNumber,
           accountType: dbUser.accountType ?? null,
+          professionalType: dbUser.professionalType ?? null,
+          professionalStatus: dbUser.professionalStatus ?? null,
+          bio: dbUser.bio ?? null,
+          photoURL: dbUser.photoURL ?? null,
+          imagePath: dbUser.imagePath ?? null,
+          isPublic: dbUser.isPublic,
+          brandName: dbUser.brandName,
+          website: dbUser.website,
+          mapsLink: dbUser.mapsLink,
+          socialLink: dbUser.socialLink,
+          socialLinks: dbUser.socialLinks,
+          isUsernameCustomized: dbUser.isUsernameCustomized,
+          professionalDescription: dbUser.professionalDescription,
+          professionalDetails: dbUser.professionalDetails,
+          bannerUrl: dbUser.bannerUrl ?? null,
+          bannerPath: dbUser.bannerPath ?? null,
         }
       : null,
   };
 
-  return NextResponse.json({ user }, { status: 200 });
+  return NextResponse.json({ user, customToken }, { status: 200 });
 }

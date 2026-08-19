@@ -40,3 +40,7 @@ quehaypahacerAccountService.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.vscode/mcp.json
+
+# backups de scripts de prueba
+.tmp/

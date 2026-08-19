@@ -1,0 +1,27 @@
+import { AuthService } from "@/application/services/auth/AuthService";
+import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
+import { AuthFirebaseRepository } from "@/infraestructure/firebase/repositories/web/auth/AuthFirebaseRepository";
+import { EventsFirebaseRepository as WebEventsFirebaseRepository } from "../firebase/repositories/web/events/EventsFirebaseREpository";
+import { SitesWebFirebaseRepository } from "../firebase/repositories/web/sites/SitesWebFirebaseRepository";
+import { getFirebaseFirestore as getWebFirebaseFirestore } from "../firebase/config/client/firebase";
+
+export const createClientContainer = () => {
+  const authRepository = new AuthFirebaseRepository(getFirebaseAuth());
+  const authService = new AuthService(authRepository);
+
+  const eventsRepository = new WebEventsFirebaseRepository(
+    getWebFirebaseFirestore(),
+  );
+
+  const sitesRepository = new SitesWebFirebaseRepository(
+    getWebFirebaseFirestore(),
+  );
+
+  return {
+    authService,
+    eventsRepository,
+    sitesRepository,
+  };
+};
+
+export type ClientContainer = ReturnType<typeof createClientContainer>;

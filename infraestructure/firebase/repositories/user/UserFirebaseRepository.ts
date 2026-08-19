@@ -29,7 +29,7 @@ export class UserFirebaseRepository extends FirebaseBaseRepository implements IU
   }
 
   async findByUsername(username: string): Promise<FirebaseUserDto | null> {
-    const snapshot = await this.collection.where("displayName", "==", username).limit(1).get();
+    const snapshot = await this.collection.where("displayName", "==", username.toLowerCase()).limit(1).get();
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     return { uid: doc.id, ...doc.data() } as FirebaseUserDto;

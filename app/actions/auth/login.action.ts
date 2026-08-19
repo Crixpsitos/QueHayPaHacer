@@ -1,13 +1,13 @@
 "use server"
 
-import { createClientContainer } from "@/infraestructure/di/container"
+import { createClientContainer } from "@/infraestructure/di/container.client"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
-import { redirect, unstable_rethrow } from "next/navigation"
 
 interface LoginActionResult {
     error?: string;
+    success?: boolean;
 }
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -36,10 +36,8 @@ export async function loginAction(
             authConfig,
         )
 
-        redirect("/")
+        return { success: true }
     } catch (error) {
-        unstable_rethrow(error)
-
         console.error("Error al iniciar sesion", error)
 
         const code =

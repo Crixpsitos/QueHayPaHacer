@@ -12,12 +12,20 @@ export class AuthService {
     return this.authRepository.registerWithEmailAndPassword(email, password);
   }
 
+  async signInWithGoogle(): Promise<UserCredential> {
+    return this.authRepository.signInWithGoogle();
+  }
+
   async logout(): Promise<void> {
     return this.authRepository.logout();
   }
 
   async sendPasswordResetEmail(email: string): Promise<void> {
     return this.authRepository.sendPasswordResetEmail(email);
+  }
+
+  async sendEmailVerification(): Promise<void> {
+    return this.authRepository.sendEmailVerification();
   }
 
   onAuthStateChanged(callback: (user: UserCredential | null) => void): () => void {

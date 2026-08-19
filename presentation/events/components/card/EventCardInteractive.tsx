@@ -1,0 +1,262 @@
+"use client";
+import { loginModalAction } from "@/app/actions/auth/login-modal.action";
+import { likeEventAction } from "@/app/actions/events/like-event.action";
+import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
+import { LoginForm } from "@/app/components/feature/auth/LoginForm";
+import { updateTagAction } from "../../../../app/actions/cache/update-tag.action";
+import { Button } from "@/app/components/ui/button/button";
+import { useAuth } from "@/app/store/auth/AuthContext";
+import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
+import { RotateCcw, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition, useRef } from "react";
+import { EventCard } from "./EventCard";
+import { shareEventAction } from "@/app/actions/events/share-event.action";
+import { cn } from "@/app/lib/utils/cn";
+
+const FEATURED_EVENTS_TAG = "featured-events";
+
+interface EventCardInteractiveProps {
+  events: EventViewModel[];
+  likedByEventId?: Record<string, boolean>;
+  info: {title: string, description: string}
+  variant?: "horizontal" | "vertical";
+  /** Máximo de columnas en modo vertical (default 4). */
+  columns?: 2 | 3 | 4;
+  /** Oculta la fila del autor en cada tarjeta. */
+  hideAuthor?: boolean;
+}
+
+interface PendingLikeState {
+  eventId: string;
+  liked: boolean;
+}
+
+interface ToastState {
+  message: string;
+  type: "error" | "info";
+}
+
+export function EventCardInteractive({
+  events,
+  likedByEventId = {},
+  info,
+  variant = "horizontal",
+  columns = 4,
+  hideAuthor = false,
+}: EventCardInteractiveProps) {
+  const router = useRouter();
+  const { user, refreshUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [pendingLike, setPendingLike] = useState<PendingLikeState | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [dynamicLikes, setDynamicLikes] = useState<Record<string, boolean>>({});
+
+  const eventIdsKey = useMemo(() => events.map((e) => e.id).join(","), [events]);
+  // Ref de deduplicación: evita doble fetch cuando el efecto corre dos veces (StrictMode / Suspense)
+  const fetchingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.uid || events.length === 0) {
+      setDynamicLikes({});
+      return;
+    }
+    const key = `${user.uid}:${eventIdsKey}`;
+    if (fetchingRef.current === key) return; // ya en vuelo
+    fetchingRef.current = key;
+
+    fetch("/api/events/likes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: events.map((e) => e.id) }),
+    })
+      .then((r) => r.json())
+      .then((likes: Record<string, boolean>) => {
+        setDynamicLikes(likes);
+        fetchingRef.current = null;
+      })
+      .catch(() => { fetchingRef.current = null; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, eventIdsKey]);
+
+  const effectiveLikes = useMemo(
+    () => ({ ...likedByEventId, ...dynamicLikes }),
+    [likedByEventId, dynamicLikes],
+  );
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
+
+  const showToast = (message: string, type: ToastState["type"] = "info") => {
+    setToast({ message, type });
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setPendingLike(null);
+    showToast("Inicia sesion para completar el like.", "info");
+  };
+
+  const handleLike = async (eventId: string, liked: boolean): Promise<boolean> => {
+    const result = await likeEventAction(eventId, liked);
+
+    if (result.authRequired) {
+      setPendingLike({ eventId, liked });
+      setIsLoginModalOpen(true);
+      return false;
+    }
+
+    if (result.error) {
+      showToast(result.error, "error");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLoginSuccess = async () => {
+    try {
+      await refreshUser();
+
+      if (pendingLike) {
+        const retryResult = await likeEventAction(pendingLike.eventId, pendingLike.liked);
+        if (retryResult.error) {
+          showToast(retryResult.error, "error");
+        }
+      }
+
+      setIsLoginModalOpen(false);
+      setPendingLike(null);
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch {
+      showToast("No se pudo completar el inicio de sesion.", "error");
+    }
+  };
+
+  const handleLoginError = (message: string) => {
+    showToast(message, "error");
+  };
+
+  const handleViewDetails = (event: EventViewModel) => {
+    // Registro de vista no bloqueante (solo cuenta una vez por usuario autenticado).
+    void recordEventViewAction(event.id, user?.uid);
+  };
+
+  const handleReload = async () => {
+    setIsLoading(true);
+    try {
+      const result = await updateTagAction(FEATURED_EVENTS_TAG);
+      if (result?.error) {
+        console.error(result.error);
+        setIsLoading(false);
+        return;
+      }
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("Error reloading events:", error);
+      
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+  if (events.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+        <h3 className="text-xl font-semibold text-foreground mb-2">
+          {info.title}
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
+          {info.description}
+        </p>
+        <Button
+          onClick={handleReload}
+          disabled={isLoading || isPending}
+          variant="outline"
+          className="gap-2"
+        >
+          <RotateCcw className="size-4" />
+          {isLoading || isPending ? "Actualizando..." : "Reintentar"}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className={cn(
+        variant === "vertical"
+          ? `grid grid-cols-1 sm:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""} gap-6`
+          : "flex flex-wrap gap-6"
+      )}>
+        {events.map((event, index) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            variant={variant}
+            attendeeCount={event.analytics?.registrations ?? 0}
+            initialLikes={event.analytics?.likes ?? 0}
+            initialLiked={effectiveLikes[event.id] ?? false}
+            viewCount={event.analytics?.views ?? 0}
+            isFirstEvent={event.metadata?.isFirstEvent ?? false}
+            hideAuthor={hideAuthor}
+            onLike={handleLike}
+            onShare={(ev) => shareEventAction(ev.id)}
+            onViewDetails={handleViewDetails}
+            prioritizeImage={index === 0}
+          />
+        ))}
+      </div>
+
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="relative w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
+            <button
+              type="button"
+              onClick={closeLoginModal}
+              className="absolute right-3 top-3 inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Cerrar modal"
+            >
+              <X className="size-4" />
+            </button>
+
+            <h3 className="mb-1 text-xl font-semibold">Inicia sesion para dar like</h3>
+            <p className="mb-5 text-sm text-muted-foreground">
+              Necesitamos autenticar tu cuenta para guardar tu interaccion.
+            </p>
+
+            <LoginForm
+              loginAction={loginModalAction}
+              onSuccess={handleLoginSuccess}
+              onError={handleLoginError}
+            />
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div
+            className={`rounded-md px-4 py-2 text-sm text-white shadow-lg ${
+              toast.type === "error" ? "bg-red-600" : "bg-zinc-900"
+            }`}
+            role="status"
+          >
+            {toast.message}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

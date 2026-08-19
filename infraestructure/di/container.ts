@@ -1,21 +1,76 @@
-import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
-import { AuthFirebaseRepository } from "@/infraestructure/firebase/repositories/auth/AuthFirebaseRepository";
+
 import { UserAdapter } from "@/infraestructure/adapters/user/UserAdapter";
 import { UserFirebaseRepository } from "@/infraestructure/firebase/repositories/user/UserFirebaseRepository";
 import { CampaignFirebaseRepository } from "@/infraestructure/firebase/repositories/campaign/CampaignFirebaseRepository";
 import { CampaignAdapter } from "@/infraestructure/adapters/campaign/CampaignAdapter";
 import { UserService } from "@/application/services/user/UserService";
 import { CampaignService } from "@/application/services/campaign/CampaignService";
-import { AuthService } from "@/application/services/auth/AuthService";
-import { getFirebaseFirestore } from "../firebase/config/admin/firebase";
+
+import { getFirebaseFirestore, getEnterpriseFirestore } from "../firebase/config/admin/firebase";
 import { CampaignFirebaseMapper } from "../firebase/mappers/campaing/CampaignFirebaseMapper";
 import { UserFirebaseMapper } from "../firebase/mappers/user/UserFirebaseMapper";
 import { CategoriesFirebaseRepository } from "../firebase/repositories/categories/CategoriesFirebaseRepository";
 import { CategoriesAdapter } from "../adapters/categories/CategoriesAdapter";
 import { CategoriesFirebaseMapper } from "../firebase/mappers/categories/CategoriesFirebaseMapper";
 import { CategoriesService } from "@/application/services/categories/CategoriesService";
+import { EventsFirebaseRepository } from "../firebase/repositories/events/EventsFirebaseRepository";
+import { EventsAdapter } from "../adapters/events/EventsAdapter";
+import { EventsFirebaseMapper } from "../firebase/mappers/events/EventsFirebaseMapper";
+import { EventsService } from "@/application/services/events/EventsService";
+import { EventInteractionsFirebaseRepository } from "../firebase/repositories/EventInteraction/EventInteractionsFirebaseRepository";
+import { EventInteractionsAdapter } from "../adapters/EventInteraction/EventInteractionsAdapter";
+import { EventInteractionsFirebaseMapper } from "../firebase/mappers/EventInteraction/EventInteractionsFirebaseMapper";
+import { EventInteractionsService } from "@/application/services/events/EventInteractionsService";
+import { UserEventInteractionsProjectionFirebaseRepository } from "../firebase/repositories/EventInteraction/UserEventInteractionsProjectionFirebaseRepository";
+import { EventRegistrationFirebaseRepository } from "../firebase/repositories/EventRegistration/EventRegistrationFirebaseRepository";
+import { EventRegistrationAdapter } from "../adapters/EventRegistration/EventRegistrationAdapter";
+import { EventRegistrationFirebaseMapper } from "../firebase/mappers/EventRegistration/EventRegistrationFirebaseMapper";
+import { EventRegistrationService } from "@/application/services/events/EventRegistrationService";
+import { EventFeed } from "@/application/aggregations/EventFeed/EventFeed";
+import { UserPreferencesAdapter } from "../adapters/UserPreferences/UserPreferencesAdapter";
+import { UserPreferencesService } from "@/application/services/user/UserPreferencesService";
+import { StorageService } from "../storage/firebase/FirebaseStorageService";
+import { UserPreferencesFirebaseRepository } from "../firebase/repositories/UserPreferences/UserPreferencesFirebaseRepository";
+import { UserPreferencesFirebaseMapper } from "../firebase/mappers/UserPreferences/UserPreferencesFirebaseMapper";
+import { ProfileFirebaseRepository } from "../firebase/repositories/profile/ProfileFirebaseRepository";
+import { ProfileAdapter } from "../adapters/profile/ProfileAdapter";
+import { ProfileFirebaseMapper } from "../firebase/mappers/profile/ProfileFirebaseMapper";
+import { ProfileService } from "@/application/services/profile/ProfileService";
+import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFirebaseRepository";
+import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
+import { BadgeFirebaseMapper } from "../firebase/mappers/user/BadgeFirebaseMapper";
+import { BadgeService } from "@/application/services/user/BadgeService";
+import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
+import { ProfessionalRequestAdapter } from "../adapters/professional/ProfessionalRequestAdapter";
+import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professional/ProfessionalRequestFirebaseMapper";
+import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
+import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
+import { StudioAdapter } from "../adapters/studio/StudioAdapter";
+import { StudioFirebaseMapper } from "../firebase/mappers/studio/StudioFirebaseMapper";
+import { StudioService } from "@/application/services/studio/StudioService";
+import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFirebaseRepository";
+import { SitesAdapter } from "../adapters/sites/SitesAdapter";
+import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
+import { SitesService } from "@/application/services/sites/SitesService";
+import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
+import { EventSessionAdapter } from "../adapters/events/EventSessionAdapter";
+import { EventSessionFirebaseMapper } from "../firebase/mappers/events/EventSessionFirebaseMapper";
+import { EventSessionService } from "@/application/services/events/EventSessionService";
+import { ContactFirebaseRepository } from "../firebase/repositories/contact/ContactFirebaseRepository";
+import { ContactAdapter } from "../adapters/contact/ContactAdapter";
+import { ContactFirebaseMapper } from "../firebase/mappers/contact/ContactFirebaseMapper";
+import { ContactService } from "@/application/services/contact/ContactService";
+import { SiteInteractionFirebaseRepository } from "../firebase/repositories/SiteInteraction/SiteInteractionFirebaseRepository";
+import { SiteInteractionAdapter } from "../adapters/SiteInteraction/SiteInteractionAdapter";
+import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteraction/SiteInteractionFirebaseMapper";
+import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
+
 
 export const createServerContainer = () => {
+
+  //storage service
+  const storageService = new StorageService();
+  
   const userFirebaseRepository = new UserFirebaseRepository(getFirebaseFirestore());
   const userRepository = new UserAdapter(userFirebaseRepository, new UserFirebaseMapper());
   const userService = new UserService(userRepository);
@@ -29,23 +84,118 @@ export const createServerContainer = () => {
   const categoriesRepository = new CategoriesAdapter(categoriesFirebaseRepository, new CategoriesFirebaseMapper());
   const categoriesService = new CategoriesService(categoriesRepository);
 
+  // events
+  const eventsFirebaseRepository = new EventsFirebaseRepository(getFirebaseFirestore());
+  const eventsRepository = new EventsAdapter(eventsFirebaseRepository, new EventsFirebaseMapper());
+  const eventsService = new EventsService(eventsRepository, storageService);
+
+  // event sessions (solo para eventos multi-date)
+  const eventSessionFirebaseRepository = new EventSessionFirebaseRepository(getFirebaseFirestore());
+  const eventSessionRepository = new EventSessionAdapter(
+    eventSessionFirebaseRepository,
+    new EventSessionFirebaseMapper(),
+  );
+  const eventSessionService = new EventSessionService(eventSessionRepository);
+
+  // event interactions
+  const eventInteractionsFirebaseRepository = new EventInteractionsFirebaseRepository(getFirebaseFirestore());
+  const eventInteractionsRepository = new EventInteractionsAdapter(
+    eventInteractionsFirebaseRepository,
+    new EventInteractionsFirebaseMapper(),
+  );
+  const userEventInteractionsProjectionRepository =
+    new UserEventInteractionsProjectionFirebaseRepository(getFirebaseFirestore());
+  const eventInteractionsService = new EventInteractionsService(
+    eventInteractionsRepository,
+    userEventInteractionsProjectionRepository,
+    eventsRepository,
+    eventSessionRepository,
+  );
+
+  // event registrations
+  const eventRegistrationFirebaseRepository = new EventRegistrationFirebaseRepository(getFirebaseFirestore());
+  const eventRegistrationRepository = new EventRegistrationAdapter(
+    eventRegistrationFirebaseRepository,
+    new EventRegistrationFirebaseMapper(),
+  );
+  const eventRegistrationService = new EventRegistrationService(eventRegistrationRepository);
+
+  const eventFeed = new EventFeed(
+    eventsService,
+    eventInteractionsService,
+  );
+
+  // user preferences
+  const userPreferencesFirebaseRepository = new UserPreferencesFirebaseRepository(getFirebaseFirestore());
+  const userPreferencesRepository = new UserPreferencesAdapter(userPreferencesFirebaseRepository, new UserPreferencesFirebaseMapper());
+  const userPreferencesService = new UserPreferencesService(userPreferencesRepository);
+
+  // profile
+  const profileFirebaseRepository = new ProfileFirebaseRepository(getFirebaseFirestore(), getEnterpriseFirestore());
+  const profileRepository = new ProfileAdapter(profileFirebaseRepository, new ProfileFirebaseMapper());
+  const profileService = new ProfileService(profileRepository);
+
+  // badges
+  const badgeFirebaseRepository = new BadgeFirebaseRepository(getFirebaseFirestore());
+  const badgeRepository = new BadgeAdapter(badgeFirebaseRepository, new BadgeFirebaseMapper());
+  const badgeService = new BadgeService(badgeRepository);
+
+  // sites
+  const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
+  const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
+  const sitesService = new SitesService(sitesAdapter);
+
+  // professional requests
+  const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
+  const professionalRequestRepository = new ProfessionalRequestAdapter(
+    professionalRequestFirebaseRepository,
+    new ProfessionalRequestFirebaseMapper(),
+  );
+  const professionalRequestService = new ProfessionalRequestService(
+    professionalRequestRepository,
+    userRepository,
+  );
+
+  // studio (Estudio del Organizador)
+  const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
+  const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
+  const studioService = new StudioService(studioRepository);
+
+  // site interactions
+  const siteInteractionFirebaseRepository = new SiteInteractionFirebaseRepository(getFirebaseFirestore());
+  const siteInteractionAdapter = new SiteInteractionAdapter(
+    siteInteractionFirebaseRepository,
+    new SiteInteractionFirebaseMapper(),
+  );
+  const siteInteractionService = new SiteInteractionService(siteInteractionAdapter);
+
+  // contact
+  const contactFirebaseRepository = new ContactFirebaseRepository(getFirebaseFirestore());
+  const contactAdapter = new ContactAdapter(contactFirebaseRepository, new ContactFirebaseMapper());
+  const contactService = new ContactService(contactAdapter);
+
   return {
     userService,
     campaignService,
     categoriesService,
-  };
-};
-
-export const createClientContainer = () => {
-  const authRepository = new AuthFirebaseRepository(getFirebaseAuth());
-  const authService = new AuthService(authRepository);
-
-  return {
-    authService,
+    eventsService,
+    eventSessionService,
+    eventInteractionsService,
+    eventRegistrationService,
+    eventFeed,
+    userPreferencesService,
+    sitesService,
+    siteInteractionService,
+    storageService,
+    profileService,
+    badgeService,
+    professionalRequestService,
+    studioService,
+    contactService,
   };
 };
 
 export const createContainer = createServerContainer;
 
 export type AppContainer = ReturnType<typeof createContainer>;
-export type ClientContainer = ReturnType<typeof createClientContainer>;
+

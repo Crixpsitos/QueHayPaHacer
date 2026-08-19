@@ -1,0 +1,51 @@
+import type { IAuthRepository } from "@/domain/repository/auth/IAuthRepository";
+import type { Auth, UserCredential } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+
+export class AuthFirebaseRepository implements IAuthRepository {
+  constructor(private readonly auth: Auth) {}
+
+  onAuthStateChanged(callback: (user: UserCredential | null) => void): () => void {
+    return onAuthStateChanged(this.auth, (user) => {
+      callback(user as UserCredential | null);
+    });
+  }
+
+  logout(): Promise<void> {
+    return signOut(this.auth);
+  }
+
+  sendPasswordResetEmail(email: string): Promise<void> {
+    return sendPasswordResetEmail(this.auth, email);
+  }
+
+  sendEmailVerification(): Promise<void> {
+    if (!this.auth.currentUser) {
+      return Promise.reject(new Error("No hay un usuario autenticado"));
+    }
+
+    return sendEmailVerification(this.auth.currentUser);
+  }
+
+  async loginWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {
+    return signInWithEmailAndPassword(this.auth, email, password);
+  }
+
+  async registerWithEmailAndPassword(email: string, password: string): Promise<UserCredential> {
+    return createUserWithEmailAndPassword(this.auth, email, password);
+  }
+
+  async signInWithGoogle(): Promise<UserCredential> {
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(this.auth, provider);
+  }
+}
