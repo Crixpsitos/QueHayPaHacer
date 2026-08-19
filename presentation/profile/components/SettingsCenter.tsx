@@ -403,6 +403,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           contentType: selectedFile.type,
           isPublic: true,
           subFolder: "avatar",
+          cacheControl: "public, max-age=31536000, immutable",
         });
 
         const updateResult = await updateAvatarAction({

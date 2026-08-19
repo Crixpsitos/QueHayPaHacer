@@ -147,7 +147,7 @@ export function ProfileBanner({
         croppedFile,
         "profile",
         uid,
-        { fileName: `banner-${uid}`, contentType: blob.type, isPublic: true, subFolder: "banner" },
+        { fileName: `banner-${uid}`, contentType: blob.type, isPublic: true, subFolder: "banner", cacheControl: "public, max-age=31536000, immutable" },
       );
 
       const result = await updateBannerAction({ uid, bannerUrl: publicUrl, bannerPath: path });
