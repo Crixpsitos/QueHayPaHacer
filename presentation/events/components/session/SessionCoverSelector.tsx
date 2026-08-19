@@ -25,8 +25,9 @@ function resolveSessionCover(
 ): string | undefined {
   if (session.coverSource === "own") return session.mainImage?.url;
   if (session.coverSource === "parent") return parentCoverUrl;
-  if (typeof session.coverSource === "object" && "sessionId" in session.coverSource) {
-    const ref = siblings?.find((s) => s.id === session.coverSource.sessionId);
+  const cs = session.coverSource;
+  if (typeof cs === "object" && "sessionId" in cs) {
+    const ref = siblings?.find((s) => s.id === cs.sessionId);
     if (ref) return ref.coverSource === "own" ? ref.mainImage?.url : parentCoverUrl;
   }
   return undefined;

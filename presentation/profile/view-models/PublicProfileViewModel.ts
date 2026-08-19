@@ -1,4 +1,5 @@
 import type { ProfessionalType, ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
+import type { SocialLinkEntry } from "@/domain/entities/user/User";
 
 export interface PublicProfileViewModel {
   uid: string;
@@ -16,5 +17,8 @@ export interface PublicProfileViewModel {
   website?: string;
   mapsLink?: string;
   socialLink?: string;
+  socialLinks?: SocialLinkEntry[];
+  isUsernameCustomized?: boolean;
   professionalDetails?: ProfessionalRequestDetails;
+  bannerUrl?: string;
 }

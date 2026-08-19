@@ -109,6 +109,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
         categoryId: catId,
         title: cat?.title ?? "Otros",
         icon: cat?.icon ?? "other",
+        collectionSlug: `eventos-${cat?.slug ?? catId}-ibague`,
         events,
         nextCursor: null,
       };
@@ -155,7 +156,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           Busca por texto y/o fechas, o descubre por categorías.
         </p>
         <ExploreSearchBar
-          key={`${q}-${from ?? ""}-${to ?? ""}-${filters.free}-${filters.promoted}-${filters.multiDate}-${filters.maxPrice ?? ""}-${sp.content ?? ""}`}
+          key={`${q}-${from ?? ""}-${to ?? ""}-${filters.free}-${filters.promoted}-${filters.multiDate}-${filters.maxPrice ?? ""}`}
           initialQuery={q}
           initialFrom={from}
           initialTo={to}
@@ -163,8 +164,6 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
           initialPromoted={filters.promoted}
           initialMultiDate={filters.multiDate}
           initialMaxPrice={filters.maxPrice}
-          initialOnlyEvents={false}
-          initialOnlySites={false}
         />
       </div>
 

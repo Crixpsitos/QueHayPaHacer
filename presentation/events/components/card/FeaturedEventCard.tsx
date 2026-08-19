@@ -105,7 +105,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
           {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {isMultiDate && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-purple-600/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1 rounded-full bg-foreground/80 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-sm">
                 <Layers className="size-3" />Varias fechas
               </span>
             )}

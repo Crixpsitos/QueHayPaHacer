@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LayoutDashboard, User as UserIcon } from "lucide-react";
+import { ChevronDown, LayoutDashboard, MapPin, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -158,6 +158,12 @@ export function NavbarAccountMenu({
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/my-events">Mis eventos</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/sites" className="flex items-center gap-2">
+                <MapPin className="size-4" aria-hidden="true" />
+                Mis sitios
+              </Link>
             </DropdownMenuItem>
             {isProfessional && (
               <DropdownMenuItem asChild>

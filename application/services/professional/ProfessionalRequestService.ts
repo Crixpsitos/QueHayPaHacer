@@ -1,13 +1,31 @@
 import * as v from "valibot";
 import type { IProfessionalRequestRepository } from "@/domain/repository/professional/IProfessionalRequestRepository";
 import type { IUserRepository } from "@/domain/repository/user/IUserRepository";
-import type { ProfessionalRequest } from "@/domain/entities/professional/ProfessionalRequest";
+import type { ProfessionalRequest, BusinessDetails, GovernmentDetails, ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
 import type { UserProfessionalStatus, UserAccountType } from "@/domain/entities/user/User";
 import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
 import {
   SubmitProfessionalRequestSchema,
   type SubmitProfessionalRequestDto,
 } from "@/application/dto/professional/ProfessionalRequestDto";
+
+// Solo permite hostnames conocidos de Google Maps para evitar SSRF.
+const GOOGLE_MAPS_HOSTS = new Set(["maps.app.goo.gl", "goo.gl", "maps.google.com", "www.google.com", "google.com"]);
+
+async function resolveGoogleMapsCoords(rawUrl: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const parsed = new URL(rawUrl);
+    if (!GOOGLE_MAPS_HOSTS.has(parsed.hostname)) return null;
+    if ((parsed.hostname === "www.google.com" || parsed.hostname === "google.com") &&
+        !parsed.pathname.startsWith("/maps")) return null;
+    const res = await fetch(rawUrl, { redirect: "follow" });
+    const match = res.url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (!match) return null;
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  } catch {
+    return null;
+  }
+}
 
 export interface ProfessionalStatusResult {
   accountType: UserAccountType;
@@ -55,28 +73,17 @@ export class ProfessionalRequestService {
     }
 
     if (
-      parsed.professionalType === "business" &&
-      parsed.details.businessCategory === "otro" &&
-      !parsed.details.businessDescription?.trim()
-    ) {
-      throw new Error("Describe tu negocio cuando la categoría es \"Otro\".");
-    }
-
-    if (
       parsed.professionalType === "organizer" &&
-      parsed.details.organizerType === "empresa" &&
+      parsed.details.organizerType === "organization" &&
       !parsed.details.nit?.trim()
     ) {
-      throw new Error("El NIT es requerido cuando organizas eventos como empresa.");
+      throw new Error("El NIT es requerido cuando organizas eventos como empresa u organización.");
     }
 
     const normalizedUsername = parsed.username.trim().toLowerCase();
-    if (normalizedUsername !== user.displayName) {
-      const existing = await this.userRepository.findByUsername(normalizedUsername);
-      if (existing && existing.uid !== user.uid) {
-        throw new Error("Ese nombre de usuario ya está en uso.");
-      }
-    }
+
+    // Auto-resolve collisions para todos los tipos — suffix strategy: base → base1 → base2 …
+    const finalUsername = await this.resolveAvailableUsername(normalizedUsername, user.uid);
 
     let previousRequestId: string | null = null;
     let reapplyReason: string | null = null;
@@ -89,6 +96,23 @@ export class ProfessionalRequestService {
       if (!reapplyReason) {
         throw new Error("Debes explicar qué corregiste respecto a tu solicitud anterior.");
       }
+    }
+
+    const businessDetails =
+      parsed.professionalType === "business" ? (parsed.details as BusinessDetails) : null;
+    const governmentDetails =
+      parsed.professionalType === "government" ? (parsed.details as GovernmentDetails) : null;
+
+    // locationLat/locationLng son server-computed, no están en el schema de valibot
+    let enrichedDetails: ProfessionalRequestDetails = parsed.details as ProfessionalRequestDetails;
+    if (businessDetails?.mapsLink) {
+      const coords = await resolveGoogleMapsCoords(businessDetails.mapsLink);
+      const withCoords: BusinessDetails = {
+        ...businessDetails,
+        locationLat: coords?.lat ?? null,
+        locationLng: coords?.lng ?? null,
+      };
+      enrichedDetails = withCoords;
     }
 
     const request = await this.requestRepository.create({
@@ -104,26 +128,35 @@ export class ProfessionalRequestService {
       website: parsed.website?.trim() || null,
       previousRequestId,
       reapplyReason,
-      details: parsed.details,
+      details: enrichedDetails,
     });
-
-    // Para negocios, mapsLink y socialLink viven dentro de details; los
-    // promovemos a nivel de usuario para que la UI del perfil los muestre.
-    const businessDetails =
-      parsed.professionalType === "business" ? parsed.details : null;
 
     await this.userRepository.update(user.uid, {
       ...user,
-      displayName: normalizedUsername,
+      displayName: finalUsername,
+      isUsernameCustomized: false,
       brandName: parsed.brandName.trim(),
       website: parsed.website?.trim() || undefined,
-      mapsLink: businessDetails?.mapsLink?.trim() || undefined,
-      socialLink: businessDetails?.socialLink?.trim() || undefined,
-      professionalDetails: parsed.details,
+      professionalDescription: parsed.description.trim(),
+      // mapsLink se promueve al perfil para que el ProfileHeader lo muestre
+      mapsLink: businessDetails?.mapsLink?.trim() || governmentDetails?.mapsLink?.trim() || undefined,
+      professionalDetails: parsed.details as ProfessionalRequestDetails,
       professionalStatus: "pending",
       updatedAt: new Date(),
     });
 
     return request;
+  }
+
+  /** Finds the first available username starting from `base`, appending 1, 2 … on collision. */
+  private async resolveAvailableUsername(base: string, currentUid: string): Promise<string> {
+    const existing = await this.userRepository.findByUsername(base);
+    if (!existing || existing.uid === currentUid) return base;
+    for (let i = 1; i <= 99; i++) {
+      const candidate = `${base.slice(0, 28)}${i}`;
+      const taken = await this.userRepository.findByUsername(candidate);
+      if (!taken) return candidate;
+    }
+    return `${base.slice(0, 26)}${Date.now().toString(36).slice(-4)}`;
   }
 }

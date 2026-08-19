@@ -242,7 +242,7 @@ export async function migrateEventTypeAction(params: {
     updateTag(`event-${oldEventId}`);
     updateTag(`event-${newEvent.id}`);
     updateTag("event-list");
-    revalidateTag("event-list");
+    revalidateTag("event-list", "max");
 
     return { success: true, newEventId: newEvent.id };
 

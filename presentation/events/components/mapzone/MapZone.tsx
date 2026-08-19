@@ -42,7 +42,7 @@ export const MapZone = ({ cityCoords, pointCoords, onMarkerDrag }: MapZoneProps)
   }, [cityCoords?.latitude, cityCoords?.longitude, pointCoords?.lat, pointCoords?.lng]);
 
   return (
-    <div className="w-full h-[500px] rounded-lg overflow-hidden border border-border relative">
+    <div className="w-full h-125 rounded-lg overflow-hidden border border-border relative">
       <Map
         initialViewState={{
           longitude: markerLng,
@@ -52,16 +52,10 @@ export const MapZone = ({ cityCoords, pointCoords, onMarkerDrag }: MapZoneProps)
         ref={mapRef}
         mapStyle="https://tiles.openfreemap.org/styles/bright"
         onLoad={(e) => {
+          // Sustituye sprites desconocidos del estilo con un pixel transparente para silenciar los warnings.
           e.target.on("styleimagemissing", (ev) => {
-            const map = ev.target;
-            if (map.hasImage(ev.id)) return;
-            const canvas = document.createElement("canvas");
-            canvas.width = 1;
-            canvas.height = 1;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-            const imageData = ctx.getImageData(0, 0, 1, 1);
-            map.addImage(ev.id, imageData);
+            if (ev.target.hasImage(ev.id)) return;
+            ev.target.addImage(ev.id, { width: 1, height: 1, data: new Uint8Array(4) });
           });
         }}
       >

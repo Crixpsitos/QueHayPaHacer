@@ -1,5 +1,5 @@
 import type { Timestamp } from "firebase-admin/firestore";
-import type { UserAccountType, UserProfessionalStatus } from "@/domain/entities/user/User";
+import type { SocialLinkEntry, UserAccountType, UserProfessionalStatus } from "@/domain/entities/user/User";
 import type { ProfessionalType, ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
 
 export interface FirebaseUserDto {
@@ -18,11 +18,16 @@ export interface FirebaseUserDto {
     professionalType?: ProfessionalType | null;
     professionalStatus?: UserProfessionalStatus;
     professionalDetails?: ProfessionalRequestDetails;
+    professionalDescription?: string;
     brandName?: string;
     website?: string;
     mapsLink?: string;
     socialLink?: string;
+    socialLinks?: SocialLinkEntry[];
+    isUsernameCustomized?: boolean;
     isPublic?: boolean;
+    bannerUrl?: string;
+    bannerPath?: string;
     acceptedTermsAt: Timestamp;
     createdAt: Timestamp;
     updatedAt: Timestamp;

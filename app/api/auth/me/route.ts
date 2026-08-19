@@ -65,6 +65,8 @@ export async function GET() {
           username: dbUser.displayName,
           phoneNumber: dbUser.phoneNumber,
           accountType: dbUser.accountType ?? null,
+          professionalType: dbUser.professionalType ?? null,
+          professionalStatus: dbUser.professionalStatus ?? null,
           bio: dbUser.bio ?? null,
           photoURL: dbUser.photoURL ?? null,
           imagePath: dbUser.imagePath ?? null,
@@ -73,7 +75,12 @@ export async function GET() {
           website: dbUser.website,
           mapsLink: dbUser.mapsLink,
           socialLink: dbUser.socialLink,
+          socialLinks: dbUser.socialLinks,
+          isUsernameCustomized: dbUser.isUsernameCustomized,
+          professionalDescription: dbUser.professionalDescription,
           professionalDetails: dbUser.professionalDetails,
+          bannerUrl: dbUser.bannerUrl ?? null,
+          bannerPath: dbUser.bannerPath ?? null,
         }
       : null,
   };

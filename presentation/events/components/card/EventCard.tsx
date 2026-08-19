@@ -22,19 +22,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { EventViewModel } from "../../view-models/EventViewModel";
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  musica:          { bg: "#EFF6FF", text: "#1D4ED8" },
-  arte:            { bg: "#F5F3FF", text: "#7C3AED" },
-  gastronomia:     { bg: "#FFF7ED", text: "#C2410C" },
-  deportes:        { bg: "#F0FDF4", text: "#15803D" },
-  educacion:       { bg: "#EFF6FF", text: "#1E40AF" },
-  tecnologia:      { bg: "#F0F9FF", text: "#0369A1" },
-  bienestar:       { bg: "#FDF2F4", text: "#E63946" },
-  familia:         { bg: "#FFFBEB", text: "#B45309" },
-  entretenimiento: { bg: "#FDF4FF", text: "#9333EA" },
-  naturaleza:      { bg: "#F0FDF4", text: "#166534" },
-};
-const DEFAULT_CAT = { bg: "#F4F4F5", text: "#52525B" };
+
 
 interface EventCardProps {
   event: EventViewModel;
@@ -264,7 +252,7 @@ export const EventCard = ({
 
       <div
         className={cn(
-          "group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-card transition-all duration-300 h-full hover:-translate-y-1 hover:shadow-hover",
+          "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 h-full hover:-translate-y-1 hover:border-primary/20 hover:shadow-hover",
           "focus-within:ring-2 focus-within:ring-primary/30 focus-within:ring-offset-2",
           className,
         )}
@@ -300,30 +288,22 @@ export const EventCard = ({
 
             {/* Badges top-left: categoría (Brand badge) + varias fechas */}
             <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-              {/* Badge de categoría con color propio por slug */}
-              {(() => {
-                const col = CATEGORY_COLORS[event.categoryInfo.slug] ?? DEFAULT_CAT;
-                return (
-                  <span
-                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm"
-                    style={{ background: col.bg, color: col.text }}
-                  >
-                    {event.categoryInfo.title}
-                  </span>
-                );
-              })()}
+              {/* Badge de categoría */}
+              <span className="rounded-full bg-[var(--primary-light)] px-2.5 py-1 text-[11px] font-semibold text-primary">
+                {event.categoryInfo.title}
+              </span>
               {isMultiDate && (
-                <span className="rounded-full bg-[#09090B]/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                <span className="rounded-full bg-foreground/80 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-sm">
                   Varias fechas
                 </span>
               )}
               {event.promotion?.isPromoted && (
-                <span className="flex items-center gap-1 rounded-full bg-[#FFF8E7] px-2.5 py-1 text-[11px] font-semibold text-[#E09F00] shadow-sm">
+                <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-brand-gold-dark shadow-subtle">
                   <Sparkles className="size-3" />Destacado
                 </span>
               )}
               {isFirstEvent && (
-                <span className="rounded-full bg-[#FFF8E7] px-2.5 py-1 text-[11px] font-semibold text-[#E09F00] shadow-sm">
+                <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-brand-gold-dark shadow-subtle">
                   ✨ Primer evento
                 </span>
               )}
@@ -347,7 +327,7 @@ export const EventCard = ({
           <Heart
             className={cn(
               "size-5 transition-all",
-              liked ? "fill-[#E63946] text-[#E63946] scale-110" : "text-[#09090B]",
+              liked ? "fill-primary text-primary scale-110" : "text-foreground",
             )}
             aria-hidden="true"
           />
@@ -370,15 +350,15 @@ export const EventCard = ({
                     {getAuthorInitials(event.author.displayName)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="truncate text-[13px] text-[#71717A]">
-                  Por <span className="font-medium text-[#09090B]">{event.author.displayName}</span>
+                <span className="truncate text-[13px] text-muted-foreground">
+                  Por <span className="font-medium text-foreground">{event.author.displayName}</span>
                 </span>
               </Link>
               {!isMultiDate ? (
                 <span
                   className={cn(
                     "shrink-0 text-sm font-bold",
-                    isFree ? "text-emerald-600" : "text-[#09090B]",
+                    isFree ? "text-emerald-600" : "text-foreground",
                   )}
                 >
                   {isFree
@@ -386,29 +366,29 @@ export const EventCard = ({
                     : `$${event.price.amount.toLocaleString("es-CO")} ${event.price.currency}`}
                 </span>
               ) : (
-                <span className="shrink-0 text-[11px] text-[#71717A] italic">Precios variados</span>
+                <span className="shrink-0 text-[11px] text-muted-foreground italic">Precios variados</span>
               )}
             </div>
           )}
 
           {/* Fila 2: T00edtulo con underline crimson on hover */}
-          <h2 className="text-base font-bold leading-snug text-[#09090B] line-clamp-2 group-hover:underline group-hover:decoration-[#E63946] group-hover:underline-offset-2">
+          <h2 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:underline group-hover:decoration-primary group-hover:underline-offset-2">
             {event.title}
           </h2>
 
           {/* Fila 3: Descripci\u00f3n corta, 1 l\u00ednea (sin chips de tags) */}
-          <p className="text-[13px] text-[#71717A] line-clamp-1">{event.shortDescription}</p>
+          <p className="line-clamp-1 text-[13px] text-muted-foreground">{event.shortDescription}</p>
 
           {/* Indicadores extra: vistas, inscripciones y apertura */}
           {viewCount > 0 && (
-            <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
+            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
               <Eye className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{viewCount.toLocaleString("es-CO")} vistas</span>
             </div>
           )}
           {attendeeCount > 0 && (event.registrationType === "internal" || event.registrationType === "form") && (
-            <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
-              <Users className="size-3.5 shrink-0 text-[#E63946]" aria-hidden="true" />
+            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <Users className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
               <span>{attendeeCount.toLocaleString("es-CO")} inscritos</span>
             </div>
           )}
@@ -420,35 +400,35 @@ export const EventCard = ({
           {isMultiDate ? (
             <div className="space-y-1.5">
               <div
-                className="flex items-center justify-between gap-2 rounded-lg bg-[#F4F4F5] px-3 py-2"
+                className="flex items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2"
                 suppressHydrationWarning
               >
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Calendar className="size-3.5 shrink-0 text-[#E63946]" />
-                  <span className="truncate text-[13px] font-semibold text-[#09090B]">
+                  <Calendar className="size-3.5 shrink-0 text-primary" />
+                  <span className="truncate text-[13px] font-semibold text-foreground">
                     {hasRange
                       ? formatDateRange(event.startDate, event.endDate)
                       : "Fechas por confirmar"}
                   </span>
                 </div>
                 {hasRange && (
-                  <span className="shrink-0 rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold text-[#71717A]">
+                  <span className="shrink-0 rounded-full border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                     {isSingleDay ? "Varias sesiones" : "Varios horarios"}
                   </span>
                 )}
               </div>
             </div>
           ) : (
-            <div className="space-y-1.5" suppressHydrationWarning>
+            <div className="space-y-1 rounded-lg bg-muted px-3 py-2" suppressHydrationWarning>
               {event.startDate && (
-                <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
-                  <Calendar className="size-3.5 shrink-0 text-[#E63946]" />
-                  <span suppressHydrationWarning>{formatDateCompact(event.startDate)}</span>
+                <div className="flex items-center gap-1.5 text-[13px]">
+                  <Calendar className="size-3.5 shrink-0 text-primary" />
+                  <span className="font-medium text-foreground" suppressHydrationWarning>{formatDateCompact(event.startDate)}</span>
                 </div>
               )}
               {hasLocation && event.location?.venue && (
-                <div className="flex items-center gap-1.5 text-[13px] text-[#71717A]">
-                  <MapPin className="size-3.5 shrink-0 text-[#E63946]" />
+                <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                  <MapPin className="size-3.5 shrink-0 text-primary" />
                   <span className="truncate">{event.location.venue}</span>
                 </div>
               )}
@@ -457,13 +437,13 @@ export const EventCard = ({
         </div>
 
         {/* ── 3. FOOTER ── */}
-        <div className="mt-auto flex items-center gap-2 border-t border-[#F4F4F5] px-4 py-3">
+        <div className="mt-auto flex items-center gap-2 border-t border-border px-4 py-3">
           {/* Compartir — min 44px touch target */}
           <button
             type="button"
             onClick={handleShare}
             aria-label={shared ? "¡Enlace copiado!" : "Compartir evento"}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl text-[13px] text-[#71717A] transition-colors hover:bg-muted hover:text-[#09090B]"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Share2 className="size-4" aria-hidden="true" />
             <span className="hidden sm:inline">{shared ? "\u00a1Copiado!" : "Compartir"}</span>
@@ -473,7 +453,7 @@ export const EventCard = ({
           <Link
             href={detailUrl}
             onClick={() => onViewDetails?.(event)}
-            className="ml-auto flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#9B0A26]"
+            className="ml-auto flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-primary-glow transition-all hover:bg-primary-dark hover:shadow-hover"
             aria-label={isMultiDate ? "Ver fechas del evento" : "Ver detalles del evento"}
           >
             {isMultiDate ? "Ver fechas" : "Ver detalles"}

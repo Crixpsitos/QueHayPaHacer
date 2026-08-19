@@ -36,11 +36,11 @@ export const ProfileAvatar = ({
       ) : (
         <div
           className={cn(
-            "flex h-full w-full items-center justify-center bg-brand-violet/10",
+            "flex h-full w-full items-center justify-center bg-primary/10",
             initialsClassName
           )}
         >
-          <span className={cn("font-bold text-brand-violet", textClassName)}>
+          <span className={cn("font-bold text-primary", textClassName)}>
             {initials}
           </span>
         </div>

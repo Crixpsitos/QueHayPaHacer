@@ -172,15 +172,24 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </div>
       )}
 
-      {(site!.bookingUrl || Object.values(site!.socialMedia ?? {}).some(Boolean)) && (
-        <div className="mb-6 rounded-2xl border border-border bg-muted/40 px-4 py-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Redes del lugar</p>
-          <div className="flex flex-wrap items-center gap-2">
-          {site!.bookingUrl && (
+      <div className="mb-6 rounded-2xl border border-border bg-muted/40 px-4 py-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Redes y reservas</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Reserva — habilitada si existe bookingUrl, deshabilitada si no */}
+          {site!.bookingUrl ? (
             <BookingButton
               url={site!.bookingUrl}
               disabled={site!.temporarilyClosed?.isClosed}
             />
+          ) : (
+            <span
+              aria-disabled="true"
+              title="Reservas no disponibles para este sitio"
+              className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground opacity-50"
+            >
+              <ExternalLink className="size-4 shrink-0" />
+              Reservar
+            </span>
           )}
           {site!.socialMedia?.instagram && (
             <a href={site!.socialMedia.instagram} target="_blank" rel="noopener noreferrer"
@@ -221,9 +230,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               <Globe className="size-3.5" />Sitio web
             </a>
           )}
-          </div>
         </div>
-      )}
+      </div>
 
       <div className="mb-8 overflow-hidden rounded-2xl border border-border">
         <div className="flex min-h-16 items-stretch">
@@ -422,31 +430,31 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </aside>
       </div>
 
-      {linkedEvents.length > 0 && (
-        <>
-          <Separator className="my-10" />
-          <section>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                  <CalendarDays className="size-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">Itinerario del sitio</h2>
-                  <p className="text-sm text-muted-foreground">Eventos que se realizan en {site!.name}</p>
-                </div>
+      <>
+        <Separator className="my-10" />
+        <section>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <CalendarDays className="size-5 text-primary" />
               </div>
+              <div>
+                <h2 className="text-xl font-bold">Itinerario del sitio</h2>
+                <p className="text-sm text-muted-foreground">Eventos que se realizan en {site!.name}</p>
+              </div>
+            </div>
+            {linkedEvents.length > 0 && (
               <Badge variant="secondary" className="rounded-full">
                 {linkedEvents.length} evento{linkedEvents.length !== 1 ? "s" : ""}
               </Badge>
-            </div>
-            <SiteItineraryGrid
-              events={linkedEvents}
-              emptyMessage="Todavía no hay eventos en este lugar."
-            />
-          </section>
-        </>
-      )}
+            )}
+          </div>
+          <SiteItineraryGrid
+            events={linkedEvents}
+            emptyMessage="No hay eventos próximos en este lugar."
+          />
+        </section>
+      </>
     </div>
   );
 }

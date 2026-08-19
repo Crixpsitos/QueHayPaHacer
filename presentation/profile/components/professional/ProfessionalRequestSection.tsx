@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Briefcase, Loader2 } from "lucide-react";
 import { getProfessionalStatusAction } from "@/app/actions/professional/get-professional-status.action";
 import { ProfessionalStatusCard } from "./ProfessionalStatusCard";
 import { ProfessionalRequestForm } from "./ProfessionalRequestForm";
@@ -11,9 +11,16 @@ interface ProfessionalRequestSectionProps {
   uid: string;
   defaultUsername: string;
   defaultPhone: string;
+  /** Website actual del perfil — single source of truth */
+  defaultWebsite: string;
 }
 
-export function ProfessionalRequestSection({ uid, defaultUsername, defaultPhone }: ProfessionalRequestSectionProps) {
+export function ProfessionalRequestSection({
+  uid,
+  defaultUsername,
+  defaultPhone,
+  defaultWebsite,
+}: ProfessionalRequestSectionProps) {
   const [status, setStatus] = useState<ProfessionalStatusResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -48,28 +55,45 @@ export function ProfessionalRequestSection({ uid, defaultUsername, defaultPhone 
     );
   }
 
-  if (showForm) {
-    return (
-      <ProfessionalRequestForm
-        uid={uid}
-        defaultUsername={defaultUsername}
-        defaultPhone={defaultPhone}
-        isReapply={status.professionalStatus === "rejected"}
-        previousRequest={status.latestRequest}
-        onCancel={() => setShowForm(false)}
-        onSubmitted={() => {
-          setShowForm(false);
-          setRefreshIndex((index) => index + 1);
-        }}
-      />
-    );
-  }
-
   return (
-    <ProfessionalStatusCard
-      status={status}
-      onRequest={() => setShowForm(true)}
-      onReapply={() => setShowForm(true)}
-    />
+    <section aria-label="Cuenta profesional">
+      {/* ── Header único — siempre visible ── */}
+      <div className="mb-6 flex items-start gap-3.5 border-b border-border pb-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+          <Briefcase className="size-5 text-primary" aria-hidden />
+        </div>
+        <div>
+          <h2 className="font-bold text-foreground">Cuenta profesional</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Amplía tu presencia en{" "}
+            <span className="font-medium text-foreground">Qué Hay Pa&apos; Hacer</span> y accede
+            a herramientas para gestionar tus actividades.
+          </p>
+        </div>
+      </div>
+
+      {showForm ? (
+        <ProfessionalRequestForm
+          uid={uid}
+          defaultUsername={defaultUsername}
+          defaultPhone={defaultPhone}
+          defaultWebsite={defaultWebsite}
+          isReapply={status.professionalStatus === "rejected"}
+          previousRequest={status.latestRequest}
+          onCancel={() => setShowForm(false)}
+          onSubmitted={() => {
+            setShowForm(false);
+            setRefreshIndex((index) => index + 1);
+          }}
+        />
+      ) : (
+        <ProfessionalStatusCard
+          status={status}
+          username={defaultUsername}
+          onRequest={() => setShowForm(true)}
+          onReapply={() => setShowForm(true)}
+        />
+      )}
+    </section>
   );
 }

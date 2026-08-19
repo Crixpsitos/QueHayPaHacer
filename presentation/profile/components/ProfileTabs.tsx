@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, memo } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, BarChart3, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard, Building2 } from "lucide-react";
+import { Activity, MapPin, Heart, Award, Eye, Share2, Users, Zap, Calendar, TrendingUp, Sparkles, Trophy, Milestone, Pencil, LayoutDashboard, Building2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
@@ -15,6 +16,7 @@ import type {
 } from "@/domain/repository/profile/IProfileRepository";
 import { EventStatusBadge } from "./EventStatusBadge";
 import { EventAttendeesDialog } from "@/presentation/events/components/EventAttendeesDialog";
+import { DeleteEventModal } from "./DeleteEventModal";
 
 interface ProfileTabsProps {
   uid: string;
@@ -38,14 +40,30 @@ function ProfileTabsInner({
   canEdit = false,
   showStudioLink = false,
 }: ProfileTabsProps) {
-  const [activeTab, setActiveTab] = useState("events");
-  const [isLoading, setIsLoading] = useState(true);
+  const hasLikesTab = Boolean(fetchUserLikes);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [sites, setSites] = useState<UserSite[]>([]);
   const [likes, setLikes] = useState<UserEventInteraction[]>([]);
   const [badges, setBadges] = useState<UserBadge[]>([]);
-  const hasLikesTab = Boolean(fetchUserLikes);
+
+  // Tab state driven by URL query param (?tab=events|sites|likes|badges)
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const VALID_TABS = hasLikesTab
+    ? ["events", "sites", "likes", "badges"]
+    : ["events", "sites", "badges"];
+  const rawTab = searchParams.get("tab") ?? "";
+  const activeTab = VALID_TABS.includes(rawTab) ? rawTab : "events";
+
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const [isLoading, setIsLoading] = useState(true);
 
   // SINGLE useEffect - se dispara solo cuando uid cambia
   useEffect(() => {
@@ -234,28 +252,42 @@ function ProfileTabsInner({
   };
 
   return (
-    <div className="w-full rounded-xl border border-border bg-card p-4 sm:p-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${hasLikesTab ? "grid-cols-4" : "grid-cols-3"}`}>
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Eventos</span>
-          </TabsTrigger>
-          <TabsTrigger value="sites" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span className="hidden sm:inline">Sitios</span>
-          </TabsTrigger>
-          {hasLikesTab && (
-            <TabsTrigger value="likes" className="flex items-center gap-2">
-              <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Likes</span>
+    <div className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <div className="border-b border-border">
+          <TabsList className="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsTrigger
+              value="events"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <Activity className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Eventos</span>
             </TabsTrigger>
-          )}
-          <TabsTrigger value="badges" className="flex items-center gap-2">
-            <Award className="h-4 w-4" />
-            <span className="hidden sm:inline">Insignias</span>
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger
+              value="sites"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Sitios</span>
+            </TabsTrigger>
+            {hasLikesTab && (
+              <TabsTrigger
+                value="likes"
+                className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                <Heart className="h-4 w-4 shrink-0" aria-hidden />
+                <span>Likes</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger
+              value="badges"
+              className="relative flex min-w-max items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <Award className="h-4 w-4 shrink-0" aria-hidden />
+              <span>Insignias</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="events" className="mt-6">
           <AnimatePresence mode="wait">
@@ -296,7 +328,7 @@ function ProfileTabsInner({
                 animate="visible"
                 exit="exit"
               >
-                {events.map((event) => (
+                {events.map((event, eventIndex) => (
                   (() => {
                     const eventTimeState = getEventTimeState(
                       event.startDate,
@@ -323,7 +355,7 @@ function ProfileTabsInner({
                       <motion.article
                         key={event.id}
                         variants={itemVariants}
-                        className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-xl"
+                        className="group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-xl"
                       >
                   <div className="relative aspect-video w-full overflow-hidden bg-muted">
                     {event.image ? (
@@ -334,6 +366,8 @@ function ProfileTabsInner({
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading={eventIndex === 0 ? "eager" : "lazy"}
+                          priority={eventIndex === 0}
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent"></div>
                       </>
@@ -349,7 +383,7 @@ function ProfileTabsInner({
                         {eventTimeState.label}
                       </span>
                       {event.eventType === "multi-date" && (
-                        <span className="inline-flex items-center rounded-full border border-purple-400/60 bg-purple-500/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                        <span className="inline-flex items-center rounded-full bg-foreground/80 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-sm">
                           Varias fechas
                         </span>
                       )}
@@ -365,7 +399,7 @@ function ProfileTabsInner({
                     </div>
                   </div>
 
-                  <div className="space-y-3.5 p-4">
+                  <div className="flex flex-col flex-1 gap-3.5 p-4">
                     <div>
                       <p className="line-clamp-2 text-[15px] font-semibold leading-tight text-foreground">{event.title}</p>
                       <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
@@ -415,88 +449,79 @@ function ProfileTabsInner({
                     </div>
                     )}
                     {event.eventType === "multi-date" && (
-                    <div className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-300">
-                      <Sparkles className="size-3.5 shrink-0" />
+                    <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
+                      <Sparkles className="size-3.5 shrink-0 text-primary/70" />
                       <span>Precio y ubicación varían por sesión. <Link href={`/eventos/${event.id}`} className="underline">Ver sesiones</Link></span>
                     </div>
                     )}
 
-                    <div className="rounded-xl border border-border/60 bg-background p-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/75">
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          Rendimiento
+                    {/* Panel de rendimiento */}
+                    <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Rendimiento</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                          <TrendingUp className="h-3 w-3" />{engagement.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="mb-3 grid grid-cols-3 gap-2">
+                        <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                          <p className="text-sm font-bold text-foreground">{formatCompactNumber(views)}</p>
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Eye className="h-3 w-3" /><span>Vistas</span>
+                          </div>
                         </div>
-                        <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          <TrendingUp className="h-3 w-3" />
-                          {engagement.toFixed(1)}% engagement
+                        <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                          <p className="text-sm font-bold text-foreground">{formatCompactNumber(likesCount)}</p>
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Heart className="h-3 w-3" /><span>Likes</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                          <p className="text-sm font-bold text-foreground">{formatCompactNumber(isMultiDate ? shares : registrations)}</p>
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            {isMultiDate ? <Share2 className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                            <span>{isMultiDate ? "Shares" : "Registros"}</span>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="rounded-lg bg-muted/40 p-2">
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Eye className="h-3.5 w-3.5" />
-                            Vistas
-                          </div>
-                          <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(views)}</p>
-                        </div>
-                        <div className="rounded-lg bg-muted/40 p-2">
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Heart className="h-3.5 w-3.5" />
-                            Likes
-                          </div>
-                          <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(likesCount)}</p>
-                        </div>
-                        <div className="rounded-lg bg-muted/40 p-2">
-                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            {isMultiDate ? <Share2 className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
-                            {isMultiDate ? "Compartidos" : "Registros"}
-                          </div>
-                          <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(isMultiDate ? shares : registrations)}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-2 space-y-1.5">
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          {/* "Clicks" solo tiene sentido en eventos con registro externo */}
-                          {!isMultiDate && event.registrationType === "external" && (
-                            <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3" />Clicks: {formatCompactNumber(clicks)}</span>
-                          )}
-                          {!isMultiDate && (
-                          <span className="inline-flex items-center gap-1"><Share2 className="h-3 w-3" />Compartidos: {formatCompactNumber(shares)}</span>
-                          )}
+                          <span>Engagement</span>
+                          <span className="font-medium text-foreground">{engagement.toFixed(1)}%</span>
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-foreground/70"
-                            style={{ width: `${Math.max(6, engagement)}%` }}
-                          />
+                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(4, Math.min(100, (engagement / 20) * 100))}%` }} />
                         </div>
                       </div>
-
                       {typeof occupancy === "number" && (
-                        <div className="mt-2 border-t border-border/50 pt-2">
-                          <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>Ocupacion estimada</span>
-                            <span>{occupancy.toFixed(0)}%</span>
+                        <div className="mt-2.5 space-y-1 border-t border-border/50 pt-2.5">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>Ocupación estimada</span>
+                            <span className="font-medium text-foreground">{occupancy.toFixed(0)}%</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full bg-amber-500"
-                              style={{ width: `${Math.max(4, occupancy)}%` }}
-                            />
+                            <div className="h-full rounded-full bg-[var(--brand-gold)] transition-all" style={{ width: `${Math.max(4, occupancy)}%` }} />
                           </div>
+                        </div>
+                      )}
+                      {!isMultiDate && (event.registrationType === "external" || shares > 0) && (
+                        <div className="mt-2.5 flex items-center gap-4 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
+                          {event.registrationType === "external" && clicks > 0 && (
+                            <span className="flex items-center gap-1"><Zap className="h-3 w-3" />{formatCompactNumber(clicks)} clicks</span>
+                          )}
+                          {shares > 0 && (
+                            <span className="flex items-center gap-1"><Share2 className="h-3 w-3" />{formatCompactNumber(shares)} compartidos</span>
+                          )}
                         </div>
                       )}
                     </div>
 
                     {canEdit && (
-                      <div className="flex gap-2">
+                      <div className="mt-auto flex gap-2">
                         {event.status?.toLowerCase() === "published" && (
                           <Link
                             href={`/eventos/${event.id}`}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-primary-glow transition-all hover:bg-primary-dark"
                             aria-label={`Ver evento: ${event.title}`}
                           >
                             <Eye className="h-4 w-4" />
@@ -505,7 +530,7 @@ function ProfileTabsInner({
                         )}
                         <Link
                           href={`/eventos/${event.id}/edit`}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-violet/40 bg-brand-violet/5 px-3 py-2 text-sm font-semibold text-brand-violet transition-colors hover:bg-brand-violet/10"
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                           aria-label={`Editar evento: ${event.title}`}
                         >
                           <Pencil className="h-4 w-4" />
@@ -514,7 +539,7 @@ function ProfileTabsInner({
                         {showStudioLink ? (
                           <Link
                             href={`/studio/events/${event.id}`}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/10"
                             aria-label={`Ir al Estudio del evento: ${event.title}`}
                           >
                             <LayoutDashboard className="h-4 w-4" />
@@ -539,6 +564,11 @@ function ProfileTabsInner({
                             />
                           )
                         )}
+                        <DeleteEventModal
+                          eventId={event.id}
+                          eventTitle={event.title}
+                          isPublished={event.status?.toLowerCase() === "published"}
+                        />
                       </div>
                     )}
                   </div>
@@ -581,7 +611,7 @@ function ProfileTabsInner({
                 animate="visible"
                 exit="exit"
               >
-                {sites.map((site) => (
+                {sites.map((site, siteIndex) => (
                   <motion.article
                     key={site.id}
                     variants={itemVariants}
@@ -598,6 +628,8 @@ function ProfileTabsInner({
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                               className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading={siteIndex === 0 ? "eager" : "lazy"}
+                              priority={siteIndex === 0}
                             />
                             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
                           </>
@@ -647,44 +679,42 @@ function ProfileTabsInner({
                       </div>
 
                       {/* Analytics */}
-                      <div className="rounded-xl border border-border/60 bg-background p-3">
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/75">
-                            <BarChart3 className="size-3.5" />
-                            Rendimiento
-                          </div>
-                          {(() => {
-                            const siteViews = site.analytics.views;
-                            const siteLikes = site.analytics.likes;
-                            const siteEngagement = siteViews > 0 ? Math.min(100, (siteLikes / siteViews) * 100) : 0;
-                            return (
-                              <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                <TrendingUp className="size-3" />
-                                {siteEngagement.toFixed(1)}% engagement
+                      {(site.analytics.views > 0 || site.analytics.likes > 0 || site.analytics.eventCount > 0) && (() => {
+                        const siteEngagement = site.analytics.views > 0 ? Math.min(100, (site.analytics.likes / site.analytics.views) * 100) : 0;
+                        return (
+                          <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analytics</span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                <TrendingUp className="size-3" />{siteEngagement.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="mb-3 grid grid-cols-3 gap-2">
+                              <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                                <p className="text-sm font-bold text-foreground">{formatCompactNumber(site.analytics.views)}</p>
+                                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Eye className="size-3" /><span>Vistas</span></div>
                               </div>
-                            );
-                          })()}
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="rounded-lg bg-muted/40 p-2">
-                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Eye className="size-3.5" />Vistas</div>
-                            <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(site.analytics.views)}</p>
+                              <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                                <p className="text-sm font-bold text-foreground">{formatCompactNumber(site.analytics.likes)}</p>
+                                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Heart className="size-3" /><span>Likes</span></div>
+                              </div>
+                              <div className="flex flex-col items-center rounded-lg border border-border/50 bg-card px-2 py-2.5">
+                                <p className="text-sm font-bold text-foreground">{site.analytics.eventCount}</p>
+                                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Calendar className="size-3" /><span>Eventos</span></div>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                                <span>Engagement</span>
+                                <span className="font-medium text-foreground">{siteEngagement.toFixed(1)}%</span>
+                              </div>
+                              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(4, siteEngagement)}%` }} />
+                              </div>
+                            </div>
                           </div>
-                          <div className="rounded-lg bg-muted/40 p-2">
-                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Heart className="size-3.5" />Likes</div>
-                            <p className="mt-1 text-sm font-semibold text-foreground">{formatCompactNumber(site.analytics.likes)}</p>
-                          </div>
-                          <div className="rounded-lg bg-muted/40 p-2">
-                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Calendar className="size-3.5" />Eventos</div>
-                            <p className="mt-1 text-sm font-semibold text-foreground">{site.analytics.eventCount}</p>
-                          </div>
-                        </div>
-                        <div className="mt-2">
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-foreground/70" style={{ width: `${Math.max(4, site.analytics.views > 0 ? Math.min(100, (site.analytics.likes / site.analytics.views) * 100) : 0)}%` }} />
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       {/* Acciones */}
                       {canEdit && (
@@ -699,14 +729,14 @@ function ProfileTabsInner({
                           )}
                           <Link
                             href={`/sites/${site.id}/edit`}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-violet/40 bg-brand-violet/5 px-3 py-2 text-sm font-semibold text-brand-violet transition-colors hover:bg-brand-violet/10"
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                           >
                             <Pencil className="size-4" /> Editar
                           </Link>
                           {showStudioLink && (
                             <Link
                               href={`/studio/sites/${site.id}`}
-                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-foreground/20 bg-foreground/5 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/10"
                             >
                               <LayoutDashboard className="size-4" /> Estudio
                             </Link>
@@ -774,6 +804,8 @@ function ProfileTabsInner({
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading={index === 0 ? "eager" : "lazy"}
+                          priority={index === 0}
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent"></div>
                         <div className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-500/90 shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
@@ -977,8 +1009,8 @@ function ProfileTabsInner({
                 {badges.filter((b) => b.category === "milestone").length > 0 && (
                   <motion.div variants={itemVariants}>
                     <div className="flex items-center gap-3 mb-6 pb-3 border-b border-border">
-                      <div className="p-2 rounded-lg bg-purple-500/10">
-                        <Milestone className="w-5 h-5 text-purple-500" />
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Milestone className="w-5 h-5 text-primary" />
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-foreground">Hitos</h3>
@@ -997,7 +1029,7 @@ function ProfileTabsInner({
                           <motion.div
                             key={badge.id}
                             variants={itemVariants}
-                            className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 hover:shadow-lg hover:border-purple-500/30"
+                            className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 hover:shadow-lg hover:border-primary/20"
                           >
                             <div className="flex flex-col h-full">
                               <div className="mb-4 text-5xl">{badge.icon || "🎯"}</div>

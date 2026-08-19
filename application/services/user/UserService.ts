@@ -55,7 +55,7 @@ export class UserService {
 
         const updated: User = {
             ...existing,
-            ...input,
+            ...(input as Partial<User>),
             updatedAt: new Date(),
         };
 

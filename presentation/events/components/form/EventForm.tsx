@@ -465,14 +465,9 @@ export const EventForm = ({
     }
   }, [form, onSaveDraft, eventType]);
 
-  // En /create, router.back() puede devolver al mismo /create si el historial es circular.
+  // router.back() puede devolver a la misma ruta u otra inesperada; push a "/" es predecible.
   const navigateAway = useCallback(() => {
-    const onCreateRoute = typeof window !== "undefined" && window.location.pathname.includes("/create");
-    if (!onCreateRoute && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
+    router.push("/");
   }, [router]);
 
   // La "X" del header pide salir: solo mostramos el modal si hay cambios sin guardar.
@@ -666,7 +661,7 @@ export const EventForm = ({
   const isFullReady = readyCount === publishChecklist.length;
 
   return (
-    <div className="min-h-screen bg-[#FAFAFC]">
+    <div className="flex min-h-screen flex-col bg-[#FAFAFC]">
 
       {/* ── HEADER STICKY ──────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white border-b border-[#F4F4F5]">
@@ -750,7 +745,7 @@ export const EventForm = ({
       </header>
 
       {/* ── BODY CON CONTAINER ─────────────────────────────────── */}
-      <div className="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 md:px-8 lg:px-12">
+      <div className="mx-auto flex-1 max-w-screen-2xl px-4 py-8 sm:px-6 md:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr_300px]">
 
           {/* ── COL 1: PASOS + BADGES ──────────────────────────── */}

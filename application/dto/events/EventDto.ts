@@ -369,7 +369,11 @@ export const publishEventSchema = v.pipe(
   ),
 );
 
-
+/**
+ * Publicación de eventos multi-fecha: solo campos del encabezado.
+ * fecha / lugar / precio / registro viven en cada sesión, no en el evento padre.
+ * (v.object ignora claves desconocidas, así que un payload completo se recorta solo.)
+ */
 export const publishEventMultiDateSchema = v.object({
   id: v.optional(v.string()),
   slug: v.optional(v.string()),

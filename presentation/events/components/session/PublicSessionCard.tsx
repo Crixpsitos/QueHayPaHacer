@@ -4,13 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, MapPin, ChevronRight } from "lucide-react";
+import { CalendarDays, MapPin, Clock, ChevronRight } from "lucide-react";
 import type { SessionViewModel } from "../../view-models/SessionViewModel";
+import { cn } from "@/app/lib/utils/cn";
+import { isSessionInProgress } from "../../utils/eventTemporalUtils";
 
 interface PublicSessionCardProps {
   session: SessionViewModel;
   /** slug o id del evento padre, para construir el href. */
   parentRef: string;
+  /** True si la sesión ya finalizó — activa el estado visual vencido. */
+  isPast?: boolean;
 }
 
 function formatPrice(price: SessionViewModel["price"]): string {
@@ -22,91 +26,129 @@ function formatPrice(price: SessionViewModel["price"]): string {
   }).format(price.amount);
 }
 
-export function PublicSessionCard({ session, parentRef }: PublicSessionCardProps) {
+export function PublicSessionCard({ session, parentRef, isPast = false }: PublicSessionCardProps) {
   const start = new Date(session.startDate);
   const end = new Date(session.endDate);
+  const inProgress = !isPast && isSessionInProgress(session.startDate, session.endDate);
 
-  const dayLabel = format(start, "EEE", { locale: es }); // vie
-  const dayNum = format(start, "d", { locale: es }); // 7
-  const monthLabel = format(start, "MMM", { locale: es }); // dic
-  // Sesión que cruza la medianoche: sin el día del final, "11:00 — 10:00" parece
-  // que la sesión termina antes de empezar.
+  const dayLabel = format(start, "EEE", { locale: es });
+  const dayNum = format(start, "d", { locale: es });
+  const monthLabel = format(start, "MMM", { locale: es });
   const spansDays = start.toDateString() !== end.toDateString();
   const timeRange = spansDays
-    ? `${format(start, "HH:mm", { locale: es })} — ${format(end, "d MMM, HH:mm", { locale: es })}`
-    : `${format(start, "HH:mm", { locale: es })} — ${format(end, "HH:mm", { locale: es })}`;
+    ? `${format(start, "HH:mm", { locale: es })} \u2014 ${format(end, "d MMM, HH:mm", { locale: es })}`
+    : `${format(start, "HH:mm", { locale: es })} \u2014 ${format(end, "HH:mm", { locale: es })}`;
 
   const place = [session.location?.venue, session.location?.city?.name]
     .filter(Boolean)
     .join(", ");
 
+  const priceLabel = formatPrice(session.price);
+  const isFree = session.price.isFree;
+
   return (
     <Link
       href={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
-      className="group flex items-stretch gap-4 rounded-2xl border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
-      aria-label={`Ver sesión: ${session.title || "sesión"}`}
+      className={cn(
+        "group flex overflow-hidden rounded-2xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]",
+        isPast
+          ? "border-[#E4E4E7] bg-[#F4F4F5] opacity-75 hover:opacity-90"
+          : "border-[#F4F4F5] bg-white shadow-card hover:border-[#E4E4E7] hover:shadow-hover",
+      )}
+      aria-label={`Ver sesi\u00f3n: ${session.title || "sesi\u00f3n"}${isPast ? " (finalizada)" : inProgress ? " (en curso)" : ""}`}
     >
-      {/* Fecha en pastilla */}
+      {/* Date pill */}
       <div
-        className="flex w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-gray-900 py-2 text-white"
+        className={cn(
+          "flex w-16 shrink-0 flex-col items-center justify-center py-4 text-white",
+          isPast ? "bg-[#A1A1AA]" : "bg-[#E63946]",
+        )}
         suppressHydrationWarning
       >
-        <span className="text-[10px] font-medium uppercase leading-none opacity-70">
+        <span className="text-[10px] font-semibold uppercase leading-none tracking-wide opacity-80">
           {dayLabel}
         </span>
-        <span className="text-xl font-bold leading-tight">{dayNum}</span>
-        <span className="text-[10px] font-medium uppercase leading-none opacity-70">
+        <span className="mt-1 text-2xl font-black leading-none">{dayNum}</span>
+        <span className="mt-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide opacity-80">
           {monthLabel}
         </span>
       </div>
 
-      {/* Portada */}
-      <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+      {/* Cover */}
+      <div className={cn("relative w-28 shrink-0 overflow-hidden bg-[#F4F4F5]", isPast && "grayscale")}>
         {session.coverUrl ? (
           <Image
             src={session.coverUrl}
-            alt={session.title || "Sesión"}
+            alt={session.title || "Sesi\u00f3n"}
             fill
-            sizes="96px"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="112px"
+            className={cn(
+              "object-cover",
+              !isPast && "transition-transform duration-300 group-hover:scale-105",
+            )}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <CalendarDays className="h-6 w-6 text-gray-400" />
+            <CalendarDays className="h-7 w-7 text-[#D4D4D8]" />
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <p className="truncate font-semibold text-gray-900">
-          {session.title || "Sesión"}
-        </p>
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <p className={cn("line-clamp-1 text-sm font-semibold", isPast ? "text-[#71717A]" : "text-[#09090B]")}>
+            {session.title || "Sesi\u00f3n del evento"}
+          </p>
+          {isPast && (
+            <span className="shrink-0 rounded-full bg-[#E4E4E7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#71717A]">
+              Finalizada
+            </span>
+          )}
+          {inProgress && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
+              En curso
+            </span>
+          )}
+        </div>
         <div
-          className="flex items-center gap-1.5 text-xs text-gray-500"
+          className="flex items-center gap-1.5 text-xs text-[#A1A1AA]"
           suppressHydrationWarning
         >
-          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+          <Clock className="h-3 w-3 shrink-0" />
           <span className="truncate">{timeRange}</span>
         </div>
         {place && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-[#A1A1AA]">
+            <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{place}</span>
           </div>
         )}
       </div>
 
-      {/* Precio + chevron */}
-      <div className="flex shrink-0 flex-col items-end justify-center gap-1 pr-1">
-        <span
-          className={`text-xs font-semibold ${
-            session.price.isFree ? "text-emerald-600" : "text-gray-900"
-          }`}
-        >
-          {formatPrice(session.price)}
-        </span>
-        <ChevronRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5" />
+      {/* Price + arrow */}
+      <div className="flex shrink-0 flex-col items-end justify-center gap-2 px-4 py-3">
+        {!isPast && (
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-semibold",
+              isFree
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-[#F4F4F5] text-[#09090B]",
+            )}
+          >
+            {priceLabel}
+          </span>
+        )}
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 transition-all duration-200",
+            isPast
+              ? "text-[#D4D4D8]"
+              : "text-[#A1A1AA] group-hover:translate-x-0.5 group-hover:text-[#E63946]",
+          )}
+        />
       </div>
     </Link>
   );

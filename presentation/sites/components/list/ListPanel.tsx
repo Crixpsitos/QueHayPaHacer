@@ -68,7 +68,10 @@ export function ListPanel({
               )}
             >
               {label}
-              <span className={cn("ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", active ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")}>
+              <span className={cn(
+                "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                active ? "bg-[#FDF2F4] text-[#E63946]" : "bg-muted text-muted-foreground",
+              )}>
                 {counts[key] ?? 0}
               </span>
             </button>
@@ -77,11 +80,11 @@ export function ListPanel({
         </div>
         {/* Left fade — shows when scrolled right */}
         {showLeftFade && (
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent" aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-linear-to-r from-background to-transparent" aria-hidden />
         )}
         {/* Right fade — shows when more tabs hidden to the right */}
         {showRightFade && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-background to-transparent" aria-hidden />
         )}
       </div>
 
@@ -103,10 +106,13 @@ export function ListPanel({
         ) : noSites ? (
           <EmptyState onCreate={onCreate} />
         ) : totalFiltered === 0 ? (
-          <p className="flex flex-col items-center gap-2 py-14 text-center text-sm text-muted-foreground">
-            <MapPinned className="size-8 text-muted-foreground/60" aria-hidden />
-            {EMPTY[tab]}
-          </p>
+          <div className="flex flex-col items-center justify-center gap-3 py-14 text-center">
+            <MapPinned className="size-9 text-muted-foreground/30" aria-hidden />
+            <div>
+              <p className="text-sm font-medium text-foreground">{EMPTY[tab]}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Prueba seleccionando otro filtro.</p>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col gap-3">
             <AnimatePresence initial={false}>
@@ -125,8 +131,8 @@ export function ListPanel({
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-      <span className="flex size-16 items-center justify-center rounded-2xl bg-accent text-primary">
-        <MapPinned className="size-8" aria-hidden />
+      <span className="flex size-16 items-center justify-center rounded-2xl bg-[#FDF2F4]">
+        <MapPinned className="size-8 text-[#E63946]" aria-hidden />
       </span>
       <div className="max-w-xs">
         <h2 className="text-base font-semibold text-foreground">Aún no has agregado sitios</h2>

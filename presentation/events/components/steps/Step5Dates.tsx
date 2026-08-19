@@ -110,7 +110,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
                         )}
                       >
                         <CalendarIcon className="mr-2 size-4 text-[#A1A1AA]" />
-                        {current ? formatDate(field.value) : <span>dd / mm / aaaa</span>}
+                        {current ? formatDate(field.value!) : <span>dd / mm / aaaa</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -214,7 +214,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
                         )}
                       >
                         <CalendarIcon className="mr-2 size-4 text-[#A1A1AA]" />
-                        {current ? formatDate(field.value) : <span>dd / mm / aaaa</span>}
+                        {current ? formatDate(field.value!) : <span>dd / mm / aaaa</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">

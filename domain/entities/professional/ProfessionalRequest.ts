@@ -3,7 +3,8 @@ export type ProfessionalType = "organizer" | "business" | "government";
 export type ProfessionalRequestStatus = "pending" | "approved" | "rejected";
 
 export interface OrganizerDetails {
-  organizerType: "persona_natural" | "empresa";
+  organizerType: "natural_person" | "organization";
+  organizationName: string | null;
   nit: string | null;
   eventCategories: string[];
 }
@@ -28,12 +29,24 @@ export interface BusinessDetails {
   businessDescription: string | null;
   mapsLink: string | null;
   socialLink: string | null;
+  /** NIT del negocio */
+  nit: string | null;
+  /** Coordenadas extraídas automáticamente del mapsLink al enviar la solicitud. */
+  locationLat: number | null;
+  locationLng: number | null;
+  /** Teléfono comercial/público del negocio — independiente de User.phoneNumber. */
+  businessPhone?: string | null;
 }
 
 export interface GovernmentDetails {
   entityName: string;
   department: string;
   institutionalEmail: string;
+  /** Teléfono oficial de la entidad — independiente de User.phoneNumber. */
+  institutionalPhone: string;
+  mapsLink: string | null;
+  /** NIT de la entidad — solo para verificación/identificación. */
+  nit?: string | null;
 }
 
 export type ProfessionalRequestDetails = OrganizerDetails | BusinessDetails | GovernmentDetails;

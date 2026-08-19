@@ -81,40 +81,42 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
   };
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      <span className="text-xs font-medium text-muted-foreground mr-0.5">
+    <div className={cn("space-y-2", className)}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
         Compartir en:
-      </span>
+      </p>
 
-      {networks.map(({ label, href, Icon, colorClass }) => (
-        <a
-          key={label}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleNetworkClick}
-          aria-label={`Compartir en ${label}`}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors",
-            colorClass,
-          )}
+      <div className="flex flex-wrap gap-1.5">
+        {networks.map(({ label, href, Icon, colorClass }) => (
+          <a
+            key={label}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleNetworkClick}
+            aria-label={`Compartir en ${label}`}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors",
+              colorClass,
+            )}
+          >
+            <Icon className="size-3.5 shrink-0" />
+            {label}
+          </a>
+        ))}
+
+        <button
+          type="button"
+          onClick={handleCopy}
+          aria-label="Copiar enlace"
+          className="flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:bg-[#FAFAFC]"
         >
-          <Icon className="size-3.5 shrink-0" />
-          {label}
-        </a>
-      ))}
-
-      <button
-        type="button"
-        onClick={handleCopy}
-        aria-label="Copiar enlace"
-        className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-      >
-        {copied
-          ? <><Check className="size-3.5 text-green-500" />Copiado</>
-          : <><Link2 className="size-3.5" />Copiar enlace</>
-        }
-      </button>
+          {copied
+            ? <><Check className="size-3.5 text-emerald-500" />Copiado</>
+            : <><Link2 className="size-3.5" />Copiar enlace</>
+          }
+        </button>
+      </div>
     </div>
   );
 }

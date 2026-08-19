@@ -38,12 +38,22 @@ export async function registerEventAction(
   const { uid, name, email } = tokens.decodedToken;
 
   try {
-    const { eventRegistrationService, eventsService } = createServerContainer();
+    const { eventRegistrationService, eventsService, eventSessionService } = createServerContainer();
 
     // El organizador no puede inscribirse a su propio evento.
     const event = await eventsService.getEventById(eventId.trim());
     if (event?.author?.id && event.author.id === uid) {
       return { error: "No puedes inscribirte a tu propio evento." };
+    }
+
+    // Bloqueo temporal: eventos y sesiones ya finalizados no aceptan nuevos registros.
+    if (sessionId) {
+      const session = await eventSessionService.getById(eventId.trim(), sessionId);
+      if (session && new Date(session.endDate).getTime() < Date.now()) {
+        return { error: "Esta sesión ya finalizó y no acepta nuevos registros." };
+      }
+    } else if (event && new Date(event.endDate).getTime() < Date.now()) {
+      return { error: "Este evento ya finalizó y no acepta nuevos registros." };
     }
 
     const alreadyRegistered = await eventRegistrationService.isUserRegistered(

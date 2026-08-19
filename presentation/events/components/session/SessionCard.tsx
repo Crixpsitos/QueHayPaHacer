@@ -85,7 +85,7 @@ export function SessionCard({
     >
       {/* Thumbnail + número */}
       <div className="relative h-20 w-24 shrink-0">
-        <div className="h-full w-full overflow-hidden rounded-xl bg-[#F4F4F5]">
+        <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#F4F4F5]">
           {coverUrl ? (
             <Image
               src={coverUrl}

@@ -9,6 +9,7 @@ export class ContactFirebaseMapper {
       phoneNumber: dto.phoneNumber,
       message: dto.message,
       uid: dto.uid,
+      contactReason: dto.contactReason ?? null,
       createdAt: new Date(),
     };
   }

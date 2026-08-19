@@ -45,6 +45,7 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",
     "react-dropzone": "^15.0.0",
+    "react-easy-crop": "^6.2.3",
     "react-hook-form": "^7.72.1",
     "react-map-gl": "^8.1.1",
     "recharts": "^3.9.0",
