@@ -40,10 +40,6 @@ import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFire
 import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
 import { BadgeFirebaseMapper } from "../firebase/mappers/user/BadgeFirebaseMapper";
 import { BadgeService } from "@/application/services/user/BadgeService";
-import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
-import { ProfessionalRequestAdapter } from "../adapters/professional/ProfessionalRequestAdapter";
-import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professional/ProfessionalRequestFirebaseMapper";
-import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
 import { StudioFirebaseMapper } from "../firebase/mappers/studio/StudioFirebaseMapper";
@@ -145,17 +141,6 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
-  // professional requests
-  const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
-  const professionalRequestRepository = new ProfessionalRequestAdapter(
-    professionalRequestFirebaseRepository,
-    new ProfessionalRequestFirebaseMapper(),
-  );
-  const professionalRequestService = new ProfessionalRequestService(
-    professionalRequestRepository,
-    userRepository,
-  );
-
   // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
   const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
@@ -189,7 +174,6 @@ export const createServerContainer = () => {
     storageService,
     profileService,
     badgeService,
-    professionalRequestService,
     studioService,
     contactService,
   };

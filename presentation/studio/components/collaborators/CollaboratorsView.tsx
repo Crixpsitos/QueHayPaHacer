@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { notify } from "@/presentation/shared/lib/notify";
-import { PROFESSIONAL_TYPE_LABEL } from "@/presentation/profile/lib/professionalType";
 import type { UserSearchItem } from "@/domain/entities/studio/Studio";
 import { searchCollaboratorsAction } from "@/app/actions/studio/search-collaborators.action";
 import { inviteCollaboratorsAction } from "@/app/actions/studio/invite-collaborators.action";
@@ -79,7 +78,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
         email: u.email,
         displayName: u.displayName,
         photoURL: u.photoURL,
-        professionalType: u.professionalType,
+        creatorVerified: u.creatorVerified,
       })),
     );
     setSending(false);
@@ -118,7 +117,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
                   kind: "user",
                   displayName: inv.fromDisplayName,
                   photoURL: inv.fromPhotoURL,
-                  professionalType: inv.fromProfessionalType,
+                  creatorVerified: inv.fromCreatorVerified,
                 },
                 ...prev,
               ],
@@ -374,11 +373,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{c.displayName}</p>
                     <p className="text-xs text-slate-400">
-                      {c.kind === "external"
-                        ? "Externo"
-                        : c.professionalType
-                          ? PROFESSIONAL_TYPE_LABEL[c.professionalType]
-                          : "Profesional"}
+                      {c.kind === "external" ? "Externo" : "Creador"}
                     </p>
                   </div>
                   <button

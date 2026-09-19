@@ -14,7 +14,7 @@ import { publishEventAction } from "@/app/actions/events/publish-event.action";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { EmailVerificationRequiredDialog } from "./EmailVerificationRequiredDialog";
-import { MultiDateProfessionalRequiredDialog } from "./MultiDateProfessionalRequiredDialog";
+import { MultiDatePremiumRequiredDialog } from "./MultiDatePremiumRequiredDialog";
 import { EventFormSkeleton } from "./EventFormSkeleton";
 import { ConvertToStandardDialog } from "./ConvertToStandardDialog";
 import { ConvertToMultiDateDialog } from "./ConvertToMultiDateDialog";
@@ -35,14 +35,14 @@ export const EventClientWrapper = ({
   const searchParams = useSearchParams();
   const urlType = searchParams.get("type") as "standard" | "multi-date" | null;
 
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
 
   const existingId = (initialData as EventViewModel)?.id;
   const persistedEventType = (initialData as EventViewModel)?.eventType ?? "standard";
 
   const resolvedEditorType: "standard" | "multi-date" = mode === "edit"
     ? persistedEventType
-    : (urlType === "multi-date" && isProfessional ? "multi-date" : "standard");
+    : (urlType === "multi-date" && isPremium ? "multi-date" : "standard");
 
   // ── Estado de migración (solo EDIT) ───────────────────────────────────────
   const [isMigrating, setIsMigrating] = useState(false);
@@ -76,7 +76,7 @@ export const EventClientWrapper = ({
   const [showConvertToMultiDialog, setShowConvertToMultiDialog] = useState(false);
   const [showConvertToStandardDialog, setShowConvertToStandardDialog] = useState(false);
   // Almacena el formId del draft cuando el toggle se activa en CREATE con ID existente.
-  const createDraftIdRef = useRef<string | undefined>(undefined);
+  const [createDraftId, setCreateDraftId] = useState<string | undefined>(undefined);
   // Snapshot del formulario capturado en el momento del toggle, para pasarlo a migrateEventTypeAction.
   const formSnapshotRef = useRef<FormEventDto | undefined>(undefined);
 
@@ -85,7 +85,7 @@ export const EventClientWrapper = ({
     targetType: "standard" | "multi-date",
     selectedSessionId?: string | null,
   ) => {
-    const effectiveId = createDraftIdRef.current ?? existingId;
+    const effectiveId = createDraftId ?? existingId;
     if (isMigrating || migrationStartedRef.current || !effectiveId) return;
 
     migrationStartedRef.current = true;
@@ -116,7 +116,7 @@ export const EventClientWrapper = ({
       setIsMigrating(false);
       notify.error("Error inesperado durante la migración. Tu evento original sigue intacto.");
     }
-  }, [isMigrating, existingId, initialData, router]);
+  }, [createDraftId, isMigrating, existingId, initialData, router]);
 
   // ── Toggle ────────────────────────────────────────────────────────────────
   const handleToggleEventType = useCallback((formId?: string, formSnapshot?: FormEventDto) => {
@@ -136,7 +136,7 @@ export const EventClientWrapper = ({
         return;
       }
       // Con ID de draft: mostrar diálogo de confirmación antes de migrar.
-      createDraftIdRef.current = formId;
+      setCreateDraftId(formId);
       if (resolvedEditorType === "standard") {
         setShowConvertToMultiDialog(true);
       } else {
@@ -146,7 +146,7 @@ export const EventClientWrapper = ({
     }
 
     // EDIT: diálogo + migración en Firestore.
-    createDraftIdRef.current = undefined;
+    setCreateDraftId(undefined);
     if (persistedEventType === "standard") {
       setShowConvertToMultiDialog(true);
     } else {
@@ -211,8 +211,13 @@ export const EventClientWrapper = ({
         const result = await publishEventAction(cleanDraft);
 
         if (result.success) {
-          notify.success("Evento publicado exitosamente.");
-          startTransition(() => router.push(`/eventos/${result.slug}`));
+          if (result.status === "pending") {
+            notify.success("Evento enviado a validación.");
+            startTransition(() => router.push("/mis-eventos"));
+          } else {
+            notify.success("Evento publicado. La auditoría está pendiente.");
+            startTransition(() => router.push(`/eventos/${result.slug}`));
+          }
         } else {
           notify.error(result.error ?? "Error al publicar evento.");
           return;
@@ -235,14 +240,17 @@ export const EventClientWrapper = ({
     if (isHydrating) {
       return <EventFormSkeleton />;
     }
-    if (!user?.emailVerified) {
+    if (!user) {
+      return <EventFormSkeleton />;
+    }
+    if (!user.emailVerified) {
       return <EmailVerificationRequiredDialog />;
     }
-    if (urlType === "multi-date" && !isProfessional) {
-      return <MultiDateProfessionalRequiredDialog />;
+    if (urlType === "multi-date" && !isPremium) {
+      return <MultiDatePremiumRequiredDialog />;
     }
-    if (!urlType && isProfessional) {
-      return <EventTypeSelector isProfessional={isProfessional} />;
+    if (!urlType && isPremium) {
+      return <EventTypeSelector isPremium={isPremium} />;
     }
   }
 
@@ -263,9 +271,9 @@ export const EventClientWrapper = ({
           onCancel={handleConvertToMultiCancel}
         />
       )}
-      {showConvertToStandardDialog && (existingId ?? createDraftIdRef.current) && (
+      {showConvertToStandardDialog && (existingId ?? createDraftId) && (
         <ConvertToStandardDialog
-          eventId={(existingId ?? createDraftIdRef.current)!}
+          eventId={(existingId ?? createDraftId)!}
           onConfirm={handleConvertToStandardConfirm}
           onCancel={handleConvertToStandardCancel}
         />

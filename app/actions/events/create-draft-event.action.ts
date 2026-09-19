@@ -10,7 +10,6 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
@@ -33,10 +32,13 @@ export async function createDraftEventAction(
     };
   }
 
+  const { eventsService, userService } = createServerContainer();
+  const author = await userService.getUserById(tokens.decodedToken.uid);
+
   // Multi-fecha es exclusivo de cuentas profesionales.
   if (
     event.eventType === "multi-date" &&
-    filterStandardClaims(tokens.decodedToken).role !== "professional"
+    author?.plan !== "premium"
   ) {
     return {
       success: false,
@@ -81,7 +83,6 @@ export async function createDraftEventAction(
   );
 
   try {
-    const { eventsService } = createServerContainer();
     const event = await eventsService.createDraftEvent(
       parsedData as unknown as Partial<Events>,
     );

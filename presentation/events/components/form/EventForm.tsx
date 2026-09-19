@@ -175,7 +175,7 @@ export const EventForm = ({
   const { user } = useAuth();
   // Step dinámico "Colaboradores": solo para cuentas profesionales, insertado antes
   // del último paso (Revisión / Promoción). Todo se deriva de `stepDefs`.
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
 
   const stepDefs: StepDef[] = useMemo(() => {
     const collab: StepDef = { key: "collab", label: "Colaboradores", icon: "Users", schema: step8Schema };
@@ -187,7 +187,7 @@ export const EventForm = ({
         { key: "sessions", label: "Sesiones", icon: "Calendar", schema: step8Schema },
         { key: "promo", label: "Promoción", icon: "Star", schema: step8Schema },
       ];
-      return isProfessional ? [...base.slice(0, 4), collab, base[4]] : base;
+      return isPremium ? [...base.slice(0, 4), collab, base[4]] : base;
     }
     const base: StepDef[] = [
       { key: "basic", label: "Información básica", icon: "FileText", schema: step1Schema },
@@ -199,8 +199,8 @@ export const EventForm = ({
       { key: "pricing", label: "Precios", icon: "DollarSign", schema: step7Schema },
       { key: "review", label: "Revisión", icon: "CheckCircle", schema: step8Schema },
     ];
-    return isProfessional ? [...base.slice(0, 7), collab, base[7]] : base;
-  }, [isMultiDate, isProfessional]);
+    return isPremium ? [...base.slice(0, 7), collab, base[7]] : base;
+  }, [isMultiDate, isPremium]);
 
   const stepSchema = useMemo(() => stepDefs.map((s) => s.schema), [stepDefs]);
   const ACTIVE_STEPS = useMemo(

@@ -6,6 +6,7 @@ import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { HomeSitesContainer } from "@/presentation/sites/components/home/HomeSitesContainer";
 import { Separator } from "@/app/components/ui/separator";
 import type { Events } from "@/domain/entities/events/Events";
+import { RandomSitesContainer } from "@/presentation/sites/components/home/RandomSitesContainer";
 
 const fetchWeekendEventIds = async () => {
   "use cache";
@@ -75,6 +76,8 @@ export const HomeEventsRecomendationContainer = async () => {
         <Separator className="my-6" />
         <HomeSitesContainer />
       </ContentSection>
+
+      <RandomSitesContainer />
 
       <ContentSection
         title="Eventos para esta semana"

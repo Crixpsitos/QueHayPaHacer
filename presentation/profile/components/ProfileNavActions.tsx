@@ -14,7 +14,7 @@ export function ProfileNavActions() {
   const { user, setUser } = useAuth();
   const router = useRouter();
 
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
 
   const handleLogout = async () => {
     setUser(null);
@@ -24,7 +24,7 @@ export function ProfileNavActions() {
 
   return (
     <>
-      {isProfessional && (
+      {isPremium && (
         <Link
           href="/studio"
           aria-label="Ir al Estudio del Organizador"

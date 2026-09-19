@@ -9,6 +9,9 @@ export interface UserEvent {
   title: string;
   description: string;
   status: string;
+  moderationStatus: "pending" | "approved" | "rejected" | "pending_audit";
+  moderationMode: "pre_publication" | "post_publication";
+  rejectionReason?: string | null;
   eventType?: "standard" | "multi-date";
   registrationType?: "none" | "internal" | "external" | "form";
   createdAt: Date;

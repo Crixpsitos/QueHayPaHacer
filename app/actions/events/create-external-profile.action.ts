@@ -49,7 +49,7 @@ export async function createExternalProfileAction(
     const { userService, studioService } = createServerContainer();
 
     const me = await userService.getUserById(uid);
-    if (me?.accountType !== "professional") {
+    if (me?.plan !== "premium") {
       return { success: false, error: "Solo cuentas profesionales pueden agregar colaboradores." };
     }
 

@@ -28,6 +28,18 @@ export async function updateProfileVisibilityAction(
     }
 
     const { userService } = createServerContainer();
+    const user = await userService.getUserById(uid);
+
+    if (!user) {
+      return { success: false, error: "No encontramos tu perfil." };
+    }
+
+    if (isPublic && user.participation === "consumer") {
+      return {
+        success: false,
+        error: "Los perfiles consumidores siempre son privados.",
+      };
+    }
 
     // Actualizar la visibilidad del perfil en la BD
     await userService.updateUser(uid, {

@@ -77,11 +77,11 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   // El acceso al Estudio es solo para dueños con cuenta profesional; los demás
   // dueños ven un modal sencillo con sus inscritos.
-  let isProfessionalOwner = false;
+  let isPremiumOwner = false;
   if (isOwner && userId) {
     const { userService } = createServerContainer();
     const owner = await userService.getUserById(userId);
-    isProfessionalOwner = owner?.accountType === "professional";
+    isPremiumOwner = owner?.plan === "premium";
   }
 
   // Sitio vinculado (si el evento tiene location.siteId)
@@ -110,7 +110,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
         initialLiked={initialLiked}
         initialRegistered={initialRegistered}
         isOwner={isOwner}
-        isProfessionalOwner={isProfessionalOwner}
+        isPremiumOwner={isPremiumOwner}
         linkedSite={linkedSite}
       />
     </>

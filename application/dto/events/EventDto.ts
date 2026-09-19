@@ -163,7 +163,7 @@ export const step4Schema = v.object({
 const step5Object = v.object({
   startDate: v.string(),
   endDate: v.string(),
-  status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
+  status: v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
 });
 
 export const step5Schema = v.pipe(
@@ -383,7 +383,7 @@ export const publishEventMultiDateSchema = v.object({
   ...step3Schema.entries,
   ...step8Schema.entries,
   ...collaboratorEntries,
-  status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
+  status: v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
   createdAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
@@ -437,7 +437,7 @@ export const FormEventSchema = v.object({
   startDate: v.optional(v.string()),
   endDate: v.optional(v.string()),
   status: v.optional(
-    v.picklist(["draft", "published", "cancelled", "ended"] as const),
+    v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
   ),
   registrationType: v.optional(
     v.picklist(["none", "internal", "external", "form"] as const),

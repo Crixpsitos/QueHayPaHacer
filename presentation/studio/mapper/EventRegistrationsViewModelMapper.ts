@@ -27,11 +27,10 @@ export function toEventRegistrationsViewModel(
       userId: r.userId,
       // Nombre completo; si no hay, cae al displayName y por último a un genérico.
       name: fullName || r.displayName || "Sin nombre",
-      // El "@handle" es exclusivo de cuentas profesionales (y solo si además hay
+      // El "@handle" es exclusivo de creadores (y solo si además hay
       // nombre completo; si no, el displayName ya se usó como nombre principal).
-      handle: r.isProfessional && fullName && r.displayName ? r.displayName : undefined,
-      // Chulito de verificado: solo para cuentas profesionales.
-      verified: r.isProfessional,
+      handle: r.isCreator && fullName && r.displayName ? r.displayName : undefined,
+      isCreator: r.isCreator,
       photoURL: r.photoURL,
       registeredAt: r.registeredAt.toISOString(),
       attendanceConfirmed: r.attendanceConfirmed,

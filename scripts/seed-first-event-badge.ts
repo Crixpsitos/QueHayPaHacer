@@ -38,8 +38,8 @@ async function main() {
   const userId = userDoc.id;
   const userData = userDoc.data();
   console.log(`\n✅  Usuario encontrado: ${userData.displayName} (uid: ${userId})`);
-  console.log(`   accountType: ${userData.accountType ?? "?"}`);
-  console.log(`   professionalStatus: ${userData.professionalStatus ?? "?"}`);
+  console.log(`   participation: ${userData.participation ?? "?"}`);
+  console.log(`   creatorVerified: ${userData.creatorVerified ?? false}`);
 
   // 2. Verificar si ya tiene la insignia
   const existingBadge = await db

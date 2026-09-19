@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const events = await getCachedUserEvents(uid);
 
-    return NextResponse.json(events);
+    return NextResponse.json(events.filter((event) => event.status === "published"));
   } catch (error) {
     console.error("Error fetching user events:", error);
     return NextResponse.json(

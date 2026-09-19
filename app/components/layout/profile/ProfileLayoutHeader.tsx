@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
 import {
   ChevronDown,
+  CalendarDays,
   Home,
   LayoutDashboard,
   LogOut,
@@ -68,17 +69,14 @@ export function ProfileLayoutHeader() {
   const { onOpenSettings } = useProfileConfigStore();
   const router = useRouter();
 
-  const isProfessional = user?.customClaims?.role === "professional";
-  const isOrganizer = user?.profile?.accountType?.toLowerCase() === "organizer";
+  const isPremium = user?.profile?.plan === "premium";
+  const isCreator = user?.profile?.participation === "creator";
 
-  const displayName = isOrganizer
+  const displayName = isCreator
     ? `@${user?.profile?.username ?? user?.displayName ?? "Tu cuenta"}`
     : (user?.displayName ?? user?.profile?.username ?? "Tu cuenta");
 
-  const accountTypeLabel =
-    user?.customClaims?.role === "professional"
-      ? (user.profile?.accountType?.toLowerCase().replace(/_/g, " ") ?? "Cuenta profesional")
-      : "Cuenta personal";
+  const participationLabel = isCreator ? "Creador" : "Consumidor";
 
   const handleOpenSettings = () => {
     onOpenSettings(true);
@@ -114,20 +112,20 @@ export function ProfileLayoutHeader() {
           {!isHydrating && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm" aria-label="Crear evento o sitio">
+                <Button variant="default" size="sm" aria-label={isCreator ? "Crear evento o sitio" : "Aportar evento o sitio"}>
                   <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Crear</span>
+                  <span className="hidden sm:inline">{isCreator ? "Crear" : "Aportar"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={8}>
                 <DropdownMenuItem asChild>
                   <Link href="/eventos/create" className={cn("flex items-center gap-2")}>
-                    Crear evento
+                    {isCreator ? "Crear evento" : "Aportar evento"}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/sites/create" className={cn("flex items-center gap-2")}>
-                    Crear sitio
+                    {isCreator ? "Crear sitio" : "Proponer sitio"}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -174,7 +172,7 @@ export function ProfileLayoutHeader() {
                       {displayName}
                     </span>
                     <span className="truncate text-xs capitalize text-muted-foreground">
-                      {accountTypeLabel}
+                      {participationLabel}
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -188,13 +186,20 @@ export function ProfileLayoutHeader() {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem asChild>
+                  <Link href="/mis-eventos" className={cn("flex items-center gap-2")}>
+                    <CalendarDays className="size-4" aria-hidden />
+                    Mis eventos
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
                   <Link href="/sites" className={cn("flex items-center gap-2")}>
                     <MapPin className="size-4" aria-hidden />
                     Mis sitios
                   </Link>
                 </DropdownMenuItem>
 
-                {isProfessional && (
+                {isPremium && (
                   <DropdownMenuItem asChild>
                     <Link href="/studio" className={cn("flex items-center gap-2")}>
                       <LayoutDashboard className="size-4" aria-hidden />

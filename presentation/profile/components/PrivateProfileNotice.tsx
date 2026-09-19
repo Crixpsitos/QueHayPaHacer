@@ -8,7 +8,7 @@ interface PrivateProfileNoticeProps {
 
 export function PrivateProfileNotice({ profile }: PrivateProfileNoticeProps) {
   const fullName = `${profile.firstName} ${profile.lastName}`.trim() || profile.username;
-  const displayHandle = profile.isProfessional ? `@${profile.username}` : fullName;
+  const displayHandle = profile.participation === "creator" ? `@${profile.username}` : fullName;
 
   return (
     <MotionFadeIn delay={0.1}>

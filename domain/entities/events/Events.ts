@@ -6,6 +6,10 @@ import { Promotion } from "./value-objects/Promotion";
 import { CategoryInfo } from "./value-objects/CategoryInfo";
 import { MediaItem } from "./value-objects/Media";
 
+export type EventStatus = "draft" | "pending" | "published" | "rejected" | "cancelled" | "ended";
+export type EventModerationStatus = "pending" | "approved" | "rejected" | "pending_audit";
+export type EventModerationMode = "pre_publication" | "post_publication";
+
 export interface Events extends Dates {
   id: string;
   slug: string;
@@ -37,7 +41,13 @@ export interface Events extends Dates {
     photoURL: string;
   };
   location: Location;
-  status: "draft" | "published" | "cancelled" | "ended";
+  status: EventStatus;
+  moderationStatus: EventModerationStatus;
+  moderationMode: EventModerationMode;
+  rejectionReason?: string | null;
+  submittedAt?: Date;
+  reviewedAt?: Date | null;
+  reviewedBy?: string | null;
   registrationType: "none" | "internal" | "external" | "form";
   registrationEventForm?: {
     //eslint-disable-next-line @typescript-eslint/no-explicit-any

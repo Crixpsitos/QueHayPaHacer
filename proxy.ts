@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { authMiddleware } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
-const PRIVATE_PATHS = ["/profile", "/sites"];
+const PRIVATE_PATHS = ["/mis-eventos", "/sites", "/eventos/create"];
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
 
 export async function proxy(request: NextRequest) {
@@ -39,12 +39,15 @@ export async function proxy(request: NextRequest) {
       });
     },
     handleInvalidToken: async () => {
-      const isPrivate = PRIVATE_PATHS.some((p) =>
-        request.nextUrl.pathname.startsWith(p),
+      const pathname = request.nextUrl.pathname;
+      const isPrivate = pathname === "/profile" || PRIVATE_PATHS.some((path) =>
+        pathname === path || pathname.startsWith(`${path}/`),
       );
       if (!isPrivate) return NextResponse.next();
 
-      const redirectTo = encodeURIComponent(request.nextUrl.pathname);
+      const redirectTo = encodeURIComponent(
+        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+      );
       return NextResponse.redirect(
         new URL(`/login?redirect_to=${redirectTo}`, request.url),
       );

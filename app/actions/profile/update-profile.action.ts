@@ -2,8 +2,8 @@
 
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
+import { generateUsername } from "@/app/lib/utils/generateUsername";
 import { revalidateTag } from "next/cache";
-import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
 
 interface UpdateProfileInput {
   uid: string;
@@ -13,13 +13,8 @@ interface UpdateProfileInput {
   bio?: string;
   phoneNumber?: string;
   website?: string;
-  mapsLink?: string;
-  socialLink?: string;
   socialLinks?: Array<{ platform: string; url: string }>;
   isUsernameCustomized?: boolean;
-  professionalDescription?: string;
-  brandName?: string;
-  professionalDetails?: Record<string, unknown>;
 }
 
 interface UpdateProfileResult {
@@ -103,10 +98,17 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       };
     }
 
-    const username = input.username?.trim();
+    const username = generateUsername(input.username?.trim() ?? "");
     const firstName = input.firstName?.trim();
     const lastName = input.lastName?.trim();
     const bio = input.bio?.trim() ?? "";
+
+    if (!username || username.length < 3) {
+      return {
+        success: false,
+        error: "El username debe tener al menos 3 caracteres.",
+      };
+    }
 
     // Obtener usuario actual de Firebase Auth para comparar otros campos
     const currentUserAuth = await getFirebaseAdminAuth().getUser(input.uid);
@@ -129,10 +131,6 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
     }
     // Si son iguales, no hacer nada
 
-    if (Object.keys(authPayload).length > 0) {
-      await getFirebaseAdminAuth().updateUser(input.uid, authPayload);
-    }
-
     const dbPayload: {
       displayName?: string;
       firstName?: string;
@@ -140,13 +138,8 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       bio?: string;
       phoneNumber?: string;
       website?: string;
-      mapsLink?: string;
-      socialLink?: string;
       socialLinks?: Array<{ platform: string; url: string }>;
       isUsernameCustomized?: boolean;
-      professionalDescription?: string;
-      brandName?: string;
-      professionalDetails?: ProfessionalRequestDetails;
     } = {};
 
     // Solo incluir campos que realmente cambiaron
@@ -169,23 +162,24 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       dbPayload.phoneNumber = "";
     }
 
-    // Campos de presencia pública y cuenta profesional
     if (input.website !== undefined) dbPayload.website = input.website;
-    if (input.mapsLink !== undefined) dbPayload.mapsLink = input.mapsLink;
-    if (input.socialLink !== undefined) dbPayload.socialLink = input.socialLink;
     if (input.socialLinks !== undefined) dbPayload.socialLinks = input.socialLinks;
     if (input.isUsernameCustomized !== undefined) dbPayload.isUsernameCustomized = input.isUsernameCustomized;
-    if (input.professionalDescription !== undefined) dbPayload.professionalDescription = input.professionalDescription;
-    if (input.brandName !== undefined) dbPayload.brandName = input.brandName;
-    if (input.professionalDetails !== undefined) dbPayload.professionalDetails = input.professionalDetails as unknown as ProfessionalRequestDetails;
 
     await userService.updateUser(input.uid, dbPayload);
+
+    if (Object.keys(authPayload).length > 0) {
+      await getFirebaseAdminAuth().updateUser(input.uid, authPayload);
+    }
 
     revalidateTag(`user-profile-${input.uid}`, "max");
 
     return { success: true };
   } catch (error) {
     console.error("Error updating profile:", error);
+    if (error instanceof Error && error.message === "Username already in use") {
+      return { success: false, error: "Ese username ya está en uso. Elige otro." };
+    }
     return {
       success: false,
       error: resolveFirebaseErrorMessage(error),

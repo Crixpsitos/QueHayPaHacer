@@ -22,7 +22,7 @@ function ProfileTabsWrapperInner() {
 
   if (!user?.uid) return null;
 
-  const isProfessional = user.customClaims?.role === "professional";
+  const isPremium = user.profile?.plan === "premium";
 
   return (
     <ProfileTabs
@@ -32,7 +32,7 @@ function ProfileTabsWrapperInner() {
       fetchUserLikes={fetchLikes}
       fetchUserBadges={fetchBadges}
       canEdit
-      showStudioLink={isProfessional}
+      showStudioLink={isPremium}
     />
   );
 }

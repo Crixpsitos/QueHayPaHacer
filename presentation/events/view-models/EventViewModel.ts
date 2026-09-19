@@ -3,6 +3,7 @@ import type { Location } from "@/domain/entities/events/value-objects/Location";
 import { MediaItem } from "@/domain/entities/events/value-objects/Media";
 import type { Price } from "@/domain/entities/events/value-objects/Price";
 import type { ImageVariants } from "@/domain/shared/ImageVariants";
+import type { EventModerationMode, EventModerationStatus, EventStatus } from "@/domain/entities/events/Events";
 
 /**
  * ViewModel de Events para la capa de presentación.
@@ -39,7 +40,13 @@ export interface EventViewModel {
     photoURL: string;
   };
   location: Location;
-  status: "draft" | "published" | "cancelled" | "ended";
+  status: EventStatus;
+  moderationStatus: EventModerationStatus;
+  moderationMode: EventModerationMode;
+  rejectionReason?: string | null;
+  submittedAt?: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
   registrationType: "none" | "internal" | "external" | "form";
   registrationEventForm?: {
     fields: {

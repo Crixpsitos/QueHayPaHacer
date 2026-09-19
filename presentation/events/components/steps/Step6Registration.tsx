@@ -4,7 +4,6 @@ import { FormEventDto } from "@/application/dto/events/EventDto";
 import {
   Field,
   FieldGroup,
-  FieldDescription,
   FieldLabel,
   FieldError,
 } from "@/app/components/ui/field";
@@ -34,7 +33,7 @@ const RegistrationFormBuilder = dynamic(
 
 export const Step6Registration = ({ form }: Step6RegistrationProps) => {
   const { user } = useAuth();
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
   const registrationType = form.watch("registrationType");
   const capacityValue = form.watch("capacity");
   const isLimited = !!(capacityValue && capacityValue > 0);
@@ -67,14 +66,20 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
               <RadioGroup
                 onValueChange={(val) => {
                   field.onChange(val);
-                  if (val !== "external") form.setValue("externalUrl", "");
+                  if (val !== "external") {
+                    form.setValue("externalUrl", "");
+                    if (!form.getValues("price.isFree")) {
+                      form.setValue("price.isFree", true, { shouldValidate: true });
+                      form.setValue("price.amount", 0, { shouldValidate: true });
+                    }
+                  }
                 }}
                 value={field.value}
                 className="flex flex-col gap-2"
               >
                 {REGISTRATION_OPTIONS.map(({ value, Icon, label, desc }) => {
                   const isFormOption = value === "form";
-                  const isDisabled  = isFormOption && !isProfessional;
+                  const isDisabled  = isFormOption && !isPremium;
                   const isSelected  = field.value === value;
 
                   const card = (

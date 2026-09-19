@@ -1,9 +1,6 @@
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
-import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
+export type UserParticipation = "consumer" | "creator";
 
-export type UserAccountType = "personal" | "professional";
-
-export type UserProfessionalStatus = "none" | "pending" | "approved" | "rejected";
+export type UserPlan = "basic" | "premium";
 
 export type SocialPlatform =
   | "instagram"
@@ -31,15 +28,10 @@ export interface User {
     photoURL?: string;
     imagePath?: string;
     acceptedTerms: boolean;
-    accountType: UserAccountType;
-    professionalType: ProfessionalType | null;
-    professionalStatus: UserProfessionalStatus;
-    professionalDetails?: ProfessionalRequestDetails;
-    professionalDescription?: string;
-    brandName?: string;
+    participation: UserParticipation;
+    creatorVerified: boolean;
+    plan: UserPlan;
     website?: string;
-    mapsLink?: string;
-    socialLink?: string;
     socialLinks?: SocialLinkEntry[];
     isUsernameCustomized?: boolean;
     isPublic: boolean;

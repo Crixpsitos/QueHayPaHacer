@@ -7,7 +7,6 @@ import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
 import { revalidateTag } from "next/cache"
-import { updateProfile } from "firebase/auth"
 
 interface RegisterActionResult {
     error?: string;
@@ -35,11 +34,6 @@ export async function registerAction(
         const idToken = await credentials.user.getIdToken()
         const fullPhoneNumber = `+57${phoneNumber}`
 
-        const displayName = `${name} ${lastName}`
-        await updateProfile(credentials.user, {
-            displayName,
-        })
-
         try {
             await getFirebaseAdminAuth().updateUser(uid, {
                 phoneNumber: fullPhoneNumber,
@@ -49,17 +43,21 @@ export async function registerAction(
         }
 
         try {
-            const displayName = `${name} ${lastName}`
-            await userService.createUser({
+            const createdUser = await userService.createUser({
                 uid,
                 email,
                 emailVerified: credentials.user.emailVerified,
-                displayName,
+                displayName: `${name} ${lastName}`,
                 firstName: name,
                 lastName,
                 phoneNumber: fullPhoneNumber,
                 acceptedTerms: true,
-                isPublic: true,
+                creatorVerified: false,
+                isPublic: false,
+            })
+
+            await getFirebaseAdminAuth().updateUser(uid, {
+                displayName: createdUser.displayName,
             })
             
             // Asignar insignia "Usuario Nuevo" al registro
@@ -76,6 +74,11 @@ export async function registerAction(
             }
         } catch (dbError) {
             // Si falla la creacion en DB, eliminar el usuario de Firebase Auth para no dejar datos inconsistentes
+            try {
+                await userService.deleteUser(uid)
+            } catch {
+                // El perfil puede no haberse creado todavía.
+            }
             await getFirebaseAdminAuth().deleteUser(uid)
             throw dbError
         }

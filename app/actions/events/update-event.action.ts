@@ -13,6 +13,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { safeParse } from "valibot";
+import { moderationFieldsForSubmission } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
   success?: boolean;
@@ -30,6 +31,27 @@ export async function updateEventAction(
       success: false,
       error: "Debes iniciar sesion para crear un evento.",
     };
+  }
+
+  if (!tokens.decodedToken.email_verified) {
+    return {
+      success: false,
+      error: "Debes verificar tu correo electrónico antes de actualizar un evento.",
+    };
+  }
+
+  const { eventsService, userService } = createServerContainer();
+  const [existingEvent, author] = await Promise.all([
+    eventsService.getEventById(eventId),
+    userService.getUserById(userId),
+  ]);
+
+  if (!existingEvent || existingEvent.author.id !== userId) {
+    return { success: false, error: "No tienes permiso para actualizar este evento." };
+  }
+
+  if (!author) {
+    return { success: false, error: "No encontramos tu perfil de usuario." };
   }
 
   const resultParse = safeParse(FormEventSchema, {
@@ -66,17 +88,34 @@ export async function updateEventAction(
     resultParse.output as unknown as EventViewModel,
   );
 
-  try {
-    const { eventsService } = createServerContainer();
-    await eventsService.updateEvent(parsedData);
+  const updatedEvent = {
+    ...existingEvent,
+    ...parsedData,
+    id: eventId,
+    author: existingEvent.author,
+  };
 
-    if (parsedData.status === "published") {
+  if (existingEvent.status === "published" || parsedData.status === "published") {
+    Object.assign(updatedEvent, moderationFieldsForSubmission(author));
+  } else {
+    updatedEvent.moderationStatus = existingEvent.moderationStatus;
+    updatedEvent.moderationMode = existingEvent.moderationMode;
+    updatedEvent.rejectionReason = existingEvent.rejectionReason;
+    updatedEvent.submittedAt = existingEvent.submittedAt;
+    updatedEvent.reviewedAt = existingEvent.reviewedAt;
+    updatedEvent.reviewedBy = existingEvent.reviewedBy;
+  }
+
+  try {
+    await eventsService.updateEvent(updatedEvent);
+
+    if (existingEvent.status === "published" || updatedEvent.status === "published") {
       updateTag("event-list");
 
       revalidatePath("/", "page");
       revalidatePath("/eventos", "page");
-      revalidatePath(`/eventos/${eventId}`, "page");
     }
+    revalidatePath(`/eventos/${eventId}`, "page");
     updateTag(`event-${eventId}`);
     updateTag(`user-events-${userId}`);
     revalidatePath("/profile/events", "page");

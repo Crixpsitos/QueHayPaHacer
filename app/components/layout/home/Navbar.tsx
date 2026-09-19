@@ -50,6 +50,8 @@ export const Navbar = () => {
     { name: "Contactanos", href: "/contactanos" },
   ];
 
+  const isCreator = user?.profile?.participation === "creator";
+
   const handleLoginSuccess = async () => {
     try {
       await refreshUser();
@@ -79,9 +81,9 @@ export const Navbar = () => {
             <X className="size-4" />
           </button>
 
-          <h3 className="mb-1 text-xl font-semibold">Inicia sesion para dar like</h3>
+          <h3 className="mb-1 text-xl font-semibold">Inicia sesión para aportar</h3>
           <p className="mb-5 text-sm text-muted-foreground">
-            Necesitamos autenticar tu cuenta para guardar tu interaccion.
+            Accede a tu cuenta para publicar un evento o proponer un sitio.
           </p>
 
           <LoginForm
@@ -143,10 +145,10 @@ export const Navbar = () => {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/eventos/create">Crear evento</Link>
+                  <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/sites/create">Crear nuevo sitio</Link>
+                  <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -161,22 +163,22 @@ export const Navbar = () => {
                     className="hidden! md:inline-flex!"
                   >
                     <Plus className="size-4" aria-hidden="true" />
-                    Crear
+                    {isCreator ? "Crear" : "Aportar"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={8}>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/eventos/create">Crear evento</Link>
+                      <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                     ) : (
-                      <button type="button" onClick={openLoginModal}>Crear evento</button>
+                      <button type="button" onClick={openLoginModal}>{isCreator ? "Crear evento" : "Aportar evento"}</button>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/sites/create">Crear nuevo sitio</Link>
+                      <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                     ) : (
-                      <button type="button" onClick={openLoginModal}>Crear nuevo sitio</button>
+                      <button type="button" onClick={openLoginModal}>{isCreator ? "Crear sitio" : "Proponer sitio"}</button>
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>

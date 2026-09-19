@@ -24,7 +24,7 @@ export default async function StudioCollaboratorsPage() {
         fromUid: i.fromUid,
         fromDisplayName: i.fromDisplayName,
         fromPhotoURL: i.fromPhotoURL,
-        fromProfessionalType: i.fromProfessionalType,
+        fromCreatorVerified: i.fromCreatorVerified,
         invitedAt: i.invitedAt.toISOString(),
       })),
       sent: sent.map((i) => ({
@@ -39,7 +39,7 @@ export default async function StudioCollaboratorsPage() {
         kind: c.kind,
         displayName: c.displayName,
         photoURL: c.photoURL,
-        professionalType: c.professionalType,
+        creatorVerified: c.creatorVerified,
       })),
     };
   }

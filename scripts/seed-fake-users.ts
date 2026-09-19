@@ -23,8 +23,6 @@ for (const f of [".env", ".env.local"]) {
 
 const FIRST = ["Ana", "Luis", "María", "Carlos", "Sofía", "Andrés", "Valentina", "Diego", "Camila", "Julián", "Laura", "Mateo"];
 const LAST = ["García", "Rodríguez", "Martínez", "López", "Gómez", "Díaz", "Vargas", "Rojas", "Moreno", "Castro"];
-const PRO_TYPES = ["organizer", "business", "government"] as const;
-
 const pick = <T>(arr: readonly T[]) => arr[Math.floor(Math.random() * arr.length)];
 const slug = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -39,7 +37,7 @@ async function main() {
   const db = getFirebaseFirestore();
   const now = Timestamp.now();
 
-  const created: { uid: string; email: string; accountType: string }[] = [];
+  const created: { uid: string; email: string; participation: string }[] = [];
 
   for (let i = 0; i < count; i++) {
     const uid = randomUUID();
@@ -47,8 +45,7 @@ async function main() {
     const lastName = pick(LAST);
     const displayName = `${firstName} ${lastName}`;
     const email = `${slug(firstName)}.${slug(lastName)}${i}@example.com`;
-    const isPro = i % 3 === 0; // ~1 de cada 3 profesional aprobado
-    const professionalType = isPro ? pick(PRO_TYPES) : null;
+    const isCreator = i % 3 === 0;
 
     const doc = {
       uid,
@@ -61,22 +58,21 @@ async function main() {
       phoneNumber: `+57300${String(1000000 + i).slice(-7)}`,
       photoURL: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(displayName)}`,
       acceptedTerms: true,
-      accountType: isPro ? "professional" : "personal",
-      professionalType,
-      professionalStatus: isPro ? "approved" : "none",
-      ...(isPro ? { brandName: `${lastName} Eventos` } : {}),
-      isPublic: true,
+      participation: isCreator ? "creator" : "consumer",
+      creatorVerified: isCreator,
+      plan: "basic",
+      isPublic: isCreator,
       acceptedTermsAt: now,
       createdAt: now,
       updatedAt: now,
     };
 
     await db.collection("users").doc(uid).set(doc);
-    created.push({ uid, email, accountType: doc.accountType });
+    created.push({ uid, email, participation: doc.participation });
   }
 
   console.log(`\n✅ ${created.length} usuarios creados en 'users':\n`);
-  created.forEach((u) => console.log(`  ${u.accountType.padEnd(12)} ${u.email}  (${u.uid})`));
+  created.forEach((u) => console.log(`  ${u.participation.padEnd(12)} ${u.email}  (${u.uid})`));
   console.log("\nBúscalos por correo en /studio/collaborators.\n");
 }
 

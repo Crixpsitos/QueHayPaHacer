@@ -1,4 +1,3 @@
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
 import type {
   SupportTicket,
   SupportTicketDetail,
@@ -37,7 +36,7 @@ export interface FirebaseReceivedInviteDto {
   fromUid?: string;
   fromDisplayName?: string;
   fromPhotoURL?: string;
-  fromProfessionalType?: ProfessionalType;
+  fromCreatorVerified?: boolean;
   createdAt?: unknown;
 }
 
@@ -56,13 +55,13 @@ export interface StudioCollaboratorsRaw {
     toUid?: string;
     toDisplayName?: string;
     toPhotoURL?: string;
-    toProfessionalType?: ProfessionalType;
+    toCreatorVerified?: boolean;
   }[];
   receivedAccepted: {
     fromUid?: string;
     fromDisplayName?: string;
     fromPhotoURL?: string;
-    fromProfessionalType?: ProfessionalType;
+    fromCreatorVerified?: boolean;
   }[];
   externals: { id: string; displayName?: string; photoURL?: string }[];
 }

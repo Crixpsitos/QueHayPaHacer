@@ -1,16 +1,17 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
+import { generateUsername } from "@/app/lib/utils/generateUsername";
 
-/** Returns true if the username is not taken by anyone other than `currentUid`. */
 export async function checkUsernameAvailabilityAction(
   username: string,
   currentUid: string,
 ): Promise<{ available: boolean }> {
-  if (!username || username.length < 3) return { available: false };
+  const normalizedUsername = generateUsername(username);
+  if (normalizedUsername.length < 3) return { available: false };
   try {
     const { userService } = createServerContainer();
-    const existing = await userService.getUserByUsername(username);
+    const existing = await userService.getUserByUsername(normalizedUsername);
     return { available: !existing || existing.uid === currentUid };
   } catch {
     return { available: false };

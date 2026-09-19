@@ -17,7 +17,7 @@ export async function searchCollaboratorsAction(
 
     const { userService, studioService } = createServerContainer();
     const me = await userService.getUserById(tokens.decodedToken.uid);
-    if (me?.accountType !== "professional") {
+    if (me?.plan !== "premium") {
       return { success: false, error: "Solo cuentas profesionales pueden invitar colaboradores." };
     }
 

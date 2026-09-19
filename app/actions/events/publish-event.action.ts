@@ -11,19 +11,21 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { moderationFieldsForSubmission } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
   | {
       success: true;
       eventId: string;
       slug: string;
+      status: "pending" | "published";
+      moderationStatus: "pending" | "pending_audit";
       error?: never;
     }
   | {
@@ -49,10 +51,24 @@ export async function publishEventAction(
     };
   }
 
+  const { eventsService, profileService, userService } = createServerContainer();
+  const author = await userService.getUserById(tokens.decodedToken.uid);
+
+  if (!author) {
+    return { success: false, error: "No encontramos tu perfil de usuario." };
+  }
+
+  if (event.id) {
+    const existingEvent = await eventsService.getEventById(event.id);
+    if (!existingEvent || existingEvent.author.id !== author.uid) {
+      return { success: false, error: "No tienes permiso para publicar este evento." };
+    }
+  }
+
   // Multi-fecha es exclusivo de cuentas profesionales.
   if (
     event.eventType === "multi-date" &&
-    filterStandardClaims(tokens.decodedToken).role !== "professional"
+    author?.plan !== "premium"
   ) {
     return {
       success: false,
@@ -129,12 +145,9 @@ export async function publishEventAction(
     resultParse.output as unknown as EventViewModel,
   );
   const userId = tokens.decodedToken.uid;
+  Object.assign(parsedData, moderationFieldsForSubmission(author));
 
   try {
-    const { eventsService, badgeService, profileService, userService } = createServerContainer();
-
-    const author = await userService.getUserById(userId);
-
     // Detectar primer evento ANTES de publicar para setear metadata.isFirstEvent
     const existingEvents = await profileService.getUserEvents(userId);
     const hasOtherPublished = existingEvents.some((e) => e.status === "published");
@@ -143,7 +156,7 @@ export async function publishEventAction(
     }
 
     const publishedEvent = await eventsService.publishEvent(parsedData, {
-      isProfessionalAuthor: author?.accountType === "professional",
+      isPremiumAuthor: author?.plan === "premium",
     });
 
     // Multi-date: el evento no guarda fechas propias → derivarlas de las sesiones
@@ -151,21 +164,6 @@ export async function publishEventAction(
     if (event.eventType === "multi-date") {
       await syncEventDateRange(publishedEvent.id || parsedData.id);
       await syncEventSiteIds(publishedEvent.id || parsedData.id);
-    }
-
-    // Asignar insignia de "Primer Evento" si es el primer evento publicado
-    try {
-      if (!hasOtherPublished) {
-        await badgeService.awardBadgeToUser(
-          userId,
-          "first-event",
-          "Publicaste tu primer evento"
-        );
-        revalidateTag(`profile-badges-${userId}`, "max");
-        revalidateTag(`profile-stats-${userId}`, "max");
-      }
-    } catch (badgeError) {
-      console.error(`[BADGE ERROR] No se pudo asignar insignia de primer evento:`, badgeError);
     }
 
     updateTag("event-list");
@@ -179,7 +177,13 @@ export async function publishEventAction(
     revalidatePath("/", "page");
     revalidatePath("/eventos", "layout");
     revalidatePath("/profile/events", "layout");
-    return { success: true, eventId: publishedEvent.id || parsedData.id, slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id };
+    return {
+      success: true,
+      eventId: publishedEvent.id || parsedData.id,
+      slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id,
+      status: parsedData.status as "pending" | "published",
+      moderationStatus: parsedData.moderationStatus as "pending" | "pending_audit",
+    };
   } catch (error) {
     console.error("Error updating event:", error);
     return {

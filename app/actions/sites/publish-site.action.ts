@@ -9,6 +9,7 @@ import { toSlug } from "@/app/lib/utils/slug"
 import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
 import { revalidateSite } from "./_revalidate"
+import { updateTag } from "next/cache"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 type Result = { success: true; siteId: string } | { success: false; error: string }
@@ -22,7 +23,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId?: string
   if (!form.category)      return { success: false, error: "Categoría requerida" }
 
   const uid = tokens.decodedToken.uid
-  const { sitesService } = createServerContainer()
+  const { sitesService, userService } = createServerContainer()
 
   const { country, department, city } = buildLocationDetails({
     countryName: form.country,
@@ -66,13 +67,24 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId?: string
   }
 
   try {
+    const markContribution = async () => {
+      try {
+        await userService.markAsCreator(uid)
+        updateTag(`user-profile-${uid}`)
+      } catch (participationError) {
+        console.error("[USER PARTICIPATION] No se pudo marcar al autor como creador:", participationError)
+      }
+    }
+
     // siteId present → a draft already exists (created during upload). Convert it in place, don't duplicate.
     if (siteId) {
       await sitesService.publishExisting(siteId, input)
+      await markContribution()
       revalidateSite(uid, siteId)
       return { success: true, siteId }
     }
     const newId = await sitesService.publish(input)
+    await markContribution()
     revalidateSite(uid, newId)
     return { success: true, siteId: newId }
   } catch (e) {

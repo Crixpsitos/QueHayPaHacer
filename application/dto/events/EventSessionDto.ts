@@ -127,6 +127,13 @@ export const SessionSchema = v.pipe(
   ),
   v.forward(
     v.check(
+      (data) => data.price.isFree || data.registrationType === "external",
+      "Las sesiones pagadas requieren registro externo.",
+    ),
+    ["registrationType"],
+  ),
+  v.forward(
+    v.check(
       (data) =>
         data.price.isFree ||
         (data.price.amount != null && data.price.amount > 0),

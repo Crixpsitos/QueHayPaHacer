@@ -7,7 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  BadgeCheck,
+  Award,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -392,11 +392,11 @@ export function RegistrationsTable({
                 <div className="min-w-0">
                   <p className="flex items-center gap-1 truncate text-sm font-semibold text-slate-900">
                     <span className="truncate">{responsesRow.name}</span>
-                    {responsesRow.verified && (
-                      <BadgeCheck
-                        className="h-3.5 w-3.5 shrink-0 fill-sky-500 text-white"
-                        aria-label="Cuenta profesional verificada"
-                      />
+                    {responsesRow.isCreator && (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+                        <Award className="h-3.5 w-3.5" aria-hidden />
+                        Creador
+                      </span>
                     )}
                     {responsesRow.handle && (
                       <span className="text-xs font-normal text-slate-400">
@@ -552,11 +552,11 @@ function RegistrationRowItem({
           </Avatar>
           <span className="flex min-w-0 items-center gap-1">
             <span className="truncate font-medium text-slate-800">{row.name}</span>
-            {row.verified && (
-              <BadgeCheck
-                className="h-3.5 w-3.5 shrink-0 fill-sky-500 text-white"
-                aria-label="Cuenta profesional verificada"
-              />
+            {row.isCreator && (
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+                <Award className="h-3.5 w-3.5" aria-hidden />
+                Creador
+              </span>
             )}
             {row.handle && (
               <span className="shrink-0 text-xs font-normal text-slate-400">

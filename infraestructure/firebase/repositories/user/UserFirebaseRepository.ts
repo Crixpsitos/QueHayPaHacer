@@ -36,17 +36,72 @@ export class UserFirebaseRepository extends FirebaseBaseRepository implements IU
   }
 
   async create(dto: FirebaseUserDto): Promise<FirebaseUserDto> {
-    await this.collection.doc(dto.uid).set(dto);
+    const userRef = this.collection.doc(dto.uid);
+    const usernameRef = this.db.collection("usernames").doc(dto.displayName);
+
+    await this.db.runTransaction(async (transaction) => {
+      const usernameQuery = this.collection.where("displayName", "==", dto.displayName).limit(1);
+      const [username, existingUser] = await Promise.all([
+        transaction.get(usernameRef),
+        transaction.get(usernameQuery),
+      ]);
+      if (username.exists || !existingUser.empty) throw new Error("Username already in use");
+
+      transaction.create(usernameRef, { uid: dto.uid });
+      transaction.create(userRef, dto);
+    });
     return dto;
   }
 
   async update(id: string, dto: Partial<FirebaseUserDto>): Promise<FirebaseUserDto> {
-    await this.collection.doc(id).update(dto as { [key: string]: unknown });
+    const userRef = this.collection.doc(id);
+
+    await this.db.runTransaction(async (transaction) => {
+      const currentUser = await transaction.get(userRef);
+      if (!currentUser.exists) throw new Error("User not found");
+
+      const currentUsername = String(currentUser.data()?.displayName ?? "");
+      const nextUsername = dto.displayName;
+
+      if (nextUsername && nextUsername !== currentUsername) {
+        const nextUsernameRef = this.db.collection("usernames").doc(nextUsername);
+        const usernameQuery = this.collection.where("displayName", "==", nextUsername).limit(1);
+        const [nextUsernameReservation, existingUser] = await Promise.all([
+          transaction.get(nextUsernameRef),
+          transaction.get(usernameQuery),
+        ]);
+        const usernameBelongsToAnotherUser =
+          !existingUser.empty && existingUser.docs[0].id !== id;
+        if (
+          usernameBelongsToAnotherUser ||
+          (nextUsernameReservation.exists && nextUsernameReservation.data()?.uid !== id)
+        ) {
+          throw new Error("Username already in use");
+        }
+
+        transaction.set(nextUsernameRef, { uid: id });
+        if (currentUsername) {
+          transaction.delete(this.db.collection("usernames").doc(currentUsername));
+        }
+      }
+
+      transaction.update(userRef, dto as { [key: string]: unknown });
+    });
     const updated = await this.findById(id);
     return updated!;
   }
 
   async delete(id: string): Promise<void> {
-    await this.collection.doc(id).delete();
+    const userRef = this.collection.doc(id);
+    await this.db.runTransaction(async (transaction) => {
+      const user = await transaction.get(userRef);
+      if (!user.exists) return;
+
+      const username = String(user.data()?.displayName ?? "");
+      transaction.delete(userRef);
+      if (username) {
+        transaction.delete(this.db.collection("usernames").doc(username));
+      }
+    });
   }
 }

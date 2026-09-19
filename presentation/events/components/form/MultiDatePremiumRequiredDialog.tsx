@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 
-export function MultiDateProfessionalRequiredDialog() {
+export function MultiDatePremiumRequiredDialog() {
   const router = useRouter();
 
   return (
@@ -26,12 +26,11 @@ export function MultiDateProfessionalRequiredDialog() {
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10">
             <CalendarClock className="h-6 w-6 text-violet-600 dark:text-violet-500" />
           </div>
-          <DialogTitle>Función exclusiva para cuentas profesionales</DialogTitle>
+          <DialogTitle>Función exclusiva del plan Premium</DialogTitle>
           <DialogDescription>
-            Los eventos multi-fecha (con varias sesiones) solo están disponibles
-            para cuentas profesionales. Puedes crear un evento estándar, o
-            solicitar una cuenta profesional desde tu perfil para desbloquear
-            esta característica.
+            Los eventos multifecha con varias sesiones están disponibles con el
+            plan Premium. Puedes crear un evento estándar o consultar tu
+            membresía desde el perfil.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">

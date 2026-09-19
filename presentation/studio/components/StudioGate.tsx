@@ -2,13 +2,9 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { StudioShell } from "./StudioShell";
-import {
-  PROFESSIONAL_TYPE_LABEL,
-  isProfessionalType,
-} from "@/presentation/profile/lib/professionalType";
+import { createServerContainer } from "@/infraestructure/di/container";
 
 /**
  * Acceso a datos runtime (cookies/tokens) + gating profesional.
@@ -23,22 +19,19 @@ export async function StudioGate({ children }: { children: ReactNode }) {
   }
 
   const { decodedToken } = tokens;
-  const claims = filterStandardClaims(decodedToken);
+  const { userService } = createServerContainer();
+  const user = await userService.getUserById(decodedToken.uid);
 
-  if (claims.role !== "professional") {
+  if (user?.plan !== "premium") {
     redirect("/profile");
   }
 
-  const professionalLabel = isProfessionalType(claims.professionalType)
-    ? PROFESSIONAL_TYPE_LABEL[claims.professionalType]
-    : "Profesional";
-
   return (
     <StudioShell
-      displayName={decodedToken.name ?? decodedToken.email ?? "Organizador"}
+      displayName={decodedToken.name ?? decodedToken.email ?? "Creador"}
       email={decodedToken.email ?? undefined}
       photoURL={decodedToken.picture ?? undefined}
-      professionalLabel={professionalLabel}
+      premiumLabel="Plan Premium"
     >
       {children}
     </StudioShell>

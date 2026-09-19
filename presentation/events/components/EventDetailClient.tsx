@@ -491,7 +491,7 @@ interface EventDetailClientProps {
   /** True cuando el usuario que ve el evento es su organizador. */
   isOwner?: boolean;
   /** True cuando el organizador tiene cuenta profesional (acceso al Estudio). */
-  isProfessionalOwner?: boolean;
+  isPremiumOwner?: boolean;
   /** Ruta a compartir (usada por el detalle de sesión para compartir la sesión). */
   shareUrl?: string;
   /** Enlace de regreso (p.ej. al evento padre desde una sesión). */
@@ -504,7 +504,7 @@ interface EventDetailClientProps {
   sessionId?: string;
 }
 
-export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isProfessionalOwner = false, shareUrl, backLink, editSessionHref, sessionId, linkedSite }: EventDetailClientProps) {
+export function EventDetailClient({ event, initialLiked, initialRegistered, isOwner = false, isPremiumOwner = false, shareUrl, backLink, editSessionHref, sessionId, linkedSite }: EventDetailClientProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
@@ -835,7 +835,7 @@ export function EventDetailClient({ event, initialLiked, initialRegistered, isOw
                         {editSessionHref ? "Esta sesión es tuya" : "Este es tu evento"}
                       </p>
                       <div className="flex flex-wrap gap-2">
-                      {isProfessionalOwner ? (
+                      {isPremiumOwner ? (
                         // Cuenta profesional → acceso al Estudio del Organizador.
                         <Link
                           href={`/studio/events/${event.id}`}

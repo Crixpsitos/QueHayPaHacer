@@ -7,10 +7,10 @@ import { cn } from "@/app/lib/utils/cn";
 import { STUDIO_NAV } from "../lib/navigation";
 
 interface StudioSidebarProps {
-  professionalLabel: string;
+  premiumLabel: string;
 }
 
-export function StudioSidebar({ professionalLabel }: StudioSidebarProps) {
+export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
   const pathname = usePathname();
 
   const isActive = (href: string, exact?: boolean) =>
@@ -50,7 +50,7 @@ export function StudioSidebar({ professionalLabel }: StudioSidebarProps) {
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
               Cuenta
             </p>
-            <p className="truncate text-sm font-semibold text-slate-800">{professionalLabel}</p>
+            <p className="truncate text-sm font-semibold text-slate-800">{premiumLabel}</p>
           </div>
         </div>
       </div>

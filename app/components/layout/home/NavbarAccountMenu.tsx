@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, User as UserIcon } from "lucide-react";
+import { CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -49,14 +49,12 @@ export function NavbarAccountMenu({
     return <AccountTriggerSkeleton compact={compact} />;
   }
 
-  const accountTypeLabel = user?.profile?.accountType
-    ? user.profile.accountType.toLowerCase().replace(/_/g, " ")
-    : "Cuenta personal";
+  const isPremium = user?.profile?.plan === "premium";
+  const participationLabel = user?.profile?.participation === "creator"
+    ? "Creador"
+    : "Consumidor";
 
   const displayName = user?.displayName ?? user?.profile?.username ?? "Tu cuenta";
-
-  // El acceso al Estudio del Organizador es solo para cuentas profesionales.
-  const isProfessional = user?.customClaims?.role === "professional";
 
   const handleLogout = async () => {
     setUser(null);
@@ -119,7 +117,7 @@ export function NavbarAccountMenu({
               {user?.profile?.username ? `@${user.profile.username}` : displayName}
             </span>
             <span className="truncate text-xs capitalize text-muted-foreground">
-              {accountTypeLabel}
+              {participationLabel}
             </span>
           </div>
         </DropdownMenuLabel>
@@ -157,12 +155,18 @@ export function NavbarAccountMenu({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link href="/mis-eventos" className={cn("flex items-center gap-2")}>
+                <CalendarDays className="size-4" aria-hidden="true" />
+                Mis eventos
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/sites" className={cn("flex items-center gap-2")}>
                 <MapPin className="size-4" aria-hidden="true" />
                 Mis sitios
               </Link>
             </DropdownMenuItem>
-            {isProfessional && (
+            {isPremium && (
               <DropdownMenuItem asChild>
                 <Link href="/studio" className={cn("flex items-center gap-2")}>
                   <LayoutDashboard className="size-4" aria-hidden="true" />

@@ -18,6 +18,10 @@ export class ProfileFirebaseMapper {
       title: data.title ?? "Evento sin titulo",
       description: data.shortDescription ?? "Sin descripcion",
       status: data.status ?? "draft",
+      moderationStatus:
+        data.moderationStatus ?? (data.status === "published" ? "approved" : "pending"),
+      moderationMode: data.moderationMode ?? "pre_publication",
+      rejectionReason: data.rejectionReason ?? null,
       eventType: data.eventType === "multi-date" ? "multi-date" : "standard",
       registrationType: data.registrationType ?? "none",
       createdAt: this.toDate(data.createdAt),

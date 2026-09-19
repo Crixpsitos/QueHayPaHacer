@@ -5,20 +5,20 @@ import { CalendarIcon, CalendarRangeIcon, ArrowRight, Lock, X } from "lucide-rea
 import { cn } from "@/app/lib/utils/cn";
 
 interface EventTypeSelectorProps {
-  isProfessional: boolean | undefined;
+  isPremium: boolean | undefined;
 }
 
-export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
+export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
   const router = useRouter();
 
   const handleSelect = (type: "standard" | "multi-date") => {
-    if (type === "multi-date" && !isProfessional) return;
+    if (type === "multi-date" && !isPremium) return;
     const params = new URLSearchParams(window.location.search);
     params.set("type", type);
     router.push(`/eventos/create?${params.toString()}`);
   };
 
-  const isMultiDateLocked = !isProfessional;
+  const isMultiDateLocked = !isPremium;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAFAFC] px-4 py-16">

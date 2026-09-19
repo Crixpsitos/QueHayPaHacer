@@ -70,11 +70,11 @@ export async function SessionDetailContainer({
 
   const isOwner = Boolean(userId && parent.author?.id && userId === parent.author.id);
 
-  let isProfessionalOwner = false;
+  let isPremiumOwner = false;
   if (isOwner && userId) {
     const { userService } = createServerContainer();
     const owner = await userService.getUserById(userId);
-    isProfessionalOwner = owner?.accountType === "professional";
+    isPremiumOwner = owner?.plan === "premium";
   }
 
   // Sitio vinculado (si la sesión tiene location.siteId)
@@ -107,7 +107,7 @@ export async function SessionDetailContainer({
       initialLiked={initialLiked}
       initialRegistered={initialRegistered}
       isOwner={isOwner}
-      isProfessionalOwner={isProfessionalOwner}
+      isPremiumOwner={isPremiumOwner}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       backLink={{ href: `/eventos/${parentRef}`, label: parent.title }}
       editSessionHref={`/eventos/${parent.id}/edit?step=sessions`}

@@ -14,6 +14,18 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
     label: "Borrador",
     className: "border-amber-300 bg-amber-100 text-amber-700 dark:border-amber-900 dark:bg-amber-900/30 dark:text-amber-300",
   },
+  pending: {
+    label: "Pendiente de validación",
+    className: "border-amber-300 bg-amber-100 text-amber-800",
+  },
+  pending_audit: {
+    label: "Publicado · auditoría pendiente",
+    className: "border-sky-300 bg-sky-100 text-sky-800",
+  },
+  rejected: {
+    label: "Rechazado",
+    className: "border-red-300 bg-red-100 text-red-700",
+  },
   cancelled: {
     label: "Cancelado",
     className: "border-red-300 bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300",

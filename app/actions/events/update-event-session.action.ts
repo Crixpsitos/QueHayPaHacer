@@ -9,6 +9,8 @@ import { SessionOverlapError } from "@/application/services/events/EventSessionS
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 import type { EventSession } from "@/domain/entities/events/EventSession";
+import { SessionSchema } from "@/application/dto/events/EventSessionDto";
+import { safeParse } from "valibot";
 
 type UpdateSessionResult =
   | { success: true; session: EventSession; hasOverlap: boolean }
@@ -22,6 +24,23 @@ export async function updateEventSessionAction(
   const tokens = await getTokens(await cookies(), authConfig);
   if (!tokens?.decodedToken?.uid) {
     return { success: false, error: "Debes iniciar sesión." };
+  }
+
+  const validation = safeParse(SessionSchema, {
+    ...data,
+    startDate: data.startDate instanceof Date
+      ? data.startDate.toISOString()
+      : data.startDate,
+    endDate: data.endDate instanceof Date
+      ? data.endDate.toISOString()
+      : data.endDate,
+  });
+
+  if (!validation.success) {
+    return {
+      success: false,
+      error: validation.issues.map((issue) => issue.message).join(", "),
+    };
   }
 
   try {

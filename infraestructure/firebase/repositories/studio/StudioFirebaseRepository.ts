@@ -41,7 +41,6 @@ import type {
   MultiDateEventStats,
   MultiDateSessionStats,
 } from "@/domain/entities/studio/Studio";
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
 import { Pipelines, FieldValue } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
 import { buildWeeklyInteractions, WEEK_SECONDS } from "./weeklyInteractions";
@@ -63,8 +62,7 @@ interface RegistrationUserInfo {
   lastName?: string;
   displayName?: string;
   photoURL?: string;
-  /** "personal" | "professional" — determina el "@handle" y el chulito. */
-  accountType?: string;
+  participation?: string;
 }
 
 /** Mapa `analytics` tal como llega del pipeline: cualquier clave puede faltar. */
@@ -919,13 +917,12 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
             .pipeline()
             .collection("users")
             .where(field("uid").equal(variable("userId")))
-            // `accountType` decide el "@handle" y el chulito de verificado.
             .select(
               "firstName",
               "lastName",
               "displayName",
               "photoURL",
-              "accountType",
+              "participation",
             )
             .toScalarExpression()
             .as("userData"),
@@ -1025,7 +1022,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       lastName,
       displayName: user?.displayName,
       photoURL: user?.photoURL,
-      isProfessional: user?.accountType === "professional",
+      isCreator: user?.participation === "creator",
       registeredAt,
       attendanceConfirmed,
       formResponses,
@@ -1682,15 +1679,14 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .pipeline()
         .collection("users")
         .search({ query: documentMatches(trimmed), sort: score().descending() })
-        // Solo cuentas profesionales pueden ser colaboradoras.
-        .where(field("accountType").equal("professional"))
-        .limit(limit + 1)
+        .limit((limit + 1) * 3)
         .select(
           field("__name__").as("uid"),
           field("displayName").as("displayName"),
           field("photoURL").as("photoURL"),
           field("email").as("email"),
-          field("professionalType").as("professionalType"),
+          field("participation").as("participation"),
+          field("creatorVerified").as("creatorVerified"),
         )
         .execute();
 
@@ -1701,17 +1697,30 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
             displayName?: string;
             photoURL?: string;
             email?: string;
-            professionalType?: ProfessionalType;
+            participation?: string;
+            creatorVerified?: boolean;
           };
           return {
             uid: this.toDocId(row.uid),
             displayName: row.displayName || row.email || "Usuario",
             photoURL: row.photoURL ?? undefined,
             email: row.email ?? "",
-            professionalType: row.professionalType ?? undefined,
+            participation: row.participation,
+            creatorVerified: row.creatorVerified ?? false,
           };
         })
-        .filter((u) => u.uid !== uid)
+        .filter(
+          (user) =>
+            user.uid !== uid &&
+            user.participation === "creator",
+        )
+        .map((user) => ({
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          email: user.email,
+          creatorVerified: user.creatorVerified,
+        }))
         .slice(0, limit);
     } catch (error) {
       // Fallback sin índice de búsqueda (Firestore Enterprise): match EXACTO por
@@ -1729,24 +1738,24 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .limit(1)
         .get();
       return snap.docs
-        // Solo profesionales; se excluye a uno mismo.
+        // Solo creadores; se excluye a uno mismo.
         .filter((d) => {
-          const u = d.data() as { accountType?: string };
-          return d.id !== uid && u.accountType === "professional";
+          const user = d.data() as { participation?: string };
+          return d.id !== uid && user.participation === "creator";
         })
         .map((d) => {
           const u = d.data() as {
             displayName?: string;
             photoURL?: string;
             email?: string;
-            professionalType?: ProfessionalType;
+            creatorVerified?: boolean;
           };
           return {
             uid: d.id,
             displayName: u.displayName || u.email || "Usuario",
             photoURL: u.photoURL ?? undefined,
             email: u.email ?? "",
-            professionalType: u.professionalType ?? undefined,
+            creatorVerified: u.creatorVerified ?? false,
           };
         });
     }
@@ -1765,7 +1774,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       ? (meSnap.data() as {
           displayName?: string;
           photoURL?: string;
-          professionalType?: ProfessionalType;
+          creatorVerified?: boolean;
         })
       : {};
 
@@ -1780,15 +1789,18 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .map((d) => d.data().toUid as string),
     );
 
-    // Solo se puede invitar a cuentas profesionales (defensa: el buscador ya las
+    // Solo se puede invitar a creadores (defensa: el buscador ya los
     // filtra, pero validamos server-side por si llega un uid crafteado).
     const inviteeSnaps = await Promise.all(
       invitees.map((inv) => this.db.collection("users").doc(inv.uid).get()),
     );
-    const professionalUids = new Set(
+    const creatorUids = new Set(
       inviteeSnaps
         .filter(
-          (s) => s.exists && (s.data() as { accountType?: string }).accountType === "professional",
+          (s) => {
+            const data = s.data() as { participation?: string };
+            return s.exists && data.participation === "creator";
+          },
         )
         .map((s) => s.id),
     );
@@ -1796,18 +1808,18 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     const batch = this.db.batch();
     let added = 0;
     for (const inv of invitees) {
-      if (inv.uid === fromUid || seen.has(inv.uid) || !professionalUids.has(inv.uid)) continue;
+      if (inv.uid === fromUid || seen.has(inv.uid) || !creatorUids.has(inv.uid)) continue;
       const ref = this.db.collection("collaborationInvites").doc();
       batch.set(ref, {
         fromUid,
         fromDisplayName: me.displayName ?? "",
         fromPhotoURL: me.photoURL ?? null,
-        fromProfessionalType: me.professionalType ?? null,
+        fromCreatorVerified: me.creatorVerified ?? false,
         toUid: inv.uid,
         toEmail: inv.email.trim().toLowerCase(),
         toDisplayName: inv.displayName,
         toPhotoURL: inv.photoURL ?? null,
-        toProfessionalType: inv.professionalType ?? null,
+        toCreatorVerified: inv.creatorVerified ?? false,
         status: "pending",
         createdAt: FieldValue.serverTimestamp(),
         respondedAt: null,
@@ -1859,13 +1871,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           toUid?: string;
           toDisplayName?: string;
           toPhotoURL?: string;
-          toProfessionalType?: ProfessionalType;
+          toCreatorVerified?: boolean;
         };
         return {
           toUid: inv.toUid,
           toDisplayName: inv.toDisplayName,
           toPhotoURL: inv.toPhotoURL,
-          toProfessionalType: inv.toProfessionalType,
+          toCreatorVerified: inv.toCreatorVerified,
         };
       });
 
@@ -1876,13 +1888,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           fromUid?: string;
           fromDisplayName?: string;
           fromPhotoURL?: string;
-          fromProfessionalType?: ProfessionalType;
+          fromCreatorVerified?: boolean;
         };
         return {
           fromUid: inv.fromUid,
           fromDisplayName: inv.fromDisplayName,
           fromPhotoURL: inv.fromPhotoURL,
-          fromProfessionalType: inv.fromProfessionalType,
+          fromCreatorVerified: inv.fromCreatorVerified,
         };
       });
 

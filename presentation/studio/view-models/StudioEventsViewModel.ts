@@ -1,12 +1,10 @@
 import type { RegistrationType, RampUnit, RegistrationRampPoint } from "@/domain/entities/studio/Studio";
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
 
 export interface TeamMemberVM {
   uid: string;
   displayName: string;
-  brandName?: string;
   photoURL?: string;
-  professionalType: ProfessionalType;
+  creatorVerified: boolean;
   role: "owner" | "collaborator";
 }
 
@@ -33,8 +31,8 @@ export interface RegistrationRow {
   name: string;
   /** Username opcional, se muestra como "@handle" de forma sutil. */
   handle?: string;
-  /** Cuenta profesional: muestra el chulito de verificado junto al nombre. */
-  verified?: boolean;
+  /** Participa como creador. */
+  isCreator?: boolean;
   photoURL?: string;
   registeredAt: string; // ISO
   attendanceConfirmed: boolean;

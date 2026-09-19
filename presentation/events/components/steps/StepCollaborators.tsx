@@ -5,7 +5,6 @@ import type { UseFormReturn } from "react-hook-form";
 import { Check, Loader2, Plus, UserMinus, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { notify } from "@/presentation/shared/lib/notify";
-import { PROFESSIONAL_TYPE_LABEL } from "@/presentation/profile/lib/professionalType";
 import type { FormEventDto } from "@/application/dto/events/EventDto";
 import type { Collaborator, UserCollaboratorRole } from "@/domain/entities/studio/Studio";
 import { getMyCollaboratorsAction } from "@/app/actions/events/get-my-collaborators.action";
@@ -163,11 +162,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-[#09090B]">{c.displayName}</p>
                   <p className="text-xs text-[#71717A]">
-                    {c.kind === "external"
-                      ? "Perfil externo"
-                      : c.professionalType
-                        ? PROFESSIONAL_TYPE_LABEL[c.professionalType]
-                        : "Profesional"}
+                    {c.kind === "external" ? "Perfil externo" : "Creador"}
                   </p>
                 </div>
                 {c.kind === "user" && (

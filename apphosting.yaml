@@ -50,3 +50,8 @@ env:
     secret: cookieSecretPrevious
     availability:
       - RUNTIME
+
+  - variable: EVENT_MODERATION_WEBHOOK_SECRET
+    secret: eventModerationWebhookSecret
+    availability:
+      - RUNTIME

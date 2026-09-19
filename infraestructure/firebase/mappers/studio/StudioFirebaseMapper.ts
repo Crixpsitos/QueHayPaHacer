@@ -29,7 +29,7 @@ export interface FirebaseEventRegistrationDto {
   lastName: string;
   displayName?: string;
   photoURL?: string;
-  accountType?: string;
+  participation?: string;
   registeredAt: Timestamp;
   attendanceConfirmed?: boolean;
   formResponses?: { fieldId: string; label: string; value: string }[];
@@ -54,7 +54,7 @@ export class StudioFirebaseMapper {
       lastName: dto.lastName,
       displayName: dto.displayName,
       photoURL: dto.photoURL,
-      isProfessional: dto.accountType === "professional",
+      isCreator: dto.participation === "creator",
       registeredAt: dto.registeredAt.toDate(),
       attendanceConfirmed: dto.attendanceConfirmed ?? false,
       formResponses: dto.formResponses,
@@ -106,7 +106,7 @@ export class StudioFirebaseMapper {
       fromUid: dto.fromUid ?? "",
       fromDisplayName: dto.fromDisplayName || "Organizador",
       fromPhotoURL: dto.fromPhotoURL ?? undefined,
-      fromProfessionalType: dto.fromProfessionalType ?? undefined,
+      fromCreatorVerified: dto.fromCreatorVerified ?? false,
       invitedAt: this.toDateOrNull(dto.createdAt) ?? new Date(0),
     };
   }
@@ -129,7 +129,7 @@ export class StudioFirebaseMapper {
       kind: "user",
       displayName: inv.toDisplayName || "Colaborador",
       photoURL: inv.toPhotoURL ?? undefined,
-      professionalType: inv.toProfessionalType ?? undefined,
+      creatorVerified: inv.toCreatorVerified ?? false,
     }));
 
     const asInvitee: Collaborator[] = raw.receivedAccepted.map((inv) => ({
@@ -137,7 +137,7 @@ export class StudioFirebaseMapper {
       kind: "user",
       displayName: inv.fromDisplayName || "Colaborador",
       photoURL: inv.fromPhotoURL ?? undefined,
-      professionalType: inv.fromProfessionalType ?? undefined,
+      creatorVerified: inv.fromCreatorVerified ?? false,
     }));
 
     const externals: Collaborator[] = raw.externals.map((e) => ({

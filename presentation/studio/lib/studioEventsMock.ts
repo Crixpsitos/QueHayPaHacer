@@ -11,25 +11,22 @@ const MOCK_EVENT_TEAM: TeamMemberVM[] = [
   {
     uid: "owner-me",
     displayName: "Mi Organización",
-    brandName: "Mi Organización Cultural",
     photoURL: "https://api.dicebear.com/9.x/initials/svg?seed=Mi%20Organizacion",
-    professionalType: "organizer",
+    creatorVerified: true,
     role: "owner",
   },
   {
     uid: "collab-1",
     displayName: "Eventos Andinos",
-    brandName: "Eventos Andinos S.A.S",
     photoURL: "https://api.dicebear.com/9.x/initials/svg?seed=Eventos%20Andinos",
-    professionalType: "organizer",
+    creatorVerified: true,
     role: "collaborator",
   },
   {
     uid: "collab-2",
     displayName: "Café de la Plaza",
-    brandName: "Café de la Plaza",
     photoURL: "https://api.dicebear.com/9.x/initials/svg?seed=Cafe%20Plaza",
-    professionalType: "business",
+    creatorVerified: false,
     role: "collaborator",
   },
 ];
@@ -101,13 +98,12 @@ const buildRows = (count: number, withForm: boolean): RegistrationRow[] =>
   Array.from({ length: count }, (_, i) => {
     const name = `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[i % LAST_NAMES.length]}`;
     const day = 10 + (i % 18);
-    // Simulamos que las pares son cuentas profesionales (con "@handle" + chulito).
-    const isProfessional = i % 2 === 0;
+    const isCreator = i % 2 === 0;
     return {
       userId: `user-${i + 1}`,
       name,
-      handle: isProfessional ? name.toLowerCase().replace(/\s+/g, "") : undefined,
-      verified: isProfessional,
+      handle: isCreator ? name.toLowerCase().replace(/\s+/g, "") : undefined,
+      isCreator,
       // MOCK — avatar de demostración. En real vendrá del perfil del usuario.
       photoURL: `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(name + i)}`,
       registeredAt: `2026-06-${String(day).padStart(2, "0")}T${String(9 + (i % 12)).padStart(2, "0")}:30:00.000Z`,

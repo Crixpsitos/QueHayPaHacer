@@ -1,6 +1,5 @@
 import { Crown, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { PROFESSIONAL_TYPE_LABEL } from "@/presentation/profile/lib/professionalType";
 import type { TeamMemberVM } from "../../view-models/StudioEventsViewModel";
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
@@ -58,8 +57,7 @@ function Member({ member }: { member: TeamMemberVM }) {
           )}
         </div>
         <p className="truncate text-xs text-slate-400">
-          {member.brandName ? `${member.brandName} · ` : ""}
-          {PROFESSIONAL_TYPE_LABEL[member.professionalType]}
+          {member.creatorVerified ? "Creador verificado" : "Creador"}
         </p>
       </div>
     </div>

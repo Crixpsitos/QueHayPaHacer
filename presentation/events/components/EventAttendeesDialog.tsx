@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BadgeCheck, Check, Loader2, Search, Users } from "lucide-react";
+import { Award, Check, Loader2, Search, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import {
   Dialog,
@@ -170,11 +170,11 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1 truncate text-sm font-medium text-gray-900">
                       <span className="truncate">{a.name}</span>
-                      {a.verified && (
-                        <BadgeCheck
-                          className="h-3.5 w-3.5 shrink-0 fill-sky-500 text-white"
-                          aria-label="Cuenta profesional verificada"
-                        />
+                      {a.isCreator && (
+                        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+                          <Award className="h-3.5 w-3.5" aria-hidden />
+                          Creador
+                        </span>
                       )}
                       {a.handle && (
                         <span className="shrink-0 text-xs font-normal text-gray-400">@{a.handle}</span>

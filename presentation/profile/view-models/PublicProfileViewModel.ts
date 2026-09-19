@@ -1,5 +1,4 @@
-import type { ProfessionalType, ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
-import type { SocialLinkEntry } from "@/domain/entities/user/User";
+import type { SocialLinkEntry, UserParticipation, UserPlan } from "@/domain/entities/user/User";
 
 export interface PublicProfileViewModel {
   uid: string;
@@ -8,17 +7,13 @@ export interface PublicProfileViewModel {
   lastName: string;
   bio?: string;
   photoURL?: string;
-  professionalType: ProfessionalType | null;
-  isProfessional: boolean;
-  emailVerified: boolean;
+  participation: UserParticipation;
+  plan: UserPlan;
+  creatorVerified: boolean;
   memberSince: string;
   isPublic: boolean;
-  brandName?: string;
   website?: string;
-  mapsLink?: string;
-  socialLink?: string;
   socialLinks?: SocialLinkEntry[];
   isUsernameCustomized?: boolean;
-  professionalDetails?: ProfessionalRequestDetails;
   bannerUrl?: string;
 }

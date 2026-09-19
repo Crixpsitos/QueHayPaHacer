@@ -6,7 +6,7 @@ interface StudioShellProps {
   displayName: string;
   email?: string;
   photoURL?: string;
-  professionalLabel: string;
+  premiumLabel: string;
   children: ReactNode;
 }
 
@@ -18,14 +18,14 @@ export function StudioShell({
   displayName,
   email,
   photoURL,
-  professionalLabel,
+  premiumLabel,
   children,
 }: StudioShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans text-slate-900 antialiased">
       <StudioHeader displayName={displayName} email={email} photoURL={photoURL} />
       <div className="flex flex-1">
-        <StudioSidebar professionalLabel={professionalLabel} />
+        <StudioSidebar premiumLabel={premiumLabel} />
         <main className="min-w-0 flex-1 bg-gray-50/40">
           <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6">{children}</div>
         </main>

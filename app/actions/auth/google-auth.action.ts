@@ -1,7 +1,7 @@
 "use server"
 
 import { createServerContainer } from "@/infraestructure/di/container"
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
+import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase"
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 
@@ -40,7 +40,7 @@ export async function googleAuthAction(
             const displayName = `${firstName} ${lastName}`
 
             // Crear usuario con teléfono vacío
-            await userService.createUser({
+            const createdUser = await userService.createUser({
                 uid: googleUser.uid,
                 email: googleUser.email,
                 emailVerified: false,
@@ -50,8 +50,18 @@ export async function googleAuthAction(
                 phoneNumber: "",
                 photoURL: googleUser.photoURL,
                 acceptedTerms: true,
-                isPublic: true,
+                creatorVerified: false,
+                isPublic: false,
             })
+
+            try {
+                await getFirebaseAdminAuth().updateUser(googleUser.uid, {
+                    displayName: createdUser.displayName,
+                })
+            } catch (error) {
+                await userService.deleteUser(googleUser.uid)
+                throw error
+            }
         }
 
         return { success: true }

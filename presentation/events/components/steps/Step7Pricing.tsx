@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { FormEventDto } from "@/application/dto/events/EventDto";
@@ -36,17 +36,6 @@ export function Step7Pricing({ form }: Step7PricingProps) {
   });
   // Controla si mostramos el modal de advertencia (solo cuando pagado + no externo)
   const [showPaymentWarning, setShowPaymentWarning] = useState(false);
-
-  // Cuando el tipo de registro cambia a uno incompatible con "Pagado", forzar a "Gratis"
-  useEffect(() => {
-    if (registrationType !== "external" && !form.getValues("price.isFree")) {
-      form.setValue("price.isFree", true, { shouldValidate: true });
-      form.setValue("price.amount", 0, { shouldValidate: true });
-      setDisplayAmount("");
-    }
-    // Solo reaccionamos al cambio de registrationType, no al precio
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrationType]);
 
   const handleSelectFree = () => {
     form.setValue("price.isFree", true, { shouldValidate: true });
