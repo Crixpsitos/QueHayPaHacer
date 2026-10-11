@@ -7,13 +7,13 @@ import { StudioShell } from "./StudioShell";
 import { createServerContainer } from "@/infraestructure/di/container";
 
 /**
- * Acceso a datos runtime (cookies/tokens) + gating profesional.
+ * Acceso a datos runtime (cookies/tokens) + gating Premium.
  * Va dentro de un <Suspense> (via ServerBoundary) para no bloquear el render.
  */
 export async function StudioGate({ children }: { children: ReactNode }) {
   const tokens = await getTokens(await cookies(), authConfig);
 
-  // Solo cuentas profesionales acceden al Estudio.
+  // Solo cuentas Premium acceden al Estudio.
   if (!tokens) {
     redirect("/profile");
   }

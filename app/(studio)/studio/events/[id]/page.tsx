@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { isStudioEventOwner } from "@/app/actions/_session";
 import { EventDetailHeader } from "@/presentation/studio/components/events/EventDetailHeader";
 import { getCachedEventStats } from "@/presentation/studio/lib/cachedStudioData";
 import { toEventStatsViewModel } from "@/presentation/studio/mapper/EventStatsViewModelMapper";
@@ -9,6 +10,8 @@ interface EventDetailPageProps {
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { id } = await params;
+  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
+  if (!(await isStudioEventOwner(id))) notFound();
 
   // Cacheado y COMPARTIDO con los slots @stats/@registrations: los tres piden
   // las mismas stats, sin caché eran 3 lecturas a Firestore por vista.

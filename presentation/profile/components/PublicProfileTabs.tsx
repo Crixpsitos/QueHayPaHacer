@@ -2,7 +2,7 @@
 
 import { useEffect, useState, memo } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Loader2, Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import Image from "next/image";
@@ -250,7 +250,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                   <motion.div
                     key={badge.id}
                     variants={itemVariants}
-                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all duration-200 hover:shadow-lg hover:border-brand-violet/30"
+                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all duration-200 hover:shadow-lg hover:border-primary/30"
                   >
                     <div className="flex h-full flex-col">
                       <div className="mb-4 text-5xl">{badge.icon || "⭐"}</div>

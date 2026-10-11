@@ -16,34 +16,34 @@ export async function getCachedProfileStats(uid: string): Promise<ProfileStats> 
   return profileService.getStats(uid);
 }
 
-export async function getCachedUserEvents(uid: string): Promise<UserEvent[]> {
+export async function getCachedUserEvents(uid: string, limit?: number): Promise<UserEvent[]> {
   "use cache";
   cacheTag(`profile-events-${uid}`);
   cacheLife("days");
   const { profileService } = createServerContainer();
-  return profileService.getUserEvents(uid);
+  return profileService.getUserEvents(uid, limit);
 }
 
-export async function getCachedUserSites(uid: string): Promise<UserSite[]> {
+export async function getCachedUserSites(uid: string, limit?: number): Promise<UserSite[]> {
   "use cache";
   cacheTag(`profile-sites-${uid}`);
   cacheLife("days");
   const { profileService } = createServerContainer();
-  return profileService.getUserSites(uid);
+  return profileService.getUserSites(uid, limit);
 }
 
-export async function getCachedUserLikes(uid: string): Promise<UserEventInteraction[]> {
+export async function getCachedUserLikes(uid: string, limit?: number): Promise<UserEventInteraction[]> {
   "use cache";
   cacheTag(`profile-likes-${uid}`);
   cacheLife("days");
   const { profileService } = createServerContainer();
-  return profileService.getUserEventInteractions(uid);
+  return profileService.getUserEventInteractions(uid, limit);
 }
 
-export async function getCachedUserBadges(uid: string): Promise<UserBadge[]> {
+export async function getCachedUserBadges(uid: string, limit?: number): Promise<UserBadge[]> {
   "use cache";
   cacheTag(`profile-badges-${uid}`);
   cacheLife("days");
   const { profileService } = createServerContainer();
-  return profileService.getUserBadges(uid);
+  return profileService.getUserBadges(uid, limit);
 }

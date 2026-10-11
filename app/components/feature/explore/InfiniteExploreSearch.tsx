@@ -39,7 +39,8 @@ export function InfiniteExploreSearch({
     setLoading(true);
     try {
       const res = await loadMoreExploreSearchAction(q, from, to, page, filters);
-      setEvents((prev) => [...prev, ...res.events]);
+      // Offset sobre un orden no estable: puede repetir eventos entre páginas.
+      setEvents((prev) => [...prev, ...res.events.filter((e) => !prev.some((p) => p.id === e.id))]);
       setHasMore(res.hasMore);
       setPage((p) => p + 1);
     } finally {

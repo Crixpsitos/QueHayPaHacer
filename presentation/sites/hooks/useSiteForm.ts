@@ -265,10 +265,14 @@ export function useSiteForm() {
       id: m.id, type: m.type, url: m.url, alt: "",
       isCover: m.isCover, status: "ready" as const, path: m.path,
     }))
+    // geo guardada; si el doc legacy no la tiene, cae al default (Ibagué) en vez de vaciarla
+    const init = createInitialForm()
     setForm({
       coordinates: site.coordinates,
       address: site.address,
-      city: "", citySlug: "", region: "", regionSlug: "", country: "", countrySlug: "",
+      city: site.city?.name || init.city, citySlug: site.city?.slug || init.citySlug,
+      region: site.department?.name || init.region, regionSlug: site.department?.slug || init.regionSlug,
+      country: site.country?.name || init.country, countrySlug: site.country?.slug || init.countrySlug,
       name: site.name,
       description: site.description,
       category: site.category,

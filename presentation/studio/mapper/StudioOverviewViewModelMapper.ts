@@ -3,7 +3,6 @@ import type { StudioOverviewViewModel } from "../view-models/StudioOverviewViewM
 
 /**
  * Mapper: entidad de dominio `OrganizerOverview` → `StudioOverviewViewModel`.
- * Listo para usarse cuando el `StudioService` devuelva datos reales.
  */
 export class StudioOverviewViewModelMapper {
   static toViewModel(overview: OrganizerOverview): StudioOverviewViewModel {
@@ -12,19 +11,19 @@ export class StudioOverviewViewModelMapper {
     return {
       kpis: {
         views: {
-          label: "Total de vistas",
+          label: "Vistas de eventos creados este mes",
           value: kpis.totalViews,
           previousValue: kpis.previousMonthViews,
           changePct: kpis.viewsChangePct,
         },
         registrations: {
-          label: "Registros",
+          label: "Inscripciones de eventos creados este mes",
           value: kpis.totalRegistrations,
           previousValue: kpis.previousMonthRegistrations,
           changePct: kpis.registrationsChangePct,
         },
         likes: {
-          label: "Likes",
+          label: "Likes de eventos creados este mes",
           value: kpis.totalLikes,
           previousValue: kpis.previousMonthLikes,
           changePct: kpis.likesChangePct,
@@ -36,11 +35,16 @@ export class StudioOverviewViewModelMapper {
           changePct: kpis.activeEventsChangePct,
         },
       },
-      viewsVsRegistrations: overview.viewsVsRegistrations.map((p) => ({
-        eventName: p.eventName,
-        views: p.views,
-        registrations: p.registrations,
-      })),
+      conversion: overview.viewsVsRegistrations
+        .map((p) => ({
+          eventId: p.eventId,
+          eventName: p.eventName,
+          views: p.views,
+          registrations: p.registrations,
+          rate: p.views > 0 ? p.registrations / p.views : null,
+        }))
+        // Conversión desc; sin vistas al final; empate → más vistas primero.
+        .sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.views - a.views),
       registrationsTimeline: overview.registrationsTimeline.map((p) => ({
         date: p.date,
         registrations: p.registrations,

@@ -3,6 +3,9 @@ import { ServerBoundary } from "@/presentation/shared/components/ServerBoundary"
 import { loginAction } from "@/app/actions/auth/login.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { GoogleAuthButton } from "@/app/components/feature/auth/GoogleAuthButton";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Iniciar sesión", robots: { index: false, follow: false } };
 
 export default function Login({
     searchParams,
@@ -11,9 +14,9 @@ export default function Login({
 }) {
     return (
         <AuthPageShell
-            title="Iniciar sesion"
-            description="Ingresa tu correo y contrasena para continuar."
-            bottomText="Aun no tienes cuenta?"
+            title="Iniciar sesión"
+            description="Ingresa tu correo y contraseña para continuar."
+            bottomText="¿Aún no tienes cuenta?"
             bottomHrefText="Crear cuenta"
             bottomHref="/register"
         >
@@ -28,7 +31,7 @@ export default function Login({
                             <div className="h-px flex-1 bg-border" />
                         </div>
 
-                        <GoogleAuthButton label="Iniciar sesion con Google" redirectTo={sp.redirect_to} />
+                        <GoogleAuthButton label="Iniciar sesión con Google" redirectTo={sp.redirect_to} />
                     </>
                 )}
             </ServerBoundary>

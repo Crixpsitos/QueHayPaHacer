@@ -31,7 +31,7 @@ export function SiteLocalBusinessJsonLd({ site }: { site: SiteDetail }) {
     "@context": "https://schema.org",
     "@type": SCHEMA_TYPE[site.category] ?? "LocalBusiness",
     name: site.name,
-    url: `${SITE_URL}/sites/${site.id}`,
+    url: `${SITE_URL}/donde-ir/${site.slug || site.id}`,
     ...(site.coverUrl ? { image: site.coverUrl } : {}),
     ...(site.description ? { description: site.description } : {}),
     ...(site.address
@@ -66,7 +66,7 @@ export function SiteItemListJsonLd({ sites }: { sites: SiteDetail[] }) {
     itemListElement: sites.map((s, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      url: `${SITE_URL}/sites/${s.id}`,
+      url: `${SITE_URL}/donde-ir/${s.slug || s.id}`,
     })),
   };
   return (

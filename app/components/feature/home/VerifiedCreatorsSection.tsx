@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Section } from "@/app/components/layout/shared/Section";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 
 async function getVerifiedCreators() {
   "use cache";
@@ -49,7 +50,7 @@ export async function VerifiedCreatorsSection() {
             return (
               <Link
                 key={creator.uid}
-                href={`/profile/${creator.displayName}`}
+                href={buildProfileHref({ id: creator.uid, displayName: creator.displayName })}
                 className="group flex min-w-0 flex-col items-center gap-2 text-center"
                 aria-label={`Ver perfil de ${displayName}`}
               >

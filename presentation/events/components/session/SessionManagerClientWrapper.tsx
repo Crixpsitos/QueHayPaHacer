@@ -6,7 +6,7 @@ import {
   domAnimation,
   m,
   AnimatePresence,
-} from "framer-motion";
+} from "motion/react";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 import type { EventViewModel } from "../../view-models/EventViewModel";
 import { SessionManager } from "./SessionManager";

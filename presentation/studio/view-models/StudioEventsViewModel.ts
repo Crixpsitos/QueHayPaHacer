@@ -11,7 +11,6 @@ export interface TeamMemberVM {
 /**
  * ViewModels de la sección "Mis eventos" del Estudio.
  * Las fechas van como ISO string para poder serializarlas server→client.
- * Datos MOCK por ahora (ver `lib/studioEventsMock.ts`).
  */
 
 export interface StudioEventListItem {

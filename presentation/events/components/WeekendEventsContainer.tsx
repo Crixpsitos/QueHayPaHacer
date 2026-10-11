@@ -16,7 +16,7 @@ export const WeekendEventsContainer = ({ weekendEvents, likedByEventId = {} }: W
     <EventCardInteractive
       events={weekendEventsViewModels}
       likedByEventId={likedByEventId}
-      info={{ title: "Lamentablemente no hay eventos para esta semana :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
+      info={{ title: "No hay eventos esta semana", description: "Revisa la agenda completa o busca un sitio para salir.", action: { href: "/eventos", label: "Ver todos los eventos" } }}
       variant="vertical"
     />
   );

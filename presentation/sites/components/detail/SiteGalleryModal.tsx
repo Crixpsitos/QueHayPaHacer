@@ -223,13 +223,13 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
               cover.type === "video" ? (
                 <div className="relative h-full w-full">
                   {cover.thumbnailUrl
-                    ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+                    ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="(max-width: 640px) 100vw, 640px" />
                     : <div className="h-full w-full bg-zinc-900" />}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-9 text-zinc-900" /></div>
                   </div>
                 </div>
-              ) : <Image src={cover.url} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+              ) : <Image src={cover.url} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="(max-width: 640px) 100vw, 640px" />
             )}
           </button>
         </div>
@@ -280,13 +280,13 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
               cover.type === "video" ? (
                 <div className="relative h-full w-full">
                   {cover.thumbnailUrl
-                    ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+                    ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="(max-width: 1200px) 100vw, 1152px" />
                     : <div className="h-full w-full bg-zinc-900" />}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-10 text-zinc-900" /></div>
                   </div>
                 </div>
-              ) : <Image src={cover.url} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="100vw" />
+              ) : <Image src={cover.url} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="(max-width: 1200px) 100vw, 1152px" />
             )}
           </button>
         ) : (
@@ -302,14 +302,14 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
                   ? (
                     <div className="relative h-full w-full">
                       {cover.thumbnailUrl
-                        ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="50vw" />
+                        ? <Image src={cover.thumbnailUrl} alt={siteName} fill className="object-cover" priority loading="eager" fetchPriority="high" sizes="(max-width: 1200px) 50vw, 576px" />
                         : <div className="h-full w-full bg-zinc-900" />}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                         <div className="rounded-full bg-white/90 p-3 shadow-lg"><Play className="size-8 text-zinc-900" /></div>
                       </div>
                     </div>
                   )
-                  : <Image src={cover.url} alt={siteName} fill className="object-cover hover:scale-105 transition-transform duration-300" priority loading="eager" fetchPriority="high" sizes="50vw" />
+                  : <Image src={cover.url} alt={siteName} fill className="object-cover hover:scale-105 transition-transform duration-300" priority loading="eager" fetchPriority="high" sizes="(max-width: 1200px) 50vw, 576px" />
               )}
             </button>
 
@@ -328,14 +328,14 @@ export function SiteGalleryTrigger({ media, siteName, maxVisible = 5 }: SiteGall
                       ? (
                         <div className="relative h-full w-full">
                           {m.thumbnailUrl
-                            ? <Image src={m.thumbnailUrl} alt={`${siteName} video ${i + 2}`} fill className="object-cover" sizes="25vw" />
+                            ? <Image src={m.thumbnailUrl} alt={`${siteName} video ${i + 2}`} fill className="object-cover" sizes="(max-width: 1200px) 25vw, 288px" />
                             : <div className="h-full w-full bg-zinc-800" />}
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                             <div className="rounded-full bg-white/90 p-1.5"><Play className="size-4 text-zinc-900" /></div>
                           </div>
                         </div>
                       )
-                      : <Image src={m.url} alt={`${siteName} ${i + 2}`} fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="25vw" />
+                      : <Image src={m.url} alt={`${siteName} ${i + 2}`} fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="(max-width: 1200px) 25vw, 288px" />
                     }
                     {isLast && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 text-white">

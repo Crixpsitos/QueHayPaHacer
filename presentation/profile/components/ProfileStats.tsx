@@ -30,7 +30,7 @@ function StatItem({ value, label }: { value: number; label: string }) {
       <span className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
         {value}
       </span>
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60">
+      <span className="text-xs font-medium text-muted-foreground">
         {label}
       </span>
     </div>

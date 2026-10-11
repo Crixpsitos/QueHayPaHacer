@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useForm, useWatch } from "react-hook-form";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { valibotResolver } from "@hookform/resolvers/valibot";

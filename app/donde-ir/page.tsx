@@ -30,6 +30,8 @@ const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[
   return sites.filter((s): s is SiteDetail => Boolean(s));
 };
 
+const FEATURED_ROW = 4;
+
 export const metadata: Metadata = {
   title: "¿Dónde ir en Ibagué?",
   description:
@@ -47,6 +49,11 @@ export default async function DondeIrIndexPage() {
     featuredDef ? fetchCollectionSites(featuredDef) : Promise.resolve([]),
     allDef ? fetchCollectionSites(allDef) : Promise.resolve([]),
   ]);
+
+  // Destacados: una sola fila. "Todos" no repite los que ya se ven arriba.
+  const topFeatured = featured.slice(0, FEATURED_ROW);
+  const featuredIds = new Set(topFeatured.map((s) => s.id));
+  const rest = all.filter((s) => !featuredIds.has(s.id));
 
   return (
     <>
@@ -68,7 +75,7 @@ export default async function DondeIrIndexPage() {
 
         {typeCollections.length > 0 && (
           <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+            <p className="mb-3 text-sm font-medium text-[#52525B]">
               Explorar por tipo de lugar
             </p>
             <SiteCategoryChips collections={typeCollections} />
@@ -76,17 +83,17 @@ export default async function DondeIrIndexPage() {
         )}
       </Section>
 
-      {featuredDef && featured.length > 0 && (
+      {featuredDef && topFeatured.length > 0 && (
         <ContentSection title="Destacados" action={{ href: siteCollectionHref(featuredDef.slug) }}>
-          <SiteDiscoveryGrid sites={featured} showTrending layout="featured" />
+          <SiteDiscoveryGrid sites={topFeatured} />
         </ContentSection>
       )}
 
       <Separator className="my-6" />
 
-      {allDef && all.length > 0 && (
+      {allDef && rest.length > 0 && (
         <ContentSection title="Todos los sitios" action={{ href: siteCollectionHref(allDef.slug) }}>
-          <SiteDiscoveryGrid sites={all} />
+          <SiteDiscoveryGrid sites={rest} />
         </ContentSection>
       )}
     </>

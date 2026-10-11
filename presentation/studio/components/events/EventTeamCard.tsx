@@ -51,7 +51,7 @@ function Member({ member }: { member: TeamMemberVM }) {
               Dueño
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+            <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-700">
               Colaborador
             </span>
           )}

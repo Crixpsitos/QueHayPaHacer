@@ -4,7 +4,7 @@ import type { EventSession } from "@/domain/entities/events/EventSession";
 import type { EventViewModel } from "../../view-models/EventViewModel";
 import { SessionCard } from "./SessionCard";
 import { PlusIcon } from "lucide-react";
-import { m } from "framer-motion";
+import { m } from "motion/react";
 import { Button } from "@/app/components/ui/button";
 
 interface SessionManagerProps {

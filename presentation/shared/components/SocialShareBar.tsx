@@ -82,7 +82,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
 
   return (
     <div className={cn("space-y-2", className)}>
-      <p className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
+      <p className="text-sm font-medium text-[#71717A]">
         Compartir en:
       </p>
 

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { isStudioEventOwner } from "@/app/actions/_session";
 import { EventStatsPanel } from "@/presentation/studio/components/events/EventStatsPanel";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
@@ -32,6 +33,8 @@ export default async function StudioSessionDetailPage({
   searchParams,
 }: SlotProps) {
   const { id, sessionId } = await params;
+  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
+  if (!(await isStudioEventOwner(id))) notFound();
   const sp = await searchParams;
 
   const sortBy = sp.sort === "name" ? "name" : "registeredAt";

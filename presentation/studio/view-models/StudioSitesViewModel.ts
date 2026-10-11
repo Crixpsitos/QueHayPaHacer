@@ -13,8 +13,6 @@ export interface StudioSiteListItem {
   likes: number;
   shares: number;
   eventsCount: number;
-  /** MOCK: tendencia semanal (%). Placeholder para pruebas de UI; aún no es real. */
-  trend: number;
 }
 
 export interface SiteEventItem {

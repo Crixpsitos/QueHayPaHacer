@@ -25,9 +25,11 @@ export function EventsSearchInput({
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mantener el input en sync si la URL cambia por fuera (ej. navegación atrás).
-  useEffect(() => {
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
     setValue(query);
-  }, [query]);
+  }
 
   useEffect(() => {
     return () => {
@@ -70,14 +72,14 @@ export function EventsSearchInput({
 
   return (
     <div className="group relative flex-1 sm:max-w-xs">
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-500" />
+      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary" />
       <input
         type="text"
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
         aria-label="Buscar eventos"
-        className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
       />
       <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
         {isPending ? (

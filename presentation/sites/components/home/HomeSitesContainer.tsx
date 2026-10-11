@@ -27,5 +27,5 @@ export async function HomeSitesContainer() {
   const sites = await fetchHomeSites();
   if (sites.length === 0) return null;
 
-  return <SiteDiscoveryGrid sites={sites} showTrending />;
+  return <SiteDiscoveryGrid sites={sites} />;
 }

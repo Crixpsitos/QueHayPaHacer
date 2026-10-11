@@ -3,35 +3,14 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, MapPin, Heart, Share2, ArrowRight, Tag, Layers } from "lucide-react";
+import { Calendar, MapPin, Heart, Share2, Layers } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
-
-function fmtBogo(iso: string, opts: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", ...opts }).format(
-    new Date(iso),
-  );
-}
-
-function bogoDay(iso: string) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(iso));
-}
-
-function buildDateLabel(event: EventViewModel): string {
-  const isMultiDate = event.eventType === "multi-date";
-  if (isMultiDate && event.startDate && event.endDate) {
-    const same = bogoDay(event.startDate) === bogoDay(event.endDate);
-    if (same) return `Varias sesiones el ${fmtBogo(event.startDate, { day: "numeric", month: "short" })}`;
-    return `Del ${fmtBogo(event.startDate, { day: "numeric", month: "short" })} al ${fmtBogo(event.endDate, { day: "numeric", month: "short" })}`;
-  }
-  if (event.startDate) {
-    return fmtBogo(event.startDate, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  }
-  return "Fecha por confirmar";
-}
+import { formatPrice } from "../detail/format";
+import { dateLine, PosterFallback } from "./EventCard";
 
 interface FeaturedEventCardProps {
   event: EventViewModel;
@@ -47,8 +26,8 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
 
   const href = `/eventos/${event.slug || event.id}`;
   const isMultiDate = event.eventType === "multi-date";
-  const isFree = event.price?.isFree ?? event.price?.amount === 0;
-  const dateLabel = buildDateLabel(event);
+  const dateLabel = dateLine(event);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const handleLike = useCallback(async () => {
     if (!user) return;
@@ -83,24 +62,20 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
         {/* Imagen izquierda — aspect-video en mobile, altura flexible en desktop */}
         <Link
           href={href}
-          className="relative aspect-video shrink-0 overflow-hidden bg-muted sm:aspect-auto sm:w-[42%]"
+          className="relative aspect-video shrink-0 overflow-hidden bg-muted sm:aspect-auto sm:min-h-72 sm:w-[42%]"
         >
-          {event.mainImage?.url ? (
-            <>
+          {event.mainImage?.url && !imageFailed ? (
               <Image
                 src={event.mainImage.url}
                 alt={event.title}
                 fill
                 sizes="(max-width: 640px) 100vw, 42vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
-                priority={prioritizeImage}
+                loading={prioritizeImage ? "eager" : "lazy"}
+                onError={() => setImageFailed(true)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-black/10" />
-            </>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <Calendar className="size-12 text-muted-foreground/20" />
-            </div>
+            <PosterFallback title={event.title} />
           )}
           {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
@@ -109,12 +84,11 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                 <Layers className="size-3" />Varias fechas
               </span>
             )}
-            <span className={cn(
-              "rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm",
-              isFree ? "bg-emerald-500/90 text-white" : "bg-black/50 text-white"
-            )}>
-              {isFree ? "Gratis" : `$${(event.price?.amount ?? 0).toLocaleString("es-CO")}`}
-            </span>
+            {!isMultiDate && event.price && (
+              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#09090B] tabular-nums">
+                {formatPrice(event.price)}
+              </span>
+            )}
           </div>
         </Link>
 
@@ -122,10 +96,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
         <div className="flex flex-1 flex-col justify-between p-5 sm:p-7">
           <div className="space-y-3">
             {event.categoryInfo?.title && (
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <Tag className="size-3.5" />
-                {event.categoryInfo.title}
-              </div>
+              <p className="text-xs font-semibold text-primary">{event.categoryInfo.title}</p>
             )}
             <Link href={href}>
               <h2 className="line-clamp-2 text-xl font-bold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-2xl">
@@ -149,7 +120,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="size-4 shrink-0 text-primary" />
                   <span className="truncate">
-                    {event.location.venue}{event.location.city?.name ? ` · ${event.location.city.name}` : ""}
+                    {event.location.venue}{event.location.city?.name ? `, ${event.location.city.name}` : ""}
                   </span>
                 </div>
               )}
@@ -181,9 +152,9 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
               </button>
               <Link
                 href={href}
-                className="ml-auto flex items-center gap-2 rounded-full bg-grad-primary px-5 py-2.5 text-sm font-semibold text-white shadow-primary-glow transition-all hover:shadow-hover"
+                className="ml-auto flex items-center rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C92F3B]"
               >
-                Ver evento <ArrowRight className="size-4" />
+                Ver evento
               </Link>
             </div>
           </div>

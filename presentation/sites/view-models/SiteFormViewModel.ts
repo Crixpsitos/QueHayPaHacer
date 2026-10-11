@@ -144,6 +144,10 @@ export interface SiteDetail extends SiteListItem {
   socialMedia?: SiteSocialMedia
   temporarilyClosed?: SiteTemporarilyClosed
   bookingUrl?: string
+  /** Geo de la location — se recarga al editar para no borrarla al guardar. */
+  city?: { name: string; slug: string }
+  department?: { name: string; slug: string }
+  country?: { name: string; slug: string }
 }
 
 export interface MapSiteMarker {

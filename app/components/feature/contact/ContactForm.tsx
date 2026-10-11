@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import * as v from "valibot";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, Bug, Calendar, CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { sendContactAction } from "@/app/actions/contact/send-contact.action";
 import {
@@ -31,12 +31,6 @@ const CONTACT_REASONS: { value: ContactReason; label: string }[] = [
   { value: "suggestion",              label: "Propuesta o sugerencia" },
   { value: "advertising_partnership", label: "Publicidad o alianzas" },
   { value: "other",                   label: "Otro" },
-];
-
-const QUICK_ACTIONS: { icon: React.ElementType; label: string; reason: ContactReason }[] = [
-  { icon: Bug,      label: "Reportar un problema",    reason: "report_problem" },
-  { icon: Calendar, label: "Problema con un evento",  reason: "report_event" },
-  { icon: MapPin,   label: "Problema con un sitio",   reason: "report_site" },
 ];
 
 // ── Validation schema ──────────────────────────────────────────────────────────
@@ -78,11 +72,11 @@ function FieldWrapper({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-[#71717A]"
+        className="flex items-center gap-1.5 text-sm font-medium text-[#09090B]"
       >
         {label}
         {optional && (
-          <span className="normal-case tracking-normal font-normal text-[#A1A1AA]">(opcional)</span>
+          <span className="font-normal text-[#71717A]">(opcional)</span>
         )}
       </label>
       {children}
@@ -137,7 +131,6 @@ export function ContactForm() {
   }, [user, setValue]);
 
   const messageValue = watch("message") ?? "";
-  const selectedReason = watch("contactReason");
 
   const onSubmit = handleSubmit((data) => {
     setSubmitError(null);
@@ -191,35 +184,6 @@ export function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
-
-      {/* Quick actions */}
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#71717A]">
-          ¿Qué necesitas?
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map(({ icon: Icon, label, reason }) => {
-            const isSelected = selectedReason === reason;
-            return (
-              <button
-                key={reason}
-                type="button"
-                onClick={() => setValue("contactReason", reason, { shouldValidate: true })}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]/20",
-                  isSelected
-                    ? "border-[#E63946] bg-[#FDF2F4] text-[#E63946] font-semibold shadow-sm"
-                    : "border-[#E4E4E7] bg-white text-[#52525B] hover:border-[#E63946] hover:bg-[#FDF2F4] hover:text-[#E63946]",
-                )}
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Contact reason */}
       <FieldWrapper
@@ -357,7 +321,7 @@ export function ContactForm() {
       </button>
 
       <p className="text-center text-xs text-[#A1A1AA]">
-        Normalmente respondemos en poco tiempo.
+        Te responderemos al correo que indiques.
       </p>
     </form>
   );

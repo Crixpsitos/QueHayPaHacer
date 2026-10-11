@@ -22,7 +22,7 @@ import { SummaryItem } from "../ui/SummaryItem";
 import { SessionsReviewSection } from "./SessionsReviewSection";
 import { Badge } from "@/app/components/ui/badge";
 import { renderToHTMLString } from "@tiptap/static-renderer";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Avatar,
@@ -232,7 +232,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
             {formData.location?.moreInfo && (
               <SummaryItem label="Más información" value={formData.location.moreInfo} />
             )}
-            {formData.location?.coordinates?.lat && (
+            {Boolean(formData.location?.coordinates?.lat) && (
               <SummaryItem label="Mapa" value="Coordenadas configuradas" />
             )}
           </SummarySection>

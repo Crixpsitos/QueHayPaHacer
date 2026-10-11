@@ -9,8 +9,9 @@ import {
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplayStatus } from "../lib/constants"
-import type { SiteDetail, SiteMediaItem, WeekDay } from "../view-models/SiteFormViewModel"
+import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
+import { getSiteOpenStatus } from "../lib/openStatus"
 import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
@@ -268,24 +269,6 @@ function MediaLightbox({ items, index, onClose, onIndex }: {
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const DAY_ORDER: WeekDay[] = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]
-
-function getTodayKey(): WeekDay {
-  return DAY_ORDER[new Date().getDay()]
-}
-
-function getOpenStatus(schedule: SiteDetail["schedule"]): { isOpen: boolean; label: string } {
-  const key = getTodayKey()
-  const sched = schedule?.[key]
-  if (!sched || sched.closed) return { isOpen: false, label: "Cerrado hoy" }
-  const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0) }
-  const cur = new Date().getHours() * 60 + new Date().getMinutes()
-  const isOpen = cur >= toMins(sched.open) && cur < toMins(sched.close)
-  return { isOpen, label: isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}` }
-}
-
 // ── Body ───────────────────────────────────────────────────────────────────────
 
 function Body({ site, onEdit, siteEvents, eventsLoading }: {
@@ -297,8 +280,8 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
   const status     = getDisplayStatus(site.publicationStatus, site.moderationStatus)
   const color      = STATUS_COLORS[status]
   const label      = STATUS_LABELS[status]
-  const openStatus = useMemo(() => getOpenStatus(site.schedule), [site.schedule])
-  const todayKey   = getTodayKey()
+  const openStatus = useMemo(() => getSiteOpenStatus(site.schedule), [site.schedule])
+  const todayKey   = openStatus.todayKey
   const isApproved = status === "approved"
 
   const hasSocial = !!(
@@ -370,7 +353,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           openStatus.isOpen ? "text-emerald-700" : "text-[#71717A]",
         )}>
           <Clock className="size-3.5 shrink-0" aria-hidden />
-          {openStatus.label}
+          {openStatus.label ?? "Horario no disponible"}
         </span>
       </div>
 

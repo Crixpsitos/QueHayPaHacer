@@ -24,7 +24,7 @@ export interface SupportTicketDetailVM extends SupportTicketVM {
 export const SUPPORT_CATEGORIES = [
   "Problema técnico",
   "Pagos y facturación",
-  "Mi cuenta profesional",
+  "Mi cuenta y plan Premium",
   "Gestión de eventos",
   "Reportar contenido",
   "Otro",

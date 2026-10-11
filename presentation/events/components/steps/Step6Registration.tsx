@@ -117,7 +117,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                         </div>
                         <p className="text-xs text-[#71717A] mt-0.5">{desc}</p>
                         {isDisabled && (
-                          <p className="mt-1 text-xs font-medium text-amber-600">Solo disponible para cuentas profesionales</p>
+                          <p className="mt-1 text-xs font-medium text-amber-600">Disponible con Premium</p>
                         )}
                       </div>
 
@@ -140,7 +140,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                       <TooltipProvider key={value}>
                         <Tooltip>
                           <TooltipTrigger asChild>{card}</TooltipTrigger>
-                          <TooltipContent side="top">Activa una cuenta profesional para usar esta opción</TooltipContent>
+                          <TooltipContent side="top">Disponible con el plan Premium</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     );

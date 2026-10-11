@@ -1,22 +1,22 @@
+import type { Metadata } from "next";
+import { getPremiumSessionUid } from "@/app/actions/_session";
 import { StudioOverview } from "@/presentation/studio/components/overview/StudioOverview";
 import type { StudioOverviewViewModel } from "@/presentation/studio/view-models/StudioOverviewViewModel";
-import { MOCK_STUDIO_OVERVIEW } from "@/presentation/studio/view-models/StudioOverviewViewModel";
 import { StudioOverviewViewModelMapper } from "@/presentation/studio/mapper/StudioOverviewViewModelMapper";
 import type { OrganizerOverview } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { cacheLife } from "next/cache";
+
+export const metadata: Metadata = { title: "Resumen" };
 
 const EMPTY_OVERVIEW: StudioOverviewViewModel = {
   kpis: {
-    views: { label: "Total de vistas", value: 0, previousValue: 0, changePct: 0 },
-    registrations: { label: "Registros", value: 0, previousValue: 0, changePct: 0 },
-    likes: { label: "Likes", value: 0, previousValue: 0, changePct: 0 },
+    views: { label: "Vistas de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
+    registrations: { label: "Inscripciones de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
+    likes: { label: "Likes de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
     activeEvents: { label: "Eventos activos", value: 0, previousValue: 0, changePct: 0 },
   },
-  viewsVsRegistrations: [],
+  conversion: [],
   registrationsTimeline: [],
   topEvents: [],
   interactivity: [],
@@ -33,22 +33,13 @@ async function getCachedOrganizerOverview(uid: string): Promise<OrganizerOvervie
 }
 
 export default async function StudioOverviewPage() {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens) {
+  // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
+  const uid = await getPremiumSessionUid();
+  if (!uid) {
     return <StudioOverview data={EMPTY_OVERVIEW} />;
   }
 
-  try {
-    const overview = await getCachedOrganizerOverview(tokens.decodedToken.uid);
-    const data = overview
-      ? StudioOverviewViewModelMapper.toViewModel(overview)
-      : EMPTY_OVERVIEW;
-    // TODO: quitar el fallback cuando getRegistrationsTimeline tenga lógica real (hoy retorna []).
-    if (data.registrationsTimeline.length === 0) {
-      data.registrationsTimeline = MOCK_STUDIO_OVERVIEW.registrationsTimeline;
-    }
-    return <StudioOverview data={data} />;
-  } catch {
-    return <StudioOverview data={EMPTY_OVERVIEW} />;
-  }
+  const overview = await getCachedOrganizerOverview(uid).catch(() => null);
+  const data = overview ? StudioOverviewViewModelMapper.toViewModel(overview) : EMPTY_OVERVIEW;
+  return <StudioOverview data={data} />;
 }

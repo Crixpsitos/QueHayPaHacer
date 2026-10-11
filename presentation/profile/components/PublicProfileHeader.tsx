@@ -6,6 +6,7 @@ import { ShareProfileButton } from "./ShareProfileButton";
 import { MotionFadeIn } from "./MotionFadeIn";
 import { ProfileBanner } from "./ProfileBanner";
 import type { PublicProfileViewModel } from "../view-models/PublicProfileViewModel";
+import { normalizeExternalUrl } from "../lib/normalizeExternalUrl";
 
 interface ProfileStatsShape {
   eventsCount: number;
@@ -15,15 +16,18 @@ interface ProfileStatsShape {
 
 interface PublicProfileHeaderProps {
   profile: PublicProfileViewModel;
-  statsPromise: Promise<ProfileStatsShape>;
+  /** Ausente en perfiles privados: solo se muestran avatar, nombre y @username. */
+  statsPromise?: Promise<ProfileStatsShape>;
 }
 
 const formatMemberSince = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" }).format(new Date(iso));
+  new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "America/Bogota" }).format(new Date(iso));
 
 export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHeaderProps) {
   const fullName = `${profile.firstName} ${profile.lastName}`.trim() || profile.username;
   const isCreator = profile.participation === "creator";
+  const showDetails = profile.isPublic;
+  const websiteHref = showDetails && profile.website ? normalizeExternalUrl(profile.website) : null;
 
   return (
     <MotionFadeIn className="space-y-6">
@@ -45,14 +49,14 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
                 loading="eager"
                 className={`h-20 w-20 bg-background sm:h-32 sm:w-32 ${
                   isCreator
-                    ? "ring-4 ring-brand-violet/80 ring-offset-2 ring-offset-background"
+                    ? "ring-4 ring-primary/80 ring-offset-2 ring-offset-background"
                     : "border-4 border-background ring-1 ring-border"
                 }`}
                 textClassName="text-2xl sm:text-4xl"
               />
               {profile.creatorVerified && (
                 <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-background p-0.5">
-                  <BadgeCheck className="size-6 fill-primary text-white sm:size-7" strokeWidth={2.5} />
+                  <BadgeCheck className="size-6 fill-primary text-white sm:size-7" strokeWidth={2.5} role="img" aria-label="Creador verificado por QHPA" />
                 </div>
               )}
             </div>
@@ -60,41 +64,34 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
             <div className="min-w-0 flex-1 pt-12 sm:pt-14">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  {isCreator ? (
-                    <span className="text-xl font-bold tracking-tight sm:text-2xl">
-                      <span className="text-brand-violet">@</span>
-                      {profile.username}
-                    </span>
-                  ) : (
-                    <span className="text-xl font-bold tracking-tight sm:text-2xl">{fullName}</span>
-                  )}
+                  <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{fullName}</h1>
 
                   {isCreator && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary">
-                      <Award className="h-3.5 w-3.5" />
+                      <Award className="h-3.5 w-3.5" aria-hidden />
                       Creador
                     </span>
                   )}
                 </div>
 
-                {isCreator && (
-                  <p className="text-sm font-medium text-foreground/80">{fullName}</p>
-                )}
+                <p className="text-sm text-muted-foreground">@{profile.username}</p>
 
-                {profile.bio && (
+                {showDetails && profile.bio && (
                   <div className="max-w-lg border-l-2 border-primary/60 pl-4">
                     <p className="text-sm leading-7 text-foreground/80">{profile.bio}</p>
                   </div>
                 )}
 
-                <div className="flex w-fit items-center gap-1.5 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                  <span>Miembro desde {formatMemberSince(profile.memberSince)}</span>
-                </div>
+                {showDetails && (
+                  <div className="flex w-fit items-center gap-1.5 text-xs text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                    <span>Miembro desde {formatMemberSince(profile.memberSince)}</span>
+                  </div>
+                )}
 
-                {profile.website && (
+                {websiteHref && (
                   <a
-                    href={profile.website}
+                    href={websiteHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
@@ -107,11 +104,13 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
             </div>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <Suspense fallback={<StatsSkeleton />}>
-              <PublicProfileStats statsPromise={statsPromise} />
-            </Suspense>
-          </div>
+          {showDetails && statsPromise && (
+            <div className="border-t border-border pt-4">
+              <Suspense fallback={<StatsSkeleton />}>
+                <PublicProfileStats statsPromise={statsPromise} />
+              </Suspense>
+            </div>
+          )}
 
         </div>
       </div>

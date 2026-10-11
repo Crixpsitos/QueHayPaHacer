@@ -1,19 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Award, CalendarDays, Heart, MapPin } from "lucide-react";
 import { fetchMyProfileData, type MyProfileData } from "@/app/lib/api/profile-fetcher";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import {
+  MissingEventCard,
+  TimelineBadgeCard,
+  TimelineEventCard,
+  TimelineSiteCard,
+} from "./TimelineRelatedContent";
+import {
+  buildProfileTimelineItems,
+  groupProfileTimelineItems,
+  type ProfileTimelineItem,
+} from "@/presentation/profile/lib/profileTimeline";
 
-type TimelineItem = {
-  id: string;
-  date: Date;
-  title: string;
-  description: string;
-  href?: string;
-  icon: typeof CalendarDays;
-};
+const ACTIVITY_META = {
+  event: { title: "Aportaste un evento", icon: CalendarDays },
+  site: { title: "Aportaste un sitio", icon: MapPin },
+  like: { title: "Te gustó un evento", icon: Heart },
+  badge: { title: "Obtuviste una insignia", icon: Award },
+} satisfies Record<ProfileTimelineItem["type"], { title: string; icon: typeof CalendarDays }>;
+
+const formatActivityDate = (date: Date) =>
+  new Intl.DateTimeFormat("es-CO", {
+    timeZone: "America/Bogota",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 
 export function ProfileTimeline() {
   const [data, setData] = useState<MyProfileData | null>(null);
@@ -33,42 +49,11 @@ export function ProfileTimeline() {
     return <TimelineSkeleton />;
   }
 
-  const items: TimelineItem[] = [
-    ...data.events.filter((event) => event.status !== "draft").map((event) => ({
-      id: `event-${event.id}`,
-      date: new Date(event.createdAt),
-      title: "Aportaste un evento",
-      description: event.title,
-      href: `/eventos/${event.id}`,
-      icon: CalendarDays,
-    })),
-    ...data.sites.filter((site) => site.publicationStatus !== "draft").map((site) => ({
-      id: `site-${site.id}`,
-      date: new Date(site.createdAt),
-      title: "Propusiste un sitio",
-      description: site.name,
-      href: `/donde-ir/${site.slug}`,
-      icon: MapPin,
-    })),
-    ...data.likes.map((interaction) => ({
-      id: `like-${interaction.id}`,
-      date: new Date(interaction.createdAt),
-      title: "Te gustó un evento",
-      description: interaction.event?.title ?? "Evento",
-      href: interaction.eventId ? `/eventos/${interaction.eventId}` : undefined,
-      icon: Heart,
-    })),
-    ...data.badges.map((badge) => ({
-      id: `badge-${badge.id}`,
-      date: new Date(badge.earnedAt),
-      title: "Recibiste una insignia",
-      description: badge.name,
-      icon: Award,
-    })),
-  ].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const items = buildProfileTimelineItems(data);
+  const groups = groupProfileTimelineItems(items);
 
   return (
-    <section aria-labelledby="trayectoria-title" className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section aria-labelledby="trayectoria-title" className="min-w-0 py-2">
       <div className="mb-6">
         <h2 id="trayectoria-title" className="text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Tu trayectoria</h2>
         <p className="mt-1 text-sm text-muted-foreground">Tu actividad y aportes dentro de QHPA.</p>
@@ -80,28 +65,58 @@ export function ProfileTimeline() {
           <p className="mt-1 text-sm text-muted-foreground">Explora, participa o aporta algo que otros deberían descubrir.</p>
         </div>
       ) : (
-        <ol className="relative space-y-1 before:absolute before:bottom-4 before:left-4 before:top-4 before:w-px before:bg-border">
-          {items.map((item) => {
-            const Icon = item.icon;
-            const content = (
-              <div className="group flex gap-4 rounded-xl px-1 py-3">
-                <span className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-background text-primary">
-                  <Icon className="size-4" aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold group-hover:text-primary">{item.title}</p>
-                    <time className="text-xs text-muted-foreground" dateTime={item.date.toISOString()}>
-                      {new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", year: "numeric" }).format(item.date)}
-                    </time>
-                  </div>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>
-                </div>
-              </div>
-            );
-            return <li key={item.id}>{item.href ? <Link href={item.href}>{content}</Link> : content}</li>;
-          })}
-        </ol>
+        <div className="space-y-8">
+          {groups.map((group) => (
+            <section key={group.dateKey} aria-labelledby={`timeline-date-${group.dateKey}`}>
+              <time
+                id={`timeline-date-${group.dateKey}`}
+                dateTime={group.dateKey}
+                className="block text-sm font-semibold text-foreground"
+              >
+                {formatActivityDate(group.date)}
+              </time>
+
+              <ol className="mt-4 ml-4 border-l border-border">
+                {group.items.map((item) => {
+                  const meta = ACTIVITY_META[item.type];
+                  const Icon = meta.icon;
+
+                  return (
+                    <li key={item.id} className="relative grid min-w-0 grid-cols-[minmax(0,1fr)] pb-7 pl-6 last:pb-0 sm:pl-8">
+                      <span className="absolute -left-4 top-0 flex size-8 items-center justify-center rounded-full border border-border bg-background text-primary shadow-sm">
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0 space-y-3">
+                        <p className="pt-1 text-sm font-semibold text-foreground">{meta.title}</p>
+
+                        {item.type === "event" && (
+                          <TimelineEventCard
+                            event={item.event}
+                            href={`/eventos/${item.event.id}`}
+                            contributed
+                          />
+                        )}
+                        {item.type === "site" && <TimelineSiteCard site={item.site} />}
+                        {item.type === "like" && (
+                          item.interaction.event ? (
+                            <TimelineEventCard
+                              event={item.interaction.event}
+                              href={`/eventos/${item.interaction.eventId}`}
+                              showAuthor
+                            />
+                          ) : (
+                            <MissingEventCard />
+                          )
+                        )}
+                        {item.type === "badge" && <TimelineBadgeCard badge={item.badge} />}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -109,9 +124,9 @@ export function ProfileTimeline() {
 
 function TimelineSkeleton() {
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-card p-6" aria-hidden>
+    <div className="w-full space-y-4 py-2" aria-hidden>
       <Skeleton className="h-6 w-40" />
-      {[0, 1, 2].map((item) => <Skeleton key={item} className="h-16 w-full rounded-xl" />)}
+      {[0, 1, 2].map((item) => <Skeleton key={item} className="h-32 w-full rounded-lg" />)}
     </div>
   );
 }

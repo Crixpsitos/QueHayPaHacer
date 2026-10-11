@@ -47,7 +47,7 @@ export const Navbar = () => {
     { name: "Inicio", href: "/" },
     { name: "Eventos", href: "/eventos" },
     { name: "¿Dónde ir?", href: "/donde-ir" },
-    { name: "Contactanos", href: "/contactanos" },
+    { name: "Contáctanos", href: "/contactanos" },
   ];
 
   const isCreator = user?.profile?.participation === "creator";
@@ -163,7 +163,7 @@ export const Navbar = () => {
                     className="hidden! md:inline-flex!"
                   >
                     <Plus className="size-4" aria-hidden="true" />
-                    {isCreator ? "Crear" : "Aportar"}
+                    {isCreator ? "Crear evento" : "Aportar"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={8}>

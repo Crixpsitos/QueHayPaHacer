@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Activity, Award, MapPin } from "lucide-react";
 
 type Stats = {
@@ -34,9 +34,9 @@ export function PublicProfileStats({ statsPromise }: PublicProfileStatsProps) {
       initial="hidden"
       animate="visible"
     >
-      <StatChip icon={Activity} value={stats.eventsCount} label="Eventos" gradient="from-sky-500/15 to-sky-500/5" iconClassName="text-sky-600 dark:text-sky-400" />
-      <StatChip icon={MapPin} value={stats.sitesCount} label="Sitios" gradient="from-amber-500/15 to-amber-500/5" iconClassName="text-amber-600 dark:text-amber-400" />
-      <StatChip icon={Award} value={stats.badgesCount} label="Insignias" gradient="from-brand-violet/15 to-brand-violet/5" iconClassName="text-brand-violet" />
+      <StatChip icon={Activity} value={stats.eventsCount} label="Eventos" />
+      <StatChip icon={MapPin} value={stats.sitesCount} label="Sitios" />
+      <StatChip icon={Award} value={stats.badgesCount} label="Insignias" />
     </motion.div>
   );
 }
@@ -45,21 +45,17 @@ function StatChip({
   icon: Icon,
   value,
   label,
-  gradient,
-  iconClassName,
 }: {
   icon: typeof Activity;
   value: number;
   label: string;
-  gradient: string;
-  iconClassName: string;
 }) {
   return (
     <motion.div
       variants={item}
-      className={`flex flex-col items-center gap-1 rounded-xl bg-linear-to-br ${gradient} py-3 sm:flex-row sm:justify-center sm:gap-2.5`}
+      className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-3 sm:flex-row sm:justify-center sm:gap-2.5"
     >
-      <Icon className={`size-4 ${iconClassName}`} />
+      <Icon className="size-4 text-primary" aria-hidden />
       <div className="flex items-baseline gap-1.5">
         <span className="text-base font-bold text-foreground">{value}</span>
         <span className="text-xs text-muted-foreground">{label}</span>

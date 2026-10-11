@@ -9,7 +9,7 @@ export const STEPS = [
   { number: 8, label: "Revisión", icon: "CheckCircle" },
 ] as const;
 
-/** Pasos del formulario de encabezado para eventos multi-fecha (solo profesionales). */
+/** Pasos del formulario de encabezado para eventos multi-fecha (solo Premium). */
 export const MULTI_DATE_HEADER_STEPS = [
   { number: 1, label: "Información básica", icon: "FileText" },
   { number: 2, label: "Portada principal", icon: "Image" },

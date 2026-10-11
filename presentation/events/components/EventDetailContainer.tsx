@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
+import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetchers";
+import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import type { LinkedSiteInfo } from "./detail/EventPlace";
 import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
-import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
+import { recordEventView } from "@/app/actions/events/_recordEventView";
 import {
   fetchEventDetailById,
   fetchEventDetailBySlug,
@@ -49,7 +52,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   // Registrar vista del evento (misma lógica para standard y multi-date).
   after(async () => {
-    await recordEventViewAction(event.id, userId);
+    await recordEventView(event.id, userId);
   });
 
   // ── Multi-date: layout con lista de sesiones ──
@@ -63,19 +66,16 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
     ).filter((s) => isOwner || s.status === "published");
 
     return (
-      <>
-        <h1 className="sr-only">{viewModel.title}</h1>
-        <MultiDateEventDetailClient
-          event={viewModel}
-          sessions={sessionVMs}
-          initialLiked={initialLiked}
-          isOwner={isOwner}
-        />
-      </>
+      <MultiDateEventDetailClient
+        event={viewModel}
+        sessions={sessionVMs}
+        initialLiked={initialLiked}
+        isOwner={isOwner}
+      />
     );
   }
 
-  // El acceso al Estudio es solo para dueños con cuenta profesional; los demás
+  // El acceso al Estudio es solo para dueños con plan Premium; los demás
   // dueños ven un modal sencillo con sus inscritos.
   let isPremiumOwner = false;
   if (isOwner && userId) {
@@ -85,34 +85,25 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
   }
 
   // Sitio vinculado (si el evento tiene location.siteId)
-  let linkedSite: { id: string; slug: string; name: string; category: string; address: string; coverUrl: string; isOpen: boolean; openLabel: string } | undefined;
+  let linkedSite: LinkedSiteInfo | undefined;
   const siteId = event.location?.siteId;
   if (siteId) {
-    const { sitesService } = createServerContainer();
-    const site = await sitesService.getSiteDetailById(siteId);
+    // Solo sitios públicos (no borradores/rechazados), cacheado y con hora de Colombia.
+    const site = await fetchPublicSiteDetail(siteId);
     if (site) {
-      const DAY_MAP: Record<number, string> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
-      const now = new Date();
-      const sched = (site.schedule as Record<string, { open: string; close: string; closed: boolean }>)?.[DAY_MAP[now.getDay()]];
-      const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
-      const cur = now.getHours() * 60 + now.getMinutes();
-      const isOpen = !!(sched && !sched.closed && cur >= toMins(sched.open) && cur < toMins(sched.close));
-      const openLabel = !sched ? "Horario no disponible" : sched.closed ? "Cerrado hoy" : isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}`;
-      linkedSite = { id: site.id, slug: site.slug, name: site.name, category: site.category, address: site.address, coverUrl: site.coverUrl, isOpen, openLabel };
+      const { isOpen, label } = getSiteOpenStatus(site.schedule);
+      linkedSite = { id: site.id, slug: site.slug, name: site.name, category: site.category, address: site.address, coverUrl: site.coverUrl, isOpen, openLabel: label ?? "Horario no disponible" };
     }
   }
 
   return (
-    <>
-      <h1 className="sr-only">{viewModel.title}</h1>
-      <EventDetailClient
-        event={viewModel}
-        initialLiked={initialLiked}
-        initialRegistered={initialRegistered}
-        isOwner={isOwner}
-        isPremiumOwner={isPremiumOwner}
-        linkedSite={linkedSite}
-      />
-    </>
+    <EventDetailClient
+      event={viewModel}
+      initialLiked={initialLiked}
+      initialRegistered={initialRegistered}
+      isOwner={isOwner}
+      isPremiumOwner={isPremiumOwner}
+      linkedSite={linkedSite}
+    />
   );
 };

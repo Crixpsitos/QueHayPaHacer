@@ -35,7 +35,7 @@ export const AllEventsContainer = async () => {
   return (
     <EventCardInteractive
       events={allEventsViewModels}
-      info={{ title: "Lamentablemente no hay eventos disponibles :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
+      info={{ title: "Todavía no hay eventos publicados", description: "Mientras tanto, mira los sitios para salir en Ibagué.", action: { href: "/donde-ir", label: "Ver sitios" } }}
       variant="vertical"
     />
   );

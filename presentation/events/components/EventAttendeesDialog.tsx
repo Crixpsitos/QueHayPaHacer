@@ -30,7 +30,7 @@ const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
 /**
  * Modal de "Inscritos" para el organizador de un evento (pensado para cuentas
- * NO profesionales, que no tienen acceso al Estudio). Muestra la lista de
+ * NO Premium, que no tienen acceso al Estudio). Muestra la lista de
  * personas inscritas con buen detalle visual y "cargar más" por cursor.
  */
 export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAttendeesDialogProps) {

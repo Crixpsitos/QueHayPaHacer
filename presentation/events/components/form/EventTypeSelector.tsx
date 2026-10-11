@@ -115,11 +115,11 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
                 : "cursor-pointer border-[#E4E4E7] bg-white hover:border-[#09090B] hover:shadow-hover",
             )}
           >
-            {/* Badge profesional */}
+            {/* Badge Premium */}
             {isMultiDateLocked && (
               <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <Lock className="size-3" />
-                Solo cuentas profesionales
+                Solo Premium
               </div>
             )}
 
@@ -178,7 +178,7 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
                   isMultiDateLocked ? "text-[#A1A1AA]" : "text-[#09090B]",
                 )}
               >
-                {isMultiDateLocked ? "Requiere cuenta profesional" : "Empezar con este tipo"}
+                {isMultiDateLocked ? "Requiere plan Premium" : "Empezar con este tipo"}
               </span>
               <div
                 className={cn(
