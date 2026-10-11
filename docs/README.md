@@ -34,6 +34,7 @@ Cada documento distingue, cuando aplica:
 10. [Handoff y contexto reciente](./10-handoff-y-contexto-reciente.md): decisiones de esta conversación, cambios locales, validaciones y continuidad inmediata.
 11. [Prompt maestro para Claude](./11-prompt-maestro-claude.md): instrucciones listas para delegar la estabilización y cierre del MVP.
 12. [PWA y Google Play](./12-pwa-y-google-play.md): manifest, service worker (caché y cold start), Digital Asset Links y empaquetado Android con Bubblewrap.
+13. [Producción y app Android](./13-produccion-y-app-android.md): runbook completo en orden: facturación, reglas/índices/CORS, secretos, App Hosting, functions, dominio, datos iniciales y publicación en Google Play.
 
 ## Fuente de verdad vigente
 
