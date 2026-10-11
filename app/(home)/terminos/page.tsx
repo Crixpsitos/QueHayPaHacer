@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL_ENTITY, LegalDocument } from "@/app/components/layout/shared/LegalDocument";
+import { LEGAL_ENTITY, LegalDocument, responsibleLine } from "@/app/components/layout/shared/LegalDocument";
 import { FOUNDER_LIMIT, FOUNDER_MONTHS, PREMIUM_PRICE_COP, formatCOP } from "@/presentation/profile/lib/membership";
 
 export const metadata: Metadata = {
@@ -40,11 +40,41 @@ export default function TerminosPage() {
       </section>
 
       <section>
+        <h2>Una plataforma abierta</h2>
+        <p>
+          {LEGAL_ENTITY.name} es una plataforma tecnológica abierta: personas y organizaciones publican por su cuenta
+          eventos y sitios, y otras personas los descubren. Actuamos como intermediario: no creamos, editamos, aprobamos
+          ni garantizamos el contenido que publican los usuarios, y cada autor responde por lo que publica. Que
+          podamos revisar o retirar contenido no nos convierte en organizadores ni en garantes de nada.
+        </p>
+      </section>
+
+      <section>
         <h2>Revisión y retiro de contenido</h2>
         <p>
           El contenido puede pasar por una revisión antes o después de publicarse. Podemos rechazar, ocultar o retirar
           publicaciones que incumplan estos términos, y suspender cuentas que lo hagan de forma reiterada. Si crees que
           retiramos algo por error, escríbenos.
+        </p>
+      </section>
+
+      <section>
+        <h2>Cómo avisarnos de contenido ilegal o que infringe derechos</h2>
+        <p>
+          Si encuentras un evento, sitio o perfil que es ilegal, falso, peligroso o usa tu obra o imagen sin permiso,
+          usa el botón <strong>Reportar</strong> de la página o escríbenos
+          {LEGAL_ENTITY.email ? <> a <a href={`mailto:${LEGAL_ENTITY.email}`}>{LEGAL_ENTITY.email}</a></> : <> desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link></>}
+          con:
+        </p>
+        <ul>
+          <li>El enlace del contenido.</li>
+          <li>Qué está mal y, si es un asunto de derechos de autor o de imagen, que eres el titular o su representante.</li>
+          <li>Tus datos de contacto.</li>
+        </ul>
+        <p>
+          Revisaremos el aviso lo antes posible. Si el contenido es ilegal o infringe derechos, lo retiraremos o
+          suspenderemos la cuenta, y podemos pedirle su versión al autor. Si un tercero reclama por contenido que
+          publicaste, responderás frente a esa persona y nos ayudarás a resolverlo.
         </p>
       </section>
 
@@ -97,6 +127,11 @@ export default function TerminosPage() {
         <p>
           El tratamiento de tus datos se rige por nuestra <Link href="/privacidad">política de privacidad</Link>.
         </p>
+      </section>
+
+      <section>
+        <h2>Quién está detrás</h2>
+        <p>{responsibleLine()}.</p>
       </section>
 
       <section>

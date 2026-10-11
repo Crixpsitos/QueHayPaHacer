@@ -6,12 +6,31 @@ import { Section } from "./Section";
 // persona natural: completar nombre completo, cédula y correo de contacto para
 // datos personales antes del lanzamiento (Ley 1581 de 2012, Decreto 1377).
 // Si se constituye empresa, cambiar por razón social y NIT.
-export const LEGAL_ENTITY = {
+export const LEGAL_ENTITY: {
+  name: string;
+  city: string;
+  contactHref: string;
+  updatedAt: string;
+  /** Nombre completo del responsable (persona natural) o razón social. */
+  owner?: string;
+  /** Correo dedicado para datos personales y avisos de contenido (ej. legal@tudominio.co). */
+  email?: string;
+  phone?: string;
+} = {
   name: "Que Hay Pa Hacer?",
   city: "Ibagué, Tolima, Colombia",
   contactHref: "/contactanos",
   updatedAt: "11 de octubre de 2026",
+  // owner: "Nombre Apellido",
+  // email: "legal@tudominio.co",
+  // phone: "+57 3XX XXX XXXX",
 };
+
+/** "Nombre, ciudad, correo, teléfono" con lo que esté definido. */
+export function responsibleLine() {
+  const { owner, name, city, email, phone } = LEGAL_ENTITY;
+  return [owner ?? name, city, email, phone].filter(Boolean).join(", ");
+}
 
 export function LegalDocument({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL_ENTITY, LegalDocument } from "@/app/components/layout/shared/LegalDocument";
+import { LEGAL_ENTITY, LegalDocument, responsibleLine } from "@/app/components/layout/shared/LegalDocument";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
@@ -16,8 +16,9 @@ export default function PrivacidadPage() {
       <section>
         <h2>Responsable del tratamiento</h2>
         <p>
-          {LEGAL_ENTITY.name}, con domicilio en {LEGAL_ENTITY.city}. Puedes contactarnos para cualquier asunto
-          relacionado con tus datos desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link>.
+          {responsibleLine()}. Para consultas, reclamos o para ejercer tus derechos sobre tus datos escríbenos
+          {LEGAL_ENTITY.email ? <> a <a href={`mailto:${LEGAL_ENTITY.email}`}>{LEGAL_ENTITY.email}</a></> : null} o
+          desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link>.
         </p>
       </section>
 
