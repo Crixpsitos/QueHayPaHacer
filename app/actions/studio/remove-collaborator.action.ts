@@ -3,7 +3,8 @@
 import { getPremiumSessionUid } from "@/app/actions/_session";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { teamAccessTag } from "@/app/actions/_session";
 import type { CollaboratorKind } from "@/domain/entities/studio/Studio";
 
 /** Quita de mi red a un colaborador (user aceptado o externo mío). */
@@ -20,6 +21,16 @@ export async function removeCollaboratorAction(
 
     const { studioService } = createServerContainer();
     await studioService.removeCollaborator(uid, refId, kind);
+    if (kind === "user") {
+      // El vínculo se rompe en ambos sentidos: nadie conserva acceso por equipo a eventos del otro.
+      const [mine, theirs] = await Promise.all([
+        studioService.removeMemberFromOwnerEvents(uid, refId),
+        studioService.removeMemberFromOwnerEvents(refId, uid),
+      ]);
+      for (const id of [...mine, ...theirs]) updateTag(`event-${id}`);
+      updateTag(teamAccessTag(refId));
+      updateTag(teamAccessTag(uid));
+    }
     revalidatePath("/studio/collaborators");
     return { success: true };
   } catch (error) {

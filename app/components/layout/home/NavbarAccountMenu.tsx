@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
+import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.action";
+import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -36,6 +39,10 @@ function AccountTriggerSkeleton({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function InviteDot() {
+  return <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-[#E63946]" />;
+}
+
 export function NavbarAccountMenu({
   compact = false,
   showHome = false,
@@ -45,6 +52,22 @@ export function NavbarAccountMenu({
 } = {}) {
   const router = useRouter();
   const { user, isHydrating, setUser } = useAuth();
+  const [rawPending, setPendingInvites] = useState(0);
+  const uid = user?.uid;
+  const [rawHasTeam, setHasTeam] = useState(false);
+  const isPremiumPlan = user?.profile?.plan === "premium";
+  const hasTeamEvents = uid && !isPremiumPlan ? rawHasTeam : false;
+  const pendingInvites = uid ? rawPending : 0; // logout oculta el punto sin setState en efecto
+
+  // Conteo cacheado en servidor por usuario (ver la action); se refresca al abrir el menú.
+  const refreshInvites = () => {
+    void getPendingInvitationsCountAction().then(setPendingInvites).catch(() => {});
+    // Sin Premium propio: el acceso a "Eventos del equipo" depende de ser miembro de algún evento.
+    if (!isPremiumPlan) void hasTeamEventsAction().then(setHasTeam).catch(() => {});
+  };
+  useEffect(() => {
+    if (uid) refreshInvites();
+  }, [uid]);
 
   if (isHydrating) {
     return <AccountTriggerSkeleton compact={compact} />;
@@ -71,14 +94,15 @@ export function NavbarAccountMenu({
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => open && uid && refreshInvites()}>
       <DropdownMenuTrigger asChild>
         {compact ? (
           <Button
             variant="outline"
             aria-label="Abrir menu de cuenta"
-            className="size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
+            className="relative size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
           >
+            {pendingInvites > 0 && <InviteDot />}
             <Avatar className="size-9">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
@@ -102,7 +126,7 @@ export function NavbarAccountMenu({
           <Button
             variant="outline"
             aria-label="Abrir menu de cuenta"
-            className="h-9 gap-1.5 pl-1.5 pr-2"
+            className="relative h-9 gap-1.5 pl-1.5 pr-2"
           >
             <Avatar size="sm">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
@@ -116,6 +140,7 @@ export function NavbarAccountMenu({
               {username ? `@${username}` : displayName}
             </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            {pendingInvites > 0 && <InviteDot />}
           </Button>
         )}
       </DropdownMenuTrigger>
@@ -188,6 +213,18 @@ export function NavbarAccountMenu({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link href="/mis-invitaciones" className={cn("flex items-center gap-2")}>
+                <MailPlus className="size-4" aria-hidden="true" />
+                Mis invitaciones
+                {pendingInvites > 0 && (
+                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                    <span className="sr-only">{pendingInvites} pendientes: </span>
+                    {pendingInvites}
+                  </span>
+                )}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/sites" className={cn("flex items-center gap-2")}>
                 <MapPin className="size-4" aria-hidden="true" />
                 Mis sitios
@@ -201,12 +238,22 @@ export function NavbarAccountMenu({
                 </Link>
               </DropdownMenuItem>
             ) : (
+              <>
+              {hasTeamEvents && (
+                <DropdownMenuItem asChild>
+                  <Link href="/studio/events" className={cn("flex items-center gap-2")}>
+                    <LayoutDashboard className="size-4" aria-hidden="true" />
+                    Eventos del equipo
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
                   <Sparkles className="size-4" aria-hidden="true" />
                   Mejorar a Premium
                 </Link>
               </DropdownMenuItem>
+              </>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

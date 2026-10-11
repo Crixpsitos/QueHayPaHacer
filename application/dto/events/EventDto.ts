@@ -301,7 +301,7 @@ const CollaboratorsDataSchema = v.record(
   v.object({
     displayName: v.string(),
     photoURL: v.nullish(v.string()),
-    role: v.picklist(["editor", "viewer", "credit"] as const),
+    role: v.picklist(["editor", "viewer", "checkin", "credit"] as const),
   }),
 );
 const collaboratorEntries = {

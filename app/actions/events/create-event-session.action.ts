@@ -15,7 +15,7 @@ export async function createEventSessionAction(
   eventId: string,
   data: Omit<EventSession, "id" | "eventId" | "createdAt" | "updatedAt">,
 ): Promise<CreateSessionResult> {
-  const ownerError = await sessionOwnerError(eventId);
+  const ownerError = await sessionOwnerError(eventId, data?.status === "published" ? "publish_event" : "edit_event");
   if (ownerError) return { success: false, error: ownerError };
 
   // El cliente solo puede guardar borrador o publicar; cancelled/ended no.

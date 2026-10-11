@@ -1,3 +1,4 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
 import { MediaItem } from "@/domain/entities/events/value-objects/Media";
@@ -71,7 +72,7 @@ export interface FirebaseEventsDto {
     collaborators?: { refId: string; kind: "user" | "external" }[];
     collaboratorsData?: Record<
         string,
-        { displayName: string; photoURL?: string | null; role: "editor" | "viewer" | "credit" }
+        { displayName: string; photoURL?: string | null; role: TeamRole }
     >;
     createdAt: Timestamp;
     updatedAt: Timestamp;

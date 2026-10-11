@@ -22,13 +22,15 @@ interface StudioHeaderProps {
   displayName: string;
   email?: string;
   photoURL?: string;
+  /** Miembro de equipo sin Premium propio: solo tiene "Eventos del equipo". */
+  limited?: boolean;
 }
 
-export function StudioHeader({ displayName, email, photoURL }: StudioHeaderProps) {
+export function StudioHeader({ displayName, email, photoURL, limited = false }: StudioHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setUser } = useAuth();
-  const section = getActiveSectionLabel(pathname);
+  const section = getActiveSectionLabel(pathname, limited);
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const handleLogout = async () => {
@@ -42,7 +44,7 @@ export function StudioHeader({ displayName, email, photoURL }: StudioHeaderProps
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <Link href="/studio" className="shrink-0 font-heading text-base font-bold tracking-tight text-zinc-950">
+        <Link href={limited ? "/studio/events" : "/studio"} className="shrink-0 font-heading text-base font-bold tracking-tight text-zinc-950">
           {SITE_NAME}
         </Link>
         <span className="hidden items-center gap-1.5 text-sm text-slate-400 sm:flex">

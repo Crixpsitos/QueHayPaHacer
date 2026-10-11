@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { isStudioSiteOwner } from "@/app/actions/_session";
+import { isStudioSiteOwner, redirectLimitedToEvents } from "@/app/actions/_session";
 import { SiteDetail } from "@/presentation/studio/components/sites/SiteDetail";
 import type {
   SiteDetailViewModel,
@@ -93,6 +93,8 @@ interface SiteDetailPageProps {
 }
 
 export default async function SiteDetailPage({ params, searchParams }: SiteDetailPageProps) {
+  await redirectLimitedToEvents();
+
   const { id } = await params;
   // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
   if (!(await isStudioSiteOwner(id))) notFound();

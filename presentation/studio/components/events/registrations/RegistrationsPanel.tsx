@@ -39,6 +39,7 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
           nextCursor={data.nextCursor}
           prevCursor={data.prevCursor}
           requiresAttendance={data.requiresAttendance}
+          permissions={data.permissions}
           withFormResponses
         />
       );
@@ -56,6 +57,7 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
           nextCursor={data.nextCursor}
           prevCursor={data.prevCursor}
           requiresAttendance={data.requiresAttendance}
+          permissions={data.permissions}
         />
       );
   }

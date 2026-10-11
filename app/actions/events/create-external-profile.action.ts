@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { requireEventPermission } from "@/app/actions/_session";
 import type { ExternalProfileType } from "@/domain/entities/studio/Studio";
 
 const TYPES: ExternalProfileType[] = ["producer", "artist", "venue", "person"];
@@ -46,6 +47,11 @@ export async function createExternalProfileAction(
     if (!displayName) return { success: false, error: "El nombre es obligatorio." };
     if (!TYPES.includes(type)) return { success: false, error: "Tipo inválido." };
 
+    // Acreditar en un evento = gestionar el equipo: solo el dueño.
+    if (eventId && !(await requireEventPermission(eventId, "manage_team"))) {
+      return { success: false, error: "Solo el dueño del evento puede gestionar su equipo." };
+    }
+
     const { userService, studioService } = createServerContainer();
 
     const me = await userService.getUserById(uid);
@@ -73,6 +79,7 @@ export async function createExternalProfileAction(
       );
     }
 
+    if (eventId) updateTag(`event-${eventId}`);
     revalidatePath("/studio/collaborators");
 
     return {

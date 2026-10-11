@@ -6,9 +6,10 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "@/presentation/events/mapper/SessionViewModelMapper";
-import { EventDetailClient } from "./EventDetailClient";
+import { EventDetailClient, type TeamViewerRole } from "./EventDetailClient";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import {
   fetchEventDetailById,
@@ -17,6 +18,7 @@ import {
   fetchUserLiked,
   fetchUserRegistered,
 } from "../data/eventDetailFetchers";
+import { getEventAccess } from "@/app/actions/_session";
 import { recordEventView } from "@/app/actions/events/_recordEventView";
 
 interface SessionDetailContainerProps {
@@ -50,7 +52,7 @@ export async function SessionDetailContainer({
     sessions.find((s) => s.id === sessionRef);
   if (!session || session.status !== "published") return notFound();
 
-  const parentVM = EventViewModelMapper.toViewModel(parent);
+  const parentVM = { ...EventViewModelMapper.toViewModel(parent), ...publicTeam(parent.collaborators, parent.collaboratorsData) };
   const sessionVM = SessionViewModelMapper.toViewModel(
     session,
     parentVM.mainImage?.url,
@@ -72,6 +74,8 @@ export async function SessionDetailContainer({
       : [false, false];
 
   const isOwner = Boolean(userId && parent.author?.id && userId === parent.author.id);
+
+  const teamRole = !isOwner && userId ? ((await getEventAccess(parent.id))?.role as TeamViewerRole | undefined) : undefined;
 
   let isPremiumOwner = false;
   if (isOwner && userId) {
@@ -104,6 +108,7 @@ export async function SessionDetailContainer({
       initialLiked={initialLiked}
       initialRegistered={initialRegistered}
       isOwner={isOwner}
+      teamRole={teamRole}
       isPremiumOwner={isPremiumOwner}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       backLink={{ href: `/eventos/${parentRef}`, label: parent.title }}

@@ -15,6 +15,8 @@ import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { safeParse } from "valibot";
+import { requireEventPermission } from "@/app/actions/_session";
+import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
@@ -42,18 +44,25 @@ export async function updateEventAction(
     };
   }
 
+  // Dueño (sin exigir Premium, como siempre) o editor mientras el dueño siga Premium.
+  const access = await requireEventPermission(eventId, "edit_event", { ownerNeedsPremium: false });
+  if (!access) {
+    return { success: false, error: "No tienes permiso para actualizar este evento." };
+  }
+
   const { eventsService, userService } = createServerContainer();
+  // `author` = el DUEÑO (moderación y plan salen de su perfil, no del editor).
   const [existingEvent, author] = await Promise.all([
     eventsService.getEventById(eventId),
-    userService.getUserById(userId),
+    userService.getUserById(access.ownerId),
   ]);
 
-  if (!existingEvent || existingEvent.author.id !== userId) {
+  if (!existingEvent || existingEvent.author.id !== access.ownerId) {
     return { success: false, error: "No tienes permiso para actualizar este evento." };
   }
 
   if (!author) {
-    return { success: false, error: "No encontramos tu perfil de usuario." };
+    return { success: false, error: "No encontramos el perfil del organizador." };
   }
 
   // author/slug/promotion/status son del servidor (withServerOwnedFields abajo).
@@ -63,7 +72,7 @@ export async function updateEventAction(
     slug: undefined,
     // Solo para pasar el schema: withServerOwnedFields conserva el author guardado.
     author: {
-      id: userId,
+      id: access.ownerId,
       displayName: author.displayName || existingEvent.author.displayName,
       photoURL: undefined,
     },
@@ -106,7 +115,13 @@ export async function updateEventAction(
 
   // El cliente no cambia tipo (multi-fecha es Premium), estado, moderación,
   // promoción ni analytics: se conservan los del evento guardado.
-  const updatedEvent = enforcePlanFeatures(withServerOwnedFields(existingEvent, parsedData), author);
+  const { event: withTeam, changedUids } = await applyTeamPolicy(
+    withServerOwnedFields(existingEvent, parsedData),
+    existingEvent,
+    access.role,
+    access.ownerId,
+  );
+  const updatedEvent = enforcePlanFeatures(withTeam, author);
 
   if (existingEvent.status === "published") {
     Object.assign(updatedEvent, moderationFieldsForSubmission(author));
@@ -123,8 +138,9 @@ export async function updateEventAction(
     }
     revalidatePath(`/eventos/${eventId}`, "page");
     updateTag(`event-${eventId}`);
-    updateTag(`profile-events-${userId}`);
-    updateTag(`profile-stats-${userId}`);
+    invalidateTeamAccess(changedUids);
+    updateTag(`profile-events-${access.ownerId}`);
+    updateTag(`profile-stats-${access.ownerId}`);
     revalidatePath("/profile/events", "page");
 
     return { success: true };

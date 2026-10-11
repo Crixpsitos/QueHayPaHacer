@@ -7,6 +7,8 @@ interface StudioShellProps {
   email?: string;
   photoURL?: string;
   premiumLabel: string;
+  /** Miembro de equipo sin Premium propio: experiencia reducida (la UI decide qué mostrar). */
+  limited?: boolean;
   children: ReactNode;
 }
 
@@ -19,13 +21,14 @@ export function StudioShell({
   email,
   photoURL,
   premiumLabel,
+  limited = false,
   children,
 }: StudioShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans text-slate-900 antialiased">
-      <StudioHeader displayName={displayName} email={email} photoURL={photoURL} />
+      <StudioHeader displayName={displayName} email={email} photoURL={photoURL} limited={limited} />
       <div className="flex flex-1">
-        <StudioSidebar premiumLabel={premiumLabel} />
+        <StudioSidebar premiumLabel={premiumLabel} limited={limited} />
         <main className="min-w-0 flex-1 bg-gray-50/40">
           <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6">{children}</div>
         </main>

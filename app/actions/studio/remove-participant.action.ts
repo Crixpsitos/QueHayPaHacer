@@ -1,6 +1,6 @@
 "use server";
 
-import { isStudioEventOwner } from "@/app/actions/_session";
+import { requireEventPermission } from "@/app/actions/_session";
 
 import { updateTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -22,7 +22,7 @@ export async function removeParticipantAction(
   sessionId?: string,
 ): Promise<ActionResult> {
   try {
-    if (!(await isStudioEventOwner(eventId))) return { success: false, error: "No autorizado." };
+    if (!(await requireEventPermission(eventId, "remove_participant"))) return { success: false, error: "No autorizado." };
     const { studioService } = createServerContainer();
     await studioService.removeParticipant(eventId, userId, sessionId);
 

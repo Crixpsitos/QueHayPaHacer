@@ -1,5 +1,7 @@
 "use client";
 
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
+import { publicCredits } from "@/domain/entities/events/publicCredits";
 import { useState } from "react";
 import Link from "next/link";
 import { AtSign, ChevronRight, Globe, Link2, Loader2, Music2, Users } from "lucide-react";
@@ -22,7 +24,7 @@ const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
 type CollaboratorsData = Record<
   string,
-  { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+  { displayName: string; photoURL?: string; role: TeamRole }
 >;
 
 interface Props {
@@ -42,7 +44,7 @@ export function EventCollaboratorsDialog({ collaborators, collaboratorsData, cla
   const [loadingExt, setLoadingExt] = useState(false);
 
   const kindByRef = new Map((collaborators ?? []).map((c) => [c.refId, c.kind]));
-  const list = Object.entries(collaboratorsData ?? {}).map(([refId, d]) => ({
+  const list = Object.entries(publicCredits(collaboratorsData)).map(([refId, d]) => ({
     refId,
     kind: kindByRef.get(refId) ?? (d.role === "credit" ? "external" : "user"),
     displayName: d.displayName,

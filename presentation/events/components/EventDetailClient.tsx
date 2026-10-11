@@ -1,5 +1,6 @@
 "use client";
 
+import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
 import { useState, lazy, Suspense } from "react";
 import Link from "next/link";
 import { ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
@@ -29,12 +30,17 @@ const EventRegistrationModal = lazy(() =>
 const secondaryBtn =
   "inline-flex items-center gap-2 rounded-xl border border-[#E4E4E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#09090B] transition-colors hover:border-[#09090B]";
 
+/** Rol de equipo con acceso al Studio del evento (distinto del dueño). */
+export type TeamViewerRole = "editor" | "viewer" | "checkin";
+
 interface EventDetailClientProps {
   event: EventViewModel;
   initialLiked: boolean;
   initialRegistered: boolean;
   /** True cuando el usuario que ve el evento es su organizador. */
   isOwner?: boolean;
+  /** Rol de equipo de quien ve el evento (calculado en servidor); solo muestra accesos, no autoriza. */
+  teamRole?: TeamViewerRole;
   /** True cuando el organizador tiene plan Premium (acceso al Estudio). */
   isPremiumOwner?: boolean;
   /** Ruta a compartir (usada por el detalle de sesión para compartir la sesión). */
@@ -54,6 +60,7 @@ export function EventDetailClient({
   initialLiked,
   initialRegistered,
   isOwner = false,
+  teamRole,
   isPremiumOwner = false,
   shareUrl,
   backLink,
@@ -161,6 +168,29 @@ export function EventDetailClient({
         {event.registrationType === "external" && event.externalUrl && (
           <p className="text-center text-xs text-[#71717A]">Te llevamos al sitio del organizador para completar la inscripción.</p>
         )}
+      </div>
+    );
+  }
+
+  if (teamRole && !isOwner) {
+    action = (
+      <div className="space-y-4">
+        <div className="space-y-3 rounded-2xl bg-[#F4F4F5] p-4">
+          <p className="text-sm font-semibold text-[#09090B]">Estás en el equipo como {TEAM_ROLE_LABEL[teamRole].toLowerCase()}</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/studio/events/${event.id}`} className={cn(secondaryBtn, "border-[#09090B] bg-[#09090B] text-white hover:bg-[#18181B]")}>
+              <LayoutDashboard className="size-4" aria-hidden="true" />
+              Abrir en Studio
+            </Link>
+            {can(teamRole, "edit_event") && (
+              <Link href={editSessionHref ?? `/eventos/${event.id}/edit`} className={secondaryBtn}>
+                <Pencil className="size-4" aria-hidden="true" />
+                {editSessionHref ? "Editar sesión" : "Editar evento"}
+              </Link>
+            )}
+          </div>
+        </div>
+        {action}
       </div>
     );
   }

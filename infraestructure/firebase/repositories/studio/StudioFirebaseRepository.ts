@@ -37,13 +37,16 @@ import type {
   ExternalProfileInput,
   CollaboratorKind,
   CollaboratorRole,
+  TeamEventItem,
   AudienceSummary,
   CreateSupportTicketInput,
   MultiDateEventStats,
   MultiDateSessionStats,
 } from "@/domain/entities/studio/Studio";
-import { Pipelines, FieldValue } from "@google-cloud/firestore";
+import { Pipelines, FieldValue, FieldPath } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { isRoleValidForKind } from "@/domain/entities/events/teamPolicy";
+import { isTeamRole } from "@/domain/entities/events/teamAccess";
 import { buildWeeklyInteractions, WEEK_SECONDS } from "./weeklyInteractions";
 
 const {
@@ -1318,12 +1321,14 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   async confirmAttendance(
     eventId: string,
     userId: string,
-    sessionId?: string,
+    sessionId: string | undefined,
+    actingUid: string,
   ): Promise<void> {
     const regRef = this.db
       .collection(`${this.docPath(eventId, sessionId)}/registrations`)
       .doc(userId);
-    await regRef.update({ checkedInAt: FieldValue.serverTimestamp() });
+    // checkedInBy = quién confirmó (auditoría).
+    await regRef.update({ checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
   }
 
   /**
@@ -1331,7 +1336,12 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    * colección del evento/sesión (consulta de igualdad, sin índice compuesto) y sella
    * `checkedInAt`. Idempotente. Exige `requiresAttendance` en el evento/sesión.
    */
-  async checkInByCode(eventId: string, code: string, sessionId?: string): Promise<CheckInByCodeResult> {
+  async checkInByCode(
+    eventId: string,
+    code: string,
+    sessionId: string | undefined,
+    actingUid: string,
+  ): Promise<CheckInByCodeResult> {
     const targetRef = this.db.doc(this.docPath(eventId, sessionId));
     return this.db.runTransaction(async (tx) => {
       const [target, found] = await Promise.all([
@@ -1345,7 +1355,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       if (entry.status === "canceled") return { result: "canceled" };
       const name = (entry.name as string) || "Asistente";
       if (entry.status === "accepted" || entry.checkedInAt) return { result: "already", name };
-      tx.update(doc.ref, { checkedInAt: FieldValue.serverTimestamp() });
+      tx.update(doc.ref, { checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
       return { result: "ok", name };
     });
   }
@@ -1952,7 +1962,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   /**
    * Quita de mi red a un colaborador. Externo: borra el `externalProfiles`
    * (solo su `managedBy`). User: borra las invitaciones aceptadas que yo le envié.
-   * No toca los eventos donde ya está acreditado (se quitan desde el editor).
+   * No toca los eventos: la action llama a `removeMemberFromOwnerEvents` para cortar el acceso.
    */
   async removeCollaborator(uid: string, refId: string, kind: CollaboratorKind): Promise<void> {
     if (kind === "external") {
@@ -2053,6 +2063,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     };
     if (event.author?.id !== actingUid) throw new Error("No autorizado.");
     if ((event.collaborators ?? []).some((c) => c.refId === member.refId)) return;
+    if (member.refId === actingUid) throw new Error("No puedes acreditarte a ti mismo.");
+    if (!isRoleValidForKind(member.kind, member.role)) {
+      throw new Error(member.kind === "external" ? "Los perfiles externos solo pueden ser crédito." : "Rol inválido.");
+    }
+    if (!(await this.isInMyNetwork(actingUid, member.refId, member.kind))) {
+      throw new Error("Solo puedes agregar a personas de tu red de colaboradores.");
+    }
 
     await eventRef.update({
       collaborators: FieldValue.arrayUnion({ refId: member.refId, kind: member.kind }),
@@ -2063,6 +2080,100 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       },
       updatedAt: FieldValue.serverTimestamp(),
     });
+  }
+
+  /** ¿`refId` es de mi red? user = vínculo aceptado en cualquier sentido; external = perfil que yo administro. */
+  private async isInMyNetwork(uid: string, refId: string, kind: CollaboratorKind): Promise<boolean> {
+    if (kind === "external") {
+      const snap = await this.db.collection("externalProfiles").doc(refId).get();
+      return snap.exists && (snap.data() as { managedBy?: string }).managedBy === uid;
+    }
+    const invites = this.db.collection("collaborationInvites");
+    const [sent, received] = await Promise.all([
+      invites.where("fromUid", "==", uid).where("toUid", "==", refId).get(),
+      invites.where("fromUid", "==", refId).where("toUid", "==", uid).get(),
+    ]);
+    return [...sent.docs, ...received.docs].some((d) => d.data().status === "accepted");
+  }
+
+  /**
+   * Cambia el rol de un miembro ya acreditado. Transaccional (lee el tipo del miembro) y
+   * solo toca `collaboratorsData.<refId>.role`, sin pisar el resto del evento. Solo el owner.
+   */
+  async changeCollaboratorRole(
+    eventId: string,
+    refId: string,
+    role: CollaboratorRole,
+    actingUid: string,
+  ): Promise<void> {
+    const eventRef = this.db.collection("events").doc(eventId);
+    await this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(eventRef);
+      if (!snap.exists) throw new Error("Evento no encontrado.");
+      const event = snap.data() as {
+        author?: { id?: string };
+        collaborators?: { refId: string; kind: "user" | "external" }[];
+      };
+      if (event.author?.id !== actingUid) throw new Error("No autorizado.");
+      const member = (event.collaborators ?? []).find((c) => c.refId === refId);
+      if (!member) throw new Error("Esa persona no está en el equipo del evento.");
+      if (!isRoleValidForKind(member.kind, role)) {
+        throw new Error(member.kind === "external" ? "Los perfiles externos solo pueden ser crédito." : "Rol inválido.");
+      }
+      tx.update(eventRef, new FieldPath("collaboratorsData", refId, "role"), role, "updatedAt", FieldValue.serverTimestamp());
+    });
+  }
+
+  /** Eventos donde `uid` es miembro con rol de Studio. `array-contains` sobre el elemento exacto `{refId, kind:"user"}`. */
+  async listTeamEventsForUser(uid: string): Promise<TeamEventItem[]> {
+    const snap = await this.db
+      .collection("events")
+      .where("collaborators", "array-contains", { refId: uid, kind: "user" })
+      .limit(50)
+      .get();
+    const items: TeamEventItem[] = [];
+    for (const d of snap.docs) {
+      const e = d.data() as {
+        title?: string;
+        status?: string;
+        author?: { id?: string };
+        startDate?: Timestamp;
+        mainImage?: { url?: string };
+        collaboratorsData?: Record<string, { role?: string }>;
+      };
+      const role = e.collaboratorsData?.[uid]?.role;
+      if (!isTeamRole(role) || role === "credit" || !e.author?.id) continue;
+      items.push({
+        id: d.id,
+        title: e.title ?? "",
+        startDate: e.startDate?.toDate ? e.startDate.toDate() : null,
+        mainImage: e.mainImage?.url,
+        status: e.status ?? "draft",
+        role,
+        ownerId: e.author.id,
+      });
+    }
+    return items;
+  }
+
+  async removeMemberFromOwnerEvents(ownerUid: string, refId: string): Promise<string[]> {
+    const snap = await this.db
+      .collection("events")
+      .where("collaborators", "array-contains", { refId, kind: "user" })
+      .get();
+    const mine = snap.docs.filter((d) => (d.data().author as { id?: string } | undefined)?.id === ownerUid);
+    if (mine.length === 0) return [];
+    const batch = this.db.batch();
+    for (const d of mine) {
+      const next = ((d.data().collaborators ?? []) as { refId: string }[]).filter((c) => c.refId !== refId);
+      batch.update(d.ref, {
+        collaborators: next,
+        [`collaboratorsData.${refId}`]: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    return mine.map((d) => d.id);
   }
 
   /**

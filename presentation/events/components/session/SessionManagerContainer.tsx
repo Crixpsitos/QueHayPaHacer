@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
+import { requireEventPermission } from "@/app/actions/_session";
 import { SessionManagerClientWrapper } from "./SessionManagerClientWrapper";
 
 interface SessionManagerContainerProps {
@@ -23,11 +24,16 @@ export async function SessionManagerContainer({
     notFound();
   }
 
+  // Dueño o editor (edit_event); el Premium del dueño lo valida el guard.
+  if (!(await requireEventPermission(eventId, "edit_event", { ownerNeedsPremium: false }))) {
+    notFound();
+  }
+
   const { eventsService, eventSessionService } = createServerContainer();
 
   const event = await eventsService.getEventById(eventId);
 
-  if (!event || event.author.id !== tokens.decodedToken.uid) {
+  if (!event) {
     notFound();
   }
 

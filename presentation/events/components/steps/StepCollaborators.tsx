@@ -1,12 +1,13 @@
 "use client";
 
+import { TEAM_ROLE_DESCRIPTION, TEAM_ROLE_LABEL, type TeamRole } from "@/domain/entities/events/teamAccess";
 import { useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Check, Loader2, Plus, UserMinus, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { notify } from "@/presentation/shared/lib/notify";
 import type { FormEventDto } from "@/application/dto/events/EventDto";
-import type { Collaborator, UserCollaboratorRole } from "@/domain/entities/studio/Studio";
+import type { Collaborator } from "@/domain/entities/studio/Studio";
 import { getMyCollaboratorsAction } from "@/app/actions/events/get-my-collaborators.action";
 import { ExternalProfileForm } from "@/presentation/studio/components/collaborators/ExternalProfileForm";
 import type { CreatedExternal } from "@/app/actions/events/create-external-profile.action";
@@ -14,10 +15,8 @@ import { cn } from "@/app/lib/utils/cn";
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
-const ROLE_LABEL: Record<string, string> = {
-  viewer: "Visualizador",
-  editor: "Editor",
-};
+// Orden de presentación: Editor, Lector, Control de acceso, Solo crédito.
+const ROLE_ORDER: readonly TeamRole[] = ["editor", "viewer", "checkin", "credit"];
 
 /**
  * Step del wizard (solo plan Premium) para acreditar colaboradores de
@@ -30,7 +29,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
 
   const [roster, setRoster] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);
-  const [roles, setRoles] = useState<Record<string, UserCollaboratorRole>>({});
+  const [roles, setRoles] = useState<Record<string, TeamRole>>({});
   const [showExternal, setShowExternal] = useState(false);
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
     kind: "user" | "external",
     displayName: string,
     photoURL: string | undefined,
-    role: "editor" | "viewer" | "credit",
+    role: TeamRole,
   ) => {
     form.setValue("collaborators", [...collaborators, { refId, kind }], { shouldDirty: true });
     form.setValue(
@@ -88,11 +87,16 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
 
   return (
     <div className="space-y-4">
+      <p className="rounded-xl bg-[#F4F4F5] px-4 py-3 text-sm text-[#3F3F46]">
+        Los editores publican y cambian el evento; el personal de control de acceso solo escanea el QR y confirma
+        asistencia; los lectores ven estadísticas e inscritos sin datos de contacto. Quien queda como solo crédito
+        aparece en el evento, sin acceso al Studio.
+      </p>
 
       {/* Acreditados en este evento */}
       {creditedEntries.length > 0 && (
         <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#71717A]">
+          <p className="mb-3 text-xs font-semibold text-[#71717A]">
             Acreditados en este evento
           </p>
           <ul className="space-y-2">
@@ -110,7 +114,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-[#09090B]">{c.displayName}</p>
                   <p className="text-xs text-[#71717A]">
-                    {c.role === "credit" ? "Perfil externo" : (ROLE_LABEL[c.role] ?? c.role)}
+                    {TEAM_ROLE_LABEL[c.role] ?? c.role}
                   </p>
                 </div>
                 <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
@@ -132,7 +136,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
 
       {/* Mi red */}
       <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
-        <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#71717A]">
+        <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-[#71717A]">
           <Users className="size-3.5" /> Mi red
         </p>
 
@@ -151,7 +155,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
             {available.map((c) => (
               <li
                 key={c.refId}
-                className="flex items-center gap-3 rounded-xl border border-[#F4F4F5] px-3 py-2.5"
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-[#F4F4F5] px-3 py-2.5"
               >
                 <Avatar className="size-9 shrink-0">
                   <AvatarImage src={c.photoURL} alt={c.displayName} />
@@ -165,20 +169,26 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                     {c.kind === "external" ? "Perfil externo" : "Creador"}
                   </p>
                 </div>
-                {c.kind === "user" && (
+                {c.kind === "user" ? (
                   <select
                     value={roles[c.refId] ?? "viewer"}
+                    aria-label={`Rol de ${c.displayName}`}
                     onChange={(e) =>
                       setRoles((prev) => ({
                         ...prev,
-                        [c.refId]: e.target.value as UserCollaboratorRole,
+                        [c.refId]: e.target.value as TeamRole,
                       }))
                     }
                     className="h-8 rounded-lg border border-[#E4E4E7] bg-white px-2.5 text-xs text-[#09090B] outline-none transition-colors focus:border-[#E63946]"
                   >
-                    <option value="viewer">Visualizador</option>
-                    <option value="editor">Editor</option>
+                    {ROLE_ORDER.map((r) => (
+                      <option key={r} value={r}>
+                        {TEAM_ROLE_LABEL[r]}
+                      </option>
+                    ))}
                   </select>
+                ) : (
+                  <span className="text-xs font-medium text-[#71717A]">{TEAM_ROLE_LABEL.credit}</span>
                 )}
                 <button
                   type="button"
@@ -190,6 +200,9 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                 >
                   <Plus className="size-3.5" /> Acreditar
                 </button>
+                <p className="basis-full pl-12 text-xs text-[#71717A]">
+                  {c.kind === "user" ? TEAM_ROLE_DESCRIPTION[roles[c.refId] ?? "viewer"] : TEAM_ROLE_DESCRIPTION.credit}
+                </p>
               </li>
             ))}
           </ul>

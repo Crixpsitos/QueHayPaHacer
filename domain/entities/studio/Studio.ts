@@ -1,3 +1,4 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 
 /**
  * Tipos de dominio del "Estudio del Organizador".
@@ -301,11 +302,23 @@ export interface GetStudioListParams {
   limit?: number;
 }
 
+/** Evento donde el usuario es miembro del equipo (rol con acceso al Studio). */
+export interface TeamEventItem {
+  id: string;
+  title: string;
+  startDate: Date | null;
+  /** URL de la portada. */
+  mainImage?: string;
+  status: string;
+  role: TeamRole;
+  ownerId: string;
+}
+
 /** Tipo de colaborador: user real de la plataforma o perfil externo sin login. */
 export type CollaboratorKind = "user" | "external";
 /** Rol de un colaborador de user real (los externos siempre son "credit"). */
-export type UserCollaboratorRole = "editor" | "viewer";
-export type CollaboratorRole = UserCollaboratorRole | "credit";
+export type UserCollaboratorRole = Exclude<TeamRole, "credit">;
+export type CollaboratorRole = TeamRole;
 export type ExternalProfileType = "producer" | "artist" | "venue" | "person";
 
 /** Miembro de mi red de colaboradores: user que aceptó, o perfil externo mío. */

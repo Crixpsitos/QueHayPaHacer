@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getMyTeamAccess } from "@/app/actions/_session";
 import { StudioShell } from "./StudioShell";
 import { createServerContainer } from "@/infraestructure/di/container";
 
@@ -22,8 +23,13 @@ export async function StudioGate({ children }: { children: ReactNode }) {
   const { userService } = createServerContainer();
   const user = await userService.getUserById(decodedToken.uid);
 
+  // Sin Premium propio: pasa solo si es miembro (editor/lector/control de acceso) de eventos de un
+  // dueño Premium → experiencia limitada. Si no, como siempre.
+  let limited = false;
   if (user?.plan !== "premium") {
-    redirect("/profile");
+    const { hasTeamEvents } = await getMyTeamAccess();
+    if (!hasTeamEvents) redirect("/profile");
+    limited = true;
   }
 
   return (
@@ -31,7 +37,8 @@ export async function StudioGate({ children }: { children: ReactNode }) {
       displayName={decodedToken.name ?? decodedToken.email ?? "Creador"}
       email={decodedToken.email ?? undefined}
       photoURL={decodedToken.picture ?? undefined}
-      premiumLabel="Plan Premium"
+      premiumLabel={limited ? "Equipo" : "Plan Premium"}
+      limited={limited}
     >
       {children}
     </StudioShell>

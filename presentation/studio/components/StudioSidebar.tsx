@@ -6,13 +6,15 @@ import { motion } from "motion/react";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { SPRING_SNAPPY } from "@/app/components/motion/primitives";
-import { STUDIO_NAV } from "../lib/navigation";
+import { STUDIO_NAV, STUDIO_NAV_LIMITED } from "../lib/navigation";
 
 interface StudioSidebarProps {
   premiumLabel: string;
+  /** Modo equipo sin Premium propio: solo "Eventos del equipo" y acceso a conocer Premium. */
+  limited?: boolean;
 }
 
-export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
+export function StudioSidebar({ premiumLabel, limited = false }: StudioSidebarProps) {
   const pathname = usePathname();
 
   const isActive = (href: string, exact?: boolean) =>
@@ -21,7 +23,7 @@ export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-gray-200 bg-gray-50/60 lg:flex">
       <nav className="flex-1 space-y-1 p-3">
-        {STUDIO_NAV.map((item) => {
+        {(limited ? STUDIO_NAV_LIMITED : STUDIO_NAV).map((item) => {
           const active = isActive(item.href, item.exact);
           return (
             <Link
@@ -58,7 +60,12 @@ export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
             <p className="text-[11px] font-medium text-slate-400">
               Cuenta
             </p>
-            <p className="truncate text-sm font-semibold text-slate-800">{premiumLabel}</p>
+            <p className="truncate text-sm font-semibold text-slate-800">{limited ? "Colaborador" : premiumLabel}</p>
+            {limited && (
+              <Link href="/premium" className="text-xs font-medium text-primary hover:underline">
+                Conocer Premium
+              </Link>
+            )}
           </div>
         </div>
       </div>

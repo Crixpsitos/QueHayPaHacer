@@ -18,6 +18,8 @@ import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
 import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration";
+import { requireEventPermission } from "@/app/actions/_session";
+import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
@@ -63,15 +65,24 @@ export async function publishEventAction(
   }
 
   const { eventsService, profileService, userService, contentDeclarationService } = createServerContainer();
-  const author = await userService.getUserById(tokens.decodedToken.uid);
+  const actorUid = tokens.decodedToken.uid;
+  const existingEvent = event.id ? await eventsService.getEventById(event.id) : null;
+  if (event.id && !existingEvent) {
+    return { success: false, error: "No tienes permiso para publicar este evento." };
+  }
+  // Evento existente: dueño (sin exigir Premium, como siempre) o editor mientras el dueño siga Premium.
+  const access = event.id
+    ? await requireEventPermission(event.id, "publish_event", { ownerNeedsPremium: false })
+    : null;
+  if (event.id && !access) {
+    return { success: false, error: "No tienes permiso para publicar este evento." };
+  }
+  // `author` = el DUEÑO del evento (plan y moderación salen de su perfil); quien publica (actor) firma la declaración.
+  const ownerId = access?.ownerId ?? actorUid;
+  const author = await userService.getUserById(ownerId);
 
   if (!author) {
-    return { success: false, error: "No encontramos tu perfil de usuario." };
-  }
-
-  const existingEvent = event.id ? await eventsService.getEventById(event.id) : null;
-  if (event.id && (!existingEvent || existingEvent.author.id !== author.uid)) {
-    return { success: false, error: "No tienes permiso para publicar este evento." };
+    return { success: false, error: "No encontramos el perfil del organizador." };
   }
 
   // El tipo guardado manda: el cliente no puede cambiarlo al publicar.
@@ -136,9 +147,9 @@ export async function publishEventAction(
     publishedAt: new Date().toISOString(),
     eventType,
     author: {
-      id: tokens.decodedToken.uid,
-      displayName: author.displayName || tokens.decodedToken.name || "",
-      photoURL: author.photoURL || tokens.decodedToken.picture || undefined,
+      id: ownerId,
+      displayName: author.displayName || (ownerId === actorUid ? tokens.decodedToken.name : "") || "",
+      photoURL: author.photoURL || (ownerId === actorUid ? tokens.decodedToken.picture : undefined) || undefined,
     },
   });
 
@@ -159,11 +170,15 @@ export async function publishEventAction(
     resultParse.output as unknown as EventViewModel,
   );
   // Republicar conserva analytics (score), promoción, createdAt, metadata, autor.
-  const parsedData = enforcePlanFeatures(
+  const { event: withTeam, changedUids } = await applyTeamPolicy(
     existingEvent ? withServerOwnedFields(existingEvent, domainData) : domainData,
-    author,
+    existingEvent,
+    access?.role ?? "owner",
+    ownerId,
   );
-  const userId = tokens.decodedToken.uid;
+  const parsedData = enforcePlanFeatures(withTeam, author);
+  // userId = dueño (tags de perfil, "primer evento"); el actor solo firma la declaración.
+  const userId = ownerId;
   Object.assign(parsedData, moderationFieldsForSubmission(author));
 
   try {
@@ -178,14 +193,14 @@ export async function publishEventAction(
     // el evento aún no tiene id (se crea al publicar) se escribe después y, si falla,
     // se borra el evento recién creado para no dejar contenido publicado sin evidencia.
     if (parsedData.id) {
-      await contentDeclarationService.record(userId, "event", parsedData.id);
+      await contentDeclarationService.record(actorUid, "event", parsedData.id);
     }
     const publishedEvent = await eventsService.publishEvent(parsedData, {
       isPremiumAuthor: author?.plan === "premium",
     });
     if (!parsedData.id) {
       try {
-        await contentDeclarationService.record(userId, "event", publishedEvent.id);
+        await contentDeclarationService.record(actorUid, "event", publishedEvent.id);
       } catch (e) {
         await eventsService.deleteEvent(publishedEvent.id).catch(() => {});
         throw e;
@@ -199,6 +214,7 @@ export async function publishEventAction(
       await syncEventSiteIds(publishedEvent.id || parsedData.id);
     }
 
+    invalidateTeamAccess(changedUids);
     updateTag("event-list");
     updateTag(`event-${publishedEvent.id || parsedData.id}`);
     updateTag(`profile-events-${userId}`);

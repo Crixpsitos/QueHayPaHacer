@@ -21,6 +21,7 @@ import type {
   ExternalProfileInput,
   CollaboratorKind,
   CollaboratorRole,
+  TeamEventItem,
   AudienceSummary,
   SupportTicket,
   SupportTicketDetail,
@@ -55,9 +56,9 @@ export interface IStudioRepository {
    * registro y lugar propios, que en multi-date viven en cada sesión.
    */
   getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null>;
-  confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void>;
+  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string): Promise<void>;
   /** Check-in por código QR: busca la inscripción por `checkInCode` y sella `checkedInAt`. */
-  checkInByCode(eventId: string, code: string, sessionId?: string): Promise<CheckInByCodeResult>;
+  checkInByCode(eventId: string, code: string, sessionId: string | undefined, actingUid: string): Promise<CheckInByCodeResult>;
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void>;
   incrementExternalRegistrationClick(eventId: string): Promise<void>;
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]>;
@@ -112,6 +113,12 @@ export interface IStudioRepository {
     },
     actingUid: string,
   ): Promise<void>;
+  /** Cambia el rol de un miembro ya acreditado (solo el owner; externos solo `credit`). */
+  changeCollaboratorRole(eventId: string, refId: string, role: CollaboratorRole, actingUid: string): Promise<void>;
+  /** Eventos donde `uid` es miembro con rol de Studio (editor/viewer/checkin). Máx. 50. */
+  listTeamEventsForUser(uid: string): Promise<TeamEventItem[]>;
+  /** Saca a `refId` de los eventos de `ownerUid` (al romper el vínculo de red). Devuelve los ids afectados. */
+  removeMemberFromOwnerEvents(ownerUid: string, refId: string): Promise<string[]>;
   /** Quitar un colaborador acreditado de un evento (solo el owner del evento). */
   removeCollaboratorFromEvent(eventId: string, refId: string, actingUid: string): Promise<void>;
 

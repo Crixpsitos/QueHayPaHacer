@@ -1,7 +1,7 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { isStudioEventOwner } from "@/app/actions/_session";
+import { requireEventPermission } from "@/app/actions/_session";
 import { parseCheckInPayload } from "@/domain/entities/EventRegistration/checkIn";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { studioRegistrationsTag } from "@/presentation/studio/lib/cachedStudioData";
@@ -21,7 +21,7 @@ const ERRORS = {
 
 /**
  * Check-in por QR o código escrito. Mismo guard que confirmAttendanceAction
- * (Premium + autor). `eventId`/`sessionId` son los de la pantalla del Studio.
+ * (permiso de confirmar asistencia). `eventId`/`sessionId` son los de la pantalla del Studio.
  */
 export async function checkInByCodeAction(input: {
   eventId: string;
@@ -31,7 +31,11 @@ export async function checkInByCodeAction(input: {
   const eventId = input.eventId?.trim();
   const sessionId = input.sessionId?.trim() || undefined;
   try {
-    if (!eventId || !(await isStudioEventOwner(eventId))) return { success: false, error: "No autorizado." };
+    // Escanear y confirmar van juntos: el rol debe poder ambas cosas.
+    const access = eventId ? await requireEventPermission(eventId, "scan_attendance") : null;
+    if (!eventId || !access || !(await requireEventPermission(eventId, "confirm_attendance"))) {
+      return { success: false, error: "No autorizado." };
+    }
 
     const parsed = typeof input.input === "string" ? parseCheckInPayload(input.input) : null;
     if (!parsed) return { success: false, error: "No reconocemos ese código." };
@@ -43,7 +47,7 @@ export async function checkInByCodeAction(input: {
       return { success: false, error: "Este QR es de otra sesión." };
     }
 
-    const res = await createServerContainer().studioService.checkInByCode(eventId, parsed.code, sessionId);
+    const res = await createServerContainer().studioService.checkInByCode(eventId, parsed.code, sessionId, access.uid);
     if (res.result !== "ok" && res.result !== "already") return { success: false, error: ERRORS[res.result] };
     if (res.result === "ok") updateTag(studioRegistrationsTag(eventId, sessionId));
     return { success: true, name: res.name, ...(res.result === "already" ? { alreadyConfirmed: true } : {}) };

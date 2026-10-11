@@ -1,5 +1,6 @@
 "use server";
 
+import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { enforcePlanFeatures } from "./lib/eventModerationPolicy";
 import {
   FormEventDto,
@@ -79,10 +80,14 @@ export async function createDraftEventAction(
     };
   }
 
-  const parsedData = enforcePlanFeatures(
+  // Evento nuevo: quien lo crea es el dueño; el equipo solo puede ser de su red.
+  const { event: withTeam, changedUids } = await applyTeamPolicy(
     EventViewModelMapper.toDomain(resultParse.output as unknown as EventViewModel),
-    author,
+    null,
+    "owner",
+    tokens.decodedToken.uid,
   );
+  const parsedData = enforcePlanFeatures(withTeam, author);
 
   try {
     const event = await eventsService.createDraftEvent(
@@ -92,6 +97,7 @@ export async function createDraftEventAction(
     const eventViewModel = EventViewModelMapper.toViewModel(event);
     const userId = tokens.decodedToken.uid;
 
+    invalidateTeamAccess(changedUids);
     updateTag(`profile-events-${userId}`);
     updateTag(`profile-stats-${userId}`);
     revalidatePath("/profile/events", "layout");

@@ -1,5 +1,7 @@
 "use client";
 
+import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
+import type { TeamViewerRole } from "./EventDetailClient";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
@@ -22,9 +24,11 @@ interface MultiDateEventDetailClientProps {
   sessions: SessionViewModel[];
   initialLiked: boolean;
   isOwner?: boolean;
+  /** Rol de equipo con acceso al Studio (calculado en servidor). */
+  teamRole?: TeamViewerRole;
 }
 
-export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOwner = false }: MultiDateEventDetailClientProps) {
+export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOwner = false, teamRole }: MultiDateEventDetailClientProps) {
   const parentRef = event.slug || event.id;
   const allPast = isMultiDateEventPast(sessions);
   const upcoming = sessions.filter((s) => !isSessionPast(s.endDate));
@@ -56,6 +60,21 @@ export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOw
             </span>
             <span className="shrink-0 font-semibold text-[#E63946]">Administrar sesiones</span>
           </Link>
+        )}
+
+        {!isOwner && teamRole && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E4E4E7] bg-white px-4 py-3 text-sm">
+            <span className="flex items-center gap-2 font-medium text-[#09090B]">
+              <LayoutDashboard className="size-4 shrink-0 text-[#71717A]" aria-hidden="true" />
+              Estás en el equipo como {TEAM_ROLE_LABEL[teamRole].toLowerCase()}
+            </span>
+            <span className="flex items-center gap-4 font-semibold">
+              <Link href={`/studio/events/${event.id}`} className="text-[#E63946]">Abrir en Studio</Link>
+              {can(teamRole, "edit_event") && (
+                <Link href={`/eventos/${event.id}/edit?step=sessions`} className="text-[#09090B]">Editar evento</Link>
+              )}
+            </span>
+          </div>
         )}
 
         <EventHero event={event} dateLabel="Varias fechas" />
