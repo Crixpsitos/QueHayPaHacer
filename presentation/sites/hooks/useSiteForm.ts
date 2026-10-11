@@ -227,12 +227,12 @@ export function useSiteForm() {
     setSubmitState("idle")
   }, [form, fetchSites, targetId, commitSiteId])
 
-  const handlePublish = useCallback(async () => {
+  const handlePublish = useCallback(async (declaration: boolean) => {
     const validation = validate(true)
     if (Object.keys(validation).length) { setErrors(validation); return }
     setSubmitState("publishing")
     // a draft already exists (upload created it) → convert it in place, don't duplicate
-    const result = await publishSiteAction(form, targetId() ?? undefined)
+    const result = await publishSiteAction(form, targetId() ?? undefined, declaration)
     if (!result.success) {
       notify.error("No se pudo publicar", { description: result.error })
       setSubmitState("idle")
@@ -287,12 +287,12 @@ export function useSiteForm() {
     setAddressAutoDetected(false)
   }, [])
 
-  const handleSaveEdit = useCallback(async () => {
+  const handleSaveEdit = useCallback(async (declaration: boolean) => {
     const validation = validate(true)
     if (Object.keys(validation).length) { setErrors(validation); return }
     if (!editId) { console.error("[saveEdit] no editId"); return }
     setSubmitState("publishing")
-    const result = await updateSiteAction(editId, form)
+    const result = await updateSiteAction(editId, form, declaration)
     if (!result.success) {
       notify.error("No se pudo guardar los cambios", { description: result.error })
       setSubmitState("idle")

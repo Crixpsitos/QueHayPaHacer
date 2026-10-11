@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { SummarySection } from "../ui/SummarySection";
 import { SummaryItem } from "../ui/SummaryItem";
 import { SessionsReviewSection } from "./SessionsReviewSection";
+import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration";
 import { Badge } from "@/app/components/ui/badge";
 import { renderDescriptionHTML } from "@/presentation/events/lib/renderDescription";
 import {
@@ -35,6 +36,8 @@ interface Step8ReviewProps {
   onGoToStep: (step: number) => void;
   /** En multi-fecha, fecha/lugar/registro/precio viven en cada sesión, no en el evento. */
   isMultiDate?: boolean;
+  declared: boolean;
+  onDeclaredChange: (declared: boolean) => void;
 }
 
 const PROMOTION_PRICE_PER_DAY = 7500;
@@ -93,7 +96,7 @@ const ExpandableContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8ReviewProps) => {
+export const Step8Review = ({ form, onGoToStep, isMultiDate = false, declared, onDeclaredChange }: Step8ReviewProps) => {
   const formData = form.watch();
   const isPromoted = form.watch("promotion.isPromoted");
   const promotedUntil = form.watch("promotion.promotedUntil");
@@ -322,6 +325,8 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
           <p className="text-sm text-[#A1A1AA]">Sin colaboradores</p>
         )}
       </SummarySection>
+
+      <AuthorDeclaration kind="evento" checked={declared} onChange={onDeclaredChange} />
 
       {/* Promoción — oculta hasta que PROMOTION_ENABLED = true */}
       {PROMOTION_ENABLED && (

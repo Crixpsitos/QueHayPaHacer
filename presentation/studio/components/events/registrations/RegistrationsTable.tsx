@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import {
   Download,
   FileText,
   Loader2,
+  ScanLine,
   Trash2,
   UserCheck,
   X,
@@ -31,10 +33,12 @@ import { cn } from "@/app/lib/utils/cn";
 import { notify } from "@/presentation/shared/lib/notify";
 import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
 import { removeParticipantAction } from "@/app/actions/studio/remove-participant.action";
+import { AttendanceScannerDialog } from "./AttendanceScannerDialog";
 import { toCsv, downloadCsv } from "../../../lib/csv";
 import { EventsSearchInput } from "../EventsSearchInput";
 import type { RegistrationRow } from "../../../view-models/StudioEventsViewModel";
 import type { RegistrationSortBy } from "@/domain/entities/studio/Studio";
+import type { TeamAction } from "@/domain/entities/events/teamAccess";
 
 interface RegistrationsTableProps {
   eventId: string;
@@ -53,6 +57,8 @@ interface RegistrationsTableProps {
    * columna "Asistencia" no se gestiona y muestra "No se requiere". */
   requiresAttendance: boolean;
   withFormResponses?: boolean;
+  /** Permisos del rol de quien mira (la UI solo oculta; el servidor autoriza cada acción). */
+  permissions: Record<TeamAction, boolean>;
 }
 
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -74,7 +80,17 @@ export function RegistrationsTable({
   prevCursor,
   requiresAttendance,
   withFormResponses = false,
+  permissions,
 }: RegistrationsTableProps) {
+  const canScan = permissions.scan_attendance;
+  const canConfirm = permissions.confirm_attendance;
+  const canRemove = permissions.remove_participant;
+  const canExport = permissions.export_registrations;
+  // Sin contacto el servidor ya manda las respuestas vacías: no mostramos acciones que no llevan a nada.
+  const showResponses = withFormResponses && permissions.view_attendee_contact;
+  const hasRowActions = showResponses || canConfirm || canRemove;
+  const selectable = canConfirm || canRemove;
+  const colCount = 3 + (hasRowActions ? 1 : 0) + (selectable ? 1 : 0);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,6 +99,7 @@ export function RegistrationsTable({
   const [data, setData] = useState<RegistrationRow[]>(rows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [responsesRow, setResponsesRow] = useState<RegistrationRow | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
 
   // El servidor manda orden/límite/búsqueda/página; cuando cambian, el slot
   // re-fetchea y llegan filas nuevas por props → resincronizamos lo local.
@@ -214,6 +231,18 @@ export function RegistrationsTable({
         <h2 className="text-sm font-semibold text-slate-900">
           Registros <span className="font-normal text-slate-400">({data.length})</span>
         </h2>
+        <div className="flex items-center gap-2">
+        {requiresAttendance && canScan && (
+          <button
+            type="button"
+            onClick={() => setScanOpen(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-zinc-950 px-3 text-xs font-medium text-white transition-colors hover:bg-zinc-800"
+          >
+            <ScanLine className="h-3.5 w-3.5" />
+            Escanear asistencia
+          </button>
+        )}
+        {canExport && (
         <button
           type="button"
           onClick={exportCsv}
@@ -222,9 +251,14 @@ export function RegistrationsTable({
           <Download className="h-3.5 w-3.5" />
           Exportar CSV
         </button>
+        )}
+        </div>
       </div>
+      {requiresAttendance && canScan && (
+        <AttendanceScannerDialog eventId={eventId} sessionId={sessionId} open={scanOpen} onOpenChange={setScanOpen} />
+      )}
 
-      {withFormResponses && (
+      {showResponses && (
         <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary-light px-3 py-2.5">
           <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <p className="text-xs text-zinc-800">
@@ -264,11 +298,11 @@ export function RegistrationsTable({
       )}
 
       {/* Toolbar de acciones masivas */}
-      {selected.size > 0 && (
+      {selectable && selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary-light px-3 py-2">
           <span className="text-xs font-semibold text-primary">{selected.size} seleccionado(s)</span>
           <div className="ml-auto flex items-center gap-2">
-            {requiresAttendance && (
+            {requiresAttendance && canConfirm && (
               <button
                 type="button"
                 onClick={() => void bulkConfirm()}
@@ -278,6 +312,7 @@ export function RegistrationsTable({
                 Confirmar asistencia
               </button>
             )}
+            {canRemove && (
             <button
               type="button"
               onClick={() => void bulkRemove()}
@@ -286,6 +321,7 @@ export function RegistrationsTable({
               <Trash2 className="h-3.5 w-3.5" />
               Quitar
             </button>
+            )}
             <button
               type="button"
               onClick={() => setSelected(new Set())}
@@ -303,7 +339,7 @@ export function RegistrationsTable({
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-white/85 backdrop-blur">
               <tr className="border-b border-gray-200 text-left text-xs font-semibold text-slate-400">
-                <th className="w-10 px-3 py-2.5">
+                {selectable && <th className="w-10 px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={allFilteredSelected}
@@ -311,7 +347,7 @@ export function RegistrationsTable({
                     className="h-4 w-4 cursor-pointer accent-primary"
                     aria-label="Seleccionar todos"
                   />
-                </th>
+                </th>}
                 <th className="px-3 py-2.5">
                   <SortHeader
                     label="Participante"
@@ -333,7 +369,7 @@ export function RegistrationsTable({
                   />
                 </th>
                 <th className="px-3 py-2.5">Asistencia</th>
-                <th className="px-3 py-2.5 text-right">Acciones</th>
+                {hasRowActions && <th className="px-3 py-2.5 text-right">Acciones</th>}
               </tr>
             </thead>
             <tbody className={cn(isPending && "opacity-60 transition-opacity")}>
@@ -344,7 +380,11 @@ export function RegistrationsTable({
                   zebra={i % 2 === 1}
                   selected={selected.has(row.userId)}
                   requiresAttendance={requiresAttendance}
-                  withFormResponses={withFormResponses}
+                  showResponses={showResponses}
+                  selectable={selectable}
+                  canConfirm={canConfirm}
+                  canRemove={canRemove}
+                  hasRowActions={hasRowActions}
                   onToggleSelect={() => toggleOne(row.userId)}
                   onViewResponses={() => setResponsesRow(row)}
                   onConfirm={() => void confirmOne(row.userId)}
@@ -353,7 +393,7 @@ export function RegistrationsTable({
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-sm text-slate-400">
+                  <td colSpan={colCount} className="px-3 py-10 text-center text-sm text-slate-400">
                     {query ? "Sin resultados para tu búsqueda." : "No hay registros."}
                   </td>
                 </tr>
@@ -522,7 +562,11 @@ function RegistrationRowItem({
   zebra,
   selected,
   requiresAttendance,
-  withFormResponses,
+  showResponses,
+  selectable,
+  canConfirm,
+  canRemove,
+  hasRowActions,
   onToggleSelect,
   onViewResponses,
   onConfirm,
@@ -532,21 +576,37 @@ function RegistrationRowItem({
   zebra: boolean;
   selected: boolean;
   requiresAttendance: boolean;
-  withFormResponses: boolean;
+  showResponses: boolean;
+  selectable: boolean;
+  canConfirm: boolean;
+  canRemove: boolean;
+  hasRowActions: boolean;
   onToggleSelect: () => void;
   onViewResponses: () => void;
   onConfirm: () => void;
   onRemove: () => void;
 }) {
+  // Al pasar a "confirmada" (escáner o botón) la fila destella un tinte esmeralda.
+  const still = useReducedMotion();
+  const [prevConfirmed, setPrevConfirmed] = useState(row.attendanceConfirmed);
+  const [flash, setFlash] = useState(false);
+  if (prevConfirmed !== row.attendanceConfirmed) {
+    setPrevConfirmed(row.attendanceConfirmed);
+    setFlash(row.attendanceConfirmed);
+  }
+  const animateFlash = flash && !still;
   return (
-    <tr
+    <motion.tr
+      initial={false}
+      animate={animateFlash ? { backgroundColor: ["rgba(16,185,129,0.22)", "rgba(16,185,129,0)"] } : undefined}
+      transition={{ duration: 1.2, ease: "easeOut" }}
       className={cn(
         "border-b border-gray-100 transition-colors hover:bg-slate-100/70",
         zebra && "bg-slate-50/50",
         selected && "bg-primary-light",
       )}
     >
-      <td className="px-3 py-2.5">
+      {selectable && <td className="px-3 py-2.5">
         <input
           type="checkbox"
           checked={selected}
@@ -554,7 +614,7 @@ function RegistrationRowItem({
           className="h-4 w-4 cursor-pointer accent-primary"
           aria-label={`Seleccionar ${row.name}`}
         />
-      </td>
+      </td>}
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-2.5">
           <Avatar className="h-7 w-7 border border-gray-200">
@@ -586,19 +646,24 @@ function RegistrationRowItem({
         {!requiresAttendance ? (
           <span className="text-[11px] text-slate-400">No se requiere</span>
         ) : row.attendanceConfirmed ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+          <motion.span
+            initial={animateFlash ? { opacity: 0, scale: 0.8 } : false}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 26 }}
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
+          >
             <Check className="h-3 w-3" />
             Confirmada
-          </span>
+          </motion.span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
             Pendiente
           </span>
         )}
       </td>
-      <td className="px-3 py-2.5">
+      {hasRowActions && <td className="px-3 py-2.5">
         <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-          {withFormResponses && (
+          {showResponses && (
             <button
               type="button"
               onClick={onViewResponses}
@@ -608,7 +673,7 @@ function RegistrationRowItem({
               Respuestas
             </button>
           )}
-          {requiresAttendance && !row.attendanceConfirmed && (
+          {requiresAttendance && canConfirm && !row.attendanceConfirmed && (
             <button
               type="button"
               onClick={onConfirm}
@@ -619,7 +684,7 @@ function RegistrationRowItem({
               <UserCheck className="h-3.5 w-3.5" />
             </button>
           )}
-          <button
+          {canRemove && <button
             type="button"
             onClick={onRemove}
             title="Quitar del evento"
@@ -627,9 +692,9 @@ function RegistrationRowItem({
             className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-slate-400 hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          </button>}
         </div>
-      </td>
-    </tr>
+      </td>}
+    </motion.tr>
   );
 }

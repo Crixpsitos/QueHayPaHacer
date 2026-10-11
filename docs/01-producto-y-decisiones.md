@@ -137,6 +137,13 @@ Decisiones pendientes:
 - `external`: enlace a una plataforma externa.
 - `form`: formulario personalizado.
 
+### Control de asistencia con QR
+
+- Función Premium: el campo `requiresAttendance` (evento o sesión) solo queda activo para autores Premium; el servidor lo fuerza a `false` si no lo son.
+- Solo si el evento/sesión lo exige, quien se inscribe ve en "Mis inscripciones" el botón "Ver mi código QR". El organizador (Studio) pulsa "Escanear asistencia" en la tabla de registros, apunta la cámara o escribe el código, y la inscripción queda con `checkedInAt` (asistió).
+- El código es un secreto aleatorio por inscripción (12 caracteres Crockford base32, 60 bits; se muestra `XXXX-XXXX-XXXX`). Se crea al pedir el QR y se borra al cancelar; al reinscribirse se genera otro. El QR codifica `qhpa:1:<eventId>:<sessionId|->:<CÓDIGO>`.
+- El escaneo solo funciona para el autor del evento y dentro del evento/sesión de la pantalla; un QR de otro evento se rechaza. Es idempotente ("ya estaba confirmado"). Sin cámara o sin permiso, se puede escribir el código.
+
 ### Pagos
 
 QHPA **no procesa pagos**. Si un evento es pagado, la UI obliga a usar registro externo y el creador administra el cobro fuera de la plataforma.

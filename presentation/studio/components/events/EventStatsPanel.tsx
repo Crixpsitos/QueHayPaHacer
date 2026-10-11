@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { Eye, Users, Heart, Share2, TrendingUp, Info, MousePointerClick } from "lucide-react";
 import type { EventStatsViewModel } from "../../view-models/StudioEventsViewModel";
-import { EventTeamCard } from "./EventTeamCard";
 import {
   Tooltip,
   TooltipContent,
@@ -110,7 +109,6 @@ export function EventStatsPanel({ stats, hideLikes = false }: EventStatsPanelPro
         <RegistrationRampChart data={stats.registrationRamp} unit={stats.rampUnit} />
       </div>
 
-      {stats.team.length > 0 && <EventTeamCard team={stats.team} />}
     </div>
   );
 }

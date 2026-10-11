@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Eye, Pencil } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { can, type EventAccessRole } from "@/domain/entities/events/teamAccess";
 import type { RegistrationType } from "@/domain/entities/studio/Studio";
 import { REGISTRATION_TYPE_LABEL } from "../../lib/registrationType";
 
@@ -10,6 +11,8 @@ interface EventDetailHeaderProps {
   status: string;
   date: string; // ISO
   registrationType: RegistrationType;
+  /** Rol de quien mira (el UI oculta "Editar"/acciones según `permissions`; el servidor autoriza). */
+  viewerRole?: EventAccessRole;
 }
 
 const formatDate = (iso: string) =>
@@ -21,6 +24,7 @@ export function EventDetailHeader({
   status,
   date,
   registrationType,
+  viewerRole,
 }: EventDetailHeaderProps) {
   const published = status.toLowerCase() === "published";
 
@@ -68,6 +72,7 @@ export function EventDetailHeader({
               Ver evento
             </Link>
           )}
+          {(!viewerRole || can(viewerRole, "edit_event")) && (
           <Link
             href={`/eventos/${eventId}/edit`}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-zinc-950 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
@@ -75,6 +80,7 @@ export function EventDetailHeader({
             <Pencil className="h-4 w-4" />
             Editar evento
           </Link>
+          )}
         </div>
       </div>
     </div>

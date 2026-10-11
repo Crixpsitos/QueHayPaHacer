@@ -13,6 +13,7 @@ export interface FirebaseUserDto {
     photoURL?: string;
     imagePath?: string;
     acceptedTerms: boolean;
+    acceptedTermsVersion?: string;
     participation?: UserParticipation;
     creatorVerified?: boolean;
     plan?: UserPlan;

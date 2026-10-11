@@ -1,11 +1,12 @@
+import type { EventAccessRole, TeamAction, TeamRole } from "@/domain/entities/events/teamAccess";
 import type { RegistrationType, RampUnit, RegistrationRampPoint } from "@/domain/entities/studio/Studio";
 
 export interface TeamMemberVM {
-  uid: string;
+  refId: string;
   displayName: string;
   photoURL?: string;
-  creatorVerified: boolean;
-  role: "owner" | "collaborator";
+  kind: "user" | "external";
+  role: "owner" | TeamRole;
 }
 
 /**
@@ -55,8 +56,10 @@ export interface EventStatsViewModel {
   /** Unidad del eje de la curva de ritmo ("hour" | "day"). */
   rampUnit: RampUnit;
   registrationRamp: RegistrationRampPoint[];
-  /** Dueño (role: "owner") + colaboradores del evento. */
-  team: TeamMemberVM[];
+  /** Rol de quien mira el Studio (calculado en servidor). */
+  viewerRole: EventAccessRole;
+  /** Permisos del rol: la UI solo oculta, el servidor autoriza. */
+  permissions: Record<TeamAction, boolean>;
 }
 
 export interface EventRegistrationsViewModel {
@@ -72,4 +75,7 @@ export interface EventRegistrationsViewModel {
   /** Cursor de paginación: `null` si no hay página en esa dirección. */
   nextCursor: string | null;
   prevCursor: string | null;
+  /** Rol de quien mira. Sin `view_attendee_contact`, `formResponses` ya viene vacío desde el servidor. */
+  viewerRole: EventAccessRole;
+  permissions: Record<TeamAction, boolean>;
 }

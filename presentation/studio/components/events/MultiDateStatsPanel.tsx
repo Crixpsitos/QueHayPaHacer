@@ -14,10 +14,14 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { can, type EventAccessRole } from "@/domain/entities/events/teamAccess";
+import { TeamRoleBanner } from "./EventTeamSection";
 import type { MultiDateEventStats } from "@/domain/entities/studio/Studio";
 
 interface MultiDateStatsPanelProps {
   stats: MultiDateEventStats;
+  /** Rol de quien mira: la UI oculta lo que no le corresponde; el servidor autoriza. */
+  viewerRole: EventAccessRole;
 }
 
 const formatNumber = (n: number) => n.toLocaleString("es-CO");
@@ -53,7 +57,9 @@ const STATUS_LABEL: Record<string, string> = {
  * y registro propios. Aquí eso vive en cada sesión, así que las métricas del
  * padre solas engañan: el acumulado suma evento + sesiones.
  */
-export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
+export function MultiDateStatsPanel({ stats, viewerRole }: MultiDateStatsPanelProps) {
+  const canStats = can(viewerRole, "view_stats");
+  const canEdit = can(viewerRole, "edit_event");
   const published = stats.status.toLowerCase() === "published";
 
   // Los likes NO se acumulan: son del evento. Sumar los de las fechas contaría
@@ -78,6 +84,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
 
   return (
     <div className="space-y-6">
+      <TeamRoleBanner role={viewerRole} />
       {/* Encabezado */}
       <div>
         <Link
@@ -132,18 +139,20 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
             </div>
           </div>
 
-          <Link
-            href={`/eventos/${stats.eventId}/edit?step=sessions`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <Pencil className="h-4 w-4" />
-            Gestionar sesiones
-          </Link>
+          {canEdit && (
+            <Link
+              href={`/eventos/${stats.eventId}/edit?step=sessions`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              <Pencil className="h-4 w-4" />
+              Gestionar sesiones
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Acumulado evento + sesiones */}
-      <div>
+      {/* Acumulado evento + sesiones (solo con permiso de estadísticas) */}
+      {canStats && <div>
         <h2 className="mb-3 text-sm font-semibold text-slate-900">
           Acumulado{" "}
           <span className="font-normal text-slate-400">
@@ -188,7 +197,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
             El like es del evento completo, no de una fecha.
           </span>
         </div>
-      </div>
+      </div>}
 
       {/* Fechas */}
       <div className="space-y-3">
@@ -249,7 +258,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
                   </div>
 
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3.5 text-xs text-slate-600">
+                    {canStats ? <div className="flex items-center gap-3.5 text-xs text-slate-600">
                       <span className="inline-flex items-center gap-1">
                         <Eye className="h-3.5 w-3.5 text-slate-400" />
                         <span className="tabular-nums font-medium">
@@ -268,12 +277,12 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
                           {formatNumber(session.shares)}
                         </span>
                       </span>
-                    </div>
+                    </div> : <span />}
 
                     {/* CTA explícito: la tarjeta entera navega, pero sin esto no
                         se lee como algo en lo que se pueda entrar. */}
                     <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-primary">
-                      Ver estadísticas
+                      {canStats ? "Ver estadísticas" : "Abrir fecha"}
                       <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </div>

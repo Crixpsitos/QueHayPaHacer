@@ -1,3 +1,4 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import { ImageVariants } from "@/domain/shared/ImageVariants";
 import { Location } from "./value-objects/Location";
 import { Dates } from "./value-objects/Dates";
@@ -66,7 +67,7 @@ export interface Events extends Dates {
   /** Datos denormalizados de cada colaborador para pintar créditos sin joins. Clave = refId. */
   collaboratorsData?: Record<
     string,
-    { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+    { displayName: string; photoURL?: string; role: TeamRole }
   >;
   analytics?: {
     views?: number;

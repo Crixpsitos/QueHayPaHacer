@@ -3,14 +3,16 @@ import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetch
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
-import { EventDetailClient } from "./EventDetailClient";
+import { EventDetailClient, type TeamViewerRole } from "./EventDetailClient";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
+import { getEventAccess } from "@/app/actions/_session";
 import { recordEventView } from "@/app/actions/events/_recordEventView";
 import {
   fetchEventDetailById,
@@ -34,7 +36,8 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   if (!event || event.status !== "published") return notFound();
 
-  const viewModel = EventViewModelMapper.toViewModel(event);
+  // El personal interno (lector / control de acceso) no viaja al cliente en la página pública.
+  const viewModel = { ...EventViewModelMapper.toViewModel(event), ...publicTeam(event.collaborators, event.collaboratorsData) };
 
   // Resolver estado de like y registro del usuario (no bloqueante — por defecto false si no autenticado)
   const tokens = await getTokens(await cookies(), authConfig);
@@ -49,6 +52,9 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   // El dueño no puede inscribirse a su propio evento (sí puede dar like / compartir).
   const isOwner = Boolean(userId && event.author?.id && userId === event.author.id);
+
+  // Rol de equipo (editor/lector/control de acceso) para el acceso a Studio. Lectura sin caché, solo si hay sesión.
+  const teamRole = !isOwner && userId ? ((await getEventAccess(event.id))?.role as TeamViewerRole | undefined) : undefined;
 
   // Registrar vista del evento (misma lógica para standard y multi-date).
   after(async () => {
@@ -71,6 +77,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
         sessions={sessionVMs}
         initialLiked={initialLiked}
         isOwner={isOwner}
+        teamRole={teamRole}
       />
     );
   }
@@ -102,6 +109,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
       initialLiked={initialLiked}
       initialRegistered={initialRegistered}
       isOwner={isOwner}
+      teamRole={teamRole}
       isPremiumOwner={isPremiumOwner}
       linkedSite={linkedSite}
     />

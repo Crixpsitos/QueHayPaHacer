@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
-import { isStudioEventOwner } from "@/app/actions/_session";
+import { requireEventPermission } from "@/app/actions/_session";
+import type { EventAccessRole } from "@/domain/entities/events/teamAccess";
 import { EventStatsPanel } from "@/presentation/studio/components/events/EventStatsPanel";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
+import { TeamRoleBanner } from "@/presentation/studio/components/events/EventTeamSection";
 import { SessionDetailHeader } from "@/presentation/studio/components/events/SessionDetailHeader";
 import {
   getCachedEventRegistrations,
@@ -33,8 +35,9 @@ export default async function StudioSessionDetailPage({
   searchParams,
 }: SlotProps) {
   const { id, sessionId } = await params;
-  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
-  if (!(await isStudioEventOwner(id))) notFound();
+  // Permiso por rol aquí (no basta el layout): inscritos traen PII (se enmascara por rol en el mapper).
+  const access = await requireEventPermission(id, "view_registrations");
+  if (!access) notFound();
   const sp = await searchParams;
 
   const sortBy = sp.sort === "name" ? "name" : "registeredAt";
@@ -48,7 +51,7 @@ export default async function StudioSessionDetailPage({
   const domainStats = await getCachedEventStats(id, sessionId);
   if (!domainStats) notFound();
 
-  const stats = toEventStatsViewModel(domainStats);
+  const stats = toEventStatsViewModel(domainStats, access.role);
 
   return (
     <div className="space-y-6">
@@ -58,9 +61,11 @@ export default async function StudioSessionDetailPage({
         status={stats.status}
         date={stats.date}
         registrationType={stats.registrationType}
+        viewerRole={access.role}
       />
+      <TeamRoleBanner role={access.role} />
 
-      <EventStatsPanel stats={stats} hideLikes />
+      {stats.permissions.view_stats && <EventStatsPanel stats={stats} hideLikes />}
 
       {stats.status.toLowerCase() === "draft" ? (
         <DraftEventNotice eventId={id} />
@@ -75,6 +80,7 @@ export default async function StudioSessionDetailPage({
           cursor={cursor}
           direction={direction}
           search={search}
+          viewerRole={access.role}
         />
       )}
     </div>
@@ -91,6 +97,7 @@ async function SessionRegistrations({
   cursor,
   direction,
   search,
+  viewerRole,
 }: {
   eventId: string;
   sessionId: string;
@@ -101,6 +108,7 @@ async function SessionRegistrations({
   cursor?: string;
   direction: "next" | "prev";
   search?: string;
+  viewerRole: EventAccessRole;
 }) {
   const result = await getCachedEventRegistrations(
     eventId,
@@ -110,7 +118,7 @@ async function SessionRegistrations({
 
   // El id del VM debe ser el del evento PADRE: la tabla lo combina con
   // `sessionId` para escribir en `events/{id}/sessions/{sid}/registrations`.
-  const data = toEventRegistrationsViewModel(eventId, registrationType, result);
+  const data = toEventRegistrationsViewModel(eventId, registrationType, result, viewerRole);
 
   return (
     <RegistrationsPanel

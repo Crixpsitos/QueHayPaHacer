@@ -24,6 +24,7 @@ import type {
   ExternalProfileInput,
   CollaboratorKind,
   CollaboratorRole,
+  TeamEventItem,
   AudienceSummary,
   SupportTicket,
   SupportTicketDetail,
@@ -66,8 +67,12 @@ export class StudioAdapter implements IStudioRepository {
     return this.repository.getMultiDateEventStats(eventId);
   }
 
-  confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void> {
-    return this.repository.confirmAttendance(eventId, userId, sessionId);
+  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string): Promise<void> {
+    return this.repository.confirmAttendance(eventId, userId, sessionId, actingUid);
+  }
+
+  checkInByCode(eventId: string, code: string, sessionId: string | undefined, actingUid: string) {
+    return this.repository.checkInByCode(eventId, code, sessionId, actingUid);
   }
 
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void> {
@@ -171,6 +176,18 @@ export class StudioAdapter implements IStudioRepository {
     actingUid: string,
   ): Promise<void> {
     return this.repository.addCollaboratorToEvent(eventId, member, actingUid);
+  }
+
+  changeCollaboratorRole(eventId: string, refId: string, role: CollaboratorRole, actingUid: string): Promise<void> {
+    return this.repository.changeCollaboratorRole(eventId, refId, role, actingUid);
+  }
+
+  listTeamEventsForUser(uid: string): Promise<TeamEventItem[]> {
+    return this.repository.listTeamEventsForUser(uid);
+  }
+
+  removeMemberFromOwnerEvents(ownerUid: string, refId: string): Promise<string[]> {
+    return this.repository.removeMemberFromOwnerEvents(ownerUid, refId);
   }
 
   removeCollaboratorFromEvent(eventId: string, refId: string, actingUid: string): Promise<void> {

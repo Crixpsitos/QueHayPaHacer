@@ -1,3 +1,4 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import type { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
 import { MediaItem } from "@/domain/entities/events/value-objects/Media";
@@ -79,7 +80,7 @@ export interface EventViewModel {
   collaborators?: { refId: string; kind: "user" | "external" }[];
   collaboratorsData?: Record<
     string,
-    { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+    { displayName: string; photoURL?: string; role: TeamRole }
   >;
   metadata?: {
     isFirstEvent?: boolean;

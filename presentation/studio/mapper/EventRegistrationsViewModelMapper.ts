@@ -1,3 +1,5 @@
+import type { EventAccessRole } from "@/domain/entities/events/teamAccess";
+import { maskRegistrationsForRole, permissionsFor } from "@/domain/entities/events/teamPolicy";
 import type {
   EventRegistrationsResult,
   RegistrationType,
@@ -11,17 +13,25 @@ import type {
  * Convierte el dominio `EventRegistrationsResult` al ViewModel de presentación.
  * Si `result` es null (consulta aún sin implementar), devuelve un VM vacío para
  * que el panel renderice sin datos en vez de provocar un 404.
+ *
+ * PRIVACIDAD: aquí se aplica la máscara por rol (siempre en servidor): sin
+ * `view_attendee_contact` se descartan las respuestas del formulario.
  */
 export function toEventRegistrationsViewModel(
   eventId: string,
   registrationType: RegistrationType,
   result: EventRegistrationsResult | null,
+  viewerRole: EventAccessRole,
 ): EventRegistrationsViewModel {
+  const permissions = permissionsFor(viewerRole);
   if (!result) {
-    return { eventId, registrationType, rows: [], requiresAttendance: false, nextCursor: null, prevCursor: null };
+    return {
+      eventId, registrationType, rows: [], requiresAttendance: false, nextCursor: null, prevCursor: null,
+      viewerRole, permissions,
+    };
   }
 
-  const rows: RegistrationRow[] = result.registrations.map((r) => {
+  const rows: RegistrationRow[] = maskRegistrationsForRole(result.registrations, viewerRole).map((r) => {
     const fullName = `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
     return {
       userId: r.userId,
@@ -50,5 +60,7 @@ export function toEventRegistrationsViewModel(
     requiresAttendance: result.requiresAttendance,
     nextCursor: result.nextCursor,
     prevCursor: result.prevCursor,
+    viewerRole,
+    permissions,
   };
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getPremiumSessionUid } from "@/app/actions/_session";
+import { getPremiumSessionUid, redirectLimitedToEvents } from "@/app/actions/_session";
 import { SitesList } from "@/presentation/studio/components/sites/SitesList";
 import type { OrganizerSiteListItem, GetStudioListParams } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -29,6 +29,8 @@ interface StudioSitesPageProps {
 }
 
 export default async function StudioSitesPage({ searchParams }: StudioSitesPageProps) {
+  await redirectLimitedToEvents();
+
   const sp = await searchParams;
   const limit = LIMIT_OPTIONS.includes(Number(sp.limit)) ? Number(sp.limit) : DEFAULT_LIMIT;
   const search = sp.q?.trim() || undefined;

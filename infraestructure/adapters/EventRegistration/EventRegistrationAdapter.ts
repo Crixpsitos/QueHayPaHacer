@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
-import type { IEventRegistrationRepository, RegisterEventInput } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { IEventRegistrationMapper } from "@/infraestructure/firebase/mappers/EventRegistration/IEventRegistrationMapper";
 import type { IEventRegistrationFirebaseRepository } from "@/infraestructure/firebase/repositories/EventRegistration/IEventRegistrationFirebaseRepository";
 
@@ -23,7 +23,8 @@ export class EventRegistrationAdapter implements IEventRegistrationRepository {
 
   async isUserRegistered(eventId: string, userId: string, sessionId?: string): Promise<boolean> {
     const entry = await this.repository.findEntryByEventIdAndUserId(eventId, userId, sessionId);
-    return entry !== null;
+    // Una inscripción cancelada no cuenta: permite volver a inscribirse.
+    return entry !== null && entry.status !== "canceled";
   }
 
   async registerUserToEvent(input: RegisterEventInput): Promise<void> {
@@ -43,5 +44,17 @@ export class EventRegistrationAdapter implements IEventRegistrationRepository {
       },
       input.sessionId,
     );
+  }
+
+  listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]> {
+    return this.repository.listByUserId(userId, limit);
+  }
+
+  getOrCreateCheckInCode(eventId: string, userId: string, sessionId?: string): Promise<CheckInCodeResult> {
+    return this.repository.getOrCreateCheckInCode(eventId, userId, sessionId);
+  }
+
+  cancelRegistration(eventId: string, userId: string, sessionId?: string): Promise<CancelRegistrationResult> {
+    return this.repository.cancelRegistration(eventId, userId, sessionId);
   }
 }

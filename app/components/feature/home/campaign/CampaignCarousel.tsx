@@ -299,7 +299,7 @@ const CampaignCarouselComponent = ({
             type="button"
             onClick={() => scrollToIndex(index)}
             className={cn(
-              "rounded-full bg-white transition-all duration-300",
+              "relative rounded-full bg-white transition-[width,opacity] duration-300 motion-reduce:transition-none after:absolute after:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50",
               currentIndex === index ? "h-2 w-5" : "h-2 w-2 opacity-60",
             )}
             aria-label={`Ir al slide ${index + 1}`}
@@ -325,7 +325,7 @@ const CampaignCarouselComponent = ({
               type="button"
               onClick={() => scrollToIndex(index)}
               className={cn(
-                "rounded-full bg-white transition-all duration-300 hover:bg-white/90",
+                "relative rounded-full bg-white transition-[height,opacity] duration-300 motion-reduce:transition-none after:absolute after:-inset-1.5 hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50",
                 getProgressiveDotStyle(index),
               )}
               aria-label={`Ir al slide ${index + 1}`}

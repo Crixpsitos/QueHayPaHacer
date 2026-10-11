@@ -1,3 +1,4 @@
+import { GrowBar } from "./GrowBar";
 import { ChartEmpty } from "../charts/ChartEmpty";
 import { CHART, formatCompact } from "../charts/chartTheme";
 
@@ -31,12 +32,11 @@ export function TopEventsRanking({ events }: TopEventsRankingProps) {
               role="img"
               aria-label={`Puntuación ${scoreFmt.format(event.score)} de ${SCORE_MAX}`}
             >
-              <div
+              <GrowBar
                 className="h-full rounded-full"
-                style={{
-                  width: `${Math.min(100, (event.score / SCORE_MAX) * 100)}%`,
-                  background: CHART.ink,
-                }}
+                pct={Math.min(100, (event.score / SCORE_MAX) * 100)}
+                color={CHART.ink}
+                delay={index * 0.06}
               />
             </div>
             <p className="mt-1 text-xs tabular-nums text-zinc-500">{formatCompact(event.views)} vistas</p>

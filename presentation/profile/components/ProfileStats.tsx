@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { CountUp } from "@/app/components/motion/primitives";
 
 type Stats = {
   eventsCount: number;
@@ -28,7 +29,7 @@ function StatItem({ value, label }: { value: number; label: string }) {
   return (
     <div className="group flex flex-col items-center gap-1 py-5 transition-colors hover:bg-muted/30">
       <span className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
-        {value}
+        <CountUp value={value} />
       </span>
       <span className="text-xs font-medium text-muted-foreground">
         {label}

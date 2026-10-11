@@ -63,6 +63,7 @@ const SITE_JSONLD = [
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/app/components/pwa/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -110,6 +111,7 @@ export default function RootLayout({
         </AuthProvider>
         <Toaster />
         <ServiceWorkerRegister />
+        <InstallBanner />
       </body>
     </html>
   );

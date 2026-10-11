@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { isStudioEventOwner } from "@/app/actions/_session";
+import { requireEventPermission } from "@/app/actions/_session";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
 import {
@@ -18,8 +18,9 @@ const DEFAULT_LIMIT = 10;
 
 export default async function EventRegistrationsSlot({ params, searchParams }: SlotProps) {
   const { id } = await params;
-  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
-  if (!(await isStudioEventOwner(id))) notFound();
+  // Permiso por rol aquí (no basta el layout): inscritos traen PII (se enmascara por rol en el mapper).
+  const access = await requireEventPermission(id, "view_registrations");
+  if (!access) notFound();
   const sp = await searchParams;
 
   // Orden, límite, búsqueda y paginación vienen por query params:
@@ -48,7 +49,7 @@ export default async function EventRegistrationsSlot({ params, searchParams }: S
     direction,
     search,
   });
-  const data = toEventRegistrationsViewModel(id, stats.registrationType, result);
+  const data = toEventRegistrationsViewModel(id, stats.registrationType, result, access.role);
 
   return (
     <RegistrationsPanel

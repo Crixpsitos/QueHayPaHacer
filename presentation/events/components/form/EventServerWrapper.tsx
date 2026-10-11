@@ -1,40 +1,23 @@
-import { getTokens } from "next-firebase-auth-edge";
 import { notFound } from "next/navigation";
 import { EventViewModel } from "../../view-models/EventViewModel";
-import { cookies } from "next/headers";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "../../mapper/EventViewModelMapper";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { cacheTag } from "next/cache";
-import { cacheLife } from "next/cache";
+import { requireEventPermission } from "@/app/actions/_session";
 import { EventClientWrapper } from "./EventClientWrapper";
 
 interface EventFormServerWrapperProps {
   eventId: string;
 }
 
-const findEditableEvent = async (id: string, userId: string) => {
-  "use cache";
-  cacheTag(`event-${id}`);
-  cacheLife("hours");
-
-  const { eventsService } = createServerContainer();
-  const event = await eventsService.getEventById(id);
-
-  // Solo el autor puede editar, sin importar el estado (borrador o publicado).
-  if (!event || event.author.id !== userId) return null;
-
-  return event;
-};
-
+// Sin caché: el permiso (dueño o editor) debe reflejar el equipo actual, no una copia de horas.
 const getEditableEventData = async (
   id: string,
 ): Promise<EventViewModel | null> => {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) return null;
+  const access = await requireEventPermission(id, "edit_event", { ownerNeedsPremium: false });
+  if (!access) return null;
 
-  const eventData = await findEditableEvent(id, tokens.decodedToken.uid);
-
+  const { eventsService } = createServerContainer();
+  const eventData = await eventsService.getEventById(id);
   if (!eventData) return null;
 
   return EventViewModelMapper.toViewModel(eventData);
@@ -45,7 +28,7 @@ export const EventServerWrapper = async ({
 }: EventFormServerWrapperProps) => {
   const eventData = await getEditableEventData(eventId);
 
-  // El evento no existe (o no es del autor) → 404.
+  // El evento no existe (o no tienes permiso de edición) → 404.
   if (!eventData) {
     notFound();
   }

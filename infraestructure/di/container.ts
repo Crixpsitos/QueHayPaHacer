@@ -61,6 +61,8 @@ import { SiteInteractionAdapter } from "../adapters/SiteInteraction/SiteInteract
 import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteraction/SiteInteractionFirebaseMapper";
 import { ReportFirebaseRepository } from "../firebase/repositories/report/ReportFirebaseRepository";
 import { ReportService } from "@/application/services/report/ReportService";
+import { ContentDeclarationFirebaseRepository } from "../firebase/repositories/contentDeclaration/ContentDeclarationFirebaseRepository";
+import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
 
@@ -169,6 +171,11 @@ export const createServerContainer = () => {
     sitesService,
   );
 
+  // declaración del autor al publicar (evidencia legal)
+  const contentDeclarationService = new ContentDeclarationService(
+    new ContentDeclarationFirebaseRepository(getFirebaseFirestore()),
+  );
+
   return {
     userService,
     campaignService,
@@ -187,6 +194,7 @@ export const createServerContainer = () => {
     studioService,
     contactService,
     reportService,
+    contentDeclarationService,
   };
 };
 

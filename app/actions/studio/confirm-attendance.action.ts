@@ -1,6 +1,6 @@
 "use server";
 
-import { isStudioEventOwner } from "@/app/actions/_session";
+import { requireEventPermission } from "@/app/actions/_session";
 
 import { updateTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -18,9 +18,10 @@ export async function confirmAttendanceAction(
   sessionId?: string,
 ): Promise<ActionResult> {
   try {
-    if (!(await isStudioEventOwner(eventId))) return { success: false, error: "No autorizado." };
+    const access = await requireEventPermission(eventId, "confirm_attendance");
+    if (!access) return { success: false, error: "No autorizado." };
     const { studioService } = createServerContainer();
-    await studioService.confirmAttendance(eventId, userId, sessionId);
+    await studioService.confirmAttendance(eventId, userId, sessionId, access.uid);
     // Solo cambia la fila (checkedInAt), no los contadores → basta con la tabla.
     updateTag(studioRegistrationsTag(eventId, sessionId));
     return { success: true };

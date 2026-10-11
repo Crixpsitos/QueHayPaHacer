@@ -23,12 +23,23 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    screenshots: [
+      { src: "/screenshots/mobile.png", sizes: "540x960", type: "image/png", form_factor: "narrow", label: "Cartelera de eventos en Ibagué" },
+      { src: "/screenshots/desktop.png", sizes: "1280x720", type: "image/png", form_factor: "wide", label: "Cartelera de eventos en Ibagué" },
+    ],
     shortcuts: [
       {
         name: "Eventos",
         short_name: "Eventos",
         description: "Eventos próximos en Ibagué",
         url: "/eventos?source=pwa",
+        icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+      {
+        name: "Mis inscripciones",
+        short_name: "Inscripciones",
+        description: "Eventos a los que te inscribiste",
+        url: "/mis-inscripciones?source=pwa",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {

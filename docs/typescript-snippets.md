@@ -126,7 +126,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 ```typescript
 FileName.getInitialProps = async (ctx) => {
   return {
-
+    
   }
 }
 ```
@@ -182,7 +182,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 interface Data {}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-
+  
 }
 ```
 
@@ -193,7 +193,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-
+  
 }
 
 export const config = {

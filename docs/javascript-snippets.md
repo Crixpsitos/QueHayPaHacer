@@ -110,7 +110,7 @@ export const getStaticPaths = async () => {
 ```javascript
 FileName.getInitialProps = async (ctx) => {
   return {
-
+    
   }
 }
 ```
@@ -160,7 +160,7 @@ export default MyDocument
 
 ```javascript
 export default async function handler(req, res) {
-
+  
 }
 ```
 
@@ -169,7 +169,7 @@ export default async function handler(req, res) {
 ```javascript
 import { NextResponse } from 'next/server'
 export async function middleware(request) {
-
+  
 }
 
 export const config = {

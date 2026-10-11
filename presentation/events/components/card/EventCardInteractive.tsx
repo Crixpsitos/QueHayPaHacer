@@ -1,5 +1,6 @@
 "use client";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
+import type { CSSProperties } from "react";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import Link from "next/link";
@@ -145,7 +146,7 @@ export function EventCardInteractive({
         {info.action && (
           <Link
             href={info.action.href}
-            className="mt-5 inline-flex h-10 items-center rounded-full border border-[#E4E4E7] px-5 text-sm font-semibold text-[#09090B] transition-colors hover:border-[#09090B]"
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-[#09090B] px-6 text-sm font-semibold text-white transition-[transform,background-color] duration-150 hover:bg-[#27272A] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
           >
             {info.action.label}
           </Link>
@@ -161,16 +162,30 @@ export function EventCardInteractive({
           ? `grid grid-cols-1 sm:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""} gap-6`
           : "flex flex-wrap gap-6"
       )}>
-        {events.map((event, index) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            attendeeCount={event.analytics?.registrations ?? 0}
-            initialLiked={effectiveLikes[event.id] ?? false}
-            onLike={handleLike}
-            prioritizeImage={index === 0}
-          />
-        ))}
+        {events.map((event, index) => {
+          const card = (
+            <EventCard
+              event={event}
+              attendeeCount={event.analytics?.registrations ?? 0}
+              initialLiked={effectiveLikes[event.id] ?? false}
+              onLike={handleLike}
+              prioritizeImage={index === 0}
+            />
+          );
+          // Entrada solo con CSS: las primeras suben al cargar; el resto aparece al hacer scroll.
+          if (variant !== "vertical") return <div key={event.id} className="contents">{card}</div>;
+          return index < 4 ? (
+            <div
+              key={event.id}
+              className={cn("card-rise h-full", index === 0 && "card-rise-first")}
+              style={{ "--i": index } as CSSProperties}
+            >
+              {card}
+            </div>
+          ) : (
+            <div key={event.id} className="card-reveal h-full">{card}</div>
+          );
+        })}
       </div>
 
       {isLoginModalOpen && (

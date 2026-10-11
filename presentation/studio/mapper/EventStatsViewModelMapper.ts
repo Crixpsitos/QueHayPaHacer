@@ -1,11 +1,12 @@
+import type { EventAccessRole } from "@/domain/entities/events/teamAccess";
+import { permissionsFor } from "@/domain/entities/events/teamPolicy";
 import type { EventStats } from "@/domain/entities/studio/Studio";
 import type { EventStatsViewModel } from "../view-models/StudioEventsViewModel";
 
 /**
  * Convierte el dominio `EventStats` al ViewModel de presentación.
- * `team` viene de colaboradores (consulta aparte); por ahora va vacío.
  */
-export function toEventStatsViewModel(stats: EventStats): EventStatsViewModel {
+export function toEventStatsViewModel(stats: EventStats, viewerRole: EventAccessRole): EventStatsViewModel {
   return {
     eventId: stats.eventId,
     name: stats.name,
@@ -20,6 +21,7 @@ export function toEventStatsViewModel(stats: EventStats): EventStatsViewModel {
     score: stats.score,
     rampUnit: stats.rampUnit,
     registrationRamp: stats.registrationRamp,
-    team: [],
+    viewerRole,
+    permissions: permissionsFor(viewerRole),
   };
 }

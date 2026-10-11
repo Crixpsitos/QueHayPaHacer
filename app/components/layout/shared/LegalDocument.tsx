@@ -1,17 +1,41 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Section } from "./Section";
+import { LEGAL_VERSION } from "@/app/lib/legal/version";
 
-// ponytail: datos del responsable en un solo lugar. Hoy el responsable es una
-// persona natural: completar nombre completo, cédula y correo de contacto para
-// datos personales antes del lanzamiento (Ley 1581 de 2012, Decreto 1377).
-// Si se constituye empresa, cambiar por razón social y NIT.
-export const LEGAL_ENTITY = {
+// Identificación del responsable del tratamiento: la Ley 1581 de 2012 y su decreto piden que la
+// política identifique a quien trata los datos y cómo contactarlo. Se muestra en /terminos y /privacidad.
+// Si algún día se constituye empresa, cambiar `owner` por la razón social (y agregar el NIT).
+export const LEGAL_ENTITY: {
+  name: string;
+  city: string;
+  contactHref: string;
+  updatedAt: string;
+  /** Nombre completo del responsable (persona natural) o razón social. */
+  owner?: string;
+  /** Correo dedicado para datos personales y avisos de contenido (ej. legal@tudominio.co). */
+  email?: string;
+  phone?: string;
+} = {
   name: "Que Hay Pa Hacer?",
   city: "Ibagué, Tolima, Colombia",
   contactHref: "/contactanos",
-  updatedAt: "11 de octubre de 2026",
+  // Fecha legible derivada de la versión (única fuente de verdad).
+  updatedAt: new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeZone: "America/Bogota" }).format(
+    new Date(`${LEGAL_VERSION}T12:00:00-05:00`),
+  ),
+  owner: "Cristian Andres Peña Montealegre",
+  email: "quehaypahacer6@gmail.com",
 };
+
+/** Línea de denuncia de explotación sexual infantil (Ley 679/2001 y Decreto 1524/2002 piden un enlace visible). */
+export const TE_PROTEJO_URL = "https://www.teprotejo.org";
+
+/** "Nombre, ciudad, correo, teléfono" con lo que esté definido. */
+export function responsibleLine() {
+  const { owner, name, city, email, phone } = LEGAL_ENTITY;
+  return [owner ?? name, city, email, phone].filter(Boolean).join(", ");
+}
 
 export function LegalDocument({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (

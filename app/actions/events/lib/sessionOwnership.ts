@@ -1,29 +1,27 @@
 import { revalidateTag, updateTag } from "next/cache";
-import { getSessionUid } from "@/app/actions/_session";
+import { getSessionUid, requireEventPermission } from "@/app/actions/_session";
+import type { TeamAction } from "@/domain/entities/events/teamAccess";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { syncEventDateRange } from "./syncEventDateRange";
 import { syncEventSiteIds } from "./syncEventSiteIds";
 
 /**
- * Guard de las actions de sesión: autor del evento padre, evento multi-fecha y
- * plan Premium (multi-fecha es exclusivo). Devuelve el mensaje de error o null.
+ * Guard de las actions de sesión: permiso sobre el evento padre (`edit_event` por defecto;
+ * `publish_event` al publicar), evento multi-fecha y plan Premium del DUEÑO (multi-fecha es
+ * exclusivo). Devuelve el mensaje de error o null.
  */
-export async function sessionOwnerError(eventId: string): Promise<string | null> {
+export async function sessionOwnerError(
+  eventId: string,
+  action: TeamAction = "edit_event",
+): Promise<string | null> {
   const uid = await getSessionUid();
   if (!uid) return "Debes iniciar sesión.";
-  const { eventsService, userService } = createServerContainer();
-  const [event, user] = await Promise.all([
-    eventsService.getEventById(eventId),
-    userService.getUserById(uid),
-  ]);
-  if (!event || event.author.id !== uid) {
-    return "No tienes permiso para modificar las sesiones de este evento.";
-  }
-  if (event.eventType !== "multi-date") {
+  // requireEventPermission exige el Premium del dueño (si es editor) o el propio (si es dueño).
+  const access = await requireEventPermission(eventId, action);
+  if (!access) return "No tienes permiso para modificar las sesiones de este evento.";
+  const event = await createServerContainer().eventsService.getEventById(eventId);
+  if (!event || event.eventType !== "multi-date") {
     return "Solo los eventos multi-fecha tienen sesiones.";
-  }
-  if (user?.plan !== "premium") {
-    return "Los eventos multi-fecha son exclusivos del plan Premium.";
   }
   return null;
 }

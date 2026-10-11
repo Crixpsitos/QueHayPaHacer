@@ -1,8 +1,9 @@
 "use client";
 
+import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
 import { useState, lazy, Suspense } from "react";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
+import { ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";
 import type { EventViewModel } from "../view-models/EventViewModel";
@@ -16,7 +17,8 @@ import { EventDescription } from "./detail/EventDescription";
 import { Lightbox, MediaStrip, buildSlides } from "./detail/EventMedia";
 import { EventPlace, type LinkedSiteInfo } from "./detail/EventPlace";
 import { BackLink, EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
-import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
+import { DateBlock, MobileCtaBar, RegisteredChip, Ticket, ctaClass } from "./detail/Ticket";
+import { AttentionRing, Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
 
@@ -28,12 +30,17 @@ const EventRegistrationModal = lazy(() =>
 const secondaryBtn =
   "inline-flex items-center gap-2 rounded-xl border border-[#E4E4E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#09090B] transition-colors hover:border-[#09090B]";
 
+/** Rol de equipo con acceso al Studio del evento (distinto del dueño). */
+export type TeamViewerRole = "editor" | "viewer" | "checkin";
+
 interface EventDetailClientProps {
   event: EventViewModel;
   initialLiked: boolean;
   initialRegistered: boolean;
   /** True cuando el usuario que ve el evento es su organizador. */
   isOwner?: boolean;
+  /** Rol de equipo de quien ve el evento (calculado en servidor); solo muestra accesos, no autoriza. */
+  teamRole?: TeamViewerRole;
   /** True cuando el organizador tiene plan Premium (acceso al Estudio). */
   isPremiumOwner?: boolean;
   /** Ruta a compartir (usada por el detalle de sesión para compartir la sesión). */
@@ -53,6 +60,7 @@ export function EventDetailClient({
   initialLiked,
   initialRegistered,
   isOwner = false,
+  teamRole,
   isPremiumOwner = false,
   shareUrl,
   backLink,
@@ -149,18 +157,40 @@ export function EventDetailClient({
     );
   } else if (alreadyIn) {
     action = (
-      <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-        <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+      <RegisteredChip animateIn={!initialRegistered}>
         Ya estás registrado {sessionId ? "en esta fecha" : "en este evento"}
-      </p>
+      </RegisteredChip>
     );
   } else {
     action = (
       <div className="space-y-2">
-        {ctaButton}
+        <AttentionRing>{ctaButton}</AttentionRing>
         {event.registrationType === "external" && event.externalUrl && (
           <p className="text-center text-xs text-[#71717A]">Te llevamos al sitio del organizador para completar la inscripción.</p>
         )}
+      </div>
+    );
+  }
+
+  if (teamRole && !isOwner) {
+    action = (
+      <div className="space-y-4">
+        <div className="space-y-3 rounded-2xl bg-[#F4F4F5] p-4">
+          <p className="text-sm font-semibold text-[#09090B]">Estás en el equipo como {TEAM_ROLE_LABEL[teamRole].toLowerCase()}</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/studio/events/${event.id}`} className={cn(secondaryBtn, "border-[#09090B] bg-[#09090B] text-white hover:bg-[#18181B]")}>
+              <LayoutDashboard className="size-4" aria-hidden="true" />
+              Abrir en Studio
+            </Link>
+            {can(teamRole, "edit_event") && (
+              <Link href={editSessionHref ?? `/eventos/${event.id}/edit`} className={secondaryBtn}>
+                <Pencil className="size-4" aria-hidden="true" />
+                {editSessionHref ? "Editar sesión" : "Editar evento"}
+              </Link>
+            )}
+          </div>
+        </div>
+        {action}
       </div>
     );
   }
@@ -261,7 +291,9 @@ export function EventDetailClient({
                     </p>
                   </div>
                 )}
-                {action}
+                <div id="ticket-cta" aria-live="polite">
+                  {action}
+                </div>
               </Ticket>
             </div>
           </aside>
@@ -269,9 +301,9 @@ export function EventDetailClient({
           <div className="min-w-0 space-y-14 lg:col-span-8">
             <EventDescription doc={event.description} />
             <MediaStrip slides={slides} offset={mediaOffset} onOpen={setLightboxIndex} />
-            <EventPlace event={event} linkedSite={linkedSite} />
-            <EventOrganizer event={event} />
-            <EventShare event={event} path={shareUrl ?? `/eventos/${event.slug || event.id}`} sessionId={sessionId} />
+            <Reveal><EventPlace event={event} linkedSite={linkedSite} /></Reveal>
+            <Reveal><EventOrganizer event={event} /></Reveal>
+            <Reveal><EventShare event={event} path={shareUrl ?? `/eventos/${event.slug || event.id}`} sessionId={sessionId} /></Reveal>
             <ReportButton targetType="event" targetId={event.id} sessionId={sessionId} isOwner={isOwner} className="-mt-10" />
           </div>
         </div>

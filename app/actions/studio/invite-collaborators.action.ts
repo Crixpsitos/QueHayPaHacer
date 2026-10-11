@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import type { InviteeInput } from "@/domain/entities/studio/Studio";
 
 /** Envía invitaciones a varios usuarios a la vez. Solo plan Premium. */
@@ -26,6 +26,11 @@ export async function inviteCollaboratorsAction(
 
     await studioService.inviteCollaborators(tokens.decodedToken.uid, invitees);
     revalidatePath("/studio/collaborators");
+    // El contador de "Mis invitaciones" de cada invitado se actualiza al instante.
+    for (const invitee of invitees) {
+      const toUid = (invitee as { uid?: string }).uid;
+      if (toUid) updateTag(`invitations-${toUid}`);
+    }
     return { success: true };
   } catch (error) {
     console.error("[INVITE COLLABORATORS ERROR]", error);

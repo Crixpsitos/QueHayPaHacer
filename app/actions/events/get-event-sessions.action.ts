@@ -1,5 +1,6 @@
 "use server";
 
+import { can, resolveEventRole } from "@/domain/entities/events/teamAccess";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
@@ -26,7 +27,7 @@ export async function getEventSessionsAction(
       eventSessionService.getByEventId(eventId),
     ]);
     // Borradores solo para el autor; el resto ve únicamente las publicadas.
-    const isAuthor = event?.author.id === tokens.decodedToken.uid;
+    const isAuthor = can(event ? resolveEventRole(event, tokens.decodedToken.uid) : null, "edit_event");
     return {
       success: true,
       sessions: isAuthor ? sessions : sessions.filter((s) => s.status === "published"),

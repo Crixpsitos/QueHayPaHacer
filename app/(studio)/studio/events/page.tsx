@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getPremiumSessionUid } from "@/app/actions/_session";
+import { getPremiumSessionUid, listMyTeamEvents } from "@/app/actions/_session";
+import { TeamEventsList } from "@/presentation/studio/components/events/TeamEventsList";
 import { EventsList } from "@/presentation/studio/components/events/EventsList";
 import type { StudioEventListItem } from "@/presentation/studio/view-models/StudioEventsViewModel";
 import type {
@@ -54,6 +55,12 @@ export default async function StudioEventsPage({ searchParams }: StudioEventsPag
 
   // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
   const uid = await getPremiumSessionUid();
+  // Eventos ajenos donde soy miembro (editor/lector/control de acceso); el servidor valida el rol al abrir cada uno.
+  const teamEvents = await listMyTeamEvents();
+  if (!uid && teamEvents.length > 0) {
+    // Studio limitado: sin Premium propio, solo se listan los eventos del equipo.
+    return <TeamEventsList as="h1" events={teamEvents} />;
+  }
   if (!uid) {
     return (
       <EventsList
@@ -81,13 +88,16 @@ export default async function StudioEventsPage({ searchParams }: StudioEventsPag
   }
 
   return (
-    <EventsList
-      events={toViewModel(page)}
-      limit={limit}
-      limitOptions={LIMIT_OPTIONS}
-      query={search ?? ""}
-      nextCursor={page.nextCursor}
-      prevCursor={page.prevCursor}
-    />
+    <div className="space-y-10">
+      <EventsList
+        events={toViewModel(page)}
+        limit={limit}
+        limitOptions={LIMIT_OPTIONS}
+        query={search ?? ""}
+        nextCursor={page.nextCursor}
+        prevCursor={page.prevCursor}
+      />
+      {teamEvents.length > 0 && <TeamEventsList events={teamEvents} />}
+    </div>
   );
 }

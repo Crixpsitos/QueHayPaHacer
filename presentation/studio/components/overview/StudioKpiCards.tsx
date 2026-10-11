@@ -1,6 +1,7 @@
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import type { KpiViewModel } from "../../view-models/StudioOverviewViewModel";
+import { CountUp } from "@/app/components/motion/primitives";
 import { formatNumber } from "../charts/chartTheme";
 
 interface StudioKpiCardsProps {
@@ -24,7 +25,7 @@ function KpiTile({ kpi }: { kpi: KpiViewModel }) {
     <div className="bg-white px-4 py-4 sm:px-5">
       <p className="text-sm text-zinc-500">{kpi.label}</p>
       <p className="mt-2 font-heading text-3xl font-semibold tabular-nums tracking-tight text-zinc-950">
-        {formatNumber(kpi.value)}
+        <CountUp value={kpi.value} format={formatNumber} />
       </p>
       {hasPreviousBaseline && (
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">

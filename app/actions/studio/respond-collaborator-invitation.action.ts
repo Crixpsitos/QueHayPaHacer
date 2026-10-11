@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 interface ActionResult {
   success: boolean;
@@ -27,6 +27,7 @@ export async function respondCollaboratorInvitationAction(
       accept,
     );
     revalidatePath("/studio/collaborators");
+    updateTag(`invitations-${tokens.decodedToken.uid}`);
     return { success: true };
   } catch (error) {
     console.error("[RESPOND COLLABORATOR INVITATION ERROR]", error);

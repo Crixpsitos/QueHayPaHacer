@@ -61,7 +61,7 @@ export function PublicEventCard({ event, priority = false }: PublicEventCardProp
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 h-full",
+        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 h-full",
         "hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-hover",
         "focus-within:ring-2 focus-within:ring-primary/30 focus-within:ring-offset-2",
         isPast && "opacity-90",
@@ -203,7 +203,7 @@ export function PublicEventCard({ event, priority = false }: PublicEventCardProp
         <Link
           href={`/eventos/${event.id}`}
           className={cn(
-            "mt-auto flex items-center justify-center gap-1.5 rounded-full py-2.5 text-sm font-semibold transition-all",
+            "mt-auto flex items-center justify-center gap-1.5 rounded-full py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity]",
             isPast
               ? "bg-muted text-muted-foreground hover:bg-border"
               : "bg-primary text-primary-foreground shadow-primary-glow hover:bg-primary-dark hover:shadow-hover",

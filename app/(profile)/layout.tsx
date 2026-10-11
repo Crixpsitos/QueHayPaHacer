@@ -3,7 +3,7 @@ import { HomeLayout } from "@/app/components/layout/home/HomeLayout";
 import { TooltipProvider } from "@/app/components/ui/tooltip";
 import { GlobalModal } from "@/presentation/shared/components/GlobalModal";
 
-// Áreas privadas (/profile, /mis-eventos): fuera del índice.
+// Áreas privadas (/profile, /mis-eventos, /mis-inscripciones): fuera del índice.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 // Mismo shell que (home): Navbar + Footer.

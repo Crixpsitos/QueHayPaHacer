@@ -16,7 +16,7 @@ export async function updateEventSessionAction(
   sessionId: string,
   data: Partial<Omit<EventSession, "id" | "eventId" | "createdAt">>,
 ): Promise<UpdateSessionResult> {
-  const ownerError = await sessionOwnerError(eventId);
+  const ownerError = await sessionOwnerError(eventId, data?.status === "published" ? "publish_event" : "edit_event");
   if (ownerError) return { success: false, error: ownerError };
 
   // El cliente solo puede guardar borrador o publicar; cancelled/ended no.

@@ -21,7 +21,7 @@ export async function setSessionStatusAction(
   sessionId: string,
   status: "draft" | "published",
 ): Promise<SetStatusResult> {
-  const ownerError = await sessionOwnerError(eventId);
+  const ownerError = await sessionOwnerError(eventId, status === "published" ? "publish_event" : "edit_event");
   if (ownerError) return { success: false, error: ownerError };
   if (status !== "draft" && status !== "published") {
     return { success: false, error: "Estado de sesión inválido." };

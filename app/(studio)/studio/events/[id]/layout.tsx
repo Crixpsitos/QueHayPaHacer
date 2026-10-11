@@ -43,8 +43,8 @@ export default async function EventDetailLayout(
       {children}
       {/* SLOT A arriba (estadísticas) y SLOT B abajo a ancho completo (la tabla de
           registros necesita el espacio para búsqueda, paginación y acciones). */}
-      <div>{stats}</div>
-      <div>{registrations}</div>
+      <div className="empty:hidden">{stats}</div>
+      <div className="empty:hidden">{registrations}</div>
     </div>
   );
 }

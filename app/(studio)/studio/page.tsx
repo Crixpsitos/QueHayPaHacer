@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getPremiumSessionUid } from "@/app/actions/_session";
+import { getPremiumSessionUid, redirectLimitedToEvents } from "@/app/actions/_session";
 import { StudioOverview } from "@/presentation/studio/components/overview/StudioOverview";
 import type { StudioOverviewViewModel } from "@/presentation/studio/view-models/StudioOverviewViewModel";
 import { StudioOverviewViewModelMapper } from "@/presentation/studio/mapper/StudioOverviewViewModelMapper";
@@ -33,6 +33,8 @@ async function getCachedOrganizerOverview(uid: string): Promise<OrganizerOvervie
 }
 
 export default async function StudioOverviewPage() {
+  await redirectLimitedToEvents();
+
   // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
   const uid = await getPremiumSessionUid();
   if (!uid) {
