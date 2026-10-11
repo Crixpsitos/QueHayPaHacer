@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Container } from "../shared/Container";
 import { FooterYear } from "./FooterYear";
 import { TE_PROTEJO_URL } from "../shared/LegalDocument";
+import { InstallPrompt } from "@/app/components/pwa/InstallPrompt";
 
 const LINKS = [
   { href: "/eventos", label: "Eventos" },
@@ -22,6 +23,7 @@ export const Footer = () => {
           <p className="leading-relaxed">
             La cartelera de Ibagué: eventos, planes y sitios para salir, aportados por la comunidad.
           </p>
+          <InstallPrompt />
         </div>
         <nav aria-label="Pie de página">
           <ul className="flex flex-wrap gap-x-5 gap-y-2">

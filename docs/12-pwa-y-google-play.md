@@ -2,11 +2,18 @@
 
 QHPA es una PWA instalable (manifest + service worker propio) y se publica en Google Play como **Trusted Web Activity (TWA)** generada con Bubblewrap: la app Android es un Chrome a pantalla completa que abre el sitio. No hay código Android en el repo.
 
+## 0. Estado y decisión
+
+- **Decisión:** lanzar primero como PWA instalable (costo cero, se actualiza con cada deploy). Google Play (cuota única de USD 25) después, cuando haya tracción; todo lo necesario ya está listo en el repo.
+- **Listo:** manifest completo (id, scope, `start_url` con `?source=pwa`, íconos 192/512 any + maskable, `screenshots` narrow/wide en `public/screenshots/`, atajos Eventos / Mis inscripciones / ¿Dónde ir?, `lang: es-CO`), metadatos iOS, SW con `/offline`, invitación a instalar (`app/components/pwa/InstallPrompt.tsx`, montada en el footer: botón "Instalar app" en Android/escritorio vía `beforeinstallprompt`, instrucción Compartir → Añadir a pantalla de inicio en iOS Safari; oculta si ya está instalada o descartada, recuerdo en `localStorage`), `assetlinks.json`, y `android/` con `twa-manifest.json` + `README.md` (pasos exactos de Bubblewrap).
+- **Pendiente (manual):** probar la instalación en celulares reales (Android e iOS), reemplazar el dominio placeholder en `android/twa-manifest.json`, generar keystore/AAB, cuenta de Play y poner `ANDROID_SHA256_CERT_FINGERPRINTS`.
+- Pasos de empaquetado: ver `android/README.md` (resumen en §4).
+
 ## 1. Piezas en el repositorio
 
 | Pieza | Archivo | Qué hace |
 | --- | --- | --- |
-| Manifest | `app/manifest.ts` → `/manifest.webmanifest` | Nombre, `short_name` QHPA, `start_url` `/?source=pwa`, `display: standalone`, colores, íconos y atajos (Eventos, ¿Dónde ir?). |
+| Manifest | `app/manifest.ts` → `/manifest.webmanifest` | Nombre, `short_name` QHPA, `start_url` `/?source=pwa`, `display: standalone`, colores, íconos y atajos (Eventos, Mis inscripciones, ¿Dónde ir?) y capturas. |
 | Metadatos | `app/layout.tsx` | `viewport.themeColor` (en Next 16 va en `viewport`, no en `metadata`), `appleWebApp`, `apple-touch-icon`. |
 | Íconos | `public/icons/*` | 192/512 `any`, 512 `maskable` (glifo dentro de la zona segura), 180 Apple. Se regeneran con `pnpm exec tsx scripts/generate-pwa-icons.ts` (usa el `sharp` que trae Next). |
 | Service worker | `public/sw.js` | Caché (ver §2). Comentado en español. |

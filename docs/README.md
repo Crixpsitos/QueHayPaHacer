@@ -35,6 +35,7 @@ Cada documento distingue, cuando aplica:
 11. [Prompt maestro para Claude](./11-prompt-maestro-claude.md): instrucciones listas para delegar la estabilización y cierre del MVP.
 12. [PWA y Google Play](./12-pwa-y-google-play.md): manifest, service worker (caché y cold start), Digital Asset Links y empaquetado Android con Bubblewrap.
 14. [Marco legal y cumplimiento](./14-legal-y-cumplimiento.md): rol de intermediario, normas colombianas relevantes, mecanismos implementados y pendientes.
+15. [Runbook de lanzamiento a producción](./15-runbook-produccion.md): checklist ejecutable (facturación, APIs, reglas/índices, secretos, functions, dominio, seeds, rollout, prueba de humo, backups) y `scripts/prod/preflight.sh`.
 
 ## Fuente de verdad vigente
 
