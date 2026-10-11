@@ -33,6 +33,7 @@ Limitación honesta: un contrato (los términos) **solo obliga a quien lo acepta
 | Aceptación con Google: la cuenta nueva **no se crea** hasta aceptar | `google-auth.action.ts`, `GoogleAuthButton.tsx` |
 | Declaración del autor al publicar (derechos, permisos, veracidad, responsabilidad); el servidor la exige y guarda la evidencia | `AuthorDeclaration.tsx`, `publish-event.action.ts`, `publish-site.action.ts`, `update-site.action.ts`; colección `contentDeclarations/{tipo}_{id}` |
 | Reportar contenido con motivos y detalle; un reporte por persona y objetivo | `ReportButton.tsx`, colección `reports`; `scripts/list-reports.ts` |
+| Aviso por correo cuando entra un reporte | Cloud Function `notifyNewReport` (repo `functions`) deja el log `alert=qhpa_new_report`; una alerta de Cloud Monitoring lo envía por correo (máx. uno cada 5 min). Se crea con `scripts/setup-report-alert.sh <proyecto> <correo>` (ver abajo) |
 | Plan de datos: transmisión a Google (EE. UU.) autorizada expresamente; conservación de evidencia | `/privacidad` |
 
 Las colecciones `reports`, `contentDeclarations` y `planChanges` no son accesibles desde el cliente (las reglas niegan todo por defecto; solo escribe el Admin SDK).
@@ -45,13 +46,20 @@ Las colecciones `reports`, `contentDeclarations` y `planChanges` no son accesibl
 | S.A.S. | No es posible por ahora. | Sin persona jurídica el patrimonio personal queda expuesto. Mitigaciones: textos, declaración al publicar, aviso y retiro rápido; y, mientras no se pueda constituir empresa, **no cobrar Premium** (la transferencia o Nequi identifica a quien cobra). |
 | Registro de organizadores (Ley 1480, art. 53) | **No se implementa ahora.** | QHPA no vende ni cobra entradas: redirige a terceros. El art. 53 habla de plataformas que *ponen en contacto* oferentes y consumidores, aunque la venta ocurra fuera, así que **no se puede descartar** que aplique a eventos con precio o enlace de compra. Se asume el riesgo por el bajo volumen. Alternativa mínima si se quiere cubrir: exigir teléfono verificado y la declaración al publicar eventos con precio o enlace externo (ya se tiene nombre y correo del registro). Reevaluar al crecer o al cobrar. |
 | Usuarios y contenido anteriores | Sin acción. | Son datos de develop (pruebas). |
-| Panel de moderación | Más adelante. | Mientras tanto: botón **Reportar** + `scripts/list-reports.ts` (`--resolve <id> --apply`). |
+| Panel de moderación | Más adelante. | Mientras tanto: botón **Reportar**, el aviso por correo y `scripts/list-reports.ts` (`--resolve <id> --apply`). |
 
 ## Pendientes
 
 1. **Reaceptación al cambiar los términos.** Los textos prometen pedir aceptación nueva en cambios importantes; falta el mecanismo (comparar `acceptedTermsVersion` con `LEGAL_VERSION` y bloquear hasta aceptar).
 2. **Editar una sesión de un evento ya publicado** no pide una declaración nueva (se pide al publicar o republicar el evento).
-3. **Plazos internos** para atender avisos de retiro (hoy "lo antes posible").
+3. **Plazos internos** para atender avisos de retiro (hoy "lo antes posible"). Con el aviso por correo, revisa tu bandeja a diario.
 4. **Definir las variables `LEGAL_*`** antes del lanzamiento (ver arriba) y, si se cobra, el RUT y la facturación con un contador.
 5. **Revisión por un abogado** de ambos textos, de la cláusula de indemnidad y del tope de responsabilidad (puede chocar con las reglas de cláusulas abusivas del Estatuto del Consumidor si el usuario es consumidor).
 6. **Formularios personalizados (Premium):** el organizador puede pedir datos sensibles; los términos se lo prohíben salvo autorización expresa, pero la plataforma no lo valida.
+
+## Aviso de reportes: cómo se configura
+
+1. Desplegar la function (desde la carpeta que contiene `firebase.json`): `npx firebase-tools deploy --only functions:notifyNewReport --project <proyecto>`.
+2. Crear el canal y la alerta (una vez por proyecto): `scripts/setup-report-alert.sh <proyecto> <correo>`. Es idempotente: si ya existen, no hace nada.
+3. Probar sin crear un reporte real: `gcloud logging write qhpa-alert-test '{"alert":"qhpa_new_report","message":"prueba"}' --payload-type=json --severity=WARNING --project <proyecto>`; debe llegar un correo en unos minutos.
+4. Repetir 1 y 2 en `quehaypahacer-prod` cuando tenga facturación. Si el correo no llega, revisa spam y que el canal figure como verificado en Cloud Monitoring → Alerting → Edit notification channels.
