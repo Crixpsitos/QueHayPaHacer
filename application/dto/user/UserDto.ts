@@ -26,6 +26,7 @@ export const CreateUserSchema = v.object({
     photoURL: v.optional(v.string()),
     imagePath: v.optional(v.string()),
     acceptedTerms: v.literal(true, "User must accept terms"),
+    acceptedTermsVersion: v.optional(v.string()),
     participation: v.optional(v.picklist(["consumer", "creator"] as const)),
     creatorVerified: v.optional(v.boolean(), false),
     plan: v.optional(v.picklist(["basic", "premium"] as const)),

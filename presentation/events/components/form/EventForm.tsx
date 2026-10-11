@@ -153,7 +153,7 @@ interface EventFormProps {
   initialData?: Partial<FormEventDto>;
   /** Paso inicial (1-based). Usado para abrir el form directo en un paso (p.ej. Sesiones). */
   initialStep?: number;
-  onPublish: (data: FormEventDto) => Promise<void>;
+  onPublish: (data: FormEventDto, declaration: boolean) => Promise<void>;
   onSaveDraft: (data: FormEventDto) => Promise<Events | null>;
   /** Si se provee, el toggle “Varias fechas” llama este handler en lugar de hacer router.push directo. */
   onToggleEventType?: (formId?: string, formSnapshot?: FormEventDto) => void;
@@ -235,6 +235,8 @@ export const EventForm = ({
     setCurrentStep(stepNumber);
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Declaración del autor: nunca pre-marcada; se exige para publicar/actualizar.
+  const [declared, setDeclared] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   // mountedRef prevents subsequent prop updates (saveDraft) from auto-advancing steps
   const mountedRef = useRef(false);
@@ -519,7 +521,7 @@ export const EventForm = ({
 
     try {
       setIsSubmitting(true);
-      await onPublish(form.getValues());
+      await onPublish(form.getValues(), declared);
     } catch (error) {
       console.error(error);
     } finally {
@@ -549,7 +551,7 @@ export const EventForm = ({
         return <StepCollaborators form={form} />;
       case "promo":
       case "review":
-        return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate={isMultiDate} />;
+        return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate={isMultiDate} declared={declared} onDeclaredChange={setDeclared} />;
       default:
         return null;
     }
@@ -1038,7 +1040,7 @@ export const EventForm = ({
             {currentStep === ACTIVE_STEPS.length ? (
               <Button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !declared}
                 onClick={handlePublishSubmit}
                 className="rounded-xl px-5 text-sm font-semibold bg-[#E63946] hover:bg-[#9B0A26] text-white shadow-primary-glow"
               >

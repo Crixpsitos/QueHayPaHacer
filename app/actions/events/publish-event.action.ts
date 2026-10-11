@@ -17,6 +17,7 @@ import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
@@ -33,9 +34,19 @@ type PublishEventActionResult =
       error: string;
     };
 
+/**
+ * `declaration` (declaración del autor) es obligatoria en TODA publicación, incluida
+ * la republicación/edición de un evento ya publicado (reafirma la responsabilidad
+ * sobre el contenido editado). Los borradores no pasan por aquí. Las sesiones
+ * multi-fecha se publican a través del evento.
+ */
 export async function publishEventAction(
   event: FormEventDto,
+  declaration: boolean,
 ): Promise<PublishEventActionResult> {
+  if (!hasDeclared(declaration)) {
+    return { success: false, error: DECLARATION_ERROR };
+  }
   const tokens = await getTokens(await cookies(), authConfig);
   if (!tokens?.decodedToken?.uid) {
     return {
@@ -51,7 +62,7 @@ export async function publishEventAction(
     };
   }
 
-  const { eventsService, profileService, userService } = createServerContainer();
+  const { eventsService, profileService, userService, contentDeclarationService } = createServerContainer();
   const author = await userService.getUserById(tokens.decodedToken.uid);
 
   if (!author) {
@@ -163,9 +174,23 @@ export async function publishEventAction(
       parsedData.metadata = { ...parsedData.metadata, isFirstEvent: true };
     }
 
+    // Evidencia ANTES de publicar: si falla, se aborta y no se publica. Solo cuando
+    // el evento aún no tiene id (se crea al publicar) se escribe después y, si falla,
+    // se borra el evento recién creado para no dejar contenido publicado sin evidencia.
+    if (parsedData.id) {
+      await contentDeclarationService.record(userId, "event", parsedData.id);
+    }
     const publishedEvent = await eventsService.publishEvent(parsedData, {
       isPremiumAuthor: author?.plan === "premium",
     });
+    if (!parsedData.id) {
+      try {
+        await contentDeclarationService.record(userId, "event", publishedEvent.id);
+      } catch (e) {
+        await eventsService.deleteEvent(publishedEvent.id).catch(() => {});
+        throw e;
+      }
+    }
 
     // Multi-date: el evento no guarda fechas propias → derivarlas de las sesiones
     // (min inicio / max fin) para que aparezca en los listados por fecha.

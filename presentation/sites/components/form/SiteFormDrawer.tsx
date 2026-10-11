@@ -17,6 +17,7 @@ import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadTo
 import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import type { SubmitState } from "../../hooks/useSiteForm"
+import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
   SiteFormViewModel, SiteSocialMedia, SiteTemporarilyClosed, WeekDay,
@@ -486,7 +487,7 @@ export interface SiteFormDrawerProps {
   onSetCover: (id: string) => void
   onUpdateSchedule: (day: WeekDay, partial: Partial<DaySchedule>) => void
   onSaveDraft: () => void
-  onPublish: () => void
+  onPublish: (declaration: boolean) => void
   onReset: () => void
   onEnsureDraftId: () => Promise<string>
 }
@@ -643,6 +644,8 @@ export function SiteFormDrawer({
   const showDraftActions = !isEdit || isDraft
   const [openSection, setOpenSection] = useState<SectionKey>("location")
   const [isSheetOpen, setIsSheetOpen] = useState(true)
+  // Declaración del autor: nunca pre-marcada; exigida para publicar/guardar cambios.
+  const [declared, setDeclared] = useState(false)
   const [mounted, setMounted] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const y = useMotionValue(0)
@@ -677,7 +680,7 @@ export function SiteFormDrawer({
 
   const isBusy = submitState === "saving" || submitState === "publishing"
   const hasCoverReady = form.media.some((m) => m.type === "image" && m.isCover && m.status === "ready")
-  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady
+  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared
 
   const toggle = (id: SectionKey) => setOpenSection((prev) => (prev === id ? ("" as SectionKey) : id))
 
@@ -767,11 +770,14 @@ export function SiteFormDrawer({
             <span className="font-semibold">Rechazado.</span>{rejectionReason ? ` ${rejectionReason}` : ""} Corrige y reenvía a revisión.
           </p>
         )}
+        <div className="mb-3">
+          <AuthorDeclaration kind="sitio" checked={declared} onChange={setDeclared} />
+        </div>
         <div className="flex gap-3">
           {!showDraftActions ? (
             <>
               <Button variant="outline" className="flex-1" onClick={onBack} disabled={isBusy}>Cancelar</Button>
-              <Button className="flex-1" onClick={onPublish} disabled={publishDisabled}>
+              <Button className="flex-1" onClick={() => onPublish(declared)} disabled={publishDisabled}>
                 {submitState === "publishing" ? <Loader2 className="size-4 animate-spin" /> : isMediaProcessing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 {isRejected ? "Reenviar a revisión" : "Guardar cambios"}
               </Button>
@@ -782,7 +788,7 @@ export function SiteFormDrawer({
                 {(submitState === "saving" || isMediaProcessing) ? <Loader2 className="size-4 animate-spin" /> : null}
                 Guardar borrador
               </Button>
-              <Button className="flex-1" onClick={onPublish} disabled={publishDisabled} title={!hasCoverReady ? "Agrega una imagen de portada para publicar" : undefined}>
+              <Button className="flex-1" onClick={() => onPublish(declared)} disabled={publishDisabled} title={!hasCoverReady ? "Agrega una imagen de portada para publicar" : undefined}>
                 {submitState === "publishing" ? <Loader2 className="size-4 animate-spin" /> : isMediaProcessing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 Publicar
               </Button>

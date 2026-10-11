@@ -34,6 +34,7 @@ Cada documento distingue, cuando aplica:
 10. [Handoff y contexto reciente](./10-handoff-y-contexto-reciente.md): decisiones de esta conversación, cambios locales, validaciones y continuidad inmediata.
 11. [Prompt maestro para Claude](./11-prompt-maestro-claude.md): instrucciones listas para delegar la estabilización y cierre del MVP.
 12. [PWA y Google Play](./12-pwa-y-google-play.md): manifest, service worker (caché y cold start), Digital Asset Links y empaquetado Android con Bubblewrap.
+14. [Marco legal y cumplimiento](./14-legal-y-cumplimiento.md): rol de intermediario, normas colombianas relevantes, mecanismos implementados y pendientes.
 
 ## Fuente de verdad vigente
 

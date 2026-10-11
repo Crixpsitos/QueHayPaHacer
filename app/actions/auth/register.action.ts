@@ -7,6 +7,8 @@ import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
 import { updateTag } from "next/cache"
+import { ACCEPTANCE_REQUIRED_ERROR, hasValidAcceptance } from "@/app/lib/legal/acceptance"
+import { LEGAL_VERSION } from "@/app/lib/legal/version"
 
 interface RegisterActionResult {
     error?: string;
@@ -24,7 +26,13 @@ export async function registerAction(
     email: string,
     phoneNumber: string,
     password: string,
+    acceptedTerms: boolean,
+    acceptedDataPolicy: boolean,
 ): Promise<RegisterActionResult | void> {
+    if (!hasValidAcceptance(acceptedTerms, acceptedDataPolicy)) {
+        return { error: ACCEPTANCE_REQUIRED_ERROR }
+    }
+
     try {
         const { authService } = createClientContainer()
         const { userService, badgeService } = createServerContainer()
@@ -52,6 +60,7 @@ export async function registerAction(
                 lastName,
                 phoneNumber: fullPhoneNumber,
                 acceptedTerms: true,
+                acceptedTermsVersion: LEGAL_VERSION,
                 creatorVerified: false,
                 isPublic: false,
             })

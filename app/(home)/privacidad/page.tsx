@@ -31,6 +31,8 @@ export default function PrivacidadPage() {
           <li><strong>Inscripciones:</strong> los eventos en los que te inscribes y las respuestas a los formularios que el creador del evento solicite.</li>
           <li><strong>Actividad:</strong> vistas, me gusta y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
           <li><strong>Contacto y soporte:</strong> el correo, teléfono y mensaje que nos envías.</li>
+          <li><strong>Aceptaciones y reportes:</strong> la fecha y la versión de los términos y de esta política que aceptaste, las declaraciones que haces al publicar, los reportes que envías o recibes y las decisiones de moderación.</li>
+          <li><strong>Datos de organizador:</strong> si organizas eventos con venta de entradas o servicios al público, podemos pedirte documento de identidad, dirección y teléfono.</li>
           <li><strong>Plan Premium:</strong> el historial de activaciones de tu plan (fechas, vencimiento y la referencia del pago que nos compartes). No recibimos ni guardamos datos de tarjetas ni claves bancarias: el pago lo haces desde tu banco o Nequi.</li>
         </ul>
       </section>
@@ -42,6 +44,9 @@ export default function PrivacidadPage() {
           <li>Mostrar tu perfil y el contenido que publicas en la cartelera de Ibagué.</li>
           <li>Gestionar tus inscripciones y permitir que el creador del evento las administre.</li>
           <li>Revisar el contenido publicado para evitar abuso, fraude o información falsa.</li>
+          <li>Prevenir, detectar, investigar y gestionar fraude, abuso e incumplimientos de la ley o de los términos.</li>
+          <li>Atender reclamos de terceros (por ejemplo, titulares de derechos de autor o asistentes) y requerimientos de las autoridades.</li>
+          <li>Conservar la evidencia necesaria para defender derechos y cumplir obligaciones legales.</li>
           <li>Darte estadísticas de tus eventos y sitios si usas el Estudio.</li>
           <li>Responder tus mensajes y solicitudes de soporte.</li>
         </ul>
@@ -57,16 +62,39 @@ export default function PrivacidadPage() {
         </p>
         <p>
           Cuando te inscribes en un evento, su creador puede ver tu nombre, correo y las respuestas del formulario de
-          inscripción para gestionar la asistencia.
+          inscripción para gestionar la asistencia. Ese creador es el responsable de tratar esos datos conforme a la
+          ley; nosotros solo ponemos la herramienta. No respondas preguntas sobre datos sensibles (como salud) si no
+          estás de acuerdo.
         </p>
       </section>
 
       <section>
         <h2>Con quién los compartimos</h2>
+        <ul>
+          <li>
+            <strong>Autoridades:</strong> cuando una autoridad competente lo exija en ejercicio de sus funciones o por
+            orden judicial. En estos casos la ley no exige tu autorización.
+          </li>
+          <li>
+            <strong>Quien tenga un reclamo legítimo contra tu contenido o tu evento</strong> (por ejemplo, un titular de
+            derechos de autor o una persona que compró), únicamente cuando la ley lo permita o lo ordene, para que
+            resuelva el reclamo contigo. Si eres organizador, los datos de identificación que nos diste pueden ser
+            consultados por quien haya comprado para presentar una queja.
+          </li>
+          <li>
+            <strong>Proveedores tecnológicos</strong> que tratan datos por nuestra cuenta: Google Cloud y Firebase
+            (Google LLC) para alojar la plataforma, la base de datos, las imágenes y la autenticación.
+          </li>
+        </ul>
+        <p>No vendemos tus datos ni los cedemos a terceros con fines comerciales.</p>
+      </section>
+
+      <section>
+        <h2>Transmisión y transferencia internacional</h2>
         <p>
-          Usamos Google Cloud y Firebase (Google LLC) para alojar la plataforma, la base de datos, las imágenes y la
-          autenticación. Estos servicios pueden almacenar datos fuera de Colombia, con garantías de seguridad
-          equivalentes. Solo compartiremos datos con autoridades cuando la ley lo exija.
+          Google almacena y procesa datos en servidores fuera de Colombia, incluidos Estados Unidos. Al aceptar esta
+          política autorizas expresamente esa transmisión y transferencia internacional, que hacemos a proveedores con
+          estándares de seguridad y con un nivel adecuado de protección.
         </p>
       </section>
 
@@ -97,8 +125,11 @@ export default function PrivacidadPage() {
       <section>
         <h2>Conservación y seguridad</h2>
         <p>
-          Conservamos tus datos mientras tengas una cuenta activa. Al eliminarla, borramos tu perfil y datos de cuenta;
-          algunos registros pueden mantenerse el tiempo que exija la ley. Protegemos la información con cifrado en
+          Conservamos tus datos mientras tengas una cuenta activa. Al eliminarla, borramos tu perfil y datos de cuenta.
+          Mantenemos, solo para defender derechos y cumplir la ley, la evidencia mínima necesaria (aceptaciones,
+          declaraciones al publicar, reportes y decisiones de moderación, y datos de identificación de quien organizó
+          eventos) durante el tiempo en que puedan surgir reclamaciones, es decir, los plazos de prescripción
+          aplicables. Protegemos la información con cifrado en
           tránsito, control de acceso y reglas de seguridad en la base de datos.
         </p>
       </section>
@@ -106,8 +137,9 @@ export default function PrivacidadPage() {
       <section>
         <h2>Menores de edad</h2>
         <p>
-          La plataforma está dirigida a mayores de 18 años. Los menores solo pueden usarla con autorización de su
-          padre, madre o representante legal.
+          La plataforma está dirigida a mayores de 18 años y al registrarte declaras que lo eres. No recogemos
+          intencionalmente datos de menores; si detectamos una cuenta de un menor, la cerramos y borramos sus datos.
+          Si publicas imágenes de menores, necesitas la autorización de su padre, madre o representante legal.
         </p>
       </section>
 

@@ -21,7 +21,7 @@ const CONTACT_HREF = "/contactanos?motivo=premium";
 const FEATURES = [
   { Icon: CalendarRange, title: "Eventos de varias fechas", body: "Temporadas, ciclos o talleres con varias funciones en una sola página, cada una con su cupo e inscripciones." },
   { Icon: ListChecks, title: "Control de asistencia", body: "Marca quién llegó y quién no desde la lista de inscritos y sabe cuánta gente de verdad asistió." },
-  { Icon: ClipboardList, title: "Formularios personalizados", body: "Pide los datos que necesitas al inscribirse: talla, empresa, nivel, alergias…" },
+  { Icon: ClipboardList, title: "Formularios personalizados", body: "Pide los datos que necesitas al inscribirse: talla, empresa o nivel. Pide solo lo necesario." },
   { Icon: BarChart3, title: "Estudio con estadísticas", body: "Vistas, inscripciones y conversión de cada evento y sitio, con exportación a CSV." },
   { Icon: Users, title: "Colaboradores", body: "Acredita a artistas, aliados y organizaciones en tus eventos y arma tu red." },
   { Icon: LifeBuoy, title: "Soporte prioritario", body: "Tus solicitudes se atienden primero, por correo." },

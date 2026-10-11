@@ -29,6 +29,8 @@ export interface User {
     photoURL?: string;
     imagePath?: string;
     acceptedTerms: boolean;
+    /** Versión de Términos/Privacidad aceptada (LEGAL_VERSION). */
+    acceptedTermsVersion?: string;
     participation: UserParticipation;
     creatorVerified: boolean;
     plan: UserPlan;

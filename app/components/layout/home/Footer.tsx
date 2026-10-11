@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "../shared/Container";
 import { FooterYear } from "./FooterYear";
+import { TE_PROTEJO_URL } from "../shared/LegalDocument";
 
 const LINKS = [
   { href: "/eventos", label: "Eventos" },
@@ -36,9 +37,10 @@ export const Footer = () => {
       </Container>
       <Container className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row sm:justify-between">
         <span>© <FooterYear /> Que Hay Pa Hacer?</span>
-        <span className="flex gap-5">
+        <span className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/terminos" className="transition-colors hover:text-white">Términos y condiciones</Link>
           <Link href="/privacidad" className="transition-colors hover:text-white">Política de privacidad</Link>
+          <a href={TE_PROTEJO_URL} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white">Denunciar abuso infantil</a>
         </span>
       </Container>
     </footer>

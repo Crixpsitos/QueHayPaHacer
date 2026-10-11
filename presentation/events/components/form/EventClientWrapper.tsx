@@ -205,10 +205,10 @@ export const EventClientWrapper = ({
   );
 
   const handlePublishSubmit = useCallback(
-    async (eventDraft: FormEventDto): Promise<void> => {
+    async (eventDraft: FormEventDto, declaration: boolean): Promise<void> => {
       try {
         const cleanDraft: FormEventDto = JSON.parse(JSON.stringify(eventDraft));
-        const result = await publishEventAction(cleanDraft);
+        const result = await publishEventAction(cleanDraft, declaration);
 
         if (result.success) {
           if (result.status === "pending") {

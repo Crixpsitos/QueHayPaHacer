@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Section } from "./Section";
+import { LEGAL_VERSION } from "@/app/lib/legal/version";
 
 // ponytail: datos del responsable en un solo lugar. Hoy el responsable es una
 // persona natural: completar nombre completo, cédula y correo de contacto para
@@ -20,11 +21,17 @@ export const LEGAL_ENTITY: {
   name: "Que Hay Pa Hacer?",
   city: "Ibagué, Tolima, Colombia",
   contactHref: "/contactanos",
-  updatedAt: "11 de octubre de 2026",
+  // Fecha legible derivada de la versión (única fuente de verdad).
+  updatedAt: new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeZone: "America/Bogota" }).format(
+    new Date(`${LEGAL_VERSION}T12:00:00-05:00`),
+  ),
   // owner: "Nombre Apellido",
   // email: "legal@tudominio.co",
   // phone: "+57 3XX XXX XXXX",
 };
+
+/** Línea de denuncia de explotación sexual infantil (Ley 679/2001 y Decreto 1524/2002 piden un enlace visible). */
+export const TE_PROTEJO_URL = "https://www.teprotejo.org";
 
 /** "Nombre, ciudad, correo, teléfono" con lo que esté definido. */
 export function responsibleLine() {

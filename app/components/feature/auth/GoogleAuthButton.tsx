@@ -4,7 +4,9 @@ import { safeRedirect } from "@/app/lib/utils/safeRedirect";
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import Link from "next/link";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { googleAuthAction } from "@/app/actions/auth/google-auth.action";
 import { cn } from "@/app/lib/utils/cn";
 
@@ -18,13 +20,31 @@ export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }:
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const handleClick = () => {
+  const [needsTerms, setNeedsTerms] = useState(false);
+  const [terms, setTerms] = useState(false);
+  const [data, setData] = useState(false);
+
+  const closeDialog = async () => {
+    // La sesión de Firebase se abrió con el popup: se cierra para no dejar una cuenta a medias.
+    setNeedsTerms(false);
+    setTerms(false);
+    setData(false);
+    try {
+      await signOut(getFirebaseAuth());
+    } catch {
+      // Sin sesión que cerrar.
+    }
+  };
+
+  const authenticate = (accepted?: boolean) => {
     setError(null);
     startTransition(async () => {
       try {
         const auth = getFirebaseAuth();
-        const provider = new GoogleAuthProvider();
-        const credentials = await signInWithPopup(auth, provider);
+        // Con aceptación se reutiliza la sesión abierta por el popup (no hay segundo popup).
+        const credentials = accepted && auth.currentUser
+          ? { user: auth.currentUser }
+          : await signInWithPopup(auth, new GoogleAuthProvider());
         const idToken = await credentials.user.getIdToken();
 
         const result = await googleAuthAction(idToken, {
@@ -34,12 +54,17 @@ export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }:
             credentials.user.displayName ||
             credentials.user.email!.split("@")[0],
           photoURL: credentials.user.photoURL ?? undefined,
-        });
+        }, accepted);
 
+        if (result?.needsTerms) {
+          setNeedsTerms(true);
+          return;
+        }
         if (result?.error) {
           setError(result.error);
           return;
         }
+        setNeedsTerms(false);
         router.push(safeRedirect(redirectTo));
       } catch (err) {
         const code =
@@ -53,8 +78,60 @@ export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }:
     });
   };
 
+  const handleClick = () => authenticate();
+
   return (
     <div className="flex flex-col gap-2">
+      <Dialog open={needsTerms} onOpenChange={(open) => { if (!open && !isPending) void closeDialog(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Antes de crear tu cuenta</DialogTitle>
+            <DialogDescription>
+              Es la primera vez que usas esta cuenta de Google en Qué hay pa&apos; hacer. Para crearla necesitamos tu aceptación expresa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 text-sm text-muted-foreground">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary" />
+              <span>
+                Acepto los{" "}
+                <Link href="/terminos" target="_blank" className="font-medium text-primary hover:underline">términos y condiciones</Link>
+                {" "}y declaro que soy mayor de 18 años.
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" checked={data} onChange={(e) => setData(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary" />
+              <span>
+                Autorizo el tratamiento de mis datos personales según la{" "}
+                <Link href="/privacidad" target="_blank" className="font-medium text-primary hover:underline">política de privacidad</Link>
+                , incluida su transmisión a Google (Firebase) en Estados Unidos y su uso para prevenir y gestionar
+                incumplimientos de la ley y atender requerimientos de autoridades y reclamos de terceros.
+              </span>
+            </label>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => void closeDialog()}
+              disabled={isPending}
+              className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => authenticate(true)}
+              disabled={!terms || !data || isPending}
+              className={cn(
+                "rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-all",
+                !terms || !data || isPending ? "cursor-not-allowed opacity-50" : "hover:bg-[#9B0A26]",
+              )}
+            >
+              {isPending ? "Creando cuenta..." : "Aceptar y continuar"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <button
         type="button"
         onClick={handleClick}

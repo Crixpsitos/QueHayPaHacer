@@ -5,13 +5,16 @@ import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteSchema, validateSiteForm } from "@/application/dto/sites/SiteDto"
+import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration"
 import { buildSiteInput } from "./buildSiteInput"
 import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 type Result = { success: true } | { success: false; error: string }
 
-export async function updateSiteAction(siteId: string, form: SiteFormViewModel): Promise<Result> {
+// Edita/reenvía un sitio ya publicado: exige la declaración como publishSiteAction (ver nota allí).
+export async function updateSiteAction(siteId: string, form: SiteFormViewModel, declaration: boolean): Promise<Result> {
+  if (!hasDeclared(declaration)) return { success: false, error: DECLARATION_ERROR }
   const tokens = await getTokens(await cookies(), authConfig)
   if (!tokens?.decodedToken?.uid) return { success: false, error: "No autenticado" }
 
@@ -19,9 +22,12 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel):
   if (invalid) return { success: false, error: invalid }
 
   const uid = tokens.decodedToken.uid
-  const { sitesService } = createServerContainer()
+  const { sitesService, contentDeclarationService } = createServerContainer()
 
   try {
+    // Evidencia antes de aplicar; solo si el sitio es del autor (ver publishSiteAction).
+    if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo actualizar el sitio" }
+    await contentDeclarationService.record(uid, "site", siteId)
     await sitesService.updateSite(uid, siteId, buildSiteInput(uid, tokens.decodedToken, form, "published"))
     revalidateSite(uid, siteId)
     return { success: true }

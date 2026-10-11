@@ -4,6 +4,8 @@ import type { IUserRepository } from "@/domain/repository/user/IUserRepository";
 import { CreateUserSchema, UpdateUserSchema, type CreateUserDto, type UpdateUserDto } from "@/application/dto/user/UserDto";
 import { generateUniqueUsernameCandidate, generateUsername } from "@/app/lib/utils/generateUsername";
 
+import { LEGAL_VERSION } from "@/app/lib/legal/version";
+
 const USERNAME_ATTEMPTS = 5;
 
 export class UserService {
@@ -44,6 +46,7 @@ export class UserService {
                 participation: input.participation ?? "consumer",
                 creatorVerified: input.creatorVerified ?? false,
                 plan: input.plan ?? "basic",
+                acceptedTermsVersion: input.acceptedTermsVersion ?? LEGAL_VERSION,
                 acceptedTermsAt: now,
                 createdAt: now,
                 updatedAt: now,
