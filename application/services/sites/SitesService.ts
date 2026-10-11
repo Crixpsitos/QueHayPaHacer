@@ -91,6 +91,12 @@ export class SitesService {
     return !!dto && authorIdOf(dto) === uid
   }
 
+  /** Snapshot mínimo para reportes. */
+  async getTitleAndAuthor(id: string): Promise<{ title: string; authorId: string | null } | null> {
+    const dto = await this.adapter.findRawById(id)
+    return dto ? { title: dto.name, authorId: authorIdOf(dto) ?? null } : null
+  }
+
   private async assertOwner(uid: string, id: string): Promise<FirebaseSiteDto> {
     // raw DTO — no domain mapping, so legacy media shapes never break ownership checks
     const dto = await this.adapter.findRawById(id)

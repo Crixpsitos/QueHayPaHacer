@@ -13,6 +13,7 @@ import { EventHero } from "./detail/EventHero";
 import { EventDescription } from "./detail/EventDescription";
 import { EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
 import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
+import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { formatDateRange, formatPriceSummary } from "./detail/format";
 
 interface MultiDateEventDetailClientProps {
@@ -120,6 +121,7 @@ export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOw
 
             <EventOrganizer event={event} />
             <EventShare event={event} path={`/eventos/${parentRef}`} />
+            <ReportButton targetType="event" targetId={event.id} isOwner={isOwner} className="-mt-10" />
           </div>
         </div>
       </Section>

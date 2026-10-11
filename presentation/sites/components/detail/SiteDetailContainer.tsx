@@ -15,6 +15,7 @@ import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteIti
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
 import { SiteSocialShare } from "./SiteSocialShare";
+import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { SiteLocalBusinessJsonLd } from "../discovery/SiteJsonLd";
 import { BookingButton } from "@/presentation/shared/components/BookingButton";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
@@ -339,6 +340,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               title={site!.name}
               className="[&>p]:hidden"
             />
+            <ReportButton targetType="site" targetId={siteId} authorId={site!.author.id} className="mt-4" />
           </div>
         </aside>
       </div>

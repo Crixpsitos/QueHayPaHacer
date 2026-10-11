@@ -59,6 +59,8 @@ import { ContactService } from "@/application/services/contact/ContactService";
 import { SiteInteractionFirebaseRepository } from "../firebase/repositories/SiteInteraction/SiteInteractionFirebaseRepository";
 import { SiteInteractionAdapter } from "../adapters/SiteInteraction/SiteInteractionAdapter";
 import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteraction/SiteInteractionFirebaseMapper";
+import { ReportFirebaseRepository } from "../firebase/repositories/report/ReportFirebaseRepository";
+import { ReportService } from "@/application/services/report/ReportService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
 
@@ -159,6 +161,14 @@ export const createServerContainer = () => {
   const contactAdapter = new ContactAdapter(contactFirebaseRepository, new ContactFirebaseMapper());
   const contactService = new ContactService(contactAdapter);
 
+  // reports (moderación de contenido)
+  const reportService = new ReportService(
+    new ReportFirebaseRepository(getFirebaseFirestore()),
+    eventsService,
+    eventSessionService,
+    sitesService,
+  );
+
   return {
     userService,
     campaignService,
@@ -176,6 +186,7 @@ export const createServerContainer = () => {
     badgeService,
     studioService,
     contactService,
+    reportService,
   };
 };
 

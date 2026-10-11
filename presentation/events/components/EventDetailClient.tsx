@@ -17,6 +17,7 @@ import { Lightbox, MediaStrip, buildSlides } from "./detail/EventMedia";
 import { EventPlace, type LinkedSiteInfo } from "./detail/EventPlace";
 import { BackLink, EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
 import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
+import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
 
 // Lazy — solo se carga si el usuario abre el modal
@@ -271,6 +272,7 @@ export function EventDetailClient({
             <EventPlace event={event} linkedSite={linkedSite} />
             <EventOrganizer event={event} />
             <EventShare event={event} path={shareUrl ?? `/eventos/${event.slug || event.id}`} sessionId={sessionId} />
+            <ReportButton targetType="event" targetId={event.id} sessionId={sessionId} isOwner={isOwner} className="-mt-10" />
           </div>
         </div>
       </Section>
