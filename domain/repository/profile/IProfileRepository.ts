@@ -8,6 +8,17 @@ export interface UserEvent {
   id: string;
   title: string;
   description: string;
+  category?: {
+    id?: string;
+    title: string;
+    slug?: string;
+  };
+  author?: {
+    id: string;
+    displayName: string;
+    photoURL?: string;
+    creatorVerified?: boolean;
+  };
   status: string;
   moderationStatus: "pending" | "approved" | "rejected" | "pending_audit";
   moderationMode: "pre_publication" | "post_publication";
@@ -62,6 +73,17 @@ export interface UserEventInteraction {
   event?: {
     title: string;
     image?: string;
+    category?: {
+      id?: string;
+      title: string;
+      slug?: string;
+    };
+    author?: {
+      id: string;
+      displayName: string;
+      photoURL?: string;
+      creatorVerified?: boolean;
+    };
     status?: string;
     startDate?: Date;
     endDate?: Date;
@@ -94,8 +116,8 @@ export interface UserBadge {
 
 export interface IProfileRepository {
   getStats(uid: string): Promise<ProfileStats>;
-  getUserEvents(uid: string): Promise<UserEvent[]>;
-  getUserSites(uid: string): Promise<UserSite[]>;
-  getUserEventInteractions(uid: string): Promise<UserEventInteraction[]>;
-  getUserBadges(uid: string): Promise<UserBadge[]>;
+  getUserEvents(uid: string, limit?: number): Promise<UserEvent[]>;
+  getUserSites(uid: string, limit?: number): Promise<UserSite[]>;
+  getUserEventInteractions(uid: string, limit?: number): Promise<UserEventInteraction[]>;
+  getUserBadges(uid: string, limit?: number): Promise<UserBadge[]>;
 }

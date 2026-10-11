@@ -293,8 +293,6 @@ export interface OrganizerSiteListItem {
   likes: number;
   shares: number;
   eventsCount: number;
-  /** MOCK: tendencia semanal (%). Placeholder para probar la UI; aún no se calcula real. */
-  trend: number;
 }
 
 /** Parámetros comunes de las listas del Estudio: búsqueda full-text + tope. Sin paginación. */

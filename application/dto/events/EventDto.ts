@@ -360,13 +360,15 @@ export const publishEventSchema = v.pipe(
     (data) => data.price.isFree || data.registrationType === "external",
     "Los eventos pagados requieren registro externo. Configura el tipo de registro en el paso anterior.",
   ),
-  // Si el registro es externo, la URL es obligatoria.
-  v.check(
-    (data) =>
-      data.registrationType !== "external" ||
-      (!!data.externalUrl && data.externalUrl.trim().length > 0),
-    "La URL del sitio externo es obligatoria para el registro externo.",
-  ),
+  // Las `entries` de un step no arrastran su pipe: re-validar con los schemas
+  // completos para que el servidor aplique fechas, URL externa y monto > 0.
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (!dataset.typed) return;
+    for (const schema of [step5Schema, step6Schema, step7Schema]) {
+      const result = v.safeParse(schema, dataset.value);
+      if (!result.success) addIssue({ message: result.issues[0].message });
+    }
+  }),
 );
 
 /**

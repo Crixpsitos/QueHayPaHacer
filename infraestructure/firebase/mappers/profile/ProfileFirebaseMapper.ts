@@ -17,6 +17,8 @@ export class ProfileFirebaseMapper {
       id: doc.id,
       title: data.title ?? "Evento sin titulo",
       description: data.shortDescription ?? "Sin descripcion",
+      category: this.toEventCategory(data.categoryInfo),
+      author: this.toEventAuthor(data.author),
       status: data.status ?? "draft",
       moderationStatus:
         data.moderationStatus ?? (data.status === "published" ? "approved" : "pending"),
@@ -27,7 +29,7 @@ export class ProfileFirebaseMapper {
       createdAt: this.toDate(data.createdAt),
       startDate: this.toOptionalDate(data.startDate ?? data.start),
       endDate: this.toOptionalDate(data.endDate ?? data.end),
-      image: data.mainImage?.url,
+      image: this.toTimelineImageUrl(data.mainImage),
       isFree: typeof data.price?.isFree === "boolean" ? data.price.isFree : undefined,
       priceAmount: typeof data.price?.amount === "number" ? data.price.amount : undefined,
       priceCurrency: typeof data.price?.currency === "string" ? data.price.currency : undefined,
@@ -97,12 +99,15 @@ export class ProfileFirebaseMapper {
         eventId,
         type,
         createdAt: this.toDate(data.createdAt),
-        event: eventData ? this.toEventPreview(eventData) : undefined,
+        event: eventData ? this.toEventPreview(eventData, raw.authorsById) : undefined,
       };
     });
   }
 
-  private toEventPreview(eventObj: Record<string, unknown>): NonNullable<UserEventInteraction["event"]> {
+  private toEventPreview(
+    eventObj: Record<string, unknown>,
+    authorsById: ProfileInteractionsRaw["authorsById"],
+  ): NonNullable<UserEventInteraction["event"]> {
     const priceObj =
       eventObj.price && typeof eventObj.price === "object"
         ? (eventObj.price as Record<string, unknown>)
@@ -128,21 +133,19 @@ export class ProfileFirebaseMapper {
         ? (eventObj.analytics as Record<string, unknown>)
         : undefined;
 
-    const mainImage =
-      eventObj.mainImage && typeof eventObj.mainImage === "object"
-        ? (eventObj.mainImage as Record<string, unknown>)
-        : undefined;
-
-    const imageUrl =
-      typeof mainImage?.url === "string"
-        ? mainImage.url
-        : typeof mainImage?.temporaryUrl === "string"
-          ? mainImage.temporaryUrl
-          : undefined;
+    const author = this.toEventAuthor(eventObj.author);
+    const authorProfile = author ? authorsById[author.id] : undefined;
 
     return {
       title: typeof eventObj.title === "string" ? eventObj.title : "Evento sin título",
-      image: imageUrl,
+      image: this.toTimelineImageUrl(eventObj.mainImage),
+      category: this.toEventCategory(eventObj.categoryInfo),
+      author: author
+        ? {
+            ...author,
+            creatorVerified: authorProfile?.creatorVerified === true,
+          }
+        : undefined,
       status: typeof eventObj.status === "string" ? eventObj.status : undefined,
       startDate: this.toOptionalDate(eventObj.startDate ?? eventObj.start),
       endDate: this.toOptionalDate(eventObj.endDate ?? eventObj.end),
@@ -174,6 +177,43 @@ export class ProfileFirebaseMapper {
             : undefined,
       },
     };
+  }
+
+  private toEventCategory(value: unknown): UserEvent["category"] {
+    if (!value || typeof value !== "object") return undefined;
+    const category = value as Record<string, unknown>;
+    if (typeof category.title !== "string") return undefined;
+    return {
+      id: typeof category.id === "string" ? category.id : undefined,
+      title: category.title,
+      slug: typeof category.slug === "string" ? category.slug : undefined,
+    };
+  }
+
+  private toEventAuthor(value: unknown): UserEvent["author"] {
+    if (!value || typeof value !== "object") return undefined;
+    const author = value as Record<string, unknown>;
+    const id = typeof author.id === "string" ? author.id : typeof author.uid === "string" ? author.uid : undefined;
+    if (!id || typeof author.displayName !== "string") return undefined;
+    return {
+      id,
+      displayName: author.displayName,
+      photoURL: typeof author.photoURL === "string" ? author.photoURL : undefined,
+      creatorVerified: author.creatorVerified === true,
+    };
+  }
+
+  private toTimelineImageUrl(value: unknown): string | undefined {
+    if (!value || typeof value !== "object") return undefined;
+    const image = value as Record<string, unknown>;
+    const desktop =
+      image.desktop && typeof image.desktop === "object"
+        ? (image.desktop as Record<string, unknown>)
+        : undefined;
+
+    if (typeof desktop?.url === "string") return desktop.url;
+    if (typeof image.url === "string") return image.url;
+    return typeof image.temporaryUrl === "string" ? image.temporaryUrl : undefined;
   }
 
   /** `location.city` puede ser string (forma vieja) u objeto `{name}` (nueva). Devuelve el nombre. */

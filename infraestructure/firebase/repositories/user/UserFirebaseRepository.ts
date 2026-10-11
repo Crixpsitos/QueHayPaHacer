@@ -29,10 +29,26 @@ export class UserFirebaseRepository extends FirebaseBaseRepository implements IU
   }
 
   async findByUsername(username: string): Promise<FirebaseUserDto | null> {
-    const snapshot = await this.collection.where("displayName", "==", username.toLowerCase()).limit(1).get();
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { uid: doc.id, ...doc.data() } as FirebaseUserDto;
+    // Usernames se guardan normalizados; el valor exacto cubre perfiles legados
+    // (displayName sin normalizar) a los que apuntan links viejos. Sin scans.
+    for (const candidate of new Set([username.toLowerCase(), username])) {
+      const snapshot = await this.collection.where("displayName", "==", candidate).limit(1).get();
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return { uid: doc.id, ...doc.data() } as FirebaseUserDto;
+      }
+    }
+    return null;
+  }
+
+  async findVerifiedCreators(limit: number): Promise<FirebaseUserDto[]> {
+    const snapshot = await this.collection
+      .where("isPublic", "==", true)
+      .where("participation", "==", "creator")
+      .where("creatorVerified", "==", true)
+      .limit(limit)
+      .get();
+    return snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() } as FirebaseUserDto));
   }
 
   async create(dto: FirebaseUserDto): Promise<FirebaseUserDto> {

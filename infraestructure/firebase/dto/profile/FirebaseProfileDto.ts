@@ -13,4 +13,5 @@ export interface FirestoreDoc {
 export interface ProfileInteractionsRaw {
   interactions: FirestoreDoc[];
   eventsById: Record<string, DocumentData>;
+  authorsById: Record<string, DocumentData>;
 }

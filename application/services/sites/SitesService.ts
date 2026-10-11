@@ -6,14 +6,30 @@ export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
 
 /** Mutable content of a site — excludes slug/author/status/analytics/timestamps. */
 function contentFields(data: SiteInput) {
+  // update = set(merge) → omitir city/department/country vacíos conserva los guardados
+  // (un form que no los trae no debe borrar la ubicación).
+  const { city, department, country, ...location } = data.location
   return {
     name: data.name,
     category: data.category,
     description: data.description,
-    location: data.location,
+    location: {
+      ...location,
+      ...(city?.name ? { city } : {}),
+      ...(department?.name ? { department } : {}),
+      ...(country?.name ? { country } : {}),
+    },
     media: data.media,
     schedule: data.schedule,
+    socialMedia: data.socialMedia,
+    temporarilyClosed: data.temporarilyClosed,
+    bookingUrl: data.bookingUrl,
   }
+}
+
+/** Autor del doc — `author.uid` es la forma legacy. */
+function authorIdOf(dto: FirebaseSiteDto): string | undefined {
+  return dto.author?.id ?? (dto.author as { uid?: string } | undefined)?.uid
 }
 
 export class SitesService {
@@ -28,7 +44,8 @@ export class SitesService {
   }
 
   /** Merge only content fields into an existing doc — never touches status/analytics/slug/author. */
-  async updateDraft(id: string, data: SiteInput): Promise<void> {
+  async updateDraft(uid: string, id: string, data: SiteInput): Promise<void> {
+    await this.assertOwner(uid, id)
     return this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
   }
 
@@ -37,10 +54,14 @@ export class SitesService {
   }
 
   /** Convert an existing (draft) doc into a published one — reuses its id, no new doc. */
-  async publishExisting(id: string, data: SiteInput): Promise<void> {
+  async publishExisting(uid: string, id: string, data: SiteInput): Promise<void> {
+    const current = await this.assertOwner(uid, id)
+    // el borrador nace con nombre vacío → slug "-xxxx"; se regenera al publicar
+    const regenerateSlug = current.publicationStatus === "draft" || !current.slug || current.slug.startsWith("-")
     return this.adapter.updateRaw({
       id,
       ...contentFields(data),
+      ...(regenerateSlug ? { slug: data.slug } : {}),
       publicationStatus: "published",
       moderationStatus: "pending",
       rejectionReason: null,
@@ -48,8 +69,9 @@ export class SitesService {
     } as FirebaseSiteDto)
   }
 
-  async updateSite(id: string, data: Partial<SiteInput>): Promise<void> {
-    return this.adapter.updateRaw({ id, ...data } as FirebaseSiteDto)
+  async updateSite(uid: string, id: string, data: SiteInput): Promise<void> {
+    await this.assertOwner(uid, id)
+    return this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
   }
 
   /** Toggle public visibility — owner only. */
@@ -64,11 +86,17 @@ export class SitesService {
     return this.adapter.deleteRaw(id)
   }
 
-  private async assertOwner(uid: string, id: string): Promise<void> {
+  async isOwner(uid: string, id: string): Promise<boolean> {
+    const dto = await this.adapter.findRawById(id)
+    return !!dto && authorIdOf(dto) === uid
+  }
+
+  private async assertOwner(uid: string, id: string): Promise<FirebaseSiteDto> {
     // raw DTO — no domain mapping, so legacy media shapes never break ownership checks
     const dto = await this.adapter.findRawById(id)
     if (!dto) throw new Error("Sitio no encontrado")
-    if (dto.author?.id !== uid) throw new Error("No autorizado")
+    if (authorIdOf(dto) !== uid) throw new Error("No autorizado")
+    return dto
   }
 
   // --- Discovery público (para /donde-ir y landings por tipo) ---

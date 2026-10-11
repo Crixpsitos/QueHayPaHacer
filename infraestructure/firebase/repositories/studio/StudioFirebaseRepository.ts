@@ -105,27 +105,24 @@ interface PipelineRegistrationRow {
 /**
  * Repositorio Firebase del Estudio del Organizador.
  *
- * STUBS: las firmas están listas pero el cuerpo NO está implementado.
- * El desarrollador implementará aquí la conexión real a Firestore.
- * La UI funciona por ahora con datos MOCK en los ViewModels.
+ * Datos reales vía pipelines de Firestore Enterprise. Pendientes (sin UI que
+ * los consuma todavía): `getFormResponses` y `getAudienceSummary`.
  */
+// Colombia es UTC-5 fijo (sin horario de verano). Cloud Run corre en UTC: los
+// bordes de mes se calculan en hora de Ibagué, no del servidor.
+const BOGOTA_OFFSET_HOURS = 5;
+export function bogotaMonthStart(now: Date, monthDelta: number): Date {
+  const local = new Date(now.getTime() - BOGOTA_OFFSET_HOURS * 3_600_000);
+  return new Date(
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + monthDelta, 1, BOGOTA_OFFSET_HOURS),
+  );
+}
+
 export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   private readonly now = new Date();
-  private readonly startOfCurrentMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth(),
-    1,
-  );
-  private readonly startOfNextMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth() + 1,
-    1,
-  );
-  private readonly startOfPreviousMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth() - 1,
-    1,
-  );
+  private readonly startOfCurrentMonth = bogotaMonthStart(this.now, 0);
+  private readonly startOfNextMonth = bogotaMonthStart(this.now, 1);
+  private readonly startOfPreviousMonth = bogotaMonthStart(this.now, -1);
 
   constructor(private readonly db: Firestore) {}
 
@@ -255,14 +252,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthViews: number;
     viewsChangePct: number;
   }> {
-    const now = new Date();
-    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const startOfPreviousMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      1,
-    );
+    const { startOfCurrentMonth, startOfNextMonth, startOfPreviousMonth } = this;
 
     const memoryDebugEnabled = process.env.STUDIO_PIPELINE_MEM_DEBUG === "1";
     const heapBefore = memoryDebugEnabled ? process.memoryUsage().heapUsed : 0;
@@ -388,7 +378,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthLikes: number;
     likesChangePct: number;
   }> {
-    // TODO: implementar lógica real de likes
     const data = await this.db
       .pipeline()
       .collection("events")
@@ -434,51 +423,21 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthActiveEvents: number;
     activeEventsChangePct: number;
   }> {
-    // TODO: implementar lógica real de eventos activos
-
+    // Activos = publicados que aún no terminan. Sin comparativa mensual: no hay
+    // histórico de "activos" por mes, y la UI la oculta con previous = 0.
     const data = await this.db
       .pipeline()
-      .collectionGroup("events")
+      .collection("events")
       .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
       .where(field("status").equal("published"))
-      .addFields(
-        field("createdAt")
-          .greaterThanOrEqual(this.startOfCurrentMonth)
-          .as("isCurrentMonth"),
-      )
-      .aggregate({
-        accumulators: [countAll().as("total")],
-        groups: [field("id").as("eventId")],
-      })
+      .where(field("endDate").greaterThanOrEqual(new Date()))
+      .aggregate(countAll().as("total"))
       .execute();
 
-    let activeEvents = 0;
-    let previousMonthActiveEvents = 0;
-    data.results.forEach((result) => {
-      const row = result.data() as {
-        eventId?: string;
-        total?: number;
-      };
-
-      const total = Number(row.total ?? 0);
-      if (row.eventId) {
-        activeEvents += total;
-      } else {
-        previousMonthActiveEvents += total;
-      }
-    });
-
-    return {
-      activeEvents,
-      previousMonthActiveEvents,
-      activeEventsChangePct: this.calculateChangePct(
-        activeEvents,
-        previousMonthActiveEvents,
-      ),
-    };
+    const activeEvents = Number((data.results[0]?.data() as { total?: number } | undefined)?.total ?? 0);
+    return { activeEvents, previousMonthActiveEvents: 0, activeEventsChangePct: 0 };
   }
+
 
   private async getViewsVsRegistrations(
     uid: string,
@@ -487,28 +446,39 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .pipeline()
       .collection("events")
       .where(field("author.id").equal(uid))
+      .where(field("status").equal("published"))
+      // Desempate por id: mismo orden en cada render aunque empaten en vistas.
+      .sort(field("analytics.views").descending(), field("__name__").ascending())
       .select(
         field("__name__").as("eventId"),
         field("title").as("eventName"),
         field("analytics.views").as("views"),
         field("analytics.registrations").as("registrations"),
+        field("registrationType").as("registrationType"),
       )
+      // Tope de 10: la lista deja de ser legible con más filas; sin tope lee todos los eventos.
+      .limit(10)
       .execute();
 
-    return result.results.map((r) => {
+    return result.results.flatMap((r) => {
       const row = r.data() as {
         eventId: unknown;
         eventName: string;
         views: number;
         registrations: number;
+        registrationType?: string;
       };
+      // Externos: la inscripción ocurre fuera (registrations = 0 siempre), así
+      // que su "conversión" sería falsa. ponytail: se filtran en memoria (puede
+      // quedar < 10 filas); mover al where si la mezcla lo vuelve notorio.
+      if (row.registrationType === "external") return [];
 
-      return {
+      return [{
         eventId: this.toDocId(row.eventId),
         eventName: row.eventName,
         views: Number(row.views ?? 0),
         registrations: Number(row.registrations ?? 0),
-      };
+      }];
     });
   }
 
@@ -519,8 +489,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       this.startOfCurrentMonth.getTime() / 1000,
     );
 
-    console.log("startOfMonthSeconds", startOfMonthSeconds);
-    console.log("uid", uid);
 
     const result = await this.db
       .pipeline()
@@ -557,8 +525,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         registrationsByDay: { day: number; total: number }[];
       };
 
-      console.log("row.registrationsByDay", row.registrationsByDay);
-
       row.registrationsByDay?.forEach(({ day, total }) => {
         dayMap.set(day, (dayMap.get(day) ?? 0) + Number(total));
       });
@@ -581,7 +547,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .where(field("author.id").equal(uid))
       .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
       .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .sort(field("analytics.score").descending())
+      .sort(field("analytics.score").descending(), field("__name__").ascending())
       .limit(5)
       .select(
         field("__name__").as("eventId"),
@@ -609,7 +575,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   }
 
   private async getInteractivity(uid: string): Promise<InteractivityPoint[]> {
-    // TODO: implementar lógica real de interactividad
     const interactivityData = await this.db
       .pipeline()
       .collection("events")
@@ -617,6 +582,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
       .where(field("createdAt").lessThan(this.startOfNextMonth))
       .where(field("status").equal("published"))
+      .sort(field("analytics.score").descending(), field("__name__").ascending())
       .select(
         field("__name__").as("eventId"),
         field("title").as("eventName"),
@@ -624,7 +590,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         field("analytics.likes").as("likes"),
         field("analytics.shares").as("shares"),
       )
-      .limit(4)
+      // 6 filas: suficiente para comparar sin que la tabla de barras se alargue.
+      .limit(6)
       .execute();
 
     return interactivityData.results.map((r) => {
@@ -982,7 +949,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
 
       return { registrationType, registrations, requiresAttendance, nextCursor, prevCursor };
     } catch (error) {
-      console.log("getEventRegistrations error", { eventId, params, error });
+      console.error("getEventRegistrations error", { eventId, error });
       throw error;
     }
   }
@@ -1392,10 +1359,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    * controlamos). Por eso lo puede disparar cualquier visitante, logueado o no.
    */
   async incrementExternalRegistrationClick(eventId: string): Promise<void> {
-    await this.db.collection("events").doc(eventId).update({
-      "analytics.clicks": FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    // Action pública: solo cuenta en eventos con registro externo. Sin tocar
+    // updatedAt (un click no es una edición del evento).
+    // ponytail: sin dedupe/rate limit; añadir cuando haya rate limiting global.
+    const ref = this.db.collection("events").doc(eventId);
+    const snap = await ref.get();
+    if (snap.data()?.registrationType !== "external") return;
+    await ref.update({ "analytics.clicks": FieldValue.increment(1) });
   }
 
   async getFormResponses(
@@ -1550,9 +1520,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         likes: Number(row.likes ?? 0),
         shares: Number(row.shares ?? 0),
         eventsCount: Number(row.eventsCount ?? 0),
-        // MOCK — tendencia semanal placeholder, determinista para pruebas de UI.
-        // TODO: calcular real desde el log de interacciones (getSiteAnalytics).
-        trend: (clicks % 40) - 15,
       };
     });
   }
@@ -1578,6 +1545,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           .search({ query: documentMatches(search), sort: score().descending() })
           .where(field("location.siteId").equal(siteId))
       : collection.where(field("location.siteId").equal(siteId));
+    // Otros autores pueden apuntar a este sitio: nunca exponer sus borradores/rechazados.
+    stage = stage.where(field("status").equal("published"));
 
     if (cursorDate) {
       stage = stage.where(
@@ -1702,7 +1671,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           };
           return {
             uid: this.toDocId(row.uid),
-            displayName: row.displayName || row.email || "Usuario",
+            displayName: row.displayName || "Usuario",
             photoURL: row.photoURL ?? undefined,
             email: row.email ?? "",
             participation: row.participation,
@@ -1718,7 +1687,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           uid: user.uid,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          email: user.email,
+          // Sin exponer correos ajenos: solo si quien busca ya lo escribió completo.
+          email: user.email.toLowerCase() === trimmed.toLowerCase() ? user.email : "",
           creatorVerified: user.creatorVerified,
         }))
         .slice(0, limit);
@@ -1768,6 +1738,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    */
   async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
     if (invitees.length === 0) return;
+    if (invitees.length > 20) throw new Error("Máximo 20 invitaciones a la vez.");
 
     const meSnap = await this.db.collection("users").doc(fromUid).get();
     const me = meSnap.exists
@@ -1778,37 +1749,40 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         })
       : {};
 
-    // Dedup: invitaciones ya existentes (pendientes o aceptadas) que yo envié.
-    const existing = await this.db
-      .collection("collaborationInvites")
-      .where("fromUid", "==", fromUid)
-      .get();
-    const seen = new Set(
-      existing.docs
+    // Dedup en ambas direcciones: la red es bidireccional.
+    const [sent, received] = await Promise.all([
+      this.db.collection("collaborationInvites").where("fromUid", "==", fromUid).get(),
+      this.db.collection("collaborationInvites").where("toUid", "==", fromUid).get(),
+    ]);
+    const seen = new Set([
+      ...sent.docs
         .filter((d) => ["pending", "accepted"].includes(d.data().status))
         .map((d) => d.data().toUid as string),
-    );
+      ...received.docs
+        .filter((d) => ["pending", "accepted"].includes(d.data().status))
+        .map((d) => d.data().fromUid as string),
+    ]);
 
     // Solo se puede invitar a creadores (defensa: el buscador ya los
     // filtra, pero validamos server-side por si llega un uid crafteado).
     const inviteeSnaps = await Promise.all(
       invitees.map((inv) => this.db.collection("users").doc(inv.uid).get()),
     );
-    const creatorUids = new Set(
+    // Datos del invitado desde el servidor, nunca del cliente (p.ej. "verificado").
+    const creators = new Map(
       inviteeSnaps
-        .filter(
-          (s) => {
-            const data = s.data() as { participation?: string };
-            return s.exists && data.participation === "creator";
-          },
-        )
-        .map((s) => s.id),
+        .filter((s) => s.exists && (s.data() as { participation?: string }).participation === "creator")
+        .map((s) => [
+          s.id,
+          s.data() as { displayName?: string; email?: string; photoURL?: string; creatorVerified?: boolean },
+        ]),
     );
 
     const batch = this.db.batch();
     let added = 0;
     for (const inv of invitees) {
-      if (inv.uid === fromUid || seen.has(inv.uid) || !creatorUids.has(inv.uid)) continue;
+      const invitee = creators.get(inv.uid);
+      if (inv.uid === fromUid || seen.has(inv.uid) || !invitee) continue;
       const ref = this.db.collection("collaborationInvites").doc();
       batch.set(ref, {
         fromUid,
@@ -1816,10 +1790,10 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         fromPhotoURL: me.photoURL ?? null,
         fromCreatorVerified: me.creatorVerified ?? false,
         toUid: inv.uid,
-        toEmail: inv.email.trim().toLowerCase(),
-        toDisplayName: inv.displayName,
-        toPhotoURL: inv.photoURL ?? null,
-        toCreatorVerified: inv.creatorVerified ?? false,
+        toEmail: (invitee.email ?? "").toLowerCase(),
+        toDisplayName: invitee.displayName ?? "",
+        toPhotoURL: invitee.photoURL ?? null,
+        toCreatorVerified: invitee.creatorVerified ?? false,
         status: "pending",
         createdAt: FieldValue.serverTimestamp(),
         respondedAt: null,
@@ -1960,15 +1934,16 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       return;
     }
 
-    const snap = await this.db
-      .collection("collaborationInvites")
-      .where("fromUid", "==", uid)
-      .get();
+    // La red es bidireccional: el vínculo puede haberlo creado cualquiera de los dos.
+    const invites = this.db.collection("collaborationInvites");
+    const [sent, received] = await Promise.all([
+      invites.where("fromUid", "==", uid).where("toUid", "==", refId).get(),
+      invites.where("fromUid", "==", refId).where("toUid", "==", uid).get(),
+    ]);
     const batch = this.db.batch();
     let n = 0;
-    snap.docs.forEach((d) => {
-      const x = d.data();
-      if (x.toUid === refId && x.status === "accepted") {
+    [...sent.docs, ...received.docs].forEach((d) => {
+      if (d.data().status === "accepted") {
         batch.delete(d.ref);
         n++;
       }

@@ -14,19 +14,19 @@ export class ProfileService {
     return this.profileRepository.getStats(uid);
   }
 
-  async getUserEvents(uid: string): Promise<UserEvent[]> {
-    return this.profileRepository.getUserEvents(uid);
+  async getUserEvents(uid: string, limit?: number): Promise<UserEvent[]> {
+    return this.profileRepository.getUserEvents(uid, limit);
   }
 
-  async getUserSites(uid: string): Promise<UserSite[]> {
-    return this.profileRepository.getUserSites(uid);
+  async getUserSites(uid: string, limit?: number): Promise<UserSite[]> {
+    return this.profileRepository.getUserSites(uid, limit);
   }
 
-  async getUserEventInteractions(uid: string): Promise<UserEventInteraction[]> {
-    return this.profileRepository.getUserEventInteractions(uid);
+  async getUserEventInteractions(uid: string, limit?: number): Promise<UserEventInteraction[]> {
+    return this.profileRepository.getUserEventInteractions(uid, limit);
   }
 
-  async getUserBadges(uid: string): Promise<UserBadge[]> {
-    return this.profileRepository.getUserBadges(uid);
+  async getUserBadges(uid: string, limit?: number): Promise<UserBadge[]> {
+    return this.profileRepository.getUserBadges(uid, limit);
   }
 }

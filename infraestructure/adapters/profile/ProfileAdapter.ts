@@ -20,27 +20,27 @@ export class ProfileAdapter implements IProfileRepository {
     return this.repository.getStats(uid);
   }
 
-  async getUserEvents(uid: string): Promise<UserEvent[]> {
-    const docs = await this.repository.getUserEvents(uid);
+  async getUserEvents(uid: string, limit?: number): Promise<UserEvent[]> {
+    const docs = await this.repository.getUserEvents(uid, limit);
     return docs
       .map((doc) => this.mapper.toUserEvent(doc))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async getUserSites(uid: string): Promise<UserSite[]> {
-    const docs = await this.repository.getUserSites(uid);
+  async getUserSites(uid: string, limit?: number): Promise<UserSite[]> {
+    const docs = await this.repository.getUserSites(uid, limit);
     return docs
       .map((doc) => this.mapper.toUserSite(doc))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async getUserEventInteractions(uid: string): Promise<UserEventInteraction[]> {
-    const raw = await this.repository.getUserEventInteractions(uid);
+  async getUserEventInteractions(uid: string, limit?: number): Promise<UserEventInteraction[]> {
+    const raw = await this.repository.getUserEventInteractions(uid, limit);
     return this.mapper.toUserEventInteractions(raw);
   }
 
-  async getUserBadges(uid: string): Promise<UserBadge[]> {
-    const docs = await this.repository.getUserBadges(uid);
+  async getUserBadges(uid: string, limit?: number): Promise<UserBadge[]> {
+    const docs = await this.repository.getUserBadges(uid, limit);
     return docs.map((doc) => this.mapper.toUserBadge(doc));
   }
 }
