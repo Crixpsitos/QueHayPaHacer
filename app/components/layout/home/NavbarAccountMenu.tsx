@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, Sparkles, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { createClientContainer } from "@/infraestructure/di/container.client";
@@ -187,11 +187,18 @@ export function NavbarAccountMenu({
                 Mis sitios
               </Link>
             </DropdownMenuItem>
-            {isPremium && (
+            {isPremium ? (
               <DropdownMenuItem asChild>
                 <Link href="/studio" className={cn("flex items-center gap-2")}>
                   <LayoutDashboard className="size-4" aria-hidden="true" />
                   Ir a estudio
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild>
+                <Link href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
+                  <Sparkles className="size-4" aria-hidden="true" />
+                  Mejorar a Premium
                 </Link>
               </DropdownMenuItem>
             )}

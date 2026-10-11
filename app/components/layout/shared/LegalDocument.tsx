@@ -2,13 +2,15 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Section } from "./Section";
 
-// ponytail: datos del responsable en un solo lugar. Completar razón social, NIT
-// y correo de habeas data antes del lanzamiento (Ley 1581 de 2012, art. 13 Decreto 1377).
+// ponytail: datos del responsable en un solo lugar. Hoy el responsable es una
+// persona natural: completar nombre completo, cédula y correo de contacto para
+// datos personales antes del lanzamiento (Ley 1581 de 2012, Decreto 1377).
+// Si se constituye empresa, cambiar por razón social y NIT.
 export const LEGAL_ENTITY = {
   name: "Que Hay Pa Hacer?",
   city: "Ibagué, Tolima, Colombia",
   contactHref: "/contactanos",
-  updatedAt: "10 de octubre de 2026",
+  updatedAt: "11 de octubre de 2026",
 };
 
 export function LegalDocument({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {

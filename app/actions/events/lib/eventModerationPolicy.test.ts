@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Events } from "@/domain/entities/events/Events";
 import type { User } from "@/domain/entities/user/User";
-import { moderationFieldsForSubmission, optimizedPathFor, withServerOwnedFields } from "./eventModerationPolicy";
+import { enforcePlanFeatures, moderationFieldsForSubmission, optimizedPathFor, withServerOwnedFields } from "./eventModerationPolicy";
 
 const submittedAt = new Date("2026-01-15T12:00:00.000Z");
 
@@ -68,3 +68,13 @@ test("optimizedPathFor reproduce el nombre del optimizador", () => {
     "public/events/abc/images/optimized_main-image-qa-cover2.webp",
   )
 })
+
+test("enforcePlanFeatures: sin Premium apaga asistencia y baja form a inscripción interna", () => {
+  const event = { requiresAttendance: true, registrationType: "form" as const, registrationEventForm: { fields: [{ id: "a" }] } };
+  const basic = enforcePlanFeatures(event, { plan: "basic" });
+  assert.equal(basic.requiresAttendance, false);
+  assert.equal(basic.registrationType, "internal");
+  assert.equal(basic.registrationEventForm, undefined);
+  assert.equal(enforcePlanFeatures({ registrationType: "internal" as const }, null).registrationType, "internal");
+  assert.deepEqual(enforcePlanFeatures(event, { plan: "premium" }), event);
+});

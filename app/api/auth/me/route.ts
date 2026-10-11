@@ -67,6 +67,7 @@ export async function GET() {
           participation: dbUser.participation,
           creatorVerified: dbUser.creatorVerified,
           plan: dbUser.plan,
+          planExpiresAt: dbUser.planExpiresAt?.toISOString() ?? null,
           bio: dbUser.bio ?? null,
           photoURL: dbUser.photoURL ?? null,
           imagePath: dbUser.imagePath ?? null,

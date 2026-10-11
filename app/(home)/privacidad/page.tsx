@@ -30,6 +30,7 @@ export default function PrivacidadPage() {
           <li><strong>Inscripciones:</strong> los eventos en los que te inscribes y las respuestas a los formularios que el creador del evento solicite.</li>
           <li><strong>Actividad:</strong> vistas, me gusta y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
           <li><strong>Contacto y soporte:</strong> el correo, teléfono y mensaje que nos envías.</li>
+          <li><strong>Plan Premium:</strong> el historial de activaciones de tu plan (fechas, vencimiento y la referencia del pago que nos compartes). No recibimos ni guardamos datos de tarjetas ni claves bancarias: el pago lo haces desde tu banco o Nequi.</li>
         </ul>
       </section>
 

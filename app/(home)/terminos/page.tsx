@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_ENTITY, LegalDocument } from "@/app/components/layout/shared/LegalDocument";
+import { FOUNDER_LIMIT, FOUNDER_MONTHS, PREMIUM_PRICE_COP, formatCOP } from "@/presentation/profile/lib/membership";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
@@ -60,10 +61,18 @@ export default function TerminosPage() {
       <section>
         <h2>Plan Premium</h2>
         <p>
-          Algunas herramientas, como el Estudio, los eventos de varias fechas, los colaboradores y el soporte
-          prioritario, están disponibles con el plan Premium. Hoy la plataforma no procesa pagos. Las funciones de cada
-          plan pueden cambiar; te avisaremos antes de hacerlo.
+          Algunas herramientas, como el Estudio, los eventos de varias fechas, el control de asistencia, los
+          formularios personalizados, los colaboradores y el soporte prioritario, están disponibles con el plan{" "}
+          <Link href="/premium">Premium</Link>.
         </p>
+        <ul>
+          <li>Premium cuesta {formatCOP(PREMIUM_PRICE_COP)} pesos colombianos por mes.</li>
+          <li>La plataforma no procesa pagos en línea. Se paga por transferencia bancaria o Nequi y activamos el plan cuando confirmamos el pago.</li>
+          <li>No hay renovación ni cobro automático. El plan dura el periodo pagado; al vencer, la cuenta vuelve a Básico. Tus eventos y sitios siguen publicados y las herramientas Premium se pausan hasta que renueves.</li>
+          <li>Plan fundador: los primeros {FOUNDER_LIMIT} creadores que lo soliciten reciben {FOUNDER_MONTHS} meses de Premium sin costo, una sola vez por cuenta.</li>
+          <li>Los pagos de periodos ya activados no son reembolsables, salvo cuando la ley lo exija o el servicio no pueda prestarse por causas atribuibles a nosotros.</li>
+          <li>El precio y las funciones de cada plan pueden cambiar; los cambios no afectan el periodo que ya pagaste y te avisaremos antes.</li>
+        </ul>
       </section>
 
       <section>

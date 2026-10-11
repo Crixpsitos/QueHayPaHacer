@@ -1,5 +1,6 @@
 "use server";
 
+import { enforcePlanFeatures } from "./lib/eventModerationPolicy";
 import {
   FormEventDto,
   FormEventSchema,
@@ -78,8 +79,9 @@ export async function createDraftEventAction(
     };
   }
 
-  const parsedData = EventViewModelMapper.toDomain(
-    resultParse.output as unknown as EventViewModel,
+  const parsedData = enforcePlanFeatures(
+    EventViewModelMapper.toDomain(resultParse.output as unknown as EventViewModel),
+    author,
   );
 
   try {

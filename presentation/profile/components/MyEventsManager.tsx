@@ -97,12 +97,12 @@ export function MyEventsManager() {
 
           {!isPremium && (
             <p className="text-sm text-muted-foreground">
-              Las estadísticas avanzadas de cada evento están en Studio, con el plan premium.{" "}
+              Estadísticas de cada evento, control de asistencia y eventos de varias fechas están en Premium.{" "}
               <Link
-                href="/studio"
+                href="/premium"
                 className="font-medium text-foreground underline underline-offset-4 hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
-                Conocer Studio
+                Conocer Premium
               </Link>
             </p>
           )}

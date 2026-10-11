@@ -1,5 +1,5 @@
 import type { Timestamp } from "firebase-admin/firestore";
-import type { SocialLinkEntry, UserParticipation, UserPlan } from "@/domain/entities/user/User";
+import type { PlanSource, SocialLinkEntry, UserParticipation, UserPlan } from "@/domain/entities/user/User";
 
 export interface FirebaseUserDto {
     uid: string;
@@ -16,6 +16,8 @@ export interface FirebaseUserDto {
     participation?: UserParticipation;
     creatorVerified?: boolean;
     plan?: UserPlan;
+    planExpiresAt?: Timestamp;
+    planSource?: PlanSource;
     website?: string;
     socialLinks?: SocialLinkEntry[];
     isUsernameCustomized?: boolean;

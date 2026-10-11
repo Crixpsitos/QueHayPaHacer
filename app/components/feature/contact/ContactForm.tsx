@@ -16,13 +16,14 @@ import { cn } from "@/app/lib/utils/cn";
 // ── Contact reasons ────────────────────────────────────────────────────────────
 
 const CONTACT_REASON_VALUES = [
-  "general_inquiry", "report_problem", "report_event", "report_site",
+  "premium", "general_inquiry", "report_problem", "report_event", "report_site",
   "account_problem", "suggestion", "advertising_partnership", "other",
 ] as const;
 
 type ContactReason = typeof CONTACT_REASON_VALUES[number];
 
 const CONTACT_REASONS: { value: ContactReason; label: string }[] = [
+  { value: "premium",                 label: "Quiero Premium" },
   { value: "general_inquiry",         label: "Consulta general" },
   { value: "report_problem",          label: "Reportar un problema" },
   { value: "report_event",            label: "Reportar un evento" },
@@ -107,6 +108,9 @@ const inputCls = (hasError: boolean) =>
       : "border-[#E4E4E7] focus:border-[#E63946] focus:ring-[#E63946]/10",
   );
 
+const premiumMessage = (username?: string) =>
+  `Hola, quiero activar Premium${username ? ` para @${username}` : ""}. Organizo: `;
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function ContactForm() {
@@ -123,6 +127,14 @@ export function ContactForm() {
     mode: "onChange",
     defaultValues: { contactReason: "" as ContactReason, email: "", phoneNumber: "", message: "" },
   });
+
+  // /contactanos?motivo=premium (CTAs de Premium) precarga el motivo.
+  // Se lee en efecto (no useSearchParams) para que el formulario siga en el HTML estático.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("motivo") !== "premium") return;
+    setValue("contactReason", "premium", { shouldValidate: true });
+    setValue("message", premiumMessage(user?.profile?.username), { shouldValidate: true });
+  }, [setValue, user?.profile?.username]);
 
   useEffect(() => {
     if (user?.email) setValue("email", user.email, { shouldValidate: true });
@@ -195,7 +207,8 @@ export function ContactForm() {
           name="contactReason"
           control={control}
           render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value ?? ""}>
+            // Radix emite "" al montar y borraría el motivo precargado por URL.
+            <Select onValueChange={(v) => v && field.onChange(v)} value={field.value ?? ""}>
               <SelectTrigger
                 id="contactReason"
                 aria-invalid={Boolean(errors.contactReason)}

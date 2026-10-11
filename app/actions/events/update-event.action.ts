@@ -15,7 +15,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { safeParse } from "valibot";
-import { moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
+import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
   success?: boolean;
@@ -106,7 +106,7 @@ export async function updateEventAction(
 
   // El cliente no cambia tipo (multi-fecha es Premium), estado, moderación,
   // promoción ni analytics: se conservan los del evento guardado.
-  const updatedEvent = withServerOwnedFields(existingEvent, parsedData);
+  const updatedEvent = enforcePlanFeatures(withServerOwnedFields(existingEvent, parsedData), author);
 
   if (existingEvent.status === "published") {
     Object.assign(updatedEvent, moderationFieldsForSubmission(author));

@@ -15,7 +15,7 @@ export async function StudioGate({ children }: { children: ReactNode }) {
 
   // Solo cuentas Premium acceden al Estudio.
   if (!tokens) {
-    redirect("/profile");
+    redirect("/premium");
   }
 
   const { decodedToken } = tokens;

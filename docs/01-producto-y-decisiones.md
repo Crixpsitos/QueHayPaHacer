@@ -88,17 +88,23 @@ La definición visible vive en `presentation/profile/lib/membership.ts`.
 - Todo lo incluido en Básico.
 - Eventos multifecha.
 - Formularios personalizados.
+- Control de asistencia (`requiresAttendance`: marcar asistió/no asistió). La inscripción interna sigue abierta para Básico.
 - Studio y analíticas avanzadas.
 - Gestión de colaboradores.
-- Soporte prioritario, marcado como **próximamente**.
+- Soporte prioritario.
 
-### Estado comercial actual
+Formulario personalizado y control de asistencia se validan en servidor (`enforcePlanFeatures` en `app/actions/events/lib/eventModerationPolicy.ts`): sin Premium, `requiresAttendance` se guarda en `false` y `form` baja a `internal`.
 
-- No hay precio definido en código.
-- No existe checkout ni pasarela para comprar Premium.
-- El CTA actual dirige a `/contactanos` para acordar condiciones con el equipo.
-- Los tests exigen que Básico y Premium no inventen precio ni terminología profesional.
-- Asignar Premium es hoy una operación administrativa, no un autoservicio comercial.
+### Estado comercial (fase 1, decidido 2026-10-11)
+
+- Precio: **$ 50.000 COP/mes** (`PREMIUM_PRICE_COP` en `presentation/profile/lib/membership.ts`).
+- Plan fundador: los primeros **20** creadores reciben **3 meses** gratis, una vez por cuenta.
+- Sin pasarela: pago por transferencia o Nequi; el owner (persona natural) activa a mano.
+- Activación: `pnpm exec tsx scripts/set-user-plan.ts <correo> --reason founder|paid [--months N] --apply`. Escribe `plan`, `planExpiresAt`, `planSource` y deja auditoría en `planChanges`. Renovar suma desde el vencimiento vigente.
+- Vencimiento: Cloud Function `expirePremiumPlans` (diaria, 03:00 Bogotá) baja a Básico y audita.
+- Sin renovación ni cobro automático. Al vencer, el contenido sigue publicado y las herramientas Premium se pausan.
+- Promoción: página `/premium`, banner en el home, menú de cuenta, membresía del perfil, Mis eventos, selector de tipo de evento; el Estudio redirige a `/premium` sin plan. CTA → `/contactanos?motivo=premium`.
+- Fase 2 (cuando haya demanda): pasarela (Wompi/Mercado Pago/ePayco) cuyo webhook escribe los mismos campos que el script; requiere RUT y revisar obligación de facturación electrónica con un contador.
 
 ## 6. Verificación y moderación
 
@@ -248,7 +254,7 @@ La información visible se denormaliza en el evento para evitar joins. Deuda ace
 
 Estas decisiones requieren dueño y fecha; no se resuelven solo con código:
 
-1. Precio, impuestos, contrato y proceso de alta/cancelación de Premium.
+1. Impuestos/facturación de Premium (persona natural) y pasarela de la fase 2.
 2. Criterios y proceso de verificación de creadores.
 3. Quién modera, tiempos de respuesta y canales de apelación.
 4. Alcance exacto del MVP: qué módulos deben ser reales y cuáles se retiran si siguen en mock.

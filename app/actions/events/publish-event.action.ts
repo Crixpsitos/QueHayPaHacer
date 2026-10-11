@@ -17,7 +17,7 @@ import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
-import { moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
+import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
   | {
@@ -148,9 +148,10 @@ export async function publishEventAction(
     resultParse.output as unknown as EventViewModel,
   );
   // Republicar conserva analytics (score), promoción, createdAt, metadata, autor.
-  const parsedData = existingEvent
-    ? withServerOwnedFields(existingEvent, domainData)
-    : domainData;
+  const parsedData = enforcePlanFeatures(
+    existingEvent ? withServerOwnedFields(existingEvent, domainData) : domainData,
+    author,
+  );
   const userId = tokens.decodedToken.uid;
   Object.assign(parsedData, moderationFieldsForSubmission(author));
 

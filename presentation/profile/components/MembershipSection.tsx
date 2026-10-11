@@ -8,10 +8,15 @@ import {
   MEMBERSHIP_PLANS,
   getMembershipPlan,
   type MembershipPlanDefinition,
+  FOUNDER_LIMIT,
+  FOUNDER_MONTHS,
+  formatCOP,
 } from "@/presentation/profile/lib/membership";
 
 interface MembershipSectionProps {
   currentPlan?: UserPlan;
+  /** Vencimiento del Premium (ISO o Date). */
+  planExpiresAt?: string | Date;
   participation?: UserParticipation;
 }
 
@@ -35,6 +40,7 @@ function PlanFeatures({ plan }: { plan: MembershipPlanDefinition }) {
 
 export function MembershipSection({
   currentPlan = "basic",
+  planExpiresAt,
   participation = "consumer",
 }: MembershipSectionProps) {
   const activePlan = getMembershipPlan(currentPlan);
@@ -60,6 +66,12 @@ export function MembershipSection({
           <div>
             <p className="text-sm font-medium text-muted-foreground">Tu plan actual</p>
             <p className="mt-1 text-xl font-bold text-foreground">{activePlan.label}</p>
+            {isPremium && planExpiresAt && (
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Activo hasta el{" "}
+                {new Date(planExpiresAt).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" })}
+              </p>
+            )}
           </div>
           <span className="rounded-full bg-foreground px-2.5 py-1 text-xs font-medium text-background">
             Activo
@@ -110,27 +122,32 @@ export function MembershipSection({
                 )}
               </div>
 
-              {isPremiumPlan && (
-                <p className="mb-4 text-sm font-semibold text-foreground">
-                  Precio <span className="font-normal text-muted-foreground">por definir</span>
-                </p>
-              )}
+              <p className="mb-4 text-sm font-semibold text-foreground">
+                {plan.monthlyPriceCOP ? (
+                  <>
+                    {formatCOP(plan.monthlyPriceCOP)} <span className="font-normal text-muted-foreground">al mes</span>
+                  </>
+                ) : (
+                  "Gratis"
+                )}
+              </p>
 
               <PlanFeatures plan={plan} />
 
               {isPremiumPlan && !isPremium && (
                 <div className="mt-5 space-y-2.5">
+                  <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    Plan fundador: {FOUNDER_MONTHS} meses gratis para los primeros {FOUNDER_LIMIT} creadores.
+                  </p>
                   <Button asChild className="w-full">
-                    <Link href="/contactanos">
+                    <Link href="/contactanos?motivo=premium">
                       <MessageCircle className="size-4" aria-hidden />
-                      Contactar al equipo
+                      Quiero Premium
                     </Link>
                   </Button>
-                  <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                    {isCreator
-                      ? "Contáctanos para conocer la disponibilidad y acordar las condiciones de tu cuenta Premium."
-                      : "Contáctanos si quieres conocer cómo funciona Premium para creadores."}
-                  </p>
+                  <Link href="/premium" className="block text-center text-sm font-medium text-primary hover:underline">
+                    Ver todo lo que incluye
+                  </Link>
                 </div>
               )}
 

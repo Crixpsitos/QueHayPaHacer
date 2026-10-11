@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import { CalendarIcon, CalendarRangeIcon, ArrowRight, Lock, X } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
@@ -199,7 +201,15 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
         </div>
 
         {/* ── Nota footer ─────────────────────────────────────────── */}
-        <p className="mt-8 text-center text-xs text-[#A1A1AA]">
+        {isMultiDateLocked && (
+          <p className="mt-8 text-center text-sm text-[#52525B]">
+            ¿Tu evento tiene varias funciones?{" "}
+            <Link href="/premium" className="font-semibold text-[#E63946] hover:underline">
+              Conoce Premium
+            </Link>
+          </p>
+        )}
+        <p className="mt-4 text-center text-xs text-[#A1A1AA]">
           Puedes cambiar el tipo de evento más adelante si lo necesitas.
         </p>
       </div>

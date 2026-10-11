@@ -100,3 +100,20 @@ export function withServerOwnedFields(existing: Events, incoming: Events): Event
     createdAt: existing.createdAt,
   };
 }
+
+type PlanGatedFields = Partial<Pick<Events, "requiresAttendance" | "registrationType" | "registrationEventForm">>;
+
+/**
+ * Capacidades Premium del evento, validadas en servidor (la UI solo las oculta):
+ * control de asistencia y formulario personalizado. Sin Premium, la inscripción
+ * con formulario baja a inscripción interna (sigue abierta para todos).
+ */
+export function enforcePlanFeatures<T extends PlanGatedFields>(event: T, author: Pick<User, "plan"> | null | undefined): T {
+  if (author?.plan === "premium") return event;
+  const out: T = { ...event, requiresAttendance: false };
+  if (out.registrationType === "form") {
+    out.registrationType = "internal";
+    delete out.registrationEventForm;
+  }
+  return out;
+}

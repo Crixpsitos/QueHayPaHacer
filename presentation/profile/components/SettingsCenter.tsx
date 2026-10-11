@@ -1181,6 +1181,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     return (
       <MembershipSection
         currentPlan={user.profile?.plan}
+        planExpiresAt={user.profile?.planExpiresAt ?? undefined}
         participation={user.profile?.participation}
       />
     );

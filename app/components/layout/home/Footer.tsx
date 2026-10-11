@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/eventos", label: "Eventos" },
   { href: "/donde-ir", label: "¿Dónde ir?" },
   { href: "/eventos/create", label: "Crear evento" },
+  { href: "/premium", label: "Premium" },
   { href: "/contactanos", label: "Contáctanos" },
 ];
 
