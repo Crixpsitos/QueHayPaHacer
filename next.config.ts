@@ -2,10 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // App Hosting ya fuerza standalone en su build; explícito por si cambia el adaptador.
+  output: "standalone",
   cacheComponents: true,
-  cacheHandlers: {
-    default: require.resolve("./cache-handler.js"),
-  },
+  // ponytail: sin cacheHandlers → handler en memoria por instancia (los tags sí invalidan).
+  // El handler Redis anterior no implementaba updateTags/refreshTags (P0-D). Volver a un
+  // handler compartido solo con invalidación por tags real + fallback si Redis cae.
   cacheLife: {
     campaigns: {
       stale: 120,
