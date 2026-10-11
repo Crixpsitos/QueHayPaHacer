@@ -20,6 +20,8 @@ export interface UserRegistrationItem {
   city?: string;
   status: RegistrationStatus;
   checkedIn: boolean;
+  /** El evento/sesión usa control de asistencia (Premium) → el asistente recibe QR. */
+  requiresAttendance: boolean;
   registeredAt: string;
 }
 
@@ -35,6 +37,10 @@ export function cancelBlock(
   if (r.checkedIn) return "attended";
   return null;
 }
+
+/** El botón "Ver mi código QR" solo aplica a inscripciones vigentes con control de asistencia. */
+export const canShowCheckInQr = (r: UserRegistrationItem, now = Date.now()) =>
+  r.requiresAttendance && r.status !== "canceled" && new Date(r.endDate).getTime() >= now;
 
 export const canCancel = (...args: Parameters<typeof cancelBlock>) => cancelBlock(...args) === null;
 

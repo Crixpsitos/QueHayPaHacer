@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { FieldValue, type DocumentData, type Firestore, type Timestamp } from "firebase-admin/firestore";
 
 import { cancelBlock, type UserRegistrationItem } from "@/domain/entities/EventRegistration/myRegistrations";
-import type { CancelRegistrationResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import { generateCheckInCode } from "@/domain/entities/EventRegistration/checkIn";
+import type { CancelRegistrationResult, CheckInCodeResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
@@ -162,10 +164,42 @@ export class EventRegistrationFirebaseRepository
         city: loc?.city?.name || undefined,
         status: r.data.status ?? "registered",
         checkedIn: Boolean(r.data.checkedInAt),
+        requiresAttendance: src.requiresAttendance === true,
         registeredAt: iso(r.data.registeredAt) ?? startDate,
       });
     }
     return items;
+  }
+
+  /**
+   * Devuelve el código de check-in de la inscripción propia (doc id = userId), creándolo
+   * si falta. Exige inscripción vigente, evento/sesión sin terminar y `requiresAttendance`.
+   */
+  async getOrCreateCheckInCode(eventId: string, userId: string, sessionId?: string): Promise<CheckInCodeResult> {
+    const eventRef = this.collection.doc(eventId);
+    const targetRef = sessionId ? this.subCollection(eventId, "sessions").doc(sessionId) : eventRef;
+    const regRef = targetRef.collection("registrations").doc(userId);
+
+    return this.db.runTransaction(async (tx) => {
+      const [regSnap, targetSnap, eventSnap] = await Promise.all([
+        tx.get(regRef),
+        tx.get(targetRef),
+        sessionId ? tx.get(eventRef) : null,
+      ]);
+      if (!regSnap.exists || !targetSnap.exists) return { status: "not_found" };
+      if (regSnap.get("status") === "canceled") return { status: "canceled" };
+      const end = (targetSnap.get("endDate") as Timestamp | undefined)?.toDate();
+      if (end && end.getTime() < Date.now()) return { status: "finished" };
+      if (targetSnap.get("requiresAttendance") !== true) return { status: "no_attendance" };
+
+      let code = regSnap.get("checkInCode") as string | undefined;
+      if (!code) {
+        code = generateCheckInCode(randomBytes);
+        tx.update(regRef, { checkInCode: code });
+      }
+      const title = (targetSnap.get("title") as string) || (eventSnap?.get("title") as string) || "Evento";
+      return { status: "ok", code, title };
+    });
   }
 
   /**
@@ -197,7 +231,11 @@ export class EventRegistrationFirebaseRepository
       if (block) return block;
 
       const current = Number(targetSnap.get("analytics.registrations") ?? 0);
-      tx.update(regRef, { status: "canceled", canceledAt: FieldValue.serverTimestamp() });
+      tx.update(regRef, {
+        status: "canceled",
+        canceledAt: FieldValue.serverTimestamp(),
+        checkInCode: FieldValue.delete(), // un QR filtrado deja de servir; al reinscribirse se crea otro
+      });
       tx.update(targetRef, {
         "analytics.registrations": Math.max(0, current - 1),
         updatedAt: FieldValue.serverTimestamp(),

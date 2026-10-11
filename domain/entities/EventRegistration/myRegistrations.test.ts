@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   cancelBlock,
+  canShowCheckInQr,
   registrationCounts,
   splitRegistrations,
   statusLabel,
@@ -13,7 +14,7 @@ const NOW = Date.parse("2026-10-11T12:00:00Z");
 const h = (n: number) => new Date(NOW + n * 3_600_000).toISOString();
 const item = (id: string, startH: number, endH: number, extra: Partial<UserRegistrationItem> = {}): UserRegistrationItem => ({
   eventId: id, title: id, eventRef: id, startDate: h(startH), endDate: h(endH),
-  status: "registered", checkedIn: false, registeredAt: h(-100), ...extra,
+  status: "registered", checkedIn: false, requiresAttendance: false, registeredAt: h(-100), ...extra,
 });
 
 test("split: próximas por cercanía, pasadas por recencia, canceladas a pasadas", () => {
@@ -50,4 +51,12 @@ test("counts: próximas vigentes y asistidas", () => {
     NOW,
   );
   assert.deepEqual(c, { upcoming: 1, attended: 1 });
+});
+
+test("canShowCheckInQr: solo vigente, no cancelada y con control de asistencia", () => {
+  const on = { requiresAttendance: true };
+  assert.equal(canShowCheckInQr(item("a", 1, 3, on), NOW), true);
+  assert.equal(canShowCheckInQr(item("a", 1, 3), NOW), false);
+  assert.equal(canShowCheckInQr(item("a", 1, 3, { ...on, status: "canceled" }), NOW), false);
+  assert.equal(canShowCheckInQr(item("a", -5, -1, on), NOW), false);
 });

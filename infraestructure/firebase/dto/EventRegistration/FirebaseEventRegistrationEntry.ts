@@ -25,5 +25,7 @@ export interface FirebaseEventRegistrationEntry {
   registeredAt: Timestamp;
   registrationType: "internal" | "form";
   status: "registered" | "waitlist" | "accepted" | "canceled";
+  /** Secreto de check-in (12 chars Crockford base32). Se crea al pedir el QR; se borra al cancelar. */
+  checkInCode?: string;
   formData?: Record<string, string | string[] | number | boolean | null | Record<string, unknown>>;
 }

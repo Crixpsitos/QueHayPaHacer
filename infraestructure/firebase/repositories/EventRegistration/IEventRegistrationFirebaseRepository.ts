@@ -1,5 +1,5 @@
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
-import type { CancelRegistrationResult, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
 
 export interface IEventRegistrationFirebaseRepository {
@@ -22,6 +22,8 @@ export interface IEventRegistrationFirebaseRepository {
   ): Promise<void>;
 
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;
+
+  getOrCreateCheckInCode(eventId: string, userId: string, sessionId?: string): Promise<CheckInCodeResult>;
 
   cancelRegistration(
     eventId: string,

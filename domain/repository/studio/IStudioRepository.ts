@@ -31,6 +31,10 @@ import type {
  * Contrato del repositorio del Estudio del Organizador.
  * La implementación Firebase queda como stubs (la implementa el desarrollador).
  */
+export type CheckInByCodeResult =
+  | { result: "ok" | "already"; name: string }
+  | { result: "not_found" | "canceled" | "no_attendance" };
+
 export interface IStudioRepository {
   // Resumen
   getOrganizerOverview(uid: string): Promise<OrganizerOverview | null>;
@@ -52,6 +56,8 @@ export interface IStudioRepository {
    */
   getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null>;
   confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void>;
+  /** Check-in por código QR: busca la inscripción por `checkInCode` y sella `checkedInAt`. */
+  checkInByCode(eventId: string, code: string, sessionId?: string): Promise<CheckInByCodeResult>;
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void>;
   incrementExternalRegistrationClick(eventId: string): Promise<void>;
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]>;

@@ -70,6 +70,10 @@ export class StudioAdapter implements IStudioRepository {
     return this.repository.confirmAttendance(eventId, userId, sessionId);
   }
 
+  checkInByCode(eventId: string, code: string, sessionId?: string) {
+    return this.repository.checkInByCode(eventId, code, sessionId);
+  }
+
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void> {
     return this.repository.removeParticipant(eventId, userId, sessionId);
   }

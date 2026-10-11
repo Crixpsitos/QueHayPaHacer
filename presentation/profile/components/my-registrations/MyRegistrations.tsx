@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarSearch, MapPin } from "lucide-react";
+import { CalendarSearch, MapPin, QrCode } from "lucide-react";
 import { cancelRegistrationAction } from "@/app/actions/events/cancel-registration.action";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -18,12 +18,14 @@ import {
 import { cn } from "@/app/lib/utils/cn";
 import {
   canCancel,
+  canShowCheckInQr,
   registrationCounts,
   splitRegistrations,
   statusLabel,
   type UserRegistrationItem,
 } from "@/domain/entities/EventRegistration/myRegistrations";
 import { dateParts, formatTimeRange } from "@/presentation/events/components/detail/format";
+import { CheckInQrDialog } from "./CheckInQrDialog";
 import { notify } from "@/presentation/shared/lib/notify";
 
 const keyOf = (r: UserRegistrationItem) => `${r.eventId}/${r.sessionId ?? ""}`;
@@ -34,6 +36,7 @@ export function MyRegistrations({ items }: { items: UserRegistrationItem[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [target, setTarget] = useState<UserRegistrationItem | null>(null);
+  const [qrTarget, setQrTarget] = useState<UserRegistrationItem | null>(null);
   // `now` se fija al montar para que el corte próxima/pasada no cambie entre renders.
   const [now] = useState(() => Date.now());
 
@@ -82,10 +85,12 @@ export function MyRegistrations({ items }: { items: UserRegistrationItem[] }) {
             <Counter label="Asistidas" value={counts.attended} />
           </dl>
 
-          <Section title="Próximas" items={upcoming} now={now} onCancel={setTarget} empty="No tienes inscripciones vigentes." />
-          {past.length > 0 && <Section title="Historial" items={past} now={now} onCancel={setTarget} />}
+          <Section title="Próximas" items={upcoming} now={now} onCancel={setTarget} onQr={setQrTarget} empty="No tienes inscripciones vigentes." />
+          {past.length > 0 && <Section title="Historial" items={past} now={now} onCancel={setTarget} onQr={setQrTarget} />}
         </>
       )}
+
+      <CheckInQrDialog target={qrTarget} onClose={() => setQrTarget(null)} />
 
       <Dialog open={target !== null} onOpenChange={(open) => !open && !pending && setTarget(null)}>
         <DialogContent>
@@ -119,12 +124,13 @@ function Counter({ label, value }: { label: string; value: number }) {
 }
 
 function Section({
-  title, items, now, onCancel, empty,
+  title, items, now, onCancel, onQr, empty,
 }: {
   title: string;
   items: UserRegistrationItem[];
   now: number;
   onCancel: (r: UserRegistrationItem) => void;
+  onQr: (r: UserRegistrationItem) => void;
   empty?: string;
 }) {
   return (
@@ -138,7 +144,7 @@ function Section({
         <ul className="space-y-3">
           {items.map((r, i) => (
             <li key={keyOf(r)}>
-              <RegistrationRow r={r} now={now} priority={i < 2} onCancel={onCancel} />
+              <RegistrationRow r={r} now={now} priority={i < 2} onCancel={onCancel} onQr={onQr} />
             </li>
           ))}
         </ul>
@@ -150,12 +156,13 @@ function Section({
 const notch = "absolute left-0 size-4 -translate-x-1/2 rounded-full border border-[#E4E4E7] bg-[#FAFAFC]";
 
 function RegistrationRow({
-  r, now, priority, onCancel,
+  r, now, priority, onCancel, onQr,
 }: {
   r: UserRegistrationItem;
   now: number;
   priority: boolean;
   onCancel: (r: UserRegistrationItem) => void;
+  onQr: (r: UserRegistrationItem) => void;
 }) {
   const muted = r.status === "canceled" || new Date(r.endDate).getTime() < now;
   const d = dateParts(r.startDate);
@@ -216,6 +223,12 @@ function RegistrationRow({
             >
               {label}
             </span>
+            {canShowCheckInQr(r, now) && !r.checkedIn && (
+              <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5" onClick={() => onQr(r)}>
+                <QrCode className="size-3.5" aria-hidden />
+                Ver mi código QR
+              </Button>
+            )}
             {canCancel(r, now) && (
               <Button variant="ghost" size="sm" className="-my-1 h-7 px-2 text-[#E63946] hover:text-[#C92F3B]" onClick={() => onCancel(r)}>
                 Cancelar inscripción

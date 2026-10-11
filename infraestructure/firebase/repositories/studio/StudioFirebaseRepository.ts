@@ -1,5 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { IStudioFirebaseRepository } from "./IStudioFirebaseRepository";
+import type { CheckInByCodeResult } from "@/domain/repository/studio/IStudioRepository";
 import type {
   FirebaseSupportTicketDto,
   FirebaseSupportTicketDetailDto,
@@ -1323,6 +1324,30 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .collection(`${this.docPath(eventId, sessionId)}/registrations`)
       .doc(userId);
     await regRef.update({ checkedInAt: FieldValue.serverTimestamp() });
+  }
+
+  /**
+   * Check-in por QR: una transacción busca la inscripción por `checkInCode` en la
+   * colección del evento/sesión (consulta de igualdad, sin índice compuesto) y sella
+   * `checkedInAt`. Idempotente. Exige `requiresAttendance` en el evento/sesión.
+   */
+  async checkInByCode(eventId: string, code: string, sessionId?: string): Promise<CheckInByCodeResult> {
+    const targetRef = this.db.doc(this.docPath(eventId, sessionId));
+    return this.db.runTransaction(async (tx) => {
+      const [target, found] = await Promise.all([
+        tx.get(targetRef),
+        tx.get(targetRef.collection("registrations").where("checkInCode", "==", code).limit(1)),
+      ]);
+      if (target.get("requiresAttendance") !== true) return { result: "no_attendance" };
+      if (found.empty) return { result: "not_found" };
+      const doc = found.docs[0];
+      const entry = doc.data();
+      if (entry.status === "canceled") return { result: "canceled" };
+      const name = (entry.name as string) || "Asistente";
+      if (entry.status === "accepted" || entry.checkedInAt) return { result: "already", name };
+      tx.update(doc.ref, { checkedInAt: FieldValue.serverTimestamp() });
+      return { result: "ok", name };
+    });
   }
 
   /**

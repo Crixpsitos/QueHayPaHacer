@@ -15,6 +15,7 @@ import {
   Download,
   FileText,
   Loader2,
+  ScanLine,
   Trash2,
   UserCheck,
   X,
@@ -31,6 +32,7 @@ import { cn } from "@/app/lib/utils/cn";
 import { notify } from "@/presentation/shared/lib/notify";
 import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
 import { removeParticipantAction } from "@/app/actions/studio/remove-participant.action";
+import { AttendanceScannerDialog } from "./AttendanceScannerDialog";
 import { toCsv, downloadCsv } from "../../../lib/csv";
 import { EventsSearchInput } from "../EventsSearchInput";
 import type { RegistrationRow } from "../../../view-models/StudioEventsViewModel";
@@ -83,6 +85,7 @@ export function RegistrationsTable({
   const [data, setData] = useState<RegistrationRow[]>(rows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [responsesRow, setResponsesRow] = useState<RegistrationRow | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
 
   // El servidor manda orden/límite/búsqueda/página; cuando cambian, el slot
   // re-fetchea y llegan filas nuevas por props → resincronizamos lo local.
@@ -214,6 +217,17 @@ export function RegistrationsTable({
         <h2 className="text-sm font-semibold text-slate-900">
           Registros <span className="font-normal text-slate-400">({data.length})</span>
         </h2>
+        <div className="flex items-center gap-2">
+        {requiresAttendance && (
+          <button
+            type="button"
+            onClick={() => setScanOpen(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-zinc-950 px-3 text-xs font-medium text-white transition-colors hover:bg-zinc-800"
+          >
+            <ScanLine className="h-3.5 w-3.5" />
+            Escanear asistencia
+          </button>
+        )}
         <button
           type="button"
           onClick={exportCsv}
@@ -222,7 +236,11 @@ export function RegistrationsTable({
           <Download className="h-3.5 w-3.5" />
           Exportar CSV
         </button>
+        </div>
       </div>
+      {requiresAttendance && (
+        <AttendanceScannerDialog eventId={eventId} sessionId={sessionId} open={scanOpen} onOpenChange={setScanOpen} />
+      )}
 
       {withFormResponses && (
         <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary-light px-3 py-2.5">
