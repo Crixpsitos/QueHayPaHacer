@@ -51,3 +51,7 @@ next-env.d.ts
 /twa/
 *.aab
 *.apk
+
+# El gestor es pnpm (pnpm-lock.yaml); otros lockfiles rompen la CI.
+package-lock.json
+yarn.lock
