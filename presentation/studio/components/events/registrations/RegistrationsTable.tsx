@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -556,8 +557,20 @@ function RegistrationRowItem({
   onConfirm: () => void;
   onRemove: () => void;
 }) {
+  // Al pasar a "confirmada" (escáner o botón) la fila destella un tinte esmeralda.
+  const still = useReducedMotion();
+  const [prevConfirmed, setPrevConfirmed] = useState(row.attendanceConfirmed);
+  const [flash, setFlash] = useState(false);
+  if (prevConfirmed !== row.attendanceConfirmed) {
+    setPrevConfirmed(row.attendanceConfirmed);
+    setFlash(row.attendanceConfirmed);
+  }
+  const animateFlash = flash && !still;
   return (
-    <tr
+    <motion.tr
+      initial={false}
+      animate={animateFlash ? { backgroundColor: ["rgba(16,185,129,0.22)", "rgba(16,185,129,0)"] } : undefined}
+      transition={{ duration: 1.2, ease: "easeOut" }}
       className={cn(
         "border-b border-gray-100 transition-colors hover:bg-slate-100/70",
         zebra && "bg-slate-50/50",
@@ -604,10 +617,15 @@ function RegistrationRowItem({
         {!requiresAttendance ? (
           <span className="text-[11px] text-slate-400">No se requiere</span>
         ) : row.attendanceConfirmed ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+          <motion.span
+            initial={animateFlash ? { opacity: 0, scale: 0.8 } : false}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 26 }}
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
+          >
             <Check className="h-3 w-3" />
             Confirmada
-          </span>
+          </motion.span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
             Pendiente
@@ -648,6 +666,6 @@ function RegistrationRowItem({
           </button>
         </div>
       </td>
-    </tr>
+    </motion.tr>
   );
 }

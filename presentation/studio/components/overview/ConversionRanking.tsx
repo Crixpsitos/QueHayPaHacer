@@ -1,3 +1,4 @@
+import { GrowBar } from "./GrowBar";
 import { ChartEmpty } from "../charts/ChartEmpty";
 import { CHART, formatCompact, formatNumber, formatPercent } from "../charts/chartTheme";
 import type { ConversionRowViewModel } from "../../view-models/StudioOverviewViewModel";
@@ -20,7 +21,7 @@ export function ConversionRanking({ rows }: ConversionRankingProps) {
 
   return (
     <ul className="divide-y divide-zinc-100">
-      {rows.map((row) => (
+      {rows.map((row, i) => (
         <li key={row.eventId} className="py-2.5 first:pt-0 last:pb-0">
           <div className="flex items-baseline justify-between gap-3">
             <p className="flex min-w-0 items-center gap-2 text-sm text-zinc-900">
@@ -51,12 +52,11 @@ export function ConversionRanking({ rows }: ConversionRankingProps) {
             }
           >
             {row.rate !== null && maxRate > 0 && (
-              <div
+              <GrowBar
                 className="h-full rounded-full"
-                style={{
-                  width: `${Math.max(1, (row.rate / maxRate) * 100)}%`,
-                  background: CHART.primary,
-                }}
+                pct={Math.max(1, (row.rate / maxRate) * 100)}
+                color={CHART.primary}
+                delay={i * 0.06}
               />
             )}
           </div>

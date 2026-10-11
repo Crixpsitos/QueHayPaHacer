@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { CountUp, EASE_OUT } from "@/app/components/motion/primitives";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -118,7 +120,7 @@ function Counter({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col gap-1 px-4 py-4 sm:px-6 sm:py-5">
       <dt className="text-xs text-muted-foreground sm:text-sm">{label}</dt>
-      <dd className="font-heading text-2xl font-bold tabular-nums sm:text-3xl">{value}</dd>
+      <dd className="font-heading text-2xl font-bold tabular-nums sm:text-3xl"><CountUp value={value} /></dd>
     </div>
   );
 }
@@ -133,6 +135,7 @@ function Section({
   onQr: (r: UserRegistrationItem) => void;
   empty?: string;
 }) {
+  const still = useReducedMotion();
   return (
     <section aria-labelledby={`sec-${title}`} className="space-y-4">
       <h2 id={`sec-${title}`} className="font-heading text-xl font-semibold">
@@ -141,12 +144,22 @@ function Section({
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
-        <ul className="space-y-3">
-          {items.map((r, i) => (
-            <li key={keyOf(r)}>
-              <RegistrationRow r={r} now={now} priority={i < 2} onCancel={onCancel} onQr={onQr} />
-            </li>
-          ))}
+        <ul className="relative space-y-3">
+          {/* Solo transform: el contenido llega visible en el HTML (sin opacity:0 inicial). */}
+          <AnimatePresence mode="popLayout">
+            {items.map((r, i) => (
+              <motion.li
+                key={keyOf(r)}
+                layout={still ? false : "position"}
+                initial={still ? false : { y: 10 }}
+                animate={{ y: 0 }}
+                exit={still ? undefined : { opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.35, ease: EASE_OUT, delay: Math.min(i, 5) * 0.05 }}
+              >
+                <RegistrationRow r={r} now={now} priority={i < 2} onCancel={onCancel} onQr={onQr} />
+              </motion.li>
+            ))}
+          </AnimatePresence>
         </ul>
       )}
     </section>
@@ -224,13 +237,13 @@ function RegistrationRow({
               {label}
             </span>
             {canShowCheckInQr(r, now) && !r.checkedIn && (
-              <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5" onClick={() => onQr(r)}>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 pointer-coarse:h-11" onClick={() => onQr(r)}>
                 <QrCode className="size-3.5" aria-hidden />
                 Ver mi código QR
               </Button>
             )}
             {canCancel(r, now) && (
-              <Button variant="ghost" size="sm" className="-my-1 h-7 px-2 text-[#E63946] hover:text-[#C92F3B]" onClick={() => onCancel(r)}>
+              <Button variant="ghost" size="sm" className="-my-1 h-8 px-2 text-[#E63946] transition-[color,background-color,transform] hover:text-[#C92F3B] active:scale-[0.97] pointer-coarse:h-11" onClick={() => onCancel(r)}>
                 Cancelar inscripción
               </Button>
             )}

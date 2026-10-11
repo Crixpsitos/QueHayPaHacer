@@ -13,6 +13,7 @@ import { EventHero } from "./detail/EventHero";
 import { EventDescription } from "./detail/EventDescription";
 import { EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
 import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
+import { Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { formatDateRange, formatPriceSummary } from "./detail/format";
 
@@ -83,7 +84,7 @@ export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOw
                     <p className="text-sm text-[#71717A]">Entrada</p>
                     <p className="font-heading text-3xl font-bold tracking-tight text-[#09090B] tabular-nums">{priceLabel}</p>
                   </div>
-                  {allPast ? <PastEventState variant="event" /> : chooseCta}
+                  <div id="ticket-cta">{allPast ? <PastEventState variant="event" /> : chooseCta}</div>
                 </Ticket>
               ) : (
                 <p className="rounded-3xl border border-dashed border-[#E4E4E7] bg-white p-6 text-sm text-[#71717A]">
@@ -119,8 +120,8 @@ export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOw
               )}
             </section>
 
-            <EventOrganizer event={event} />
-            <EventShare event={event} path={`/eventos/${parentRef}`} />
+            <Reveal><EventOrganizer event={event} /></Reveal>
+            <Reveal><EventShare event={event} path={`/eventos/${parentRef}`} /></Reveal>
             <ReportButton targetType="event" targetId={event.id} isOwner={isOwner} className="-mt-10" />
           </div>
         </div>

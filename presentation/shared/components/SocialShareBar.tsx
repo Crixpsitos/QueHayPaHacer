@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { SPRING_SNAPPY } from "@/app/components/motion/primitives";
 import { Link2, Check } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 
@@ -42,6 +44,9 @@ function FacebookIcon({ className }: { className?: string }) {
 
 export function SocialShareBar({ url, title, onShare, className }: SocialShareBarProps) {
   const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const still = useReducedMotion();
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(title);
@@ -75,7 +80,8 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setCopied(false), 1500);
       onShare?.();
     } catch { /* noop */ }
   };
@@ -96,7 +102,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
             onClick={handleNetworkClick}
             aria-label={`Compartir en ${label}`}
             className={cn(
-              "flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors",
+              "flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2",
               colorClass,
             )}
           >
@@ -108,14 +114,24 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
         <button
           type="button"
           onClick={handleCopy}
-          aria-label="Copiar enlace"
-          className="flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:bg-[#FAFAFC]"
+          className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:bg-[#FAFAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
         >
-          {copied
-            ? <><Check className="size-3.5 text-emerald-500" />Copiado</>
-            : <><Link2 className="size-3.5" />Copiar enlace</>
-          }
+          {copied ? (
+            <motion.span
+              key="ok"
+              className="flex items-center gap-1.5 text-emerald-700"
+              initial={still ? false : { scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={SPRING_SNAPPY}
+            >
+              <Check className="size-3.5" aria-hidden="true" />
+              Copiado
+            </motion.span>
+          ) : (
+            <><Link2 className="size-3.5" aria-hidden="true" />Copiar enlace</>
+          )}
         </button>
+        <span role="status" aria-live="polite" className="sr-only">{copied ? "Enlace copiado" : ""}</span>
       </div>
     </div>
   );

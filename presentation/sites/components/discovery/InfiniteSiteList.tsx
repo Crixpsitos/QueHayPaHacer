@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button/button";
 import { SiteDiscoveryCard } from "./SiteDiscovery";
 import { SiteItemListJsonLd } from "./SiteJsonLd";
@@ -52,8 +53,9 @@ export function InfiniteSiteList({ category, initialSites, initialCursor }: Infi
       </div>
       {cursor && (
         <div className="flex justify-center">
-          <Button onClick={loadMore} disabled={loading} variant="outline">
-            {loading ? "Cargando..." : "Cargar más"}
+          <Button onClick={loadMore} disabled={loading} aria-busy={loading} variant="outline" className="min-h-11 min-w-36 transition-transform duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+            {loading && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />}
+            {loading ? "Cargando…" : "Cargar más"}
           </Button>
         </div>
       )}

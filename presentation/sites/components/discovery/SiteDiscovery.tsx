@@ -24,6 +24,7 @@ import {
 import { SiteItemListJsonLd } from "./SiteJsonLd";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { cn } from "@/app/lib/utils/cn";
+import { Reveal } from "@/app/components/motion/primitives";
 import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
 
@@ -54,7 +55,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
   return (
     <Link
       href={`/donde-ir/${site.slug || site.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-colors hover:border-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-colors hover:border-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F4F5]">
         {site.coverUrl ? (
@@ -62,7 +63,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
             src={site.coverUrl}
             alt=""
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100"
             sizes={CARD_SIZES}
             priority={prioritize}
           />
@@ -84,7 +85,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
 
       <div className="flex flex-1 flex-col gap-1 p-4">
         <p className="text-xs font-medium text-[#E63946]">{siteCategoryLabel(site.category)}</p>
-        <h3 className="font-heading text-base font-semibold leading-snug text-[#09090B] line-clamp-2 group-hover:underline">
+        <h3 className="font-heading text-base font-semibold leading-snug text-[#09090B] line-clamp-2 decoration-[#E63946] decoration-2 underline-offset-4 group-hover:underline group-focus-visible:underline">
           {site.name}
         </h3>
         {site.address && (
@@ -121,9 +122,15 @@ export function SiteDiscoveryGrid({ sites }: { sites: SiteDetail[] }) {
   return (
     <div className={GRID_CLASS}>
       <SiteItemListJsonLd sites={sites} />
-      {sites.map((s, index) => (
-        <SiteDiscoveryCard key={s.id} site={s} prioritize={index < 4} />
-      ))}
+      {sites.map((s, index) =>
+        index < 4 ? (
+          <SiteDiscoveryCard key={s.id} site={s} prioritize />
+        ) : (
+          <Reveal key={s.id} y={12} className="h-full">
+            <SiteDiscoveryCard site={s} />
+          </Reveal>
+        ),
+      )}
     </div>
   );
 }

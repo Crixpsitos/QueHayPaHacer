@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, CameraOff, Check, Info, Loader2, X } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import { Camera, CameraOff, Info, Loader2, X } from "lucide-react";
 import { checkInByCodeAction } from "@/app/actions/studio/check-in-by-code.action";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";
 import { cn } from "@/app/lib/utils/cn";
 
 interface Props {
@@ -64,7 +66,9 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
         ? NO_CAMERA
         : "La cámara solo funciona en una conexión segura (https). Escribe el código.",
   );
+  const still = useReducedMotion();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [outcomeSeq, setOutcomeSeq] = useState(0); // reinicia la animación en cada resultado
   const [recent, setRecent] = useState<string[]>([]);
   const [manual, setManual] = useState("");
   const [sending, setSending] = useState(false);
@@ -88,6 +92,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
       } finally {
         busy.current = false;
         setSending(false);
+        setOutcomeSeq((n) => n + 1);
       }
     },
     [eventId, sessionId, router],
@@ -161,7 +166,19 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
             </p>
           )}
           {camera === "on" && (
-            <span aria-hidden className="pointer-events-none absolute inset-8 rounded-2xl border-2 border-white/70" />
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute inset-8"
+              initial={still ? false : { scale: 1.08, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4, ease: EASE_OUT }}
+            >
+              {/* Esquinas de guía: se asientan una vez; con "reducir movimiento" quedan estáticas. */}
+              <span className="absolute top-0 left-0 size-8 rounded-tl-xl border-t-[3px] border-l-[3px] border-white" />
+              <span className="absolute top-0 right-0 size-8 rounded-tr-xl border-t-[3px] border-r-[3px] border-white" />
+              <span className="absolute bottom-0 left-0 size-8 rounded-bl-xl border-b-[3px] border-l-[3px] border-white" />
+              <span className="absolute right-0 bottom-0 size-8 rounded-br-xl border-r-[3px] border-b-[3px] border-white" />
+            </motion.span>
           )}
         </div>
       ) : (
@@ -200,23 +217,31 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
 
       <div aria-live="polite" className="min-h-12">
         {outcome && (
-          <p
+          <motion.p
+            key={outcomeSeq}
+            initial={still ? false : outcome.kind === "error" ? { x: 0 } : { opacity: 0, y: 6 }}
+            animate={
+              outcome.kind === "error"
+                ? { x: [0, -6, 6, -4, 0], opacity: 1, y: 0 }
+                : { opacity: 1, y: 0 }
+            }
+            transition={{ duration: outcome.kind === "error" ? 0.3 : 0.25, ease: EASE_OUT }}
             className={cn(
-              "flex items-start gap-2 rounded-xl px-3 py-3 text-sm font-medium",
+              "flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium",
               outcome.kind === "success" && "bg-emerald-50 text-emerald-800",
-              outcome.kind === "info" && "bg-amber-50 text-amber-800",
+              outcome.kind === "info" && "bg-zinc-100 text-zinc-700",
               outcome.kind === "error" && "bg-red-50 text-red-700",
             )}
           >
             {outcome.kind === "success" ? (
-              <Check className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <SuccessCheck size={28} className="shrink-0" />
             ) : outcome.kind === "info" ? (
-              <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <Info className="size-4 shrink-0" aria-hidden />
             ) : (
-              <X className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <X className="size-4 shrink-0" aria-hidden />
             )}
             {outcome.text}
-          </p>
+          </motion.p>
         )}
       </div>
 

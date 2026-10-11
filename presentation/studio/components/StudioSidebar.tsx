@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { SPRING_SNAPPY } from "@/app/components/motion/primitives";
 import { STUDIO_NAV } from "../lib/navigation";
 
 interface StudioSidebarProps {
@@ -26,16 +28,22 @@ export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary-light text-primary"
-                  : "text-slate-600 hover:bg-gray-100 hover:text-slate-900",
+                "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
+                active ? "text-primary" : "text-slate-600 hover:bg-gray-100 hover:text-slate-900",
               )}
             >
+              {active && (
+                <motion.span
+                  layoutId="studio-nav-active"
+                  aria-hidden
+                  className="absolute inset-0 rounded-lg bg-primary-light"
+                  transition={SPRING_SNAPPY}
+                />
+              )}
               <item.icon
-                className={cn("h-[18px] w-[18px]", active ? "text-primary" : "text-slate-400")}
+                className={cn("relative h-[18px] w-[18px]", active ? "text-primary" : "text-slate-400")}
               />
-              {item.label}
+              <span className="relative">{item.label}</span>
             </Link>
           );
         })}

@@ -123,7 +123,7 @@ export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }:
               onClick={() => authenticate(true)}
               disabled={!terms || !data || isPending}
               className={cn(
-                "rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-all",
+                "rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-[color,background-color,border-color,box-shadow,transform,opacity]",
                 !terms || !data || isPending ? "cursor-not-allowed opacity-50" : "hover:bg-[#9B0A26]",
               )}
             >

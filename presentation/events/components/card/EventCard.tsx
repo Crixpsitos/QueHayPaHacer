@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import { useCallback, useState } from "react";
 import { cn } from "@/app/lib/utils/cn";
+import { CardLikeButton } from "./CardLikeButton";
 import { EventViewModel } from "../../view-models/EventViewModel";
 import {
   dateParts,
@@ -147,7 +147,7 @@ export const EventCard = ({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-shadow hover:shadow-card",
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-shadow motion-reduce:transition-none hover:shadow-card",
         "focus-within:ring-2 focus-within:ring-[#E63946]/40 focus-within:ring-offset-2",
         className,
       )}
@@ -164,7 +164,7 @@ export const EventCard = ({
             alt=""
             fill
             sizes={CARD_SIZES}
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-500 motion-reduce:transition-none group-hover:scale-[1.03] group-focus-within:scale-[1.03] motion-reduce:group-hover:scale-100 motion-reduce:group-focus-within:scale-100"
             loading={prioritizeImage ? "eager" : "lazy"}
             onError={() => setImageFailed(true)}
           />
@@ -182,7 +182,7 @@ export const EventCard = ({
         {event.categoryInfo?.title && (
           <p className="text-xs font-semibold text-[#E63946]">{event.categoryInfo.title}</p>
         )}
-        <h3 className="font-heading line-clamp-2 text-base font-semibold leading-snug text-[#09090B]">
+        <h3 className="font-heading line-clamp-2 text-base font-semibold leading-snug text-[#09090B] decoration-[#E63946] decoration-2 underline-offset-4 group-hover:underline group-has-[a:focus-visible]:underline">
           {/* Enlace estirado: toda la tarjeta es clickeable; el like queda encima (z-10). */}
           <Link href={detailUrl} className="after:absolute after:inset-0 focus-visible:outline-none">
             {event.title}
@@ -201,18 +201,7 @@ export const EventCard = ({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={handleLike}
-        aria-label={liked ? "Quitar me gusta" : "Me gusta"}
-        aria-pressed={liked}
-        className="absolute right-2 top-2 z-10 flex size-10 items-center justify-center rounded-full bg-white/90 text-[#09090B] ring-1 ring-black/5 transition-colors hover:bg-white"
-      >
-        <Heart
-          className={cn("size-5", liked && "fill-[#E63946] text-[#E63946]")}
-          aria-hidden="true"
-        />
-      </button>
+      <CardLikeButton liked={liked} onToggle={handleLike} />
     </article>
   );
 };

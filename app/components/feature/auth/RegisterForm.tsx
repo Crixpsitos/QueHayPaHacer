@@ -1,4 +1,5 @@
 "use client";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { useState, useTransition } from "react";
@@ -220,12 +221,13 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "w-full rounded-full bg-[#E63946] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
+          "flex w-full items-center justify-center gap-2 rounded-full bg-[#E63946] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
           !isValid || isPending
             ? "cursor-not-allowed opacity-50"
             : "hover:bg-[#9B0A26]",
         )}
       >
+        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
         {isPending ? "Creando cuenta..." : "Crear cuenta"}
       </button>
     </form>

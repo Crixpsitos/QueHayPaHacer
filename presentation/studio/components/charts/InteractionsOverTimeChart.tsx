@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import {
   Area,
   AreaChart,
@@ -31,6 +32,7 @@ const SERIES = [
 ] as const;
 
 export default function InteractionsOverTimeChart({ data }: InteractionsOverTimeChartProps) {
+  const still = useReducedMotion();
   if (data.length === 0) return <ChartEmpty />;
   const totals = SERIES.map(
     (s) => `${formatNumber(data.reduce((sum, d) => sum + d[s.key], 0))} ${s.name.toLowerCase()}`,
@@ -64,6 +66,8 @@ export default function InteractionsOverTimeChart({ data }: InteractionsOverTime
           <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
           {SERIES.map((s) => (
             <Area
+            isAnimationActive={!still}
+            animationDuration={600}
               key={s.key}
               type="monotone"
               dataKey={s.key}

@@ -2,7 +2,7 @@
 
 import { useState, lazy, Suspense } from "react";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
+import { ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";
 import type { EventViewModel } from "../view-models/EventViewModel";
@@ -16,7 +16,8 @@ import { EventDescription } from "./detail/EventDescription";
 import { Lightbox, MediaStrip, buildSlides } from "./detail/EventMedia";
 import { EventPlace, type LinkedSiteInfo } from "./detail/EventPlace";
 import { BackLink, EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
-import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
+import { DateBlock, MobileCtaBar, RegisteredChip, Ticket, ctaClass } from "./detail/Ticket";
+import { AttentionRing, Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
 
@@ -149,15 +150,14 @@ export function EventDetailClient({
     );
   } else if (alreadyIn) {
     action = (
-      <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-        <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+      <RegisteredChip animateIn={!initialRegistered}>
         Ya estás registrado {sessionId ? "en esta fecha" : "en este evento"}
-      </p>
+      </RegisteredChip>
     );
   } else {
     action = (
       <div className="space-y-2">
-        {ctaButton}
+        <AttentionRing>{ctaButton}</AttentionRing>
         {event.registrationType === "external" && event.externalUrl && (
           <p className="text-center text-xs text-[#71717A]">Te llevamos al sitio del organizador para completar la inscripción.</p>
         )}
@@ -261,7 +261,9 @@ export function EventDetailClient({
                     </p>
                   </div>
                 )}
-                {action}
+                <div id="ticket-cta" aria-live="polite">
+                  {action}
+                </div>
               </Ticket>
             </div>
           </aside>
@@ -269,9 +271,9 @@ export function EventDetailClient({
           <div className="min-w-0 space-y-14 lg:col-span-8">
             <EventDescription doc={event.description} />
             <MediaStrip slides={slides} offset={mediaOffset} onOpen={setLightboxIndex} />
-            <EventPlace event={event} linkedSite={linkedSite} />
-            <EventOrganizer event={event} />
-            <EventShare event={event} path={shareUrl ?? `/eventos/${event.slug || event.id}`} sessionId={sessionId} />
+            <Reveal><EventPlace event={event} linkedSite={linkedSite} /></Reveal>
+            <Reveal><EventOrganizer event={event} /></Reveal>
+            <Reveal><EventShare event={event} path={shareUrl ?? `/eventos/${event.slug || event.id}`} sessionId={sessionId} /></Reveal>
             <ReportButton targetType="event" targetId={event.id} sessionId={sessionId} isOwner={isOwner} className="-mt-10" />
           </div>
         </div>

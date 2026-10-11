@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AXIS_TICK, CHART, TooltipCard, formatCompact, formatDay, formatNumber } from "./chartTheme";
 import { ChartEmpty } from "./ChartEmpty";
@@ -9,6 +10,7 @@ interface RegistrationsTimelineChartProps {
 }
 
 export default function RegistrationsTimelineChart({ data }: RegistrationsTimelineChartProps) {
+  const still = useReducedMotion();
   if (data.every((d) => d.registrations === 0)) return <ChartEmpty height={260} />;
 
   const total = data.reduce((sum, d) => sum + d.registrations, 0);
@@ -41,6 +43,8 @@ export default function RegistrationsTimelineChart({ data }: RegistrationsTimeli
             content={<TooltipCard labelFormatter={formatDay} />}
           />
           <Area
+            isAnimationActive={!still}
+            animationDuration={600}
             type="monotone"
             dataKey="registrations"
             name="Inscripciones"

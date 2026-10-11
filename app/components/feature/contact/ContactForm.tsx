@@ -5,12 +5,13 @@ import { useForm, Controller } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import * as v from "valibot";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
+import { AlertCircle, Loader2, Send } from "lucide-react";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { sendContactAction } from "@/app/actions/contact/send-contact.action";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/app/components/ui/select";
+import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";
 import { cn } from "@/app/lib/utils/cn";
 
 // ── Contact reasons ────────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ function FieldWrapper({
 
 const inputCls = (hasError: boolean) =>
   cn(
-    "w-full rounded-xl border px-3.5 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-all bg-white focus:ring-2",
+    "w-full rounded-xl border px-3.5 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-[color,background-color,border-color,box-shadow,transform,opacity] bg-white focus:ring-2",
     hasError
       ? "border-red-400 focus:border-red-400 focus:ring-red-100"
       : "border-[#E4E4E7] focus:border-[#E63946] focus:ring-[#E63946]/10",
@@ -165,13 +166,13 @@ export function ContactForm() {
   if (success) {
     return (
       <motion.div
+        role="status"
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, ease: EASE_OUT }}
         className="flex flex-col items-center gap-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center"
       >
-        <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100">
-          <CheckCircle2 className="size-7 text-emerald-600" />
-        </div>
+        <SuccessCheck size={56} />
         <div>
           <h3
             className="text-lg font-bold text-emerald-800"
@@ -186,7 +187,7 @@ export function ContactForm() {
         <button
           type="button"
           onClick={() => setSuccess(false)}
-          className="rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+          className="min-h-11 rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
         >
           Enviar otro mensaje
         </button>
@@ -214,7 +215,7 @@ export function ContactForm() {
                 aria-invalid={Boolean(errors.contactReason)}
                 className={cn(
                   // Override SelectTrigger defaults to match inputs exactly
-                  "w-full rounded-xl border bg-white px-3.5 py-2.5 h-auto text-sm text-[#09090B] transition-all",
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 h-auto text-sm text-[#09090B] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
                   "focus-visible:ring-2 focus-visible:outline-none",
                   errors.contactReason
                     ? "border-red-400 focus-visible:border-red-400 focus-visible:ring-red-100"
@@ -268,7 +269,7 @@ export function ContactForm() {
       {/* Message */}
       <FieldWrapper label="Mensaje" htmlFor="message" error={errors.message}>
         <div className={cn(
-          "overflow-hidden rounded-xl border transition-all focus-within:ring-2",
+          "overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,transform,opacity] focus-within:ring-2",
           errors.message
             ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
             : "border-[#E4E4E7] focus-within:border-[#E63946] focus-within:ring-[#E63946]/10",
@@ -318,7 +319,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={!isValid || isPending}
-        className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-all hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? (
           <>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { RampUnit, RegistrationRampPoint } from "@/domain/entities/studio/Studio";
 import { AXIS_TICK, CHART, TooltipCard, formatCompact, formatNumber } from "./chartTheme";
@@ -11,6 +12,7 @@ interface RegistrationRampChartProps {
 }
 
 export default function RegistrationRampChart({ data, unit }: RegistrationRampChartProps) {
+  const still = useReducedMotion();
   // Con un solo punto la curva no aporta nada: mostramos un aviso amable.
   if (data.length < 2) {
     return (
@@ -69,6 +71,8 @@ export default function RegistrationRampChart({ data, unit }: RegistrationRampCh
             }
           />
           <Area
+            isAnimationActive={!still}
+            animationDuration={600}
             type="monotone"
             dataKey="cumulativeRegistrations"
             name="Inscripciones acumuladas"

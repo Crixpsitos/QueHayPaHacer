@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, Crown, MessageCircle, Sparkles } from "lucide-react";
 
+import { AttentionRing } from "@/app/components/motion/primitives";
 import { Button } from "@/app/components/ui/button";
 import type { UserParticipation, UserPlan } from "@/domain/entities/user/User";
 import { cn } from "@/app/lib/utils/cn";
@@ -139,12 +140,14 @@ export function MembershipSection({
                   <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
                     Plan fundador: {FOUNDER_MONTHS} meses gratis para los primeros {FOUNDER_LIMIT} creadores.
                   </p>
-                  <Button asChild className="w-full">
-                    <Link href="/contactanos?motivo=premium">
-                      <MessageCircle className="size-4" aria-hidden />
-                      Quiero Premium
-                    </Link>
-                  </Button>
+                  <AttentionRing ringClassName="rounded-4xl border-primary">
+                    <Button asChild className="w-full">
+                      <Link href="/contactanos?motivo=premium">
+                        <MessageCircle className="size-4" aria-hidden />
+                        Quiero Premium
+                      </Link>
+                    </Button>
+                  </AttentionRing>
                   <Link href="/premium" className="block text-center text-sm font-medium text-primary hover:underline">
                     Ver todo lo que incluye
                   </Link>

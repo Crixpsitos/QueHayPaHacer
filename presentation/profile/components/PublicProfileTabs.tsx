@@ -180,7 +180,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                   <motion.article
                     key={site.id}
                     variants={itemVariants}
-                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                   >
                     <Link href={`/donde-ir/${site.slug || site.id}`} className="block">
                       <div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -250,7 +250,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                   <motion.div
                     key={badge.id}
                     variants={itemVariants}
-                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:shadow-lg hover:border-primary/30"
                   >
                     <div className="flex h-full flex-col">
                       <div className="mb-4 text-5xl">{badge.icon || "⭐"}</div>
