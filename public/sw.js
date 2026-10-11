@@ -2,8 +2,8 @@
  * Service worker de Que Hay Pa Hacer? — escrito a mano, sin dependencias.
  *
  * Objetivo: mitigar el cold start de Cloud Run (minInstances: 0). La primera
- * visita va a la red; las siguientes pintan al instante desde caché mientras se
- * revalida en segundo plano (stale-while-revalidate).
+ * visita va a la red; las siguientes intentan la red con tope de 2 s y, si el
+ * servidor está frío, pintan la copia mientras la red se actualiza en segundo plano.
  *
  * Versión: llega en la URL de registro (`/sw.js?v=<build>`, ver
  * app/components/pwa/ServiceWorkerRegister.tsx). Cada deploy = nombres de caché
@@ -17,6 +17,7 @@ const CURRENT_CACHES = [STATIC_CACHE, PAGES_CACHE, IMAGES_CACHE];
 
 const OFFLINE_URL = "/offline";
 const MAX_IMAGES = 150;
+const PAGE_TIMEOUT_MS = 2000;
 const IMAGE_HOSTS = ["firebasestorage.googleapis.com", "images.unsplash.com"];
 
 // Rutas privadas o con estado de sesión: nunca se cachean.
@@ -122,6 +123,9 @@ async function cacheFirst(request) {
   return res;
 }
 
+// Red primero con tope: si el servidor responde dentro de PAGE_TIMEOUT_MS se muestra
+// lo nuevo; si está frío (cold start) se pinta la copia y la red sigue en segundo plano
+// para dejar la caché fresca. Antes era stale-while-revalidate puro: siempre una visita atrasado.
 async function staleWhileRevalidatePage(event, request, key) {
   const cache = await caches.open(PAGES_CACHE);
   const cached = await cache.match(key);
@@ -134,7 +138,8 @@ async function staleWhileRevalidatePage(event, request, key) {
 
   if (cached) {
     event.waitUntil(network.catch(() => {}));
-    return cached;
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(cached), PAGE_TIMEOUT_MS));
+    return Promise.race([network.catch(() => cached), timeout]);
   }
   return network.catch(() => offlineFallback());
 }

@@ -29,7 +29,7 @@ QHPA es una PWA instalable (manifest + service worker propio) y se publica en Go
 
 **Problema:** App Hosting corre en Cloud Run con `minInstances: 0`. Tras un rato sin tráfico, la primera petición paga un cold start de varios segundos.
 
-**Solución:** la primera visita va a la red (fría si toca); en las siguientes el HTML y los assets salen de la caché del dispositivo al instante y la red se consulta en segundo plano para dejar la copia fresca para la próxima vez (**stale-while-revalidate**). El cold start deja de verse en visitas repetidas.
+**Solución:** la primera visita va a la red (fría si toca); en las siguientes el HTML y los assets salen de la caché del dispositivo al instante la red se intenta primero con un tope de 2 s: si el servidor responde se ve lo nuevo; si está frío se pinta la copia y la red sigue en segundo plano para refrescarla (**red primero con tope**). Antes era stale-while-revalidate puro y se veía siempre la versión anterior.
 
 | Recurso | Estrategia |
 | --- | --- |
