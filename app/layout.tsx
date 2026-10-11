@@ -111,7 +111,9 @@ export default function RootLayout({
         </AuthProvider>
         <Toaster />
         <ServiceWorkerRegister />
-        <InstallBanner />
+        <Suspense fallback={null}>
+          <InstallBanner />
+        </Suspense>
       </body>
     </html>
   );
