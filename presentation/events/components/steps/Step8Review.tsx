@@ -21,9 +21,7 @@ import { SummarySection } from "../ui/SummarySection";
 import { SummaryItem } from "../ui/SummaryItem";
 import { SessionsReviewSection } from "./SessionsReviewSection";
 import { Badge } from "@/app/components/ui/badge";
-import { renderToHTMLString } from "@tiptap/static-renderer";
-import DOMPurify from "isomorphic-dompurify";
-import StarterKit from "@tiptap/starter-kit";
+import { renderDescriptionHTML } from "@/presentation/events/lib/renderDescription";
 import {
   Avatar,
   AvatarFallback,
@@ -102,7 +100,6 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
   const promotedAt = form.watch("promotion.promotedAt");
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
-  const extensions = [StarterKit];
 
   const [promotionPaid, setPromotionPaid] = useState(false);
 
@@ -149,16 +146,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
                 <div
                   className="tiptap prose prose-sm max-w-none text-[#09090B] focus:outline-none"
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(
-                      renderToHTMLString({ content: formData.description, extensions }),
-                      {
-                        ALLOWED_TAGS: [
-                          "p","br","strong","em","u","s","h1","h2","h3","h4","h5","h6",
-                          "ul","ol","li","a","span","blockquote","code","pre","img",
-                        ],
-                        ALLOWED_ATTR: ["href","target","rel","src","alt","class","style"],
-                      },
-                    ),
+                    __html: renderDescriptionHTML(formData.description),
                   }}
                 />
               </ExpandableContent>

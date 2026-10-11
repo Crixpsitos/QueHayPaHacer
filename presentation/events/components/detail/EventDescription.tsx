@@ -2,29 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { renderToHTMLString } from "@tiptap/static-renderer";
-import StarterKit from "@tiptap/starter-kit";
-import DOMPurify from "isomorphic-dompurify";
+import { renderDescriptionHTML } from "@/presentation/events/lib/renderDescription";
 
-const extensions = [StarterKit];
 const COLLAPSED_PX = 320;
 
-type Doc = Parameters<typeof renderToHTMLString>[0]["content"];
-
-/**
- * Descripción rica (Tiptap JSON). Se renderiza y sanea durante el render
- * (isomorphic-dompurify funciona en servidor y cliente) para que el texto
- * llegue en el HTML del SSR.
- */
+/** Descripción rica (Tiptap JSON), renderizada sin DOM para que llegue en el HTML del SSR. */
 export function EventDescription({ doc }: { doc: unknown }) {
-  const html = useMemo(() => {
-    if (!doc) return "";
-    const raw = renderToHTMLString({ content: doc as Doc, extensions });
-    return DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "a", "span", "blockquote", "code", "pre", "img"],
-      ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "class", "style"],
-    });
-  }, [doc]);
+  const html = useMemo(() => renderDescriptionHTML(doc), [doc]);
 
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
