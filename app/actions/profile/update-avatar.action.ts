@@ -1,8 +1,10 @@
 "use server";
 
+import { getSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 interface UpdateAvatarInput {
   uid: string;
@@ -41,11 +43,19 @@ function resolveAvatarErrorMessage(error: unknown): string {
 
 export async function updateAvatarAction(input: UpdateAvatarInput): Promise<UpdateAvatarResult> {
   try {
+    if (!input.uid || (await getSessionUid()) !== input.uid) return { success: false, error: "No autorizado." };
     if (!input.uid || !input.photoURL || !input.imagePath) {
       return { success: false, error: "Faltan datos para actualizar la foto de perfil." };
     }
 
     const { userService, storageService } = createServerContainer();
+    // Solo archivos propios: el path anterior se borra con credenciales admin.
+    const ownPrefix = `public/profile/${input.uid}/avatar/`;
+    const expectedUrl = `https://storage.googleapis.com/${storageService.getBucketName}/${input.imagePath}`;
+    if (!input.imagePath.startsWith(ownPrefix) || input.imagePath.includes("..") || input.photoURL !== expectedUrl) {
+      return { success: false, error: "Archivo de foto no válido." };
+    }
+
     const currentUser = await userService.getUserById(input.uid);
 
     if (!currentUser) {
@@ -67,7 +77,7 @@ export async function updateAvatarAction(input: UpdateAvatarInput): Promise<Upda
       await storageService.delete(previousImagePath);
     }
 
-    revalidateTag(`user-profile-${input.uid}`, "max");
+    updateTag(`user-profile-${input.uid}`);
 
     return { success: true };
   } catch (error) {

@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { revalidatePath, revalidateTag, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import * as v from "valibot";
 import { createServerContainer } from "@/infraestructure/di/container";
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       const author = await userService.getUserById(result.event.author.id);
       if (author?.participation === "consumer") {
         await userService.markAsCreator(author.uid);
-        updateTag(`user-profile-${author.uid}`);
+        revalidateTag(`user-profile-${author.uid}`, { expire: 0 });
       }
 
       const events = await profileService.getUserEvents(result.event.author.id);
@@ -67,11 +67,15 @@ export async function POST(request: Request) {
       }
     }
 
-    updateTag(`event-${result.event.id}`);
-    updateTag(`user-events-${result.event.author.id}`);
-    updateTag("event-list");
-    revalidateTag(`profile-events-${result.event.author.id}`, "max");
-    revalidateTag(`profile-stats-${result.event.author.id}`, "max");
+    // Route Handler: updateTag solo existe en Server Actions; expire 0 = expiración inmediata.
+    for (const tag of [
+      `event-${result.event.id}`,
+      `profile-events-${result.event.author.id}`,
+      `profile-stats-${result.event.author.id}`,
+      "event-list",
+    ]) {
+      revalidateTag(tag, { expire: 0 });
+    }
     revalidateTag("explore", "max");
     revalidatePath("/", "page");
     revalidatePath("/eventos", "layout");

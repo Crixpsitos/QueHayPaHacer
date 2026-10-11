@@ -1,12 +1,7 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
-import { syncEventDateRange } from "./lib/syncEventDateRange";
-import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
 
 type DeleteSessionResult =
   | { success: true }
@@ -16,17 +11,13 @@ export async function deleteEventSessionAction(
   eventId: string,
   sessionId: string,
 ): Promise<DeleteSessionResult> {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
-    return { success: false, error: "Debes iniciar sesión." };
-  }
+  const ownerError = await sessionOwnerError(eventId);
+  if (ownerError) return { success: false, error: ownerError };
 
   try {
     const { eventSessionService } = createServerContainer();
     await eventSessionService.deleteSession(eventId, sessionId);
-    await syncEventDateRange(eventId);
-    await syncEventSiteIds(eventId);
-    updateTag(`event-sessions-${eventId}`);
+    await afterSessionChange(eventId);
     return { success: true };
   } catch (error) {
     console.error("deleteEventSessionAction error:", error);

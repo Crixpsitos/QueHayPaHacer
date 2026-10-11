@@ -1,8 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getPremiumSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { SupportTicketDetailVM } from "@/presentation/studio/view-models/StudioSupportViewModel";
 
@@ -16,15 +15,15 @@ export async function getSupportTicketDetailAction(
   ticketId: string,
 ): Promise<ActionResult> {
   try {
-    const tokens = await getTokens(await cookies(), authConfig);
-    if (!tokens) {
+    const uid = await getPremiumSessionUid();
+    if (!uid) {
       return { success: false, error: "No hay sesión activa." };
     }
 
     const { studioService } = createServerContainer();
     const d = await studioService.getSupportTicketDetail(
       ticketId,
-      tokens.decodedToken.uid,
+      uid,
     );
     if (!d) {
       return { success: false, error: "No se encontró el ticket." };

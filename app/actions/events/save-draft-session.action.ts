@@ -1,12 +1,7 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
-import { syncEventDateRange } from "./lib/syncEventDateRange";
-import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
 import type { FormSessionDto } from "@/application/dto/events/EventSessionDto";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
@@ -22,10 +17,8 @@ export async function saveDraftSessionAction(
   eventId: string,
   data: FormSessionDto,
 ): Promise<SaveDraftSessionResult> {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
-    return { success: false, error: "Debes iniciar sesión." };
-  }
+  const ownerError = await sessionOwnerError(eventId);
+  if (ownerError) return { success: false, error: ownerError };
 
   const payload = {
     eventId,
@@ -65,16 +58,12 @@ export async function saveDraftSessionAction(
 
     if (data.id) {
       const { session } = await eventSessionService.updateSession(eventId, data.id, payload);
-      await syncEventDateRange(eventId);
-      await syncEventSiteIds(eventId);
-      updateTag(`event-sessions-${eventId}`);
+      await afterSessionChange(eventId);
       return { success: true, session };
     }
 
     const { session } = await eventSessionService.createSession(payload);
-    await syncEventDateRange(eventId);
-    await syncEventSiteIds(eventId);
-    updateTag(`event-sessions-${eventId}`);
+    await afterSessionChange(eventId);
     return { success: true, session };
   } catch (error) {
     console.error("saveDraftSessionAction error:", error);

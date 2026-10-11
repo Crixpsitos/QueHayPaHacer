@@ -17,7 +17,7 @@ import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
-import { moderationFieldsForSubmission } from "./lib/eventModerationPolicy";
+import { moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
   | {
@@ -58,21 +58,22 @@ export async function publishEventAction(
     return { success: false, error: "No encontramos tu perfil de usuario." };
   }
 
-  if (event.id) {
-    const existingEvent = await eventsService.getEventById(event.id);
-    if (!existingEvent || existingEvent.author.id !== author.uid) {
-      return { success: false, error: "No tienes permiso para publicar este evento." };
-    }
+  const existingEvent = event.id ? await eventsService.getEventById(event.id) : null;
+  if (event.id && (!existingEvent || existingEvent.author.id !== author.uid)) {
+    return { success: false, error: "No tienes permiso para publicar este evento." };
   }
 
-  // Multi-fecha es exclusivo de cuentas profesionales.
+  // El tipo guardado manda: el cliente no puede cambiarlo al publicar.
+  const eventType = existingEvent ? existingEvent.eventType : event.eventType;
+
+  // Multi-fecha es exclusivo del plan Premium.
   if (
-    event.eventType === "multi-date" &&
+    eventType === "multi-date" &&
     author?.plan !== "premium"
   ) {
     return {
       success: false,
-      error: "Los eventos multi-fecha son exclusivos de cuentas profesionales.",
+      error: "Los eventos multi-fecha son exclusivos del plan Premium.",
     };
   }
 
@@ -85,7 +86,7 @@ export async function publishEventAction(
   }
 
   // Multi-date: no se puede publicar el evento si alguna sesión sigue en borrador.
-  if (event.eventType === "multi-date" && event.id) {
+  if (eventType === "multi-date" && event.id) {
     const { eventSessionService } = createServerContainer();
     const sessions = await eventSessionService.getByEventId(event.id);
     if (sessions.length === 0) {
@@ -105,24 +106,28 @@ export async function publishEventAction(
 
   // Multi-fecha valida solo el encabezado (v.object recorta location/fechas/precio).
   const schema =
-    event.eventType === "multi-date"
+    eventType === "multi-date"
       ? publishEventMultiDateSchema
       : publishEventSchema;
 
   const resultParse = safeParse(schema, {
     ...event,
     id: event.id,
-    slug: event.slug ||
+    // slug/promoción/fechas de sistema no se aceptan del cliente.
+    slug: existingEvent?.slug ||
       (event.title
         ? `${toSlug(event.title)}-${Date.now().toString(36)}`
         : undefined),
+    promotion: undefined,
+    createdAt: undefined,
+    updatedAt: undefined,
     status: "published",
     publishedAt: new Date().toISOString(),
-    eventType: event.eventType,
+    eventType,
     author: {
       id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name || "pruebas evento",
-      photoURL: tokens.decodedToken.picture,
+      displayName: author.displayName || tokens.decodedToken.name || "",
+      photoURL: author.photoURL || tokens.decodedToken.picture || undefined,
     },
   });
 
@@ -131,19 +136,21 @@ export async function publishEventAction(
       "Error updating event:",
       JSON.stringify(resultParse.issues, null, 3),
     );
-    console.log(
-      "esto fue lo que recibi",
-      JSON.stringify(resultParse.output, null, 3),
-    );
     return {
       success: false,
-      error: "No se pudo publicar el evento. Por favor verifica los datos.",
+      error:
+        resultParse.issues[0]?.message ??
+        "No se pudo publicar el evento. Por favor verifica los datos.",
     };
   }
 
-  const parsedData = EventViewModelMapper.toDomain(
+  const domainData = EventViewModelMapper.toDomain(
     resultParse.output as unknown as EventViewModel,
   );
+  // Republicar conserva analytics (score), promoción, createdAt, metadata, autor.
+  const parsedData = existingEvent
+    ? withServerOwnedFields(existingEvent, domainData)
+    : domainData;
   const userId = tokens.decodedToken.uid;
   Object.assign(parsedData, moderationFieldsForSubmission(author));
 
@@ -161,13 +168,15 @@ export async function publishEventAction(
 
     // Multi-date: el evento no guarda fechas propias → derivarlas de las sesiones
     // (min inicio / max fin) para que aparezca en los listados por fecha.
-    if (event.eventType === "multi-date") {
+    if (eventType === "multi-date") {
       await syncEventDateRange(publishedEvent.id || parsedData.id);
       await syncEventSiteIds(publishedEvent.id || parsedData.id);
     }
 
     updateTag("event-list");
-    updateTag(`user-events-${userId}`);
+    updateTag(`event-${publishedEvent.id || parsedData.id}`);
+    updateTag(`profile-events-${userId}`);
+    updateTag(`profile-stats-${userId}`);
     revalidateTag("explore", "max");
 
     // revalidateTag (stale-while-revalidate) para las pestanas de Eventos y stats del perfil

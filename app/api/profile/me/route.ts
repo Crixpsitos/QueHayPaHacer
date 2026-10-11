@@ -7,9 +7,12 @@ import {
 } from "@/presentation/profile/lib/cachedProfileData";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function GET() {
+const RECENT_ITEMS_PER_TYPE = 6;
+
+/** `?events=all` devuelve todos los eventos propios (vista "Mis eventos"). */
+export async function GET(request: NextRequest) {
   const tokens = await getTokens(await cookies(), authConfig);
 
   if (!tokens) {
@@ -20,10 +23,13 @@ export async function GET() {
 
   try {
     const [events, sites, likes, badges] = await Promise.all([
-      getCachedUserEvents(uid),
-      getCachedUserSites(uid),
-      getCachedUserLikes(uid),
-      getCachedUserBadges(uid),
+      getCachedUserEvents(
+        uid,
+        request.nextUrl.searchParams.get("events") === "all" ? undefined : RECENT_ITEMS_PER_TYPE,
+      ),
+      getCachedUserSites(uid, RECENT_ITEMS_PER_TYPE),
+      getCachedUserLikes(uid, RECENT_ITEMS_PER_TYPE),
+      getCachedUserBadges(uid, RECENT_ITEMS_PER_TYPE),
     ]);
 
     return NextResponse.json({ events, sites, likes, badges });

@@ -7,7 +7,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { revalidatePath } from "next/cache";
 import type { InviteeInput } from "@/domain/entities/studio/Studio";
 
-/** Envía invitaciones a varios usuarios a la vez. Solo cuentas profesionales. */
+/** Envía invitaciones a varios usuarios a la vez. Solo plan Premium. */
 export async function inviteCollaboratorsAction(
   invitees: InviteeInput[],
 ): Promise<{ success: boolean; error?: string }> {
@@ -21,7 +21,7 @@ export async function inviteCollaboratorsAction(
     const { userService, studioService } = createServerContainer();
     const me = await userService.getUserById(tokens.decodedToken.uid);
     if (me?.plan !== "premium") {
-      return { success: false, error: "Solo cuentas profesionales pueden invitar." };
+      return { success: false, error: "Necesitas el plan Premium para invitar." };
     }
 
     await studioService.inviteCollaborators(tokens.decodedToken.uid, invitees);

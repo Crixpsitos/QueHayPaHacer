@@ -1,5 +1,7 @@
 "use server";
 
+import { isStudioEventOwner } from "@/app/actions/_session";
+
 import { updateTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
 import {
@@ -20,6 +22,7 @@ export async function removeParticipantAction(
   sessionId?: string,
 ): Promise<ActionResult> {
   try {
+    if (!(await isStudioEventOwner(eventId))) return { success: false, error: "No autorizado." };
     const { studioService } = createServerContainer();
     await studioService.removeParticipant(eventId, userId, sessionId);
 
@@ -28,6 +31,13 @@ export async function removeParticipantAction(
     updateTag(studioRegistrationsTag(eventId, sessionId));
     updateTag(studioStatsTag(eventId, sessionId));
     if (sessionId) updateTag(studioMultiDateTag(eventId));
+    // Vista pública: el participante deja de verse "Inscrito" y el contador público baja.
+    updateTag(
+      sessionId
+        ? `event-registration-${userId}-${eventId}-${sessionId}`
+        : `event-registration-${userId}-${eventId}`,
+    );
+    updateTag(sessionId ? `event-sessions-${eventId}` : `event-${eventId}`);
 
     return { success: true };
   } catch (error) {

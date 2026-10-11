@@ -2,13 +2,8 @@
 
 import * as v from "valibot";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
 import { SessionSchema } from "@/application/dto/events/EventSessionDto";
-import { syncEventDateRange } from "./lib/syncEventDateRange";
-import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
 import { SESSION_OVERLAP_MESSAGE } from "@/application/services/events/EventSessionService";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
@@ -26,9 +21,10 @@ export async function setSessionStatusAction(
   sessionId: string,
   status: "draft" | "published",
 ): Promise<SetStatusResult> {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
-    return { success: false, error: "Debes iniciar sesión." };
+  const ownerError = await sessionOwnerError(eventId);
+  if (ownerError) return { success: false, error: ownerError };
+  if (status !== "draft" && status !== "published") {
+    return { success: false, error: "Estado de sesión inválido." };
   }
 
   try {
@@ -85,9 +81,7 @@ export async function setSessionStatusAction(
       sessionId,
       { status },
     );
-    await syncEventDateRange(eventId);
-    await syncEventSiteIds(eventId);
-    updateTag(`event-sessions-${eventId}`);
+    await afterSessionChange(eventId);
     return { success: true, session, hasOverlap };
   } catch (error) {
     console.error("setSessionStatusAction error:", error);

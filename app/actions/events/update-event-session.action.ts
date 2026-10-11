@@ -1,13 +1,8 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
-import { syncEventDateRange } from "./lib/syncEventDateRange";
-import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 import { SessionSchema } from "@/application/dto/events/EventSessionDto";
 import { safeParse } from "valibot";
@@ -21,9 +16,12 @@ export async function updateEventSessionAction(
   sessionId: string,
   data: Partial<Omit<EventSession, "id" | "eventId" | "createdAt">>,
 ): Promise<UpdateSessionResult> {
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens?.decodedToken?.uid) {
-    return { success: false, error: "Debes iniciar sesión." };
+  const ownerError = await sessionOwnerError(eventId);
+  if (ownerError) return { success: false, error: ownerError };
+
+  // El cliente solo puede guardar borrador o publicar; cancelled/ended no.
+  if (data.status !== "draft" && data.status !== "published") {
+    return { success: false, error: "Estado de sesión inválido." };
   }
 
   const validation = safeParse(SessionSchema, {
@@ -45,27 +43,20 @@ export async function updateEventSessionAction(
 
   try {
     const { eventSessionService } = createServerContainer();
-    // Sanitizar campos que pueden llegar con proxies del cliente Firestore.
-    const safeData: typeof data = {
-      ...data,
-      ...(data.description !== undefined && {
-        description: JSON.parse(JSON.stringify(data.description)),
-      }),
-      ...(data.media !== undefined && {
-        media: JSON.parse(JSON.stringify(data.media)),
-      }),
-      ...(data.mainImage !== undefined && {
-        mainImage: JSON.parse(JSON.stringify(data.mainImage)),
-      }),
-    };
+    // Persistir lo validado (no el payload crudo). El round-trip JSON sanea
+    // campos que pueden llegar con proxies del cliente Firestore; las fechas
+    // ya son string ISO en el output.
+    const output = JSON.parse(JSON.stringify(validation.output)) as typeof validation.output;
     const { session, hasOverlap } = await eventSessionService.updateSession(
       eventId,
       sessionId,
-      safeData,
+      {
+        ...output,
+        startDate: new Date(output.startDate),
+        endDate: new Date(output.endDate),
+      },
     );
-    await syncEventDateRange(eventId);
-    await syncEventSiteIds(eventId);
-    updateTag(`event-sessions-${eventId}`);
+    await afterSessionChange(eventId);
     return { success: true, session, hasOverlap };
   } catch (error) {
     if (error instanceof SessionOverlapError) {

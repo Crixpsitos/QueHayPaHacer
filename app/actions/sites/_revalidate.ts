@@ -3,11 +3,13 @@ import { updateTag, revalidateTag } from "next/cache"
 /**
  * Invalida las caches de sitios tras una escritura (read-your-own-writes).
  * Único lugar donde viven los nombres de tag → deben calzar con los `cacheTag`
- * de las páginas: `sites-<uid>` (grid) y `site-<id>` (detalle/analytics).
+ * de las páginas: `sites-<uid>` (grid), `site-<id>` (detalle/analytics) y
+ * `profile-sites-<uid>` (perfil/trayectoria).
  * Debe llamarse desde dentro de una Server Action.
  */
 export function revalidateSite(uid: string, siteId?: string) {
   updateTag(`sites-${uid}`)
+  updateTag(`profile-sites-${uid}`)
   if (siteId) updateTag(`site-${siteId}`)
   revalidateTag("explore", "max")
   // Invalida los listados públicos (donde-ir, home sitios populares)

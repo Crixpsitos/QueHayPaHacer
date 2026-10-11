@@ -10,13 +10,6 @@ import type {
   UserSite,
 } from "@/domain/repository/profile/IProfileRepository";
 
-interface ProfileStatsResponse {
-  eventsCount: number;
-  followersCount: number;
-  followingCount: number;
-  likesCount: number;
-}
-
 export interface MyProfileData {
   events: UserEvent[];
   sites: UserSite[];
@@ -27,25 +20,13 @@ export interface MyProfileData {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 /** Obtiene todos los datos del perfil propio en una sola petición autenticada por cookie. */
-export async function fetchMyProfileData(): Promise<MyProfileData> {
-  const response = await fetch(`${API_BASE}/api/profile/me`, {
+export async function fetchMyProfileData({ allEvents = false } = {}): Promise<MyProfileData> {
+  const response = await fetch(`${API_BASE}/api/profile/me${allEvents ? "?events=all" : ""}`, {
     cache: "no-store",
   });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch profile data: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-export async function fetchUserStats(uid: string): Promise<ProfileStatsResponse> {
-  const response = await fetch(`${API_BASE}/api/profile/stats?uid=${uid}`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user stats: ${response.statusText}`);
   }
 
   return response.json();
@@ -70,18 +51,6 @@ export async function fetchUserSites(uid: string): Promise<UserSite[]> {
 
   if (!response.ok) {
     throw new Error(`Failed to fetch user sites: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-export async function fetchUserLikes(uid: string): Promise<UserEventInteraction[]> {
-  const response = await fetch(`${API_BASE}/api/profile/likes?uid=${uid}`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user likes: ${response.statusText}`);
   }
 
   return response.json();

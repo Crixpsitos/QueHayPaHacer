@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { authMiddleware } from "next-firebase-auth-edge";
+import { removeCookies } from "next-firebase-auth-edge/next/cookies";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
 const PRIVATE_PATHS = ["/mis-eventos", "/sites", "/eventos/create"];
+// Editor y gestor de sesiones. /eventos/:id/sessions/:sessionId es público (detalle).
+const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
+
+function isPrivatePath(pathname: string) {
+  return pathname === "/profile" ||
+    PRIVATE_EVENT_PATH.test(pathname) ||
+    PRIVATE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function loginRedirect(request: NextRequest) {
+  const redirectTo = encodeURIComponent(`${request.nextUrl.pathname}${request.nextUrl.search}`);
+  return NextResponse.redirect(new URL(`/login?redirect_to=${redirectTo}`, request.url));
+}
 
 export async function proxy(request: NextRequest) {
   return authMiddleware(request, {
@@ -39,22 +53,22 @@ export async function proxy(request: NextRequest) {
       });
     },
     handleInvalidToken: async () => {
-      const pathname = request.nextUrl.pathname;
-      const isPrivate = pathname === "/profile" || PRIVATE_PATHS.some((path) =>
-        pathname === path || pathname.startsWith(`${path}/`),
-      );
-      if (!isPrivate) return NextResponse.next();
-
-      const redirectTo = encodeURIComponent(
-        `${request.nextUrl.pathname}${request.nextUrl.search}`,
-      );
-      return NextResponse.redirect(
-        new URL(`/login?redirect_to=${redirectTo}`, request.url),
-      );
+      if (!isPrivatePath(request.nextUrl.pathname)) return NextResponse.next();
+      return loginRedirect(request);
     },
     handleError: async (error) => {
       console.error("Unhandled authentication error", { error });
-      return NextResponse.redirect(new URL("/login", request.url));
+      // Sesión irrecuperable (p.ej. refresh token revocado al cambiar la contraseña):
+      // se borran las cookies. Antes redirigía siempre a /login con la cookie rota,
+      // /login volvía a fallar y quedaba en bucle (ERR_TOO_MANY_REDIRECTS).
+      const response = isPrivatePath(request.nextUrl.pathname)
+        ? loginRedirect(request)
+        : NextResponse.next();
+      removeCookies(request.headers, response, {
+        cookieName: authConfig.cookieName,
+        cookieSerializeOptions: authConfig.cookieSerializeOptions,
+      });
+      return response;
     },
     getMetadata: authConfig.getMetadata,
   });
