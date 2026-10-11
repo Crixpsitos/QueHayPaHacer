@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/app/components/ui/carousel";
@@ -38,11 +38,25 @@ const navBtn =
 export function Lightbox({ slides, initial, onClose }: { slides: MediaSlide[]; initial: number; onClose: () => void }) {
   const [api, setApi] = useState<CarouselApi>();
   const [idx, setIdx] = useState(initial);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Bloquea el scroll de la página mientras la galería está abierta.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     if (!api) return;
     api.scrollTo(initial, true);
-    const onSelect = () => setIdx(api.selectedScrollSnap());
+    const onSelect = () => {
+      setIdx(api.selectedScrollSnap());
+      // Un video que sigue sonando fuera de pantalla: se pausa al cambiar de slide.
+      rootRef.current?.querySelectorAll("video").forEach((v) => v.pause());
+    };
     api.on("select", onSelect);
     return () => {
       api.off("select", onSelect);
@@ -60,7 +74,12 @@ export function Lightbox({ slides, initial, onClose }: { slides: MediaSlide[]; i
   }, [api, onClose]);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Galería" className="fixed inset-0 z-50 flex items-center justify-center bg-black/95" onClick={onClose}>
+    <div ref={rootRef} role="dialog" aria-modal="true" aria-label="Galería" className="fixed inset-0 z-50 flex items-center justify-center bg-[#09090B]" onClick={onClose}>
+      {slides.length > 1 && (
+        <p className="absolute left-4 top-6 z-20 text-sm font-medium text-white/80 tabular-nums" aria-live="polite">
+          {idx + 1} de {slides.length}
+        </p>
+      )}
       <button className={cn(navBtn, "right-4 top-4")} onClick={onClose} aria-label="Cerrar galería">
         <X className="size-5" />
       </button>
@@ -145,7 +164,12 @@ export function MediaStrip({ slides, offset, onOpen }: { slides: MediaSlide[]; o
               aria-label={more ? `Ver ${hidden + 1} elementos más` : s.type === "video" ? "Ver video" : `Ver imagen${s.alt ? `: ${s.alt}` : ""}`}
               className="group relative aspect-square overflow-hidden rounded-2xl bg-[#18181B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
             >
-              {thumb && <Image src={thumb} alt="" fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />}
+              {thumb ? (
+                <Image src={thumb} alt="" fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+              ) : s.type === "video" ? (
+                // Sin miniatura generada: primer fotograma (solo descarga metadatos).
+                <video src={`${s.url}#t=0.1`} muted playsInline preload="metadata" aria-hidden="true" className="absolute inset-0 size-full object-cover" />
+              ) : null}
               {s.type === "video" && !more && (
                 <span className="absolute inset-0 flex items-center justify-center">
                   <span className="flex size-9 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
