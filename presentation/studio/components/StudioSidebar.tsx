@@ -28,12 +28,12 @@ export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-indigo-50 text-indigo-700"
+                  ? "bg-primary-light text-primary"
                   : "text-slate-600 hover:bg-gray-100 hover:text-slate-900",
               )}
             >
               <item.icon
-                className={cn("h-[18px] w-[18px]", active ? "text-indigo-600" : "text-slate-400")}
+                className={cn("h-[18px] w-[18px]", active ? "text-primary" : "text-slate-400")}
               />
               {item.label}
             </Link>
@@ -43,11 +43,11 @@ export function StudioSidebar({ premiumLabel }: StudioSidebarProps) {
 
       <div className="border-t border-gray-200 p-3">
         <div className="flex items-center gap-2.5 rounded-lg bg-white px-3 py-2.5 shadow-sm ring-1 ring-gray-200">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50">
-            <ShieldCheck className="h-4 w-4 text-indigo-600" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light">
+            <ShieldCheck className="h-4 w-4 text-primary" />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <p className="text-[11px] font-medium text-slate-400">
               Cuenta
             </p>
             <p className="truncate text-sm font-semibold text-slate-800">{premiumLabel}</p>

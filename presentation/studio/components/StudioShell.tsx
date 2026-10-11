@@ -11,7 +11,7 @@ interface StudioShellProps {
 }
 
 /**
- * Layout raíz del Estudio del Organizador: tema claro, header fijo y sidebar
+ * Layout raíz del Estudio: tema claro, header fijo y sidebar
  * fija. Completamente independiente del layout del home y del perfil.
  */
 export function StudioShell({

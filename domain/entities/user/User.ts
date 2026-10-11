@@ -1,6 +1,7 @@
 export type UserParticipation = "consumer" | "creator";
 
 export type UserPlan = "basic" | "premium";
+export type PlanSource = "founder" | "paid" | "manual";
 
 export type SocialPlatform =
   | "instagram"
@@ -31,6 +32,9 @@ export interface User {
     participation: UserParticipation;
     creatorVerified: boolean;
     plan: UserPlan;
+    /** Fin del Premium (fase 1, activación manual). Lo baja `expirePremiumPlans`. */
+    planExpiresAt?: Date;
+    planSource?: PlanSource;
     website?: string;
     socialLinks?: SocialLinkEntry[];
     isUsernameCustomized?: boolean;

@@ -4,7 +4,7 @@ runConfig:
   minInstances: 0
   # maxInstances: 100
   # concurrency: 80
-  cpu: 1
+  cpu: 2
   memoryMiB: 1024
 
 # Environment variables and secrets.
@@ -55,3 +55,17 @@ env:
     secret: eventModerationWebhookSecret
     availability:
       - RUNTIME
+
+  # Android TWA (Digital Asset Links → /.well-known/assetlinks.json).
+  # Ver docs/12-pwa-y-google-play.md. Las huellas son públicas (se sirven en
+  # assetlinks.json), no hace falta secret. App Hosting rechaza entradas sin
+  # `value`/`secret`: descomentar ANDROID_SHA256_CERT_FINGERPRINTS al tener la huella.
+  - variable: ANDROID_PACKAGE_NAME
+    value: com.quehaypahacer.app
+    availability:
+      - RUNTIME
+
+  # - variable: ANDROID_SHA256_CERT_FINGERPRINTS
+  #   value: "AA:BB:...:FF"   # SHA-256 de Play App Signing; varias separadas por coma
+  #   availability:
+  #     - RUNTIME

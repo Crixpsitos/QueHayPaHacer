@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { MessageSquareHeart } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { ContactForm } from "@/app/components/feature/contact/ContactForm";
+
+export const metadata: Metadata = {
+  title: "Contáctanos",
+  description: "Escríbenos si tienes una pregunta, encontraste un problema o quieres proponer algo para Que Hay Pa Hacer? en Ibagué.",
+};
 
 const ContactanosPage = () => {
   return (

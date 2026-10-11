@@ -1,9 +1,13 @@
 "use server";
 
+import { getSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
 import { generateUsername } from "@/app/lib/utils/generateUsername";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
+import * as v from "valibot";
+import type { SocialLinkEntry } from "@/domain/entities/user/User";
 
 interface UpdateProfileInput {
   uid: string;
@@ -13,7 +17,7 @@ interface UpdateProfileInput {
   bio?: string;
   phoneNumber?: string;
   website?: string;
-  socialLinks?: Array<{ platform: string; url: string }>;
+  socialLinks?: SocialLinkEntry[];
   isUsernameCustomized?: boolean;
 }
 
@@ -73,6 +77,7 @@ function resolveFirebaseErrorMessage(error: unknown): string {
 
 export async function updateProfileAction(input: UpdateProfileInput): Promise<UpdateProfileResult> {
   try {
+    if (!input.uid || (await getSessionUid()) !== input.uid) return { success: false, error: "No autorizado." };
     const { userService } = createServerContainer();
 
     // Obtener usuario actual DESDE LA BD para comparar correctamente
@@ -110,13 +115,11 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       };
     }
 
-    // Obtener usuario actual de Firebase Auth para comparar otros campos
-    const currentUserAuth = await getFirebaseAdminAuth().getUser(input.uid);
-
+    const usernameChanged = username !== currentUserDB.displayName;
     const authPayload: { displayName?: string; phoneNumber?: string | null } = {};
-    
-    // Solo actualizar displayName si realmente cambió
-    if (username && username !== currentUserAuth.displayName) {
+
+    // Solo actualizar displayName si realmente cambió (BD = fuente de verdad)
+    if (usernameChanged) {
       authPayload.displayName = username;
     }
     
@@ -138,15 +141,15 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
       bio?: string;
       phoneNumber?: string;
       website?: string;
-      socialLinks?: Array<{ platform: string; url: string }>;
+      socialLinks?: SocialLinkEntry[];
       isUsernameCustomized?: boolean;
     } = {};
 
     // Solo incluir campos que realmente cambiaron
-    if (bio) {
+    if (input.bio !== undefined) {
       dbPayload.bio = bio;
     }
-    if (username && username !== currentUserAuth.displayName) {
+    if (usernameChanged) {
       dbPayload.displayName = username;
     }
     if (firstName) {
@@ -166,19 +169,37 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
     if (input.socialLinks !== undefined) dbPayload.socialLinks = input.socialLinks;
     if (input.isUsernameCustomized !== undefined) dbPayload.isUsernameCustomized = input.isUsernameCustomized;
 
-    await userService.updateUser(input.uid, dbPayload);
+    // Auth primero: si falla (p. ej. teléfono en uso) la BD queda intacta.
+    // Si luego falla la BD, se revierte Auth a los valores previos.
+    const auth = getFirebaseAdminAuth();
+    const hasAuthChanges = Object.keys(authPayload).length > 0;
+    const previousAuth = hasAuthChanges ? await auth.getUser(input.uid) : null;
+    if (hasAuthChanges) await auth.updateUser(input.uid, authPayload);
 
-    if (Object.keys(authPayload).length > 0) {
-      await getFirebaseAdminAuth().updateUser(input.uid, authPayload);
+    try {
+      await userService.updateUser(input.uid, dbPayload);
+    } catch (dbError) {
+      if (previousAuth) {
+        await auth
+          .updateUser(input.uid, {
+            ...("displayName" in authPayload && { displayName: previousAuth.displayName ?? null }),
+            ...("phoneNumber" in authPayload && { phoneNumber: previousAuth.phoneNumber ?? null }),
+          })
+          .catch((e) => console.error("Error revirtiendo Auth tras fallo de BD:", e));
+      }
+      throw dbError;
     }
 
-    revalidateTag(`user-profile-${input.uid}`, "max");
+    updateTag(`user-profile-${input.uid}`);
 
     return { success: true };
   } catch (error) {
     console.error("Error updating profile:", error);
     if (error instanceof Error && error.message === "Username already in use") {
       return { success: false, error: "Ese username ya está en uso. Elige otro." };
+    }
+    if (error instanceof v.ValiError) {
+      return { success: false, error: "Revisa el sitio web y los enlaces: deben ser URLs http(s) válidas." };
     }
     return {
       success: false,

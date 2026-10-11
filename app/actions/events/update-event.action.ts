@@ -3,6 +3,8 @@
 import {
   FormEventSchema,
   FormEventDto,
+  publishEventSchema,
+  publishEventMultiDateSchema,
 } from "@/application/dto/events/EventDto";
 
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -13,7 +15,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { safeParse } from "valibot";
-import { moderationFieldsForSubmission } from "./lib/eventModerationPolicy";
+import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
   success?: boolean;
@@ -54,29 +56,24 @@ export async function updateEventAction(
     return { success: false, error: "No encontramos tu perfil de usuario." };
   }
 
-  const resultParse = safeParse(FormEventSchema, {
+  // author/slug/promotion/status son del servidor (withServerOwnedFields abajo).
+  const input = {
     ...event,
     id: eventId,
+    slug: undefined,
+    // Solo para pasar el schema: withServerOwnedFields conserva el author guardado.
     author: {
-      id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name || "pruebas evento",
-      photoURL: tokens.decodedToken.picture,
+      id: userId,
+      displayName: author.displayName || existingEvent.author.displayName,
+      photoURL: undefined,
     },
-    promotion: {
-      isPromoted: event.promotion?.isPromoted ?? false,
-      promotedAt: event.promotion?.promotedAt ?? null,
-      promotedUntil: event.promotion?.promotedUntil ?? null,
-    },
-  });
+  };
+  const resultParse = safeParse(FormEventSchema, input);
 
   if (!resultParse.success) {
     console.error(
       "Error updating event:",
       JSON.stringify(resultParse.issues, null, 3),
-    );
-    console.log(
-      "esto fue lo que recibi",
-      JSON.stringify(resultParse.output, null, 3),
     );
     return {
       success: false,
@@ -84,26 +81,35 @@ export async function updateEventAction(
     };
   }
 
+  // Un evento publicado/en revisión no puede quedar con datos que no pasarían
+  // la validación de publicación.
+  if (existingEvent.status === "published" || existingEvent.status === "pending") {
+    const publishParse = safeParse(
+      existingEvent.eventType === "multi-date"
+        ? publishEventMultiDateSchema
+        : publishEventSchema,
+      {
+        ...input,
+        slug: existingEvent.slug,
+        status: existingEvent.status,
+        publishedAt: new Date().toISOString(),
+      },
+    );
+    if (!publishParse.success) {
+      return { success: false, error: publishParse.issues[0].message };
+    }
+  }
+
   const parsedData = EventViewModelMapper.toDomain(
     resultParse.output as unknown as EventViewModel,
   );
 
-  const updatedEvent = {
-    ...existingEvent,
-    ...parsedData,
-    id: eventId,
-    author: existingEvent.author,
-  };
+  // El cliente no cambia tipo (multi-fecha es Premium), estado, moderación,
+  // promoción ni analytics: se conservan los del evento guardado.
+  const updatedEvent = enforcePlanFeatures(withServerOwnedFields(existingEvent, parsedData), author);
 
-  if (existingEvent.status === "published" || parsedData.status === "published") {
+  if (existingEvent.status === "published") {
     Object.assign(updatedEvent, moderationFieldsForSubmission(author));
-  } else {
-    updatedEvent.moderationStatus = existingEvent.moderationStatus;
-    updatedEvent.moderationMode = existingEvent.moderationMode;
-    updatedEvent.rejectionReason = existingEvent.rejectionReason;
-    updatedEvent.submittedAt = existingEvent.submittedAt;
-    updatedEvent.reviewedAt = existingEvent.reviewedAt;
-    updatedEvent.reviewedBy = existingEvent.reviewedBy;
   }
 
   try {
@@ -117,7 +123,8 @@ export async function updateEventAction(
     }
     revalidatePath(`/eventos/${eventId}`, "page");
     updateTag(`event-${eventId}`);
-    updateTag(`user-events-${userId}`);
+    updateTag(`profile-events-${userId}`);
+    updateTag(`profile-stats-${userId}`);
     revalidatePath("/profile/events", "page");
 
     return { success: true };

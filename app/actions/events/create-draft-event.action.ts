@@ -1,5 +1,6 @@
 "use server";
 
+import { enforcePlanFeatures } from "./lib/eventModerationPolicy";
 import {
   FormEventDto,
   FormEventSchema,
@@ -35,28 +36,30 @@ export async function createDraftEventAction(
   const { eventsService, userService } = createServerContainer();
   const author = await userService.getUserById(tokens.decodedToken.uid);
 
-  // Multi-fecha es exclusivo de cuentas profesionales.
+  // Multi-fecha es exclusivo del plan Premium.
   if (
     event.eventType === "multi-date" &&
     author?.plan !== "premium"
   ) {
     return {
       success: false,
-      error: "Los eventos multi-fecha son exclusivos de cuentas profesionales.",
+      error: "Los eventos multi-fecha son exclusivos del plan Premium.",
     };
   }
-
-  console.log("probandooooo", event)
 
   const resultParse = safeParse(FormEventSchema, {
     ...event,
     slug: event.title
       ? `${toSlug(event.title)}-${Date.now().toString(36)}`
       : undefined,
+    // Server-owned: siempre nace borrador (publicar pasa por moderación en
+    // publishEventAction) y sin promoción (no hay flujo de pago).
+    status: "draft",
+    promotion: undefined,
     author: {
       id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name ?? "pruebas evento",
-      photoURL: tokens.decodedToken.picture || undefined,
+      displayName: author?.displayName || tokens.decodedToken.name || "",
+      photoURL: author?.photoURL || tokens.decodedToken.picture || undefined,
     },
   });
 
@@ -70,16 +73,15 @@ export async function createDraftEventAction(
       })),
     );
 
-    console.log("probandooooo")
-
     return {
       success: false,
       error: resultParse.issues.map((issue) => issue.message).join(", "),
     };
   }
 
-  const parsedData = EventViewModelMapper.toDomain(
-    resultParse.output as unknown as EventViewModel,
+  const parsedData = enforcePlanFeatures(
+    EventViewModelMapper.toDomain(resultParse.output as unknown as EventViewModel),
+    author,
   );
 
   try {
@@ -90,7 +92,8 @@ export async function createDraftEventAction(
     const eventViewModel = EventViewModelMapper.toViewModel(event);
     const userId = tokens.decodedToken.uid;
 
-    updateTag(`user-events-${userId}`);
+    updateTag(`profile-events-${userId}`);
+    updateTag(`profile-stats-${userId}`);
     revalidatePath("/profile/events", "layout");
     return { success: true, eventInfo: eventViewModel };
   } catch (error) {

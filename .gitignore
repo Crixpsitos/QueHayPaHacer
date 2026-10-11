@@ -44,3 +44,14 @@ next-env.d.ts
 
 # backups de scripts de prueba
 .tmp/
+
+# Android TWA (Bubblewrap): llaves de firma y builds fuera del repo
+*.keystore
+*.jks
+/twa/
+*.aab
+*.apk
+
+# El gestor es pnpm (pnpm-lock.yaml); otros lockfiles rompen la CI.
+package-lock.json
+yarn.lock

@@ -6,7 +6,7 @@ import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/con
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 
 interface RegisterActionResult {
     error?: string;
@@ -67,8 +67,8 @@ export async function registerAction(
                     "new-user",
                     "Registro completado"
                 )
-                revalidateTag(`profile-badges-${uid}`, "max")
-                revalidateTag(`profile-stats-${uid}`, "max")
+                updateTag(`profile-badges-${uid}`)
+                updateTag(`profile-stats-${uid}`)
             } catch (badgeError) {
                 console.warn("No se pudo asignar insignia de usuario nuevo:", badgeError)
             }

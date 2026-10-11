@@ -1,8 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getPremiumSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 import { revalidatePath } from "next/cache";
 
@@ -11,11 +10,11 @@ export async function cancelInvitationAction(
   inviteId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const tokens = await getTokens(await cookies(), authConfig);
-    if (!tokens) return { success: false, error: "No hay sesión activa." };
+    const uid = await getPremiumSessionUid();
+    if (!uid) return { success: false, error: "No hay sesión activa." };
 
     const { studioService } = createServerContainer();
-    await studioService.cancelInvitation(inviteId, tokens.decodedToken.uid);
+    await studioService.cancelInvitation(inviteId, uid);
     revalidatePath("/studio/collaborators");
     return { success: true };
   } catch (error) {

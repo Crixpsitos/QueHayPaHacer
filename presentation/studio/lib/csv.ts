@@ -1,6 +1,8 @@
 /** Utilidades de exportación CSV (cliente, sin dependencias ni storage). */
 
-const escapeCell = (value: string): string => {
+export const escapeCell = (raw: string): string => {
+  // Neutraliza fórmulas (CSV injection): respuestas de formulario son input de terceros.
+  const value = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   const needsQuotes = /[",\n;]/.test(value);
   const escaped = value.replace(/"/g, '""');
   return needsQuotes ? `"${escaped}"` : escaped;

@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// PROPUESTA versionada (P0-C). NO desplegada.
+// El cliente no usa el SDK de Storage: sube con URLs firmadas V4
+// (generateUploadUrl, requiere sesión) y lee por URL pública/firmada.
+// Ninguna de las dos pasa por estas reglas, así que el SDK cliente queda cerrado.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

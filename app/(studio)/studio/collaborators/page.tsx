@@ -1,17 +1,18 @@
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import type { Metadata } from "next";
+import { getPremiumSessionUid } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { CollaboratorsView } from "@/presentation/studio/components/collaborators/CollaboratorsView";
 import type { StudioCollaboratorsViewModel } from "@/presentation/studio/view-models/StudioCollaboratorsViewModel";
 
+export const metadata: Metadata = { title: "Colaboradores" };
+
 export default async function StudioCollaboratorsPage() {
   let data: StudioCollaboratorsViewModel = { received: [], sent: [], network: [] };
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (tokens) {
+  // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
+  const uid = await getPremiumSessionUid();
+  if (uid) {
     const { studioService } = createServerContainer();
-    const uid = tokens.decodedToken.uid;
     const [received, sent, network] = await Promise.all([
       studioService.getReceivedInvitations(uid),
       studioService.getSentInvitations(uid),

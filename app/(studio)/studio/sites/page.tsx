@@ -1,10 +1,11 @@
+import type { Metadata } from "next";
+import { getPremiumSessionUid } from "@/app/actions/_session";
 import { SitesList } from "@/presentation/studio/components/sites/SitesList";
 import type { OrganizerSiteListItem, GetStudioListParams } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { cacheLife, cacheTag } from "next/cache";
+
+export const metadata: Metadata = { title: "Sitios" };
 
 const DEFAULT_LIMIT = 12;
 const LIMIT_OPTIONS = [12, 24, 48];
@@ -32,14 +33,15 @@ export default async function StudioSitesPage({ searchParams }: StudioSitesPageP
   const limit = LIMIT_OPTIONS.includes(Number(sp.limit)) ? Number(sp.limit) : DEFAULT_LIMIT;
   const search = sp.q?.trim() || undefined;
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens) {
+  // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
+  const uid = await getPremiumSessionUid();
+  if (!uid) {
     return <SitesList sites={[]} limit={limit} limitOptions={LIMIT_OPTIONS} query={search ?? ""} />;
   }
 
   let sites: OrganizerSiteListItem[] = [];
   try {
-    sites = await getCachedOrganizerSites(tokens.decodedToken.uid, { limit, search });
+    sites = await getCachedOrganizerSites(uid, { limit, search });
   } catch (error) {
     console.error("[StudioSitesPage] getOrganizerSites failed", error);
   }

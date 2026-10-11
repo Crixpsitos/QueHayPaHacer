@@ -6,7 +6,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { UserSearchItem } from "@/domain/entities/studio/Studio";
 
-/** Busca usuarios para invitar a mi red (typeahead). Solo cuentas profesionales. */
+/** Busca usuarios para invitar a mi red (typeahead). Solo plan Premium. */
 export async function searchCollaboratorsAction(
   query: string,
 ): Promise<{ success: boolean; error?: string; results?: UserSearchItem[] }> {
@@ -18,7 +18,7 @@ export async function searchCollaboratorsAction(
     const { userService, studioService } = createServerContainer();
     const me = await userService.getUserById(tokens.decodedToken.uid);
     if (me?.plan !== "premium") {
-      return { success: false, error: "Solo cuentas profesionales pueden invitar colaboradores." };
+      return { success: false, error: "Necesitas el plan Premium para invitar colaboradores." };
     }
 
     const results = await studioService.searchPotentialCollaborators(

@@ -18,7 +18,8 @@ import type { Events } from "@/domain/entities/events/Events";
 const EMPTY_INFO = {
   title: "Todavía no hay eventos en esta colección",
   description:
-    "Estamos sumando planes nuevos constantemente. Vuelve pronto para descubrir qué hay pa' hacer.",
+    "Estamos sumando planes nuevos constantemente. Mientras tanto, revisa la agenda completa.",
+  action: { href: "/eventos", label: "Ver todos los eventos" },
 };
 
 /** ItemList JSON-LD → elegibilidad para carrusel de eventos en Google (URLs absolutas). */

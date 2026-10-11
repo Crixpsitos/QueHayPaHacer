@@ -12,7 +12,7 @@ export const EventsSectionsSkeleton = () => {
 
         <Separator className="my-6" />
 
-        <div className="w-full h-80 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+        <CardGridSkeleton />
       </ContentSection>
 
       <ContentSection title="Eventos para esta semana">
@@ -23,8 +23,27 @@ export const EventsSectionsSkeleton = () => {
 
         <Separator className="my-6" />
 
-        <div className="w-full h-80 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+        <CardGridSkeleton />
       </ContentSection>
     </>
   );
 };
+
+/** Misma forma que `EventCard`: imagen 4:3 + categoría, título, fecha, precio. */
+function CardGridSkeleton() {
+  return (
+    <div className="grid animate-pulse grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white">
+          <div className="aspect-4/3 bg-[#F4F4F5]" />
+          <div className="space-y-2 p-4">
+            <div className="h-3 w-1/4 rounded bg-[#F4F4F5]" />
+            <div className="h-4 w-4/5 rounded bg-[#F4F4F5]" />
+            <div className="h-3 w-1/2 rounded bg-[#F4F4F5]" />
+            <div className="h-3 w-1/5 rounded bg-[#F4F4F5]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

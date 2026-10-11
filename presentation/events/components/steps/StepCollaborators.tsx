@@ -20,7 +20,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /**
- * Step del wizard (solo cuentas profesionales) para acreditar colaboradores de
+ * Step del wizard (solo plan Premium) para acreditar colaboradores de
  * MI red en el evento. Todo vive en el estado del form (collaborators /
  * collaboratorsData) y se persiste con el save del evento — no requiere borrador.
  */

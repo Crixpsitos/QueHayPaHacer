@@ -11,7 +11,6 @@ import { InfiniteEventList } from "@/presentation/events/components/InfiniteEven
 import {
   fetchExploreResults,
   fetchBrowseData,
-  fetchActiveCategories,
   type ExploreBrowseEventSection,
   type ExploreBrowseSiteSection,
   type ExploreFilters,
@@ -21,14 +20,13 @@ import {
   CATEGORY_COLOR_MAP,
   CATEGORY_FALLBACK_COLOR,
 } from "@/presentation/categories/lib/categoryIconMap";
-import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
 import type { SiteCategory } from "@/presentation/sites/view-models/SiteFormViewModel";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const metadata: Metadata = {
-  title: "Explorar — Que Hay Pa Hacer?",
+  title: "Explorar",
   description: "Descubre eventos y lugares en Ibagué.",
   alternates: { canonical: "/explorar" },
 };
@@ -76,13 +74,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
   const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice);
 
   // Siempre cargamos el browse: da las categorías con íconos y eventos base
-  const [browseData, categories] = await Promise.all([
-    fetchBrowseData(),
-    fetchActiveCategories(),
-  ]);
-
-  // Mapa categoría id → metadatos (para enriquecer resultados de búsqueda)
-  const catById = Object.fromEntries(categories.map((c) => [c.id, c]));
+  const browseData = await fetchBrowseData();
 
   let eventSections: ExploreBrowseEventSection[] = browseData.eventSections;
   let siteSections: ExploreBrowseSiteSection[] = browseData.siteSections;
@@ -94,26 +86,18 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
     searchTotal = data.total;
     hasMoreEvents = data.hasMoreEvents;
 
-    // Agrupar eventos por categoría para mantener el mismo layout de secciones
-    const grouped: Record<string, EventViewModel[]> = {};
-    for (const ev of data.events) {
-      const id = ev.categoryInfo?.id ?? "other";
-      grouped[id] = grouped[id] ?? [];
-      grouped[id].push(ev);
-    }
-
-    // Secciones de búsqueda solo con categorías que tienen resultados
-    eventSections = Object.entries(grouped).map(([catId, events]) => {
-      const cat = catById[catId];
-      return {
-        categoryId: catId,
-        title: cat?.title ?? "Otros",
-        icon: cat?.icon ?? "other",
-        collectionSlug: `eventos-${cat?.slug ?? catId}-ibague`,
-        events,
-        nextCursor: null,
-      };
-    });
+    // Una sola sección plana: la paginación por offset trae resultados de todas las
+    // categorías, así que agrupar por categoría mezclaba páginas en la última sección.
+    eventSections = data.events.length > 0
+      ? [{
+          categoryId: "search",
+          title: "Eventos",
+          icon: "party",
+          collectionSlug: "eventos",
+          events: data.events,
+          nextCursor: null,
+        }]
+      : [];
 
     // Sitios agrupados por categoría
     const siteGrouped: Record<string, SiteDetail[]> = {};
@@ -189,12 +173,11 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
       {/* Secciones de eventos por categoría */}
       {eventSections.length > 0 && (
         <div className="space-y-12">
-          {eventSections.map((section, idx) => (
+          {eventSections.map((section) => (
             <EventCategorySection
               key={section.categoryId}
               section={section}
               isSearch={isSearch}
-              isLast={idx === eventSections.length - 1 && siteSections.length === 0}
               q={q} from={from} to={to}
               filters={filters}
               hasMoreEvents={hasMoreEvents}
@@ -248,14 +231,12 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
 function EventCategorySection({
   section,
   isSearch,
-  isLast,
   q, from, to,
   filters,
   hasMoreEvents,
 }: {
   section: ExploreBrowseEventSection;
   isSearch: boolean;
-  isLast: boolean;
   q: string;
   from?: string;
   to?: string;
@@ -292,7 +273,7 @@ function EventCategorySection({
           q={q} from={from} to={to}
           filters={filters}
           initialEvents={section.events}
-          initialHasMore={isLast && hasMoreEvents}
+          initialHasMore={hasMoreEvents}
         />
       ) : (
         <InfiniteEventList

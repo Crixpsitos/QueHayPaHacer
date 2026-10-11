@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, Sparkles, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
+import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { cn } from "@/app/lib/utils/cn";
 import { Button } from "../../ui/button/button";
@@ -50,14 +51,21 @@ export function NavbarAccountMenu({
   }
 
   const isPremium = user?.profile?.plan === "premium";
+  const isCreatorVerified = user?.profile?.creatorVerified === true;
   const participationLabel = user?.profile?.participation === "creator"
     ? "Creador"
     : "Consumidor";
-
-  const displayName = user?.displayName ?? user?.profile?.username ?? "Tu cuenta";
+  const planLabel = isPremium ? "Premium" : "Básico";
+  const fullName = `${user?.profile?.firstName ?? ""} ${user?.profile?.lastName ?? ""}`.trim();
+  const username = user?.profile?.username ?? user?.displayName;
+  const displayName = fullName || user?.displayName || username || "Tu cuenta";
+  const avatarUrl = user?.profile?.photoURL ?? user?.photoURL;
+  const avatarFallback = displayName[0]?.toUpperCase();
 
   const handleLogout = async () => {
     setUser(null);
+    // Cerrar también la sesión del SDK cliente; si no, onIdTokenChanged puede restaurar la cookie.
+    await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
     router.refresh();
   };
@@ -72,9 +80,9 @@ export function NavbarAccountMenu({
             className="size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
           >
             <Avatar className="size-9">
-              {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
-                {user?.displayName?.[0]?.toUpperCase() ?? (
+                {avatarFallback ?? (
                   <UserIcon className="size-5" aria-hidden="true" />
                 )}
               </AvatarFallback>
@@ -97,14 +105,16 @@ export function NavbarAccountMenu({
             className="h-9 gap-1.5 pl-1.5 pr-2"
           >
             <Avatar size="sm">
-              {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
-                {user?.displayName?.[0]?.toUpperCase() ?? (
+                {avatarFallback ?? (
                   <UserIcon className="size-3.5" aria-hidden="true" />
                 )}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden max-w-28 truncate text-sm sm:inline">{displayName}</span>
+            <span className="hidden max-w-28 truncate text-sm sm:inline">
+              {username ? `@${username}` : displayName}
+            </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
           </Button>
         )}
@@ -114,11 +124,22 @@ export function NavbarAccountMenu({
         <DropdownMenuLabel className="pb-2 font-normal">
           <div className="flex flex-col gap-0.5">
             <span className="truncate font-semibold text-foreground">
-              {user?.profile?.username ? `@${user.profile.username}` : displayName}
+              {displayName}
             </span>
-            <span className="truncate text-xs capitalize text-muted-foreground">
-              {participationLabel}
+            {username && (
+              <span className="truncate text-xs text-muted-foreground">
+                @{username}
+              </span>
+            )}
+            <span className="mt-1 truncate text-xs text-muted-foreground">
+              {participationLabel} · {planLabel}
             </span>
+            {isCreatorVerified && (
+              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                <BadgeCheck className="size-3.5" aria-hidden="true" />
+                Creador verificado por QHPA
+              </span>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -138,7 +159,7 @@ export function NavbarAccountMenu({
         {!user && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/login">Iniciar sesion</Link>
+              <Link href="/login">Iniciar sesión</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/register">Crear cuenta</Link>
@@ -166,11 +187,18 @@ export function NavbarAccountMenu({
                 Mis sitios
               </Link>
             </DropdownMenuItem>
-            {isPremium && (
+            {isPremium ? (
               <DropdownMenuItem asChild>
                 <Link href="/studio" className={cn("flex items-center gap-2")}>
                   <LayoutDashboard className="size-4" aria-hidden="true" />
                   Ir a estudio
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild>
+                <Link href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
+                  <Sparkles className="size-4" aria-hidden="true" />
+                  Mejorar a Premium
                 </Link>
               </DropdownMenuItem>
             )}

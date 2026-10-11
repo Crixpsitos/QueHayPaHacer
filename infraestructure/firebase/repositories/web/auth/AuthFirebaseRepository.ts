@@ -21,6 +21,13 @@ export class AuthFirebaseRepository implements IAuthRepository {
   }
 
   logout(): Promise<void> {
+    // El HTML cacheado por el service worker (public/sw.js) incluye estado por
+    // usuario (likes, registro): se descarta al cerrar sesión.
+    if (typeof caches !== "undefined") {
+      void caches.keys().then((keys) =>
+        Promise.all(keys.filter((k) => k.startsWith("qhpa-pages-")).map((k) => caches.delete(k))),
+      );
+    }
     return signOut(this.auth);
   }
 

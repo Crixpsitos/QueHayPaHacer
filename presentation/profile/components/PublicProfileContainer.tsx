@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
 import { Container } from "@/app/components/layout/shared/Container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getCachedProfileStats, getCachedUserBadges } from "../lib/cachedProfileData";
+import { getCachedProfileStats } from "../lib/cachedProfileData";
 import { resolvePublicUser } from "../lib/resolvePublicUser";
 import { PublicProfileViewModelMapper } from "../mapper/PublicProfileViewModelMapper";
 import { PublicProfileHeader } from "./PublicProfileHeader";
@@ -33,7 +33,7 @@ export const PublicProfileContainer = async ({ handle }: PublicProfileContainerP
       <div className="space-y-6">
         <PublicProfileHeader
           profile={profile}
-          statsPromise={getCachedProfileStats(resolvedUser.uid)}
+          statsPromise={profile.isPublic ? getCachedProfileStats(resolvedUser.uid) : undefined}
         />
       </div>
       {profile.isPublic ? (

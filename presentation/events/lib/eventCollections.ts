@@ -31,6 +31,8 @@ export interface CollectionDef {
    * el slug — datos de seed viejos). Matchear por ambos los captura todos.
    */
   categorySlug?: string;
+  /** Solo para kind "category": clave de `CATEGORY_ICON_MAP` (ej. "music"). */
+  categoryIcon?: string;
   /** Nombre corto para chips/tabs (ej. "Destacados", "Música"). */
   shortLabel: string;
   /** H1 de la landing. */
@@ -139,6 +141,7 @@ export async function getEventCollections(): Promise<CollectionDef[]> {
         cityLabel: city.label,
         categoryId: cat.id,
         categorySlug: cat.slug,
+        categoryIcon: cat.icon,
         shortLabel: cat.title,
         title: `Eventos de ${cat.title} en ${city.label}`,
         description: `Descubre los mejores eventos de ${cat.title} en ${city.label}.`,

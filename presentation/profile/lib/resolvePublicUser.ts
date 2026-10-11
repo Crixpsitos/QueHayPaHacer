@@ -25,14 +25,5 @@ export const resolvePublicUser = async (rawHandle: string): Promise<User | null>
     return byUsername;
   }
 
-  const byId = await userService.getUserById(handle);
-  if (byId) {
-    return byId;
-  }
-
-  const normalizedHandle = handle.toLocaleLowerCase("es");
-  const users = await userService.getAllUsers();
-  return users.find(
-    (user) => user.displayName.toLocaleLowerCase("es") === normalizedHandle,
-  ) ?? null;
+  return userService.getUserById(handle);
 };

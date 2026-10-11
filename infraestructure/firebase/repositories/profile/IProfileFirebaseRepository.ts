@@ -11,8 +11,8 @@ import type {
  */
 export interface IProfileFirebaseRepository {
   getStats(uid: string): Promise<ProfileStats>;
-  getUserEvents(uid: string): Promise<FirestoreDoc[]>;
-  getUserSites(uid: string): Promise<FirestoreDoc[]>;
-  getUserEventInteractions(uid: string): Promise<ProfileInteractionsRaw>;
-  getUserBadges(uid: string): Promise<FirestoreDoc[]>;
+  getUserEvents(uid: string, limit?: number): Promise<FirestoreDoc[]>;
+  getUserSites(uid: string, limit?: number): Promise<FirestoreDoc[]>;
+  getUserEventInteractions(uid: string, limit?: number): Promise<ProfileInteractionsRaw>;
+  getUserBadges(uid: string, limit?: number): Promise<FirestoreDoc[]>;
 }

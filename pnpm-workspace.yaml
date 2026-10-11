@@ -2,3 +2,4 @@ allowBuilds:
   '@firebase/util': true
   protobufjs: true
   unrs-resolver: true
+  esbuild: true

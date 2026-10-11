@@ -17,6 +17,7 @@ export interface User extends UserInfo {
     participation: UserParticipation;
     creatorVerified: boolean;
     plan: UserPlan;
+    planExpiresAt?: string | null;
     bio: string | null;
     photoURL?: string | null;
     imagePath?: string | null;

@@ -47,7 +47,7 @@ export function SitesList({ sites, limit, limitOptions, query }: SitesListProps)
             <Link
               key={site.id}
               href={`/studio/sites/${site.id}`}
-              className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
             >
               <div className="relative aspect-[16/9] w-full bg-slate-100">
                 {site.image ? (
@@ -69,7 +69,7 @@ export function SitesList({ sites, limit, limitOptions, query }: SitesListProps)
               </div>
 
               <div className="flex flex-1 flex-col p-4">
-                <h2 className="font-semibold text-slate-900 group-hover:text-indigo-700">{site.name}</h2>
+                <h2 className="font-semibold text-slate-900 group-hover:text-primary">{site.name}</h2>
 
                 {/* Engagement: clicks (alcance) · likes (afinidad) · shares (viralidad) */}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
@@ -83,7 +83,7 @@ export function SitesList({ sites, limit, limitOptions, query }: SitesListProps)
                     <CalendarRange className="h-3.5 w-3.5 text-slate-400" />
                     <span className="font-semibold tabular-nums">{site.eventsCount}</span> eventos
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
                     Ver detalle
                     <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </span>

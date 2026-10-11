@@ -1,30 +1,24 @@
 "use client";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
-import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
-import { updateTagAction } from "../../../../app/actions/cache/update-tag.action";
-import { Button } from "@/app/components/ui/button/button";
+import Link from "next/link";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
-import { RotateCcw, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useRef } from "react";
 import { EventCard } from "./EventCard";
-import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { cn } from "@/app/lib/utils/cn";
-
-const FEATURED_EVENTS_TAG = "featured-events";
 
 interface EventCardInteractiveProps {
   events: EventViewModel[];
   likedByEventId?: Record<string, boolean>;
-  info: {title: string, description: string}
+  /** Estado vacío (no es un error: los errores van al error boundary). */
+  info: { title: string; description?: string; action?: { href: string; label: string } };
   variant?: "horizontal" | "vertical";
   /** Máximo de columnas en modo vertical (default 4). */
   columns?: 2 | 3 | 4;
-  /** Oculta la fila del autor en cada tarjeta. */
-  hideAuthor?: boolean;
 }
 
 interface PendingLikeState {
@@ -43,12 +37,10 @@ export function EventCardInteractive({
   info,
   variant = "horizontal",
   columns = 4,
-  hideAuthor = false,
 }: EventCardInteractiveProps) {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<PendingLikeState | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -59,14 +51,12 @@ export function EventCardInteractive({
   const fetchingRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user?.uid || events.length === 0) {
-      setDynamicLikes({});
-      return;
-    }
+    if (!user?.uid || events.length === 0) return;
     const key = `${user.uid}:${eventIdsKey}`;
     if (fetchingRef.current === key) return; // ya en vuelo
     fetchingRef.current = key;
 
+    // ponytail: un POST por grilla (no por tarjeta); el home hace 2-3. Un solo fetch por página si molesta.
     fetch("/api/events/likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -82,8 +72,9 @@ export function EventCardInteractive({
   }, [user?.uid, eventIdsKey]);
 
   const effectiveLikes = useMemo(
-    () => ({ ...likedByEventId, ...dynamicLikes }),
-    [likedByEventId, dynamicLikes],
+    // Sin sesión se ignoran los likes del fetch anterior (p. ej. tras cerrar sesión).
+    () => ({ ...likedByEventId, ...(user?.uid ? dynamicLikes : {}) }),
+    [likedByEventId, dynamicLikes, user?.uid],
   );
 
   useEffect(() => {
@@ -144,51 +135,21 @@ export function EventCardInteractive({
     showToast(message, "error");
   };
 
-  const handleViewDetails = (event: EventViewModel) => {
-    // Registro de vista no bloqueante (solo cuenta una vez por usuario autenticado).
-    void recordEventViewAction(event.id, user?.uid);
-  };
-
-  const handleReload = async () => {
-    setIsLoading(true);
-    try {
-      const result = await updateTagAction(FEATURED_EVENTS_TAG);
-      if (result?.error) {
-        console.error(result.error);
-        setIsLoading(false);
-        return;
-      }
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch (error) {
-      console.error("Error reloading events:", error);
-      
-    }finally {
-      setIsLoading(false);
-    }
-  };
-
-
-
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-        <h3 className="text-xl font-semibold text-foreground mb-2">
-          {info.title}
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
-          {info.description}
-        </p>
-        <Button
-          onClick={handleReload}
-          disabled={isLoading || isPending}
-          variant="outline"
-          className="gap-2"
-        >
-          <RotateCcw className="size-4" />
-          {isLoading || isPending ? "Actualizando..." : "Reintentar"}
-        </Button>
+      <div className="flex flex-col items-center px-6 py-14 text-center">
+        <p className="font-heading text-lg font-semibold text-[#09090B]">{info.title}</p>
+        {info.description && (
+          <p className="mt-1 max-w-md text-sm leading-relaxed text-[#71717A]">{info.description}</p>
+        )}
+        {info.action && (
+          <Link
+            href={info.action.href}
+            className="mt-5 inline-flex h-10 items-center rounded-full border border-[#E4E4E7] px-5 text-sm font-semibold text-[#09090B] transition-colors hover:border-[#09090B]"
+          >
+            {info.action.label}
+          </Link>
+        )}
       </div>
     );
   }
@@ -204,16 +165,9 @@ export function EventCardInteractive({
           <EventCard
             key={event.id}
             event={event}
-            variant={variant}
             attendeeCount={event.analytics?.registrations ?? 0}
-            initialLikes={event.analytics?.likes ?? 0}
             initialLiked={effectiveLikes[event.id] ?? false}
-            viewCount={event.analytics?.views ?? 0}
-            isFirstEvent={event.metadata?.isFirstEvent ?? false}
-            hideAuthor={hideAuthor}
             onLike={handleLike}
-            onShare={(ev) => shareEventAction(ev.id)}
-            onViewDetails={handleViewDetails}
             prioritizeImage={index === 0}
           />
         ))}

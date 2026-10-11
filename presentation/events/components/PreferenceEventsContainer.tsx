@@ -30,7 +30,7 @@ export function PreferenceEventsContainer() {
       <Separator className="my-6" />
       <EventCardInteractive
         events={events}
-        info={{ title: "Lamentablemente no hay eventos recomendados :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
+        info={{ title: "No hay recomendaciones por ahora" }}
         variant="vertical"
       />
     </ContentSection>

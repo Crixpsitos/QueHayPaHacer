@@ -16,7 +16,9 @@ export const contentType = "image/png";
  */
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = (await fetchEventDetailBySlug(id)) ?? (await fetchEventDetailById(id));
+  const found = (await fetchEventDetailBySlug(id)) ?? (await fetchEventDetailById(id));
+  // Borradores/en revisión/rechazados: OG genérica, sin filtrar título ni portada.
+  const event = found?.status === "published" ? found : null;
 
   const title = event?.title ?? "Evento en Ibagué";
   const category = event?.categoryInfo?.title;

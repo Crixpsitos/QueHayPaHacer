@@ -1,6 +1,10 @@
 "use server";
 
-import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
+import { getSessionUid } from "@/app/actions/_session";
+
+import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
+import { removeServerCookies } from "next-firebase-auth-edge/next/cookies";
+import { cookies } from "next/headers";
 import { createServerContainer } from "@/infraestructure/di/container";
 
 interface DeleteAccountPayload {
@@ -18,13 +22,7 @@ export async function deleteAccountAction(
 ): Promise<DeleteAccountResult> {
   try {
     const { uid } = payload;
-
-    if (!uid) {
-      return {
-        success: false,
-        error: "No hay sesión activa para eliminar la cuenta.",
-      };
-    }
+    if (!uid || (await getSessionUid()) !== uid) return { success: false, error: "No autorizado." };
 
     const { userService } = createServerContainer();
 
@@ -38,6 +36,8 @@ export async function deleteAccountAction(
 
     // Eliminar el usuario de Firebase Auth
     await getFirebaseAdminAuth().deleteUser(uid);
+    // Sin esto la cookie de sesión sigue viva hasta expirar.
+    await removeServerCookies(await cookies(), { cookieName: authConfig.cookieName });
 
     return {
       success: true,
@@ -53,10 +53,6 @@ export async function deleteAccountAction(
           error: "El usuario no existe.",
         };
       }
-      return {
-        success: false,
-        error: error.message,
-      };
     }
 
     return {

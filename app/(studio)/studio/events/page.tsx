@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getPremiumSessionUid } from "@/app/actions/_session";
 import { EventsList } from "@/presentation/studio/components/events/EventsList";
 import type { StudioEventListItem } from "@/presentation/studio/view-models/StudioEventsViewModel";
 import type {
@@ -5,10 +7,9 @@ import type {
   OrganizerEventsPage,
 } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { cacheLife } from "next/cache";
+
+export const metadata: Metadata = { title: "Mis eventos" };
 
 const DEFAULT_LIMIT = 10;
 const LIMIT_OPTIONS = [10, 25, 50];
@@ -51,8 +52,9 @@ export default async function StudioEventsPage({ searchParams }: StudioEventsPag
   const direction = sp.direction === "prev" ? "prev" : "next";
   const search = sp.q?.trim() || undefined;
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (!tokens) {
+  // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
+  const uid = await getPremiumSessionUid();
+  if (!uid) {
     return (
       <EventsList
         events={[]}
@@ -67,7 +69,7 @@ export default async function StudioEventsPage({ searchParams }: StudioEventsPag
 
   let page = EMPTY_PAGE;
   try {
-    page = await getCachedOrganizerEvents(tokens.decodedToken.uid, {
+    page = await getCachedOrganizerEvents(uid, {
       limit,
       cursor: sp.cursor,
       direction,

@@ -23,14 +23,13 @@ export function MultiDatePremiumRequiredDialog() {
         onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10">
-            <CalendarClock className="h-6 w-6 text-violet-600 dark:text-violet-500" />
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#E63946]/10">
+            <CalendarClock className="h-6 w-6 text-[#E63946]" />
           </div>
           <DialogTitle>Función exclusiva del plan Premium</DialogTitle>
           <DialogDescription>
             Los eventos multifecha con varias sesiones están disponibles con el
-            plan Premium. Puedes crear un evento estándar o consultar tu
-            membresía desde el perfil.
+            plan Premium. Puedes crear un evento estándar o conocer Premium.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
@@ -42,10 +41,10 @@ export function MultiDatePremiumRequiredDialog() {
             Crear evento estándar
           </Button>
           <Button
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push("/premium")}
             className="w-full font-semibold sm:w-auto"
           >
-            Ir a mi perfil
+            Conocer Premium
           </Button>
         </DialogFooter>
       </DialogContent>

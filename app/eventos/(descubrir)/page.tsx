@@ -48,7 +48,7 @@ export default async function EventosIndexPage() {
 
         {categoryCollections.length > 0 && (
           <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+            <p className="mb-3 text-sm font-medium text-[#71717A]">
               Explorar por categoría
             </p>
             <EventsCategoryChips collections={categoryCollections} />

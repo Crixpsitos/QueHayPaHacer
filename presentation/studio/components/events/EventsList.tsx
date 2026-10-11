@@ -37,7 +37,7 @@ export function EventsList({
         </div>
         <Link
           href="/eventos/create"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark"
         >
           <Plus className="h-4 w-4" />
           Crear evento
@@ -61,7 +61,7 @@ export function EventsList({
           <EventsTable events={events} query={query} />
         </div>
 
-        {events.length > 0 && (
+        {(nextCursor || prevCursor) && (
           <div className="border-t border-gray-200 px-3 py-2.5">
             <CursorPagination
               basePath="/studio/events"

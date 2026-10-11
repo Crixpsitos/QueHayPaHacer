@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useState, useTransition } from "react";
 
@@ -24,21 +25,21 @@ const registerSchema = v.pipe(
     email: v.pipe(
       v.string(),
       v.nonEmpty("El correo es obligatorio"),
-      v.email("Ingresa un correo valido"),
+      v.email("Ingresa un correo válido"),
     ),
     phoneNumber: v.pipe(
       v.string(),
-      v.nonEmpty("El numero de telefono es obligatorio"),
+      v.nonEmpty("El número de teléfono es obligatorio"),
       v.regex(/^\d{7,10}$/, "Solo digitos, sin prefijo +57"),
     ),
     password: v.pipe(
       v.string(),
-      v.nonEmpty("La contrasena es obligatoria"),
-      v.minLength(6, "La contrasena debe tener al menos 6 caracteres"),
+      v.nonEmpty("La contraseña es obligatoria"),
+      v.minLength(6, "La contraseña debe tener al menos 6 caracteres"),
     ),
     confirmPassword: v.pipe(
       v.string(),
-      v.nonEmpty("Confirma tu contrasena"),
+      v.nonEmpty("Confirma tu contraseña"),
     ),
     acceptPersonalData: v.literal(true, "Debes aceptar el uso de datos personales"),
   }),
@@ -46,7 +47,7 @@ const registerSchema = v.pipe(
     v.partialCheck(
       [["password"], ["confirmPassword"]],
       (input) => input.password === input.confirmPassword,
-      "Las contrasenas no coinciden",
+      "Las contraseñas no coinciden",
     ),
     ["confirmPassword"],
   ),
@@ -130,7 +131,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <EmailInput<RegisterFormValues>
         id="email"
         name="email"
-        label="Correo electronico"
+        label="Correo electrónico"
         register={register}
         error={errors.email}
       />
@@ -138,7 +139,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <TextInput<RegisterFormValues>
         id="phoneNumber"
         name="phoneNumber"
-        label="Numero de telefono"
+        label="Número de teléfono"
         type="tel"
         register={register}
         error={errors.phoneNumber}
@@ -147,7 +148,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <PasswordInput<RegisterFormValues>
         id="password"
         name="password"
-        label="Contrasena"
+        label="Contraseña"
         register={register}
         error={errors.password}
       />
@@ -155,7 +156,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <PasswordInput<RegisterFormValues>
         id="confirmPassword"
         name="confirmPassword"
-        label="Repetir contrasena"
+        label="Repetir contraseña"
         register={register}
         error={errors.confirmPassword}
       />
@@ -169,7 +170,10 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
           />
           <span>
-            Acepto el uso de mis datos personales conforme a la politica de privacidad.
+            Acepto los{" "}
+            <Link href="/terminos" target="_blank" className="font-medium text-primary hover:underline">términos y condiciones</Link>
+            {" "}y el tratamiento de mis datos según la{" "}
+            <Link href="/privacidad" target="_blank" className="font-medium text-primary hover:underline">política de privacidad</Link>.
           </span>
         </label>
         {errors.acceptPersonalData && (
@@ -189,10 +193,10 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "w-full rounded-full bg-gradient-to-br from-[#E63946] to-[#9B0A26] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
+          "w-full rounded-full bg-[#E63946] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
           !isValid || isPending
             ? "cursor-not-allowed opacity-50"
-            : "hover:from-[#FF4D5A] hover:to-[#B30E30]",
+            : "hover:bg-[#9B0A26]",
         )}
       >
         {isPending ? "Creando cuenta..." : "Crear cuenta"}

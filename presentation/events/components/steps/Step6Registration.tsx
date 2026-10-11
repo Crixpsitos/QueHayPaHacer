@@ -1,3 +1,4 @@
+import Link from "next/link";
 
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { FormEventDto } from "@/application/dto/events/EventDto";
@@ -110,14 +111,14 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                             {label}
                           </p>
                           {isFormOption && (
-                            <span className="rounded-full bg-[#FFB703]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#B45309]">
-                              PRO
+                            <span className="rounded-full bg-[#FFB703]/20 px-2 py-0.5 text-[11px] font-semibold text-[#B45309]">
+                              Premium
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-[#71717A] mt-0.5">{desc}</p>
                         {isDisabled && (
-                          <p className="mt-1 text-xs font-medium text-amber-600">Solo disponible para cuentas profesionales</p>
+                          <p className="mt-1 text-xs font-medium text-amber-600">Disponible con Premium</p>
                         )}
                       </div>
 
@@ -140,7 +141,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                       <TooltipProvider key={value}>
                         <Tooltip>
                           <TooltipTrigger asChild>{card}</TooltipTrigger>
-                          <TooltipContent side="top">Activa una cuenta profesional para usar esta opción</TooltipContent>
+                          <TooltipContent side="top">Disponible con el plan Premium</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     );
@@ -249,13 +250,22 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
             <Field>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-[#09090B]">¿Requiere asistencia?</p>
+                  <p className="flex items-center gap-2 text-sm font-semibold text-[#09090B]">
+                    ¿Requiere asistencia?
+                    {!isPremium && (
+                      <span className="rounded-full bg-[#FFB703]/20 px-2 py-0.5 text-[11px] font-semibold text-[#B45309]">Premium</span>
+                    )}
+                  </p>
                   <p className="text-xs text-[#71717A] mt-0.5 max-w-sm">
-                    Si lo activas, en la tabla de registros podrás confirmar la asistencia (check-in) de cada inscrito.
+                    {isPremium
+                      ? "Si lo activas, en la tabla de registros podrás confirmar la asistencia (check-in) de cada inscrito."
+                      : <>Confirma quién asistió y quién no desde el Estudio. <Link href="/premium" target="_blank" className="font-medium text-[#E63946] hover:underline">Conoce Premium</Link></>}
                   </p>
                 </div>
                 <Switch
-                  checked={requiresAttendance}
+                  disabled={!isPremium}
+                  aria-label="Requiere asistencia"
+                  checked={isPremium && requiresAttendance}
                   onCheckedChange={(checked) =>
                     form.setValue("requiresAttendance", checked, { shouldValidate: true })
                   }

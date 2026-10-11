@@ -1,18 +1,46 @@
 "use client";
 
 import { Suspense, use, useEffect, useRef, useState } from "react";
-import { AlertCircle, Award, BadgeCheck, ExternalLink, Loader2, Mail } from "lucide-react";
+import {
+  AlertCircle,
+  Award,
+  BadgeCheck,
+  BriefcaseBusiness,
+  Camera,
+  ExternalLink,
+  Link2,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Music2,
+  Users,
+  Video,
+} from "lucide-react";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { Button } from "@/app/components/ui/button";
 import { useProfileConfigStore } from "@/app/store/profile/profileConfig.store";
 import { createClientContainer } from "@/infraestructure/di/container.client";
+import type { SocialLinkEntry, SocialPlatform } from "@/domain/entities/user/User";
 import type { UserBadge } from "@/domain/repository/profile/IProfileRepository";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfileStats } from "./ProfileStats";
 import { ShareProfileButton } from "./ShareProfileButton";
 import { ProfileBanner } from "./ProfileBanner";
 
+import { normalizeExternalUrl } from "../lib/normalizeExternalUrl";
+
 const { authService } = createClientContainer();
+
+const SOCIAL_PLATFORM_META = {
+  instagram: { label: "Instagram", icon: Camera },
+  facebook: { label: "Facebook", icon: Users },
+  tiktok: { label: "TikTok", icon: Music2 },
+  youtube: { label: "YouTube", icon: Video },
+  twitter: { label: "X / Twitter", icon: MessageCircle },
+  linkedin: { label: "LinkedIn", icon: BriefcaseBusiness },
+  other: { label: "Otro enlace", icon: Link2 },
+} satisfies Record<SocialPlatform, { label: string; icon: typeof Link2 }>;
+
 
 interface ProfileHeaderProps {
   statsPromise: (uid: string) => Promise<{
@@ -52,6 +80,11 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
   const username = user.profile?.username || user.displayName || "usuario";
   const isCreator = user.profile?.participation === "creator";
   const creatorVerified = user.profile?.creatorVerified === true;
+  const websiteHref = user.profile?.website ? normalizeExternalUrl(user.profile.website) : null;
+  const socialLinks = (user.profile?.socialLinks ?? []).flatMap((link) => {
+    const href = normalizeExternalUrl(link.url);
+    return href ? [{ ...link, href }] : [];
+  });
 
   const openEditProfile = () => {
     onSelectSectionSetting("edit-profile");
@@ -63,9 +96,9 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
     setVerificationMessage(null);
     try {
       await authService.sendEmailVerification();
-      setVerificationMessage("Email de verificacion enviado. Revisa tu bandeja de entrada.");
+      setVerificationMessage("Te enviamos el correo de verificación. Revisa tu bandeja de entrada.");
     } catch {
-      setVerificationMessage("No se pudo enviar el email de verificacion.");
+      setVerificationMessage("No se pudo enviar el correo de verificación.");
     } finally {
       setIsVerifyingEmail(false);
     }
@@ -120,7 +153,7 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
               {creatorVerified && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">
                   <BadgeCheck className="size-3.5" aria-hidden />
-                  Verificado por QHPA
+                  Creador verificado por QHPA
                 </span>
               )}
             </div>
@@ -135,16 +168,23 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
               </button>
             )}
 
-            {user.profile?.website && (
-              <a
-                href={user.profile.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                Sitio web
-                <ExternalLink className="size-3.5" aria-hidden />
-              </a>
+            {(websiteHref || socialLinks.length > 0) && (
+              <div className="flex flex-wrap items-center gap-2">
+                {websiteHref && (
+                  <a
+                    href={websiteHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium text-foreground transition-colors hover:border-primary/35 hover:text-primary"
+                  >
+                    Sitio web
+                    <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                )}
+                {socialLinks.map((link, index) => (
+                  <SocialProfileLink key={`${link.platform}-${link.url}-${index}`} link={link} />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -171,11 +211,11 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
           <div className="flex gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600" aria-hidden />
             <div>
-              <h2 className="font-semibold text-amber-900">Verifica tu correo electronico</h2>
+              <h2 className="font-semibold text-amber-900">Verifica tu correo electrónico</h2>
               <p className="mt-1 text-sm text-amber-800">Necesitas verificarlo para proteger tu cuenta.</p>
               <Button size="sm" onClick={sendVerification} disabled={isVerifyingEmail} className="mt-3 bg-amber-600 text-white hover:bg-amber-700">
                 {isVerifyingEmail ? <Loader2 className="mr-2 size-3.5 animate-spin" aria-hidden /> : <Mail className="mr-2 size-3.5" aria-hidden />}
-                Enviar verificacion
+                Enviar verificación
               </Button>
               {verificationMessage && <p className="mt-2 text-xs text-amber-800">{verificationMessage}</p>}
             </div>
@@ -186,14 +226,35 @@ export const ProfileHeader = ({ statsPromise, badgesPromise }: ProfileHeaderProp
   );
 };
 
+function SocialProfileLink({
+  link,
+}: {
+  link: SocialLinkEntry & { href: string };
+}) {
+  const { label, icon: Icon } = SOCIAL_PLATFORM_META[link.platform];
+
+  return (
+    <a
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Abrir ${label}`}
+      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium text-foreground transition-colors hover:border-primary/35 hover:text-primary"
+    >
+      <Icon className="size-3.5" aria-hidden />
+      {label}
+    </a>
+  );
+}
+
 function BadgesPreview({ badgesPromise }: { badgesPromise: Promise<UserBadge[]> }) {
   const badges = use(badgesPromise);
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase text-muted-foreground">Insignias</p>
+      <p className="text-sm font-semibold text-foreground">Insignias</p>
       {badges.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aun no hay insignias.</p>
+        <p className="text-sm text-muted-foreground">Aún no tienes insignias.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {badges.map((badge) => (

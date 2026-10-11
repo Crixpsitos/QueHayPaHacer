@@ -13,15 +13,8 @@ export class UserService {
         return this.userRepository.findById(id);
     }
 
-    async getAllUsers(): Promise<User[]> {
-        return this.userRepository.findAll();
-    }
-
     async getVerifiedCreators(limit = 10): Promise<User[]> {
-        const users = await this.userRepository.findAll();
-        return users
-            .filter((user) => user.isPublic && user.participation === "creator" && user.creatorVerified)
-            .slice(0, limit);
+        return this.userRepository.findVerifiedCreators(limit);
     }
 
     async getUserByEmail(email: string): Promise<User | null> {

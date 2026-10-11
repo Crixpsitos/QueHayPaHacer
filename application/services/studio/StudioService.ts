@@ -29,9 +29,7 @@ import type {
 } from "@/domain/entities/studio/Studio";
 
 /**
- * Servicio del Estudio del Organizador. Orquesta el repositorio (stubs por ahora).
- * Mientras el repositorio no esté implementado, las páginas usan los ViewModels
- * con datos MOCK; este servicio queda listo para conectarse cuando lo implementes.
+ * Servicio del Estudio del Organizador. Orquesta el repositorio.
  */
 export class StudioService {
   constructor(private readonly repository: IStudioRepository) {}

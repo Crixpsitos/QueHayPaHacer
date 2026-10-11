@@ -36,7 +36,7 @@ const PAGE_SIZE = 20;
 
 /**
  * Lista paginada de inscritos a un evento, pensada para que el ORGANIZADOR
- * (cualquier cuenta, también las no profesionales) vea quién asiste sin entrar
+ * (cualquier cuenta, también las no Premium) vea quién asiste sin entrar
  * al Estudio. Reutiliza el pipeline del Studio pero exige ser dueño del evento.
  */
 export async function getEventAttendeesAction(

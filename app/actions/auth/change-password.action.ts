@@ -1,11 +1,18 @@
 "use server";
 
+import { getSessionUid } from "@/app/actions/_session";
+
 import { getFirebaseAdminAuth } from "@/infraestructure/firebase/config/admin/firebase";
 
 interface ChangePasswordPayload {
   uid: string;
   newPassword: string;
+  /** ID token emitido tras reauthenticateWithCredential en el cliente. */
+  idToken: string;
 }
+
+// Ventana de "login reciente" exigida para cambiar la contraseña.
+const MAX_AUTH_AGE_SECONDS = 5 * 60;
 
 interface ChangePasswordResult {
   success: boolean;
@@ -17,7 +24,14 @@ export async function changePasswordAction(
   payload: ChangePasswordPayload,
 ): Promise<ChangePasswordResult> {
   try {
-    const { uid, newPassword } = payload;
+    const { uid, newPassword, idToken } = payload;
+    if (!uid || (await getSessionUid()) !== uid) return { success: false, error: "No autorizado." };
+
+    const auth = getFirebaseAdminAuth();
+    const decoded = idToken ? await auth.verifyIdToken(idToken).catch(() => null) : null;
+    if (!decoded || decoded.uid !== uid || Date.now() / 1000 - decoded.auth_time > MAX_AUTH_AGE_SECONDS) {
+      return { success: false, error: "Vuelve a ingresar tu contraseña actual." };
+    }
 
     // Validar que la contraseña sea segura
     if (!newPassword || newPassword.length < 8) {
@@ -37,9 +51,6 @@ export async function changePasswordAction(
         error: "La contraseña debe incluir letras y números.",
       };
     }
-
-    // Obtener la instancia de Auth de Firebase Admin
-    const auth = getFirebaseAdminAuth();
 
     // Actualizar la contraseña en Firebase Admin
     await auth.updateUser(uid, {
@@ -66,10 +77,6 @@ export async function changePasswordAction(
           error: "La contraseña no es válida.",
         };
       }
-      return {
-        success: false,
-        error: error.message,
-      };
     }
 
     return {

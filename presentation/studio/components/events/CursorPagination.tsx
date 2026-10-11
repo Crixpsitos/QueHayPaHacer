@@ -69,6 +69,7 @@ export function CursorPagination({
   prevCursor,
   extraParams,
 }: CursorPaginationProps) {
+  if (!prevCursor && !nextCursor) return null; // una sola página
   return (
     <div className="flex items-center justify-end gap-1.5">
       <PaginationLink

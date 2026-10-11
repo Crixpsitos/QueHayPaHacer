@@ -173,7 +173,7 @@ export const EventForm = ({
 }: EventFormProps) => {
   const isMultiDate = eventType === "multi-date";
   const { user } = useAuth();
-  // Step dinámico "Colaboradores": solo para cuentas profesionales, insertado antes
+  // Step dinámico "Colaboradores": solo para plan Premium, insertado antes
   // del último paso (Revisión / Promoción). Todo se deriva de `stepDefs`.
   const isPremium = user?.profile?.plan === "premium";
 
@@ -402,10 +402,6 @@ export const EventForm = ({
     const isValid = await form.trigger();
 
     if (!isValid) {
-      console.log(
-        "❌ Errores activos en el paso actual:",
-        form.formState.errors,
-      );
       const firstError = formRef.current?.querySelector(
         '[aria-invalid="true"]',
       );
@@ -514,10 +510,6 @@ export const EventForm = ({
 
     const isValid = await form.trigger();
     if (!isValid) {
-      console.log(
-        "❌ Errores activos en el paso actual:",
-        form.formState.errors,
-      );
       const firstError = formRef.current?.querySelector(
         '[aria-invalid="true"]',
       );

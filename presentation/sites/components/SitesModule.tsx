@@ -52,7 +52,7 @@ export function SitesModule() {
   }, [pathname])
 
   // ── Data ───────────────────────────────────────────────────────────────────
-  const { sites, fetchSites } = useSitesStore()
+  const { sites, fetchSites, loading, error } = useSitesStore()
 
   useEffect(() => { fetchSites() }, []) // eslint-disable-line
 
@@ -194,7 +194,18 @@ export function SitesModule() {
         </div>
 
         <AnimatePresence mode="wait" initial={false}>
-          {panelMode === "list" ? (
+          {panelMode === "list" && error && sites.length === 0 ? (
+            <div key="error" role="alert" className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+              <p className="text-sm text-muted-foreground">No pudimos cargar tus sitios.</p>
+              <button
+                type="button"
+                onClick={() => void fetchSites()}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : panelMode === "list" ? (
             <motion.div
               key="list"
               initial={{ opacity: 0, x: -20 }}
@@ -214,7 +225,8 @@ export function SitesModule() {
                 onOpen={openDetail}
                 onEdit={goToEdit}
                 onCreate={goToCreate}
-                isLoading={false}
+                // solo la carga inicial: los refetch tras guardar no deben parpadear
+                isLoading={loading && sites.length === 0}
               />
             </motion.div>
           ) : (

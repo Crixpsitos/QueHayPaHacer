@@ -35,7 +35,7 @@ export function InfiniteEventList({
     setLoading(true);
     try {
       const res = await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug);
-      setEvents((prev) => [...prev, ...res.events]);
+      setEvents((prev) => [...prev, ...res.events.filter((e) => !prev.some((p) => p.id === e.id))]);
       setLikedByEventId((prev) => ({ ...prev, ...res.likedByEventId }));
       setCursor(res.nextCursor);
     } finally {
@@ -51,6 +51,7 @@ export function InfiniteEventList({
         info={{
           title: "Todavía no hay eventos en esta categoría",
           description: "Estamos sumando planes nuevos. Vuelve pronto.",
+          action: { href: "/eventos", label: "Ver todos los eventos" },
         }}
         variant="vertical"
       />

@@ -24,7 +24,7 @@ const formatNumber = (n: number) => n.toLocaleString("es-CO");
 
 const formatDate = (date: Date | null) =>
   date
-    ? new Intl.DateTimeFormat("es-CO", {
+    ? new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota",
         dateStyle: "medium",
         timeStyle: "short",
       }).format(date)
@@ -121,7 +121,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
               >
                 {published ? "Publicado" : "Borrador"}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
                 <CalendarDays className="h-3 w-3" />
                 Varias fechas
               </span>
@@ -178,10 +178,11 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
           </span>
           <span className="inline-flex items-center gap-1.5">
             <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
-            score{" "}
+            Puntuación{" "}
             <span className="font-semibold text-slate-900">
-              {stats.event.score.toFixed(2)}
+              {stats.event.score.toLocaleString("es-CO", { maximumFractionDigits: 1 })}
             </span>
+            / 150
           </span>
           <span className="text-slate-400">
             El like es del evento completo, no de una fecha.
@@ -203,7 +204,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
               <Link
                 key={session.sessionId}
                 href={`/studio/events/${stats.eventId}/session/${session.sessionId}`}
-                className="group flex items-stretch gap-4 rounded-xl border border-slate-200 bg-white p-3 transition-all hover:border-indigo-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="group flex items-stretch gap-4 rounded-xl border border-slate-200 bg-white p-3 transition-all hover:border-primary/25 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {/* Portada resuelta por `coverSource` (propia, del padre u otra sesión). */}
                 <span className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
@@ -225,7 +226,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
                 <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-semibold text-slate-900 group-hover:text-indigo-700">
+                      <span className="truncate font-semibold text-slate-900 group-hover:text-primary">
                         {session.title}
                       </span>
                       <span
@@ -271,7 +272,7 @@ export function MultiDateStatsPanel({ stats }: MultiDateStatsPanelProps) {
 
                     {/* CTA explícito: la tarjeta entera navega, pero sin esto no
                         se lee como algo en lo que se pueda entrar. */}
-                    <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-indigo-600">
+                    <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-primary">
                       Ver estadísticas
                       <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </span>

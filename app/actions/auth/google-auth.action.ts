@@ -31,6 +31,10 @@ export async function googleAuthAction(
             authConfig,
         )
 
+        // googleUser llega del cliente: el uid debe ser el del token verificado.
+        const { uid } = await getFirebaseAdminAuth().verifyIdToken(idToken)
+        if (uid !== googleUser.uid) return { error: "No autorizado." }
+
         const existing = await userService.getUserById(googleUser.uid)
         if (!existing) {
             const nameParts = googleUser.displayName.trim().split(" ")

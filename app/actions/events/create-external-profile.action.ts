@@ -17,8 +17,8 @@ export interface CreatedExternal {
 
 /**
  * Crea un perfil externo (entra a mi red). Recibe FormData (imagen + campos).
- * Si viene `eventId`, además lo acredita en ese evento ("credit"). Solo cuentas
- * profesionales.
+ * Si viene `eventId`, además lo acredita en ese evento ("credit"). Solo plan
+ * Premium.
  */
 export async function createExternalProfileAction(
   formData: FormData,
@@ -50,7 +50,7 @@ export async function createExternalProfileAction(
 
     const me = await userService.getUserById(uid);
     if (me?.plan !== "premium") {
-      return { success: false, error: "Solo cuentas profesionales pueden agregar colaboradores." };
+      return { success: false, error: "Necesitas el plan Premium para agregar colaboradores." };
     }
 
     const profile = await studioService.createExternalProfile(

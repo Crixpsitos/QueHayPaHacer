@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -58,7 +58,7 @@ interface RegistrationsTableProps {
 const LIMIT_OPTIONS = [10, 25, 50, 100];
 
 const formatDateTime = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -86,10 +86,12 @@ export function RegistrationsTable({
 
   // El servidor manda orden/límite/búsqueda/página; cuando cambian, el slot
   // re-fetchea y llegan filas nuevas por props → resincronizamos lo local.
-  useEffect(() => {
+  const [prevRows, setPrevRows] = useState(rows);
+  if (rows !== prevRows) {
+    setPrevRows(rows);
     setData(rows);
     setSelected(new Set());
-  }, [rows]);
+  }
 
   // Construye una URL con overrides; `null` elimina el param.
   const buildHref = (overrides: Record<string, string | null>) => {
@@ -142,10 +144,14 @@ export function RegistrationsTable({
   const confirmOne = async (userId: string) => {
     setData((prev) => prev.map((r) => (r.userId === userId ? { ...r, attendanceConfirmed: true } : r)));
     const res = await confirmAttendanceAction(eventId, userId, sessionId);
-    if (!res.success) notify.error(res.error ?? "Error al confirmar.");
+    if (!res.success) {
+      notify.error(res.error ?? "Error al confirmar.");
+      router.refresh(); // revierte el optimista con la verdad del servidor
+    }
   };
 
   const removeOne = async (userId: string) => {
+    if (!confirm("¿Quitar a este participante? Esta acción no se puede deshacer.")) return;
     setData((prev) => prev.filter((r) => r.userId !== userId));
     setSelected((prev) => {
       const next = new Set(prev);
@@ -164,16 +170,23 @@ export function RegistrationsTable({
     const ids = [...selected];
     setData((prev) => prev.map((r) => (selected.has(r.userId) ? { ...r, attendanceConfirmed: true } : r)));
     setSelected(new Set());
-    await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id, sessionId)));
-    notify.success(`${ids.length} asistencia(s) confirmada(s).`);
+    const results = await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id, sessionId)));
+    const failed = results.filter((r) => !r.success).length;
+    if (failed) {
+      notify.error(`No se pudieron confirmar ${failed} de ${ids.length}.`);
+      router.refresh();
+    } else notify.success(`${ids.length} asistencia(s) confirmada(s).`);
   };
 
   const bulkRemove = async () => {
     const ids = [...selected];
+    if (!confirm(`¿Quitar a ${ids.length} participante(s)? Esta acción no se puede deshacer.`)) return;
     setData((prev) => prev.filter((r) => !selected.has(r.userId)));
     setSelected(new Set());
-    await Promise.all(ids.map((id) => removeParticipantAction(eventId, id, sessionId)));
-    notify.success(`${ids.length} participante(s) removido(s).`);
+    const results = await Promise.all(ids.map((id) => removeParticipantAction(eventId, id, sessionId)));
+    const failed = results.filter((r) => !r.success).length;
+    if (failed) notify.error(`No se pudieron quitar ${failed} de ${ids.length}.`);
+    else notify.success(`${ids.length} participante(s) removido(s).`);
     // Sincroniza el slot @stats (contador "Registros" y gráficas) con el servidor.
     router.refresh();
   };
@@ -212,9 +225,9 @@ export function RegistrationsTable({
       </div>
 
       {withFormResponses && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-3 py-2.5">
-          <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-          <p className="text-xs text-indigo-900">
+        <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary-light px-3 py-2.5">
+          <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <p className="text-xs text-zinc-800">
             Este evento usa <strong>registro por formulario</strong>. Pulsa{" "}
             <span className="font-semibold">&quot;Ver respuestas&quot;</span> en cada fila para ver lo
             que respondió la persona. El CSV exportado incluye todas las respuestas.
@@ -232,7 +245,7 @@ export function RegistrationsTable({
             value={limit}
             onChange={(e) => changeLimit(Number(e.target.value))}
             disabled={isPending}
-            className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:opacity-50"
+            className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-50"
           >
             {LIMIT_OPTIONS.map((size) => (
               <option key={size} value={size}>
@@ -252,14 +265,14 @@ export function RegistrationsTable({
 
       {/* Toolbar de acciones masivas */}
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
-          <span className="text-xs font-semibold text-indigo-700">{selected.size} seleccionado(s)</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary-light px-3 py-2">
+          <span className="text-xs font-semibold text-primary">{selected.size} seleccionado(s)</span>
           <div className="ml-auto flex items-center gap-2">
             {requiresAttendance && (
               <button
                 type="button"
                 onClick={() => void bulkConfirm()}
-                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-indigo-600 px-2.5 text-xs font-medium text-white hover:bg-indigo-700"
+                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-zinc-950 px-2.5 text-xs font-medium text-white hover:bg-zinc-800"
               >
                 <UserCheck className="h-3.5 w-3.5" />
                 Confirmar asistencia
@@ -276,7 +289,7 @@ export function RegistrationsTable({
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-indigo-500 hover:bg-indigo-100"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary hover:bg-primary-light"
               aria-label="Limpiar selección"
             >
               <X className="h-3.5 w-3.5" />
@@ -289,13 +302,13 @@ export function RegistrationsTable({
         <div className="max-h-[560px] overflow-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-white/85 backdrop-blur">
-              <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-gray-200 text-left text-xs font-semibold text-slate-400">
                 <th className="w-10 px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={allFilteredSelected}
                     onChange={toggleAll}
-                    className="h-4 w-4 cursor-pointer accent-indigo-600"
+                    className="h-4 w-4 cursor-pointer accent-primary"
                     aria-label="Seleccionar todos"
                   />
                 </th>
@@ -374,7 +387,7 @@ export function RegistrationsTable({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <FileText className="h-4 w-4 text-indigo-600" />
+              <FileText className="h-4 w-4 text-primary" />
               Respuestas del formulario
             </DialogTitle>
             <DialogDescription>Lo que respondió esta persona al inscribirse.</DialogDescription>
@@ -385,7 +398,7 @@ export function RegistrationsTable({
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-slate-50 p-3">
                 <Avatar className="h-9 w-9 border border-gray-200">
                   <AvatarImage src={responsesRow.photoURL} alt={responsesRow.name} />
-                  <AvatarFallback className="bg-indigo-50 text-xs font-semibold text-indigo-700">
+                  <AvatarFallback className="bg-zinc-100 text-xs font-semibold text-zinc-700">
                     {initials(responsesRow.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -413,7 +426,7 @@ export function RegistrationsTable({
               <dl className="space-y-3">
                 {(responsesRow.formResponses ?? []).map((f) => (
                   <div key={f.label} className="rounded-lg border border-gray-100 bg-white p-3">
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <dt className="text-[11px] font-semibold text-slate-400">
                       {f.label}
                     </dt>
                     <dd className="mt-1 text-sm text-slate-800">{f.value}</dd>
@@ -484,13 +497,13 @@ function SortHeader({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
       className={cn(
         "inline-flex items-center gap-1 transition-colors hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50",
         active && "text-slate-700",
       )}
     >
       {label}
+      {active && <span className="sr-only">{dir === "asc" ? " (orden ascendente)" : " (orden descendente)"}</span>}
       {active ? (
         dir === "asc" ? (
           <ArrowUp className="h-3 w-3" />
@@ -530,7 +543,7 @@ function RegistrationRowItem({
       className={cn(
         "border-b border-gray-100 transition-colors hover:bg-slate-100/70",
         zebra && "bg-slate-50/50",
-        selected && "bg-indigo-50/60",
+        selected && "bg-primary-light",
       )}
     >
       <td className="px-3 py-2.5">
@@ -538,7 +551,7 @@ function RegistrationRowItem({
           type="checkbox"
           checked={selected}
           onChange={onToggleSelect}
-          className="h-4 w-4 cursor-pointer accent-indigo-600"
+          className="h-4 w-4 cursor-pointer accent-primary"
           aria-label={`Seleccionar ${row.name}`}
         />
       </td>
@@ -546,7 +559,7 @@ function RegistrationRowItem({
         <div className="flex items-center gap-2.5">
           <Avatar className="h-7 w-7 border border-gray-200">
             <AvatarImage src={row.photoURL} alt={row.name} />
-            <AvatarFallback className="bg-indigo-50 text-[10px] font-semibold text-indigo-700">
+            <AvatarFallback className="bg-zinc-100 text-[10px] font-semibold text-zinc-700">
               {initials(row.name)}
             </AvatarFallback>
           </Avatar>
@@ -589,7 +602,7 @@ function RegistrationRowItem({
             <button
               type="button"
               onClick={onViewResponses}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
             >
               <FileText className="h-3.5 w-3.5" />
               Respuestas

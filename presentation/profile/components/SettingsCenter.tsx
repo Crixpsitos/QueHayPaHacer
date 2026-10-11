@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { useProfileConfigStore } from "@/app/store/profile/profileConfig.store";
@@ -42,6 +43,10 @@ import { changePasswordAction } from "@/app/actions/auth/change-password.action"
 import { deleteAccountAction } from "@/app/actions/auth/delete-account.action";
 import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage";
 import { notify } from "@/presentation/shared/lib/notify";
+import { EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPassword } from "firebase/auth";
+import { loginAction } from "@/app/actions/auth/login.action";
+import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
+import { MembershipSection } from "./MembershipSection";
 
 type selectedSectionSetting =
   | "main"
@@ -100,6 +105,7 @@ const getSectionTitle = (section: selectedSectionSetting) => {
 export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean } = {}) => {
   const { user, refreshUser } = useAuth();
   const { openSettings, onOpenSettings, selectedSectionSetting, onSelectSectionSetting } = useProfileConfigStore();
+  const searchParams = useSearchParams();
   const closeResetTimeoutRef = useRef<number | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   // const [categoryNotifications, setCategoryNotifications] = useState(true); // reactivar con la sección de Notificaciones
@@ -111,8 +117,8 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
   const isMobile = useMediaQuery("(max-width: 640px)");
   const drawerDirection = isMobile ? "bottom" : "right";
   const drawerContentClassName = isMobile
-    ? "h-dvh max-h-dvh !p-0 before:inset-0 before:rounded-none"
-    : "h-dvh max-h-dvh w-full sm:w-[480px] sm:max-w-[480px] !p-0 before:inset-0 before:rounded-none before:border-y-0 before:border-r-0 before:border-l";
+    ? "!h-dvh !max-h-dvh overflow-hidden !p-0 before:inset-0 before:rounded-none"
+    : "h-dvh max-h-dvh w-full overflow-hidden sm:w-[480px] sm:max-w-[480px] !p-0 before:inset-0 before:rounded-none before:border-y-0 before:border-r-0 before:border-l";
 
   useEffect(() => {
     return () => {
@@ -121,6 +127,26 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("ajustes") === "1" && !openSettings) {
+      onOpenSettings(true);
+    }
+  }, [onOpenSettings, openSettings, searchParams]);
+
+  useEffect(() => {
+    const hasSettingsQuery = searchParams.get("ajustes") === "1";
+    if (hasSettingsQuery && !openSettings) return;
+    if (hasSettingsQuery === openSettings) return;
+
+    const url = new URL(window.location.href);
+    if (openSettings) {
+      url.searchParams.set("ajustes", "1");
+    } else {
+      url.searchParams.delete("ajustes");
+    }
+    window.history.replaceState(null, "", url.pathname + (url.search || ""));
+  }, [openSettings, searchParams]);
 
   // Form states
   const [editedUser, setEditedUser] = useState<UserData>({
@@ -439,6 +465,12 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     onSelectSectionSetting("main");
   };
 
+  // Solo cuentas con proveedor email/contraseña (no solo-Google) pueden cambiarla.
+  const hasPasswordProvider = useMemo(
+    () => Boolean(user && getFirebaseAuth().currentUser?.providerData.some((p) => p.providerId === "password")),
+    [user],
+  );
+
   const handleChangePassword = async (data: {
     current: string;
     new: string;
@@ -451,9 +483,28 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
 
     setChangePasswordMessage(null);
 
+    // Verifica la contraseña actual; el servidor exige un token con login reciente.
+    const authUser = getFirebaseAuth().currentUser;
+    if (!authUser?.email) {
+      setChangePasswordMessage({ type: "error", message: "No hay sesión activa." });
+      return;
+    }
+    let idToken: string;
+    try {
+      const cred = await reauthenticateWithCredential(
+        authUser,
+        EmailAuthProvider.credential(authUser.email, data.current),
+      );
+      idToken = await cred.user.getIdToken(true);
+    } catch {
+      setChangePasswordMessage({ type: "error", message: "La contraseña actual no es correcta." });
+      return;
+    }
+
     const result = await changePasswordAction({
       uid: user.uid,
       newPassword: data.new,
+      idToken,
     });
 
     if (!result.success) {
@@ -463,6 +514,11 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       });
       return;
     }
+
+    // Firebase revoca las sesiones previas al cambiar la contraseña: se reabre con la
+    // nueva (SDK cliente + cookies) para no dejar una cookie que ya no se puede refrescar.
+    await signInWithEmailAndPassword(getFirebaseAuth(), authUser.email, data.new).catch(() => {});
+    await loginAction(authUser.email, data.new).catch(() => {});
 
     setChangePasswordMessage({
       type: "success",
@@ -545,7 +601,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     // El username inicial ya le pertenece al usuario — no necesita verificarse
     if (trimmed === initialProfileData?.username.trim()) return;
     const timer = setTimeout(() => {
-      void checkUsernameAvailabilityAction(trimmed, user?.uid ?? "").then((res) => {
+      void checkUsernameAvailabilityAction(trimmed).then((res) => {
         setUsernameCheckedValue(trimmed);
         setUsernameCheckResult(res.available ? "available" : "taken");
       });
@@ -571,7 +627,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
               {editedUser.firstName || "Usuario"} {editedUser.lastName}
             </p>
             <p className="truncate text-sm text-muted-foreground">{editedUser.email || "Sin correo"}</p>
-            <p className="truncate text-xs text-muted-foreground">{editedUser.phone || "Sin telefono"}</p>
+            <p className="truncate text-xs text-muted-foreground">{editedUser.phone || "Sin teléfono"}</p>
           </div>
         </div>
       </div>
@@ -581,18 +637,20 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <MenuRow
           icon={User}
           title="Editar perfil"
-          description="Nombre, apellido, usuario, correo, telefono y foto"
+          description="Nombre, apellido, usuario, correo, teléfono y foto"
           onClick={() => {
             syncUserData();
             onSelectSectionSetting("edit-profile");
           }}
         />
-        <MenuRow
-          icon={Lock}
-          title="Actualizar contraseña"
-          description="Actualiza tu contraseña de acceso"
-          onClick={() => onSelectSectionSetting("change-password")}
-        />
+        {hasPasswordProvider && (
+          <MenuRow
+            icon={Lock}
+            title="Actualizar contraseña"
+            description="Actualiza tu contraseña de acceso"
+            onClick={() => onSelectSectionSetting("change-password")}
+          />
+        )}
       </Section>
 
       {/* PRIVACY */}
@@ -1011,7 +1069,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
               className={`h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors ${
                 passwordErrors.current
                   ? "border-destructive bg-destructive/5 focus:border-destructive"
-                  : "border-border bg-background focus:border-brand-violet"
+                  : "border-border bg-background focus:border-primary"
               }`}
             />
             {passwordErrors.current && (
@@ -1036,7 +1094,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
                 className={`h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors ${
                   passwordErrors.new
                     ? "border-destructive bg-destructive/5 focus:border-destructive"
-                    : "border-border bg-background focus:border-brand-violet"
+                    : "border-border bg-background focus:border-primary"
                 }`}
               />
               {/* Indicador de fortaleza */}
@@ -1077,7 +1135,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
                     ? "border-destructive bg-destructive/5 focus:border-destructive"
                     : confirmPassword && passwordsMatch
                       ? "border-emerald-300 bg-emerald-50/30 focus:border-emerald-400 dark:border-emerald-600/50 dark:bg-emerald-950/20"
-                      : "border-border bg-background focus:border-brand-violet"
+                      : "border-border bg-background focus:border-primary"
                 }`}
               />
               {confirmPassword && passwordsMatch && !passwordErrors.confirm && (
@@ -1120,38 +1178,12 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       return null;
     }
 
-    const plan = user.profile?.plan === "premium" ? "Premium" : "Básico";
-
     return (
-      <section aria-label="Membresía" className="space-y-5">
-        <div className="flex items-start gap-3.5 border-b border-border pb-5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-            <Briefcase className="size-5 text-primary" aria-hidden />
-          </div>
-          <div>
-            <h2 className="font-bold text-foreground">Tu membresía</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              El plan define las funciones disponibles, no tu identidad como creador.
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">Plan actual</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{plan}</p>
-            </div>
-            <span className="rounded-full bg-foreground px-2.5 py-1 text-xs font-medium text-background">
-              Activo
-            </span>
-          </div>
-        </div>
-
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          La gestión de cambios de plan estará disponible aquí cuando se habilite el sistema de membresías.
-        </p>
-      </section>
+      <MembershipSection
+        currentPlan={user.profile?.plan}
+        planExpiresAt={user.profile?.planExpiresAt ?? undefined}
+        participation={user.profile?.participation}
+      />
     );
   };
 
@@ -1247,7 +1279,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <Button
           aria-label="Abrir configuración"
           variant="outline"
-          className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+          className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
           onClick={() => {
             const nextOpen = !openSettings;
             if (nextOpen) {
@@ -1302,10 +1334,10 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
             {selectedSectionSetting === "main" && renderMainMenu()}
             {selectedSectionSetting === "edit-profile" && renderEditProfile()}
-            {selectedSectionSetting === "change-password" && renderChangePassword()}
+            {selectedSectionSetting === "change-password" && hasPasswordProvider && renderChangePassword()}
             {selectedSectionSetting === "membership" && renderMembership()}
             {selectedSectionSetting === "delete" && renderDelete()}
           </div>
@@ -1324,7 +1356,7 @@ function Section({
 }) {
   return (
     <div className="space-y-2">
-      <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-brand-violet">
+      <h3 className="px-1 text-sm font-semibold text-foreground">
         {title}
       </h3>
       <div className="space-y-1">{children}</div>

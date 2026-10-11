@@ -1,5 +1,6 @@
 "use client";
 
+import { safeRedirect } from "@/app/lib/utils/safeRedirect";
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
@@ -46,7 +47,7 @@ export const GoogleAuthButton = ({ label = "Continuar con Google", redirectTo }:
             ? String((err as { code: string }).code)
             : "";
         if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-          setError("No fue posible iniciar sesion con Google. Intenta nuevamente.");
+          setError("No fue posible iniciar sesión con Google. Intenta nuevamente.");
         }
       }
     });
@@ -102,8 +103,3 @@ const GoogleIcon = () => (
     />
   </svg>
 );
-
-function safeRedirect(to?: string): string {
-  if (!to || !to.startsWith("/") || to.startsWith("//")) return "/";
-  return to;
-}

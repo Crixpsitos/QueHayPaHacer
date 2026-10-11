@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { isStudioEventOwner } from "@/app/actions/_session";
 import { RegistrationsPanel } from "@/presentation/studio/components/events/registrations/RegistrationsPanel";
 import { DraftEventNotice } from "@/presentation/studio/components/events/registrations/DraftEventNotice";
 import {
@@ -17,6 +18,8 @@ const DEFAULT_LIMIT = 10;
 
 export default async function EventRegistrationsSlot({ params, searchParams }: SlotProps) {
   const { id } = await params;
+  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
+  if (!(await isStudioEventOwner(id))) notFound();
   const sp = await searchParams;
 
   // Orden, límite, búsqueda y paginación vienen por query params:

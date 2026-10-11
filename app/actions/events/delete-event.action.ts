@@ -15,19 +15,24 @@ export async function deleteEventAction(eventId: string): Promise<DeleteEventRes
   if (!eventId?.trim()) return { success: false, error: "ID de evento inválido." };
 
   try {
-    const { eventsService } = createServerContainer();
+    const { eventsService, eventSessionService } = createServerContainer();
 
     // Verificar propiedad antes de borrar
     const event = await eventsService.getEventById(eventId.trim());
     if (!event) return { success: false, error: "El evento no existe." };
     if (event.author?.id !== uid) return { success: false, error: "No tienes permiso para eliminar este evento." };
 
+    // Firestore no borra subcolecciones con el doc: sesiones primero (si no,
+    // quedan huérfanas y siguen saliendo en collectionGroup/sitios).
+    const sessions = await eventSessionService.getByEventId(eventId.trim());
+    await Promise.all(sessions.map((s) => eventSessionService.deleteSession(eventId.trim(), s.id)));
     await eventsService.deleteEvent(eventId.trim());
 
     updateTag("event-list");
     revalidateTag("explore", "max");
     revalidateTag(`profile-events-${uid}`, "max");
     revalidateTag(`event-${eventId}`, "max");
+    updateTag(`event-sessions-${eventId}`);
 
     return { success: true };
   } catch (error) {

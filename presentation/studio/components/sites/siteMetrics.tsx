@@ -24,8 +24,8 @@ const META: Record<SiteMetricKey, MetricMeta> = {
     label: "Clicks",
     hint: "Veces que abrieron el sitio",
     Icon: MousePointerClick,
-    fg: "text-indigo-600",
-    bg: "bg-indigo-50",
+    fg: "text-primary",
+    bg: "bg-primary-light",
   },
   likes: {
     label: "Me gusta",
@@ -72,7 +72,7 @@ export function MetricCard({ metric, value }: { metric: SiteMetricKey; value: nu
         <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", bg)}>
           <Icon className={cn("h-4 w-4", fg)} />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="text-[11px] font-semibold text-slate-400">{label}</p>
       </div>
       <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900">
         {formatMetric(value)}
