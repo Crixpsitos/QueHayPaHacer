@@ -172,7 +172,7 @@ No son dos fuentes de datos lógicas, pero sí dos SDKs y superficies de tipos/c
 | `users/{uid}/eventInteractions` | Proyección reciente para trayectoria/perfil. |
 | `events/{eventId}` | Evento principal. |
 | `events/{eventId}/sessions` | Sesiones multifecha. |
-| `events/{eventId}/registrations` | Registros del evento padre. Campo `checkInCode` (secreto de check-in por QR, creado perezosamente, borrado al cancelar; consulta de igualdad, sin índice compuesto). |
+| `events/{eventId}/registrations` | Registros del evento padre. |
 | `events/{eventId}/sessions/{sessionId}/registrations` | Registros por sesión. |
 | `events/{eventId}/interactions` | Likes, vistas, compartidos y clics por usuario. |
 | `sites/{siteId}` | Sitios. |
