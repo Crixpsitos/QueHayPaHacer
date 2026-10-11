@@ -3,10 +3,15 @@ import Link from "next/link";
 import { Section } from "./Section";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 
-// ponytail: datos del responsable en un solo lugar. Hoy el responsable es una
-// persona natural: completar nombre completo, cédula y correo de contacto para
-// datos personales antes del lanzamiento (Ley 1581 de 2012, Decreto 1377).
-// Si se constituye empresa, cambiar por razón social y NIT.
+// Identificación del responsable del tratamiento (Ley 1581 de 2012 y su decreto piden que la
+// política identifique a quien trata los datos y cómo contactarlo). Estos datos NO van en el
+// código ni en el repositorio: se definen como variables de entorno del backend (App Hosting →
+// Environment, disponibles en BUILD) y solo aparecen en las páginas legales. Si no se definen,
+// las páginas usan el nombre de la marca y el formulario de contacto.
+//   LEGAL_OWNER  nombre (o razón social)      LEGAL_EMAIL  correo dedicado (ej. legal@tudominio.co)
+//   LEGAL_PHONE  teléfono dedicado (opcional)
+const env = (value?: string) => value?.trim() || undefined;
+
 export const LEGAL_ENTITY: {
   name: string;
   city: string;
@@ -25,9 +30,9 @@ export const LEGAL_ENTITY: {
   updatedAt: new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeZone: "America/Bogota" }).format(
     new Date(`${LEGAL_VERSION}T12:00:00-05:00`),
   ),
-  // owner: "Nombre Apellido",
-  // email: "legal@tudominio.co",
-  // phone: "+57 3XX XXX XXXX",
+  owner: env(process.env.LEGAL_OWNER),
+  email: env(process.env.LEGAL_EMAIL),
+  phone: env(process.env.LEGAL_PHONE),
 };
 
 /** Línea de denuncia de explotación sexual infantil (Ley 679/2001 y Decreto 1524/2002 piden un enlace visible). */

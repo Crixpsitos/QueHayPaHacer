@@ -28,7 +28,7 @@ Limitación honesta: un contrato (los términos) **solo obliga a quien lo acepta
 | --- | --- |
 | Textos legales con rol de intermediario, responsabilidad del autor, moderación, aviso y retiro, uso de datos para gestionar incumplimientos, límites de responsabilidad | `app/(home)/terminos/page.tsx`, `app/(home)/privacidad/page.tsx` |
 | Versión única de los textos | `app/lib/legal/version.ts` (`LEGAL_VERSION`); **súbela cada vez que cambien los textos** |
-| Datos del responsable (nombre, correo, teléfono) | `LEGAL_ENTITY` en `app/components/layout/shared/LegalDocument.tsx` |
+| Datos del responsable (nombre, correo, teléfono) | Variables de entorno `LEGAL_OWNER`, `LEGAL_EMAIL`, `LEGAL_PHONE`, leídas en `LEGAL_ENTITY` (`app/components/layout/shared/LegalDocument.tsx`) |
 | Aceptación probada al registrarse (términos + mayoría de edad, y autorización de datos en casilla aparte); el servidor la exige | `RegisterForm.tsx`, `register.action.ts`; se guarda `acceptedTerms`, `acceptedTermsAt`, `acceptedTermsVersion` |
 | Aceptación con Google: la cuenta nueva **no se crea** hasta aceptar | `google-auth.action.ts`, `GoogleAuthButton.tsx` |
 | Declaración del autor al publicar (derechos, permisos, veracidad, responsabilidad); el servidor la exige y guarda la evidencia | `AuthorDeclaration.tsx`, `publish-event.action.ts`, `publish-site.action.ts`, `update-site.action.ts`; colección `contentDeclarations/{tipo}_{id}` |
@@ -37,14 +37,21 @@ Limitación honesta: un contrato (los términos) **solo obliga a quien lo acepta
 
 Las colecciones `reports`, `contentDeclarations` y `planChanges` no son accesibles desde el cliente (las reglas niegan todo por defecto; solo escribe el Admin SDK).
 
-## Pendientes y decisiones
+## Decisiones del propietario (2026-10-11) y riesgo que queda
 
-1. **Registro de oferentes (art. 53) ⛔.** Hoy no se guarda documento ni dirección de los organizadores. Propuesta: pedirlos (privados, solo para atender quejas y autoridades) a quien publique eventos con venta de entradas o un enlace de compra. Es una decisión de producto y de privacidad: más datos, más obligaciones de custodia.
-2. **Reaceptación al cambiar los términos.** Los textos prometen pedir aceptación nueva en cambios importantes; falta el mecanismo (comparar `acceptedTermsVersion` con `LEGAL_VERSION` y bloquear hasta aceptar). Los usuarios anteriores a este cambio no tienen versión guardada.
-3. **Editar una sesión de un evento ya publicado** no pide una declaración nueva (la declaración se pide al publicar o republicar el evento).
-4. **Contenido ya publicado** antes de este cambio no tiene declaración registrada.
-5. **Moderación operativa:** no hay panel para atender reportes (se usa el script), ni plazos internos definidos para aviso y retiro.
-6. **Constituir una S.A.S.** antes de cobrar o de crecer: separa el patrimonio personal del de la plataforma. Consulta con un contador (RUT, facturación electrónica) y con la Cámara de Comercio de Ibagué.
-7. **Datos del responsable:** completar `owner`, `email` y `phone` en `LEGAL_ENTITY` con un correo dedicado (p. ej. `legal@<dominio>`).
-8. **Revisión por un abogado** de ambos textos, de la cláusula de indemnidad y del tope de responsabilidad (puede chocar con las reglas de cláusulas abusivas del Estatuto del Consumidor si el usuario es consumidor).
-9. **Formularios personalizados (Premium):** el organizador puede pedir datos sensibles; los términos se lo prohíben salvo autorización expresa, pero la plataforma no lo valida.
+| Tema | Decisión | Por qué / riesgo residual |
+| --- | --- | --- |
+| Identificación del responsable | Los datos **no van en el repo**: variables `LEGAL_OWNER`, `LEGAL_EMAIL`, `LEGAL_PHONE` en App Hosting (Environment, disponibles en BUILD). Mínimo recomendado: un correo dedicado (`legal@<dominio>`). | La política debe identificar al responsable y su contacto (Ley 1581 y su decreto). Sin nombre ni contacto, la política queda incompleta: el riesgo real es una queja ante la SIC. Ante una autoridad no se puede ocultar la identidad: la cuenta de Google Cloud, Play Console y la cuenta que recibe los pagos de Premium están a nombre del propietario. |
+| S.A.S. | No es posible por ahora. | Sin persona jurídica el patrimonio personal queda expuesto. Mitigaciones: textos, declaración al publicar, aviso y retiro rápido; y, mientras no se pueda constituir empresa, **no cobrar Premium** (la transferencia o Nequi identifica a quien cobra). |
+| Registro de organizadores (Ley 1480, art. 53) | **No se implementa ahora.** | QHPA no vende ni cobra entradas: redirige a terceros. El art. 53 habla de plataformas que *ponen en contacto* oferentes y consumidores, aunque la venta ocurra fuera, así que **no se puede descartar** que aplique a eventos con precio o enlace de compra. Se asume el riesgo por el bajo volumen. Alternativa mínima si se quiere cubrir: exigir teléfono verificado y la declaración al publicar eventos con precio o enlace externo (ya se tiene nombre y correo del registro). Reevaluar al crecer o al cobrar. |
+| Usuarios y contenido anteriores | Sin acción. | Son datos de develop (pruebas). |
+| Panel de moderación | Más adelante. | Mientras tanto: botón **Reportar** + `scripts/list-reports.ts` (`--resolve <id> --apply`). |
+
+## Pendientes
+
+1. **Reaceptación al cambiar los términos.** Los textos prometen pedir aceptación nueva en cambios importantes; falta el mecanismo (comparar `acceptedTermsVersion` con `LEGAL_VERSION` y bloquear hasta aceptar).
+2. **Editar una sesión de un evento ya publicado** no pide una declaración nueva (se pide al publicar o republicar el evento).
+3. **Plazos internos** para atender avisos de retiro (hoy "lo antes posible").
+4. **Definir las variables `LEGAL_*`** antes del lanzamiento (ver arriba) y, si se cobra, el RUT y la facturación con un contador.
+5. **Revisión por un abogado** de ambos textos, de la cláusula de indemnidad y del tope de responsabilidad (puede chocar con las reglas de cláusulas abusivas del Estatuto del Consumidor si el usuario es consumidor).
+6. **Formularios personalizados (Premium):** el organizador puede pedir datos sensibles; los términos se lo prohíben salvo autorización expresa, pero la plataforma no lo valida.
