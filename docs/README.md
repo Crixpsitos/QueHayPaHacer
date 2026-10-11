@@ -33,6 +33,7 @@ Cada documento distingue, cuando aplica:
 9. [Inventario de superficies](./09-inventario-rutas-apis-y-scripts.md): páginas, APIs, acciones, jobs manuales y comandos operativos.
 10. [Handoff y contexto reciente](./10-handoff-y-contexto-reciente.md): decisiones de esta conversación, cambios locales, validaciones y continuidad inmediata.
 11. [Prompt maestro para Claude](./11-prompt-maestro-claude.md): instrucciones listas para delegar la estabilización y cierre del MVP.
+12. [PWA y Google Play](./12-pwa-y-google-play.md): manifest, service worker (caché y cold start), Digital Asset Links y empaquetado Android con Bubblewrap.
 
 ## Fuente de verdad vigente
 

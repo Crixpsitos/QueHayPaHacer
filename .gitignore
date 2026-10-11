@@ -44,3 +44,10 @@ next-env.d.ts
 
 # backups de scripts de prueba
 .tmp/
+
+# Android TWA (Bubblewrap): llaves de firma y builds fuera del repo
+*.keystore
+*.jks
+/twa/
+*.aab
+*.apk
