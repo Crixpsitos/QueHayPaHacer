@@ -1,4 +1,5 @@
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
+import type { CancelRegistrationResult, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
 
 export interface IEventRegistrationFirebaseRepository {
@@ -19,4 +20,12 @@ export interface IEventRegistrationFirebaseRepository {
     entry: FirebaseEventRegistrationEntry,
     sessionId?: string,
   ): Promise<void>;
+
+  listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;
+
+  cancelRegistration(
+    eventId: string,
+    userId: string,
+    sessionId?: string,
+  ): Promise<CancelRegistrationResult>;
 }

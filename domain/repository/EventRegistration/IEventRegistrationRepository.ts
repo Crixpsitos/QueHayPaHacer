@@ -1,4 +1,8 @@
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
+import type { CancelBlock, UserRegistrationItem } from "@/domain/entities/EventRegistration/myRegistrations";
+
+export type { UserRegistrationItem };
+export type CancelRegistrationResult = "ok" | "not_found" | CancelBlock;
 
 export interface RegisterEventInput {
   userId: string;
@@ -21,4 +25,10 @@ export interface IEventRegistrationRepository {
   isUserRegistered(eventId: string, userId: string, sessionId?: string): Promise<boolean>;
 
   registerUserToEvent(input: RegisterEventInput): Promise<void>;
+
+  /** Inscripciones del usuario en todos los eventos/sesiones (las 100 más recientes). */
+  listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;
+
+  /** Marca la inscripción como cancelada y baja el contador. Solo el dueño (doc id = uid). */
+  cancelRegistration(eventId: string, userId: string, sessionId?: string): Promise<CancelRegistrationResult>;
 }

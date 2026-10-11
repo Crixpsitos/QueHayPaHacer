@@ -1,4 +1,7 @@
-import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type Firestore, type Timestamp } from "firebase-admin/firestore";
+
+import { cancelBlock, type UserRegistrationItem } from "@/domain/entities/EventRegistration/myRegistrations";
+import type { CancelRegistrationResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
@@ -94,5 +97,112 @@ export class EventRegistrationFirebaseRepository
     );
 
     await batch.commit();
+  }
+
+  /**
+   * Inscripciones del usuario en todos los eventos: collectionGroup sobre
+   * `registrations` (event-level y session-level) + UNA lectura por lotes
+   * (`getAll`) de los eventos y sesiones únicos. Sin N+1. En Enterprise no
+   * requiere índice compuesto (verificado en develop).
+   * Eventos/sesiones borrados se omiten.
+   */
+  async listByUserId(userId: string, limit = 100): Promise<UserRegistrationItem[]> {
+    const snap = await this.db
+      .collectionGroup("registrations")
+      .where("userId", "==", userId)
+      .orderBy("registeredAt", "desc")
+      .limit(limit)
+      .get();
+
+    // Ruta: events/{eventId}/registrations/{uid} | events/{eventId}/sessions/{sid}/registrations/{uid}
+    // (se deriva de la ruta: las entradas antiguas no siempre traen eventId/sessionId).
+    const rows = snap.docs.map((d) => {
+      const parts = d.ref.path.split("/");
+      return { eventId: parts[1], sessionId: parts.length === 6 ? parts[3] : undefined, data: d.data() };
+    });
+    if (rows.length === 0) return [];
+
+    const eventRefs = [...new Set(rows.map((r) => r.eventId))].map((id) => this.collection.doc(id));
+    const sessionKeys = [...new Set(rows.filter((r) => r.sessionId).map((r) => `${r.eventId}/${r.sessionId}`))];
+    const sessionRefs = sessionKeys.map((k) => {
+      const [e, s] = k.split("/");
+      return this.subCollection(e, "sessions").doc(s);
+    });
+    const docs = await this.db.getAll(...eventRefs, ...sessionRefs);
+    const events = new Map<string, DocumentData>();
+    const sessions = new Map<string, DocumentData>();
+    docs.forEach((doc, i) => {
+      if (!doc.exists) return;
+      if (i < eventRefs.length) events.set(doc.id, doc.data()!);
+      else sessions.set(sessionKeys[i - eventRefs.length], doc.data()!);
+    });
+
+    const iso = (v: unknown) => (v as Timestamp | undefined)?.toDate?.().toISOString();
+    const items: UserRegistrationItem[] = [];
+    for (const r of rows) {
+      const ev = events.get(r.eventId);
+      const ses = r.sessionId ? sessions.get(`${r.eventId}/${r.sessionId}`) : undefined;
+      if (!ev || (r.sessionId && !ses)) continue;
+      const src = ses ?? ev;
+      const startDate = iso(src.startDate);
+      const endDate = iso(src.endDate);
+      if (!startDate || !endDate) continue;
+      const loc = (ses?.location ?? ev.location) as { venue?: string; city?: { name?: string } } | undefined;
+      items.push({
+        eventId: r.eventId,
+        ...(r.sessionId ? { sessionId: r.sessionId } : {}),
+        title: (ses?.title as string) || (ev.title as string) || "Evento",
+        ...(ses ? { eventTitle: ev.title as string } : {}),
+        eventRef: (ev.slug as string) || r.eventId,
+        ...(r.sessionId ? { sessionRef: (ses?.slug as string) || r.sessionId } : {}),
+        image: (ses?.mainImage?.url as string) || (ev.mainImage?.url as string) || undefined,
+        startDate,
+        endDate,
+        venue: loc?.venue || undefined,
+        city: loc?.city?.name || undefined,
+        status: r.data.status ?? "registered",
+        checkedIn: Boolean(r.data.checkedInAt),
+        registeredAt: iso(r.data.registeredAt) ?? startDate,
+      });
+    }
+    return items;
+  }
+
+  /**
+   * Cancela la inscripción del usuario (doc id = userId, así que solo puede
+   * cancelar la suya): status "canceled" + canceledAt y decrementa el contador
+   * del evento/sesión (nunca bajo 0), todo en una transacción. Idempotente.
+   */
+  async cancelRegistration(
+    eventId: string,
+    userId: string,
+    sessionId?: string,
+  ): Promise<CancelRegistrationResult> {
+    const targetRef = sessionId
+      ? this.subCollection(eventId, "sessions").doc(sessionId)
+      : this.collection.doc(eventId);
+    const regRef = targetRef.collection("registrations").doc(userId);
+
+    return this.db.runTransaction(async (tx) => {
+      const [regSnap, targetSnap] = await Promise.all([tx.get(regRef), tx.get(targetRef)]);
+      if (!regSnap.exists || !targetSnap.exists) return "not_found";
+
+      const entry = regSnap.data()!;
+      const end = (targetSnap.get("endDate") as Timestamp | undefined)?.toDate();
+      const block = cancelBlock({
+        status: entry.status,
+        checkedIn: Boolean(entry.checkedInAt),
+        endDate: end ?? new Date(8.64e15),
+      });
+      if (block) return block;
+
+      const current = Number(targetSnap.get("analytics.registrations") ?? 0);
+      tx.update(regRef, { status: "canceled", canceledAt: FieldValue.serverTimestamp() });
+      tx.update(targetRef, {
+        "analytics.registrations": Math.max(0, current - 1),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return "ok";
+    });
   }
 }

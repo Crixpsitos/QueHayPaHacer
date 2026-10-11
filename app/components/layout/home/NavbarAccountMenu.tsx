@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, Sparkles, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { createClientContainer } from "@/infraestructure/di/container.client";
@@ -179,6 +179,12 @@ export function NavbarAccountMenu({
               <Link href="/mis-eventos" className={cn("flex items-center gap-2")}>
                 <CalendarDays className="size-4" aria-hidden="true" />
                 Mis eventos
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
+                <Ticket className="size-4" aria-hidden="true" />
+                Mis inscripciones
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

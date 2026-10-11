@@ -22,7 +22,7 @@ test("cachea páginas públicas (y normaliza ?source=pwa)", () => {
 
 test("nunca cachea rutas privadas, auth ni con query", () => {
   for (const path of [
-    "/api/auth/me", "/studio", "/studio/events/1", "/profile", "/mis-eventos", "/sites", "/sites/1/edit",
+    "/api/auth/me", "/studio", "/studio/events/1", "/profile", "/mis-eventos", "/mis-inscripciones", "/sites", "/sites/1/edit",
     "/eventos/create", "/eventos/abc/edit", "/eventos/abc/edit/x", "/eventos/abc/sessions", "/eventos/abc/sessions/",
     "/login", "/register", "/reset-password", "/eventos?categoria=musica", "/?source=other", "/?source=pwa&x=1",
   ]) {

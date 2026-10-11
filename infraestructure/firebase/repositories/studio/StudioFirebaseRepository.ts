@@ -500,6 +500,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           .where(
             field("registeredAt").greaterThanOrEqual(this.startOfCurrentMonth),
           )
+          .where(field("status").notEqual("canceled"))
           .addFields(
             field("registeredAt")
               .timestampToUnixSeconds()
@@ -865,6 +866,9 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
             sort: score().descending(),
           })
         : collection;
+
+      // Las canceladas no son asistentes (ni en la tabla ni en el CSV).
+      stage = stage.where(field("status").notEqual("canceled"));
 
       if (cursorValue !== undefined) {
         stage = stage.where(
@@ -1247,6 +1251,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .pipeline()
       .collection(`${docPath}/registrations`)
       .where(field("registeredAt").lessThanOrEqual(endDate))
+      .where(field("status").notEqual("canceled"))
       .addFields(
         constant(startSeconds)
           .subtract(field("registeredAt").timestampToUnixSeconds())
@@ -1345,6 +1350,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       const current = Number(targetSnap.get("analytics.registrations") ?? 0);
 
       tx.delete(regRef);
+      // Una inscripción ya cancelada decrementó el contador al cancelarse.
+      if (regSnap.get("status") === "canceled") return;
       tx.update(targetRef, {
         "analytics.registrations": Math.max(0, current - 1),
         updatedAt: FieldValue.serverTimestamp(),

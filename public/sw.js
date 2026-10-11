@@ -25,6 +25,7 @@ const NO_CACHE_PREFIXES = [
   "/api",
   "/studio",
   "/mis-eventos",
+  "/mis-inscripciones",
   "/sites",
   "/eventos/create",
   "/login",
