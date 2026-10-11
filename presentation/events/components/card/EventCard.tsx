@@ -161,7 +161,7 @@ export const EventCard = ({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-shadow motion-reduce:transition-none hover:shadow-card",
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,box-shadow] duration-300 motion-reduce:transition-none hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5",
         "focus-within:ring-2 focus-within:ring-[#E63946]/40 focus-within:ring-offset-2",
         className,
       )}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type CSSProperties } from "react";
 import {
   MapPin,
   CalendarDays,
@@ -30,7 +30,6 @@ import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { cn } from "@/app/lib/utils/cn";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { compactCount, plainText } from "@/presentation/events/components/card/cardMeta";
-import { Reveal } from "@/app/components/motion/primitives";
 import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
 
@@ -66,7 +65,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
   return (
     <Link
       href={`/donde-ir/${site.slug || site.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-colors hover:border-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,border-color,box-shadow] duration-300 motion-reduce:transition-none hover:border-[#09090B] hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F4F5]">
         {site.coverUrl ? (
@@ -97,16 +96,16 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
           </span>
         )}
 
-        <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+        <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-end gap-1.5">
           {closedForNow ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
-              <span className="size-1.5 rounded-full bg-[#E63946]" aria-hidden="true" />
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
+              <span className="size-1.5 shrink-0 rounded-full bg-[#E63946]" aria-hidden="true" />
               Cerrado temporalmente
             </span>
           ) : openStatus?.label ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
               <span
-                className={cn("size-1.5 rounded-full", openStatus.isOpen ? "bg-emerald-500" : "bg-[#A1A1AA]")}
+                className={cn("size-1.5 shrink-0 rounded-full", openStatus.isOpen ? "bg-emerald-500" : "bg-[#A1A1AA]")}
                 aria-hidden="true"
               />
               {openStatus.label}
@@ -114,7 +113,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
           ) : (
             <span />
           )}
-          <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {site.bookingUrl && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow-sm">
                 <CalendarCheck className="size-3.5 text-[#E63946]" aria-hidden="true" />
@@ -145,7 +144,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
           {/* El horario de hoy se calcula en el cliente: se reserva la fila para no mover el diseño. */}
           <li className="flex min-h-5 items-start gap-2">
             <Clock className="mt-0.5 size-4 shrink-0 text-[#A1A1AA]" aria-hidden="true" />
-            <span className="tabular-nums">
+            <span className="line-clamp-1 tabular-nums">
               {closedForNow
                 ? site.temporarilyClosed?.reason?.trim() || "Cerrado por ahora"
                 : openStatus?.todayHours
@@ -207,11 +206,17 @@ export function SiteDiscoveryGrid({ sites }: { sites: SiteDetail[] }) {
       <SiteItemListJsonLd sites={sites} />
       {sites.map((s, index) =>
         index < 4 ? (
-          <SiteDiscoveryCard key={s.id} site={s} prioritize />
+          <div
+            key={s.id}
+            className={cn("card-rise h-full", index === 0 && "card-rise-first")}
+            style={{ "--i": index } as CSSProperties}
+          >
+            <SiteDiscoveryCard site={s} prioritize />
+          </div>
         ) : (
-          <Reveal key={s.id} y={12} className="h-full">
+          <div key={s.id} className="card-reveal h-full">
             <SiteDiscoveryCard site={s} />
-          </Reveal>
+          </div>
         ),
       )}
     </div>

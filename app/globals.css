@@ -164,6 +164,33 @@
   }
   @keyframes skeleton-sweep { to { transform: translateX(100%); } }
 
+  /* Entrada de tarjetas: solo CSS (0 KB de JS) y el contenido ya viene completo en el HTML,
+     así que no afecta al SEO ni depende de la hidratación.
+     - .card-rise: al cargar sube y aparece, escalonado por --i. La primera no se desvanece
+       (.card-rise-first) para no retrasar el LCP.
+     - .card-reveal: al entrar en pantalla con el scroll (animation-timeline: view()). Si el
+       navegador no lo soporta, la tarjeta simplemente se ve normal. */
+  @media (prefers-reduced-motion: no-preference) {
+    .card-rise {
+      animation: card-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      animation-delay: calc(var(--i, 0) * 70ms);
+    }
+    .card-rise-first { animation-name: card-rise-soft; }
+    @keyframes card-rise {
+      from { opacity: 0; transform: translateY(16px) scale(0.985); }
+    }
+    @keyframes card-rise-soft {
+      from { transform: translateY(10px); }
+    }
+    @supports (animation-timeline: view()) {
+      .card-reveal {
+        animation: card-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 5% entry 45%;
+      }
+    }
+  }
+
   /* Bounce horizontal para el swipe hint del carousel en mobile */
   .animate-bounce-x {
     animation: bounce-x 1s ease-in-out infinite;

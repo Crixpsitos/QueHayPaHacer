@@ -1,5 +1,6 @@
 "use client";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
+import type { CSSProperties } from "react";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import Link from "next/link";
@@ -10,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useRef } from "react";
 import { EventCard } from "./EventCard";
 import { cn } from "@/app/lib/utils/cn";
-import { Reveal } from "@/app/components/motion/primitives";
 
 interface EventCardInteractiveProps {
   events: EventViewModel[];
@@ -172,11 +172,18 @@ export function EventCardInteractive({
               prioritizeImage={index === 0}
             />
           );
-          // Solo las filas bajo el pliegue entran con movimiento; las primeras llegan visibles en el HTML.
-          return variant === "vertical" && index >= 4 ? (
-            <Reveal key={event.id} y={12} className="h-full">{card}</Reveal>
+          // Entrada solo con CSS: las primeras suben al cargar; el resto aparece al hacer scroll.
+          if (variant !== "vertical") return <div key={event.id} className="contents">{card}</div>;
+          return index < 4 ? (
+            <div
+              key={event.id}
+              className={cn("card-rise h-full", index === 0 && "card-rise-first")}
+              style={{ "--i": index } as CSSProperties}
+            >
+              {card}
+            </div>
           ) : (
-            <div key={event.id} className="contents">{card}</div>
+            <div key={event.id} className="card-reveal h-full">{card}</div>
           );
         })}
       </div>
