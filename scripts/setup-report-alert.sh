@@ -3,7 +3,7 @@
 # entra un reporte de contenido. La Cloud Function `notifyNewReport` (repo functions) deja el log
 # `alert=qhpa_new_report`; la alerta filtra por él.
 #
-# Uso:  scripts/setup-report-alert.sh <project-id> <correo>
+# Uso:  scripts/setup-report-alert.sh <project-id> <correo>   (idempotente; repetirlo con otro correo cambia el destinatario)
 #   scripts/setup-report-alert.sh quehaypahacer-develop tu@correo.com
 #   scripts/setup-report-alert.sh quehaypahacer-prod    tu@correo.com
 set -euo pipefail
@@ -22,9 +22,12 @@ if [ -z "$CHANNEL" ]; then
   echo "canal creado: $CHANNEL"
 fi
 
-if [ -n "$(gcloud beta monitoring policies list --project "$PROJECT" \
-  --filter="displayName=\"$POLICY_NAME\"" --format='value(name)' | head -1)" ]; then
-  echo "la alerta ya existe; nada que hacer"
+EXISTING="$(gcloud beta monitoring policies list --project "$PROJECT" \
+  --filter="displayName=\"$POLICY_NAME\"" --format='value(name)' | head -1)"
+if [ -n "$EXISTING" ]; then
+  # Ya existe: solo apunta la alerta al canal de este correo (sirve para cambiar de destinatario).
+  gcloud beta monitoring policies update "$EXISTING" --project "$PROJECT" --set-notification-channels="$CHANNEL"
+  echo "la alerta ya existía; ahora avisa a $EMAIL"
   exit 0
 fi
 
