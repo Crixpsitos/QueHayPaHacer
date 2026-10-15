@@ -2,6 +2,7 @@ import { GeoPoint } from "firebase-admin/firestore"
 import { toSlug } from "@/app/lib/utils/slug"
 import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
+import { declarationVariant } from "@/app/lib/legal/declaration"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteInput } from "@/application/services/sites/SitesService"
@@ -18,8 +19,7 @@ export function buildSiteInput(
   publicationStatus: "draft" | "published",
 ): SiteInput {
   // El cliente solo elige owner/proposer. Una cuenta de QHPA que no se declara dueña publica como QHPA.
-  const publishedAs: SitePublishedAs =
-    form.publishedAs === "owner" ? "owner" : isQhpaAdmin(uid) ? "qhpa" : "proposer"
+  const publishedAs: SitePublishedAs = declarationVariant(form.publishedAs, isQhpaAdmin(uid))
   const { country, department, city } = buildLocationDetails({
     countryName: form.country,
     countrySlug: form.countrySlug,

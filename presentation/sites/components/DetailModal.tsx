@@ -12,6 +12,9 @@ import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplaySt
 import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
 import { getSiteOpenStatus } from "../lib/openStatus"
+import { TrustBadge } from "./TrustBadge"
+import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
+import { SiteClaimCta } from "./claim/SiteClaimCta"
 import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
@@ -341,6 +344,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       >
         {site.name}
       </h2>
+      <TrustBadge site={site} withKind className="mt-2" />
 
       {/* ── Dirección + estado de apertura ──────────────────────── */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -356,6 +360,9 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           {openStatus.label ?? "Horario no disponible"}
         </span>
       </div>
+
+      <ConfirmBeforeGoingNotice site={site} className="mt-4" />
+      <div className="mt-3 empty:hidden"><SiteClaimCta site={site} /></div>
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />

@@ -1,6 +1,7 @@
 import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
+import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
 
@@ -97,6 +98,12 @@ export class SitesService {
   async getTitleAndAuthor(id: string): Promise<{ title: string; authorId: string | null } | null> {
     const dto = await this.adapter.findRawById(id)
     return dto ? { title: dto.name, authorId: authorIdOf(dto) ?? null } : null
+  }
+
+  async getClaimSnapshot(id: string): Promise<ClaimSiteSnapshot | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    return { name: dto.name, published: dto.publicationStatus === "published", authorId: authorIdOf(dto) ?? null }
   }
 
   private async assertOwner(uid: string, id: string): Promise<FirebaseSiteDto> {

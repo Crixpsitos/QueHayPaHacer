@@ -28,7 +28,7 @@ function parsePathname(p: string): { panelMode: PanelMode; formMode: FormMode; d
   return { panelMode: "list", formMode: "create", detailId: null, editId: null }
 }
 
-export function SitesModule() {
+export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) {
   const pathname = usePathname()
   const router   = useRouter()
 
@@ -264,6 +264,7 @@ export function SitesModule() {
                 onPublish={formMode === "edit" && !isDraftEdit && !isRejectedEdit ? siteForm.handleSaveEdit : siteForm.handlePublish}
                 onReset={goToList}
                 onEnsureDraftId={siteForm.ensureDraftId}
+                isQhpaAdmin={isQhpaAdmin}
               />
             </motion.div>
           )}

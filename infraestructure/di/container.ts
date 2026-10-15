@@ -62,6 +62,8 @@ import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteracti
 import { ReportFirebaseRepository } from "../firebase/repositories/report/ReportFirebaseRepository";
 import { ReportService } from "@/application/services/report/ReportService";
 import { ContentDeclarationFirebaseRepository } from "../firebase/repositories/contentDeclaration/ContentDeclarationFirebaseRepository";
+import { SiteClaimFirebaseRepository } from "../firebase/repositories/siteClaim/SiteClaimFirebaseRepository";
+import { SiteClaimService } from "@/application/services/siteClaim/SiteClaimService";
 import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
@@ -176,6 +178,12 @@ export const createServerContainer = () => {
     new ContentDeclarationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // reclamos de sitios (dueños que piden verificación)
+  const siteClaimService = new SiteClaimService(
+    new SiteClaimFirebaseRepository(getFirebaseFirestore()),
+    sitesService,
+  );
+
   return {
     userService,
     campaignService,
@@ -195,6 +203,7 @@ export const createServerContainer = () => {
     contactService,
     reportService,
     contentDeclarationService,
+    siteClaimService,
   };
 };
 

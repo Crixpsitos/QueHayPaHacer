@@ -27,8 +27,12 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel, 
   try {
     // Evidencia antes de aplicar; solo si el sitio es del autor (ver publishSiteAction).
     if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo actualizar el sitio" }
-    await contentDeclarationService.record(uid, "site", siteId)
-    await sitesService.updateSite(uid, siteId, buildSiteInput(uid, tokens.decodedToken, form, "published"))
+    const input = buildSiteInput(uid, tokens.decodedToken, form, "published")
+    await contentDeclarationService.record(uid, "site", siteId, {
+      variant: input.publishedAs as "owner" | "proposer" | "qhpa",
+      siteKind: input.kind,
+    })
+    await sitesService.updateSite(uid, siteId, input)
     revalidateSite(uid, siteId)
     return { success: true }
   } catch (e) {

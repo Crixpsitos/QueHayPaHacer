@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { compactCount, plainText } from "@/presentation/events/components/card/cardMeta";
 import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
+import { TrustBadge } from "../TrustBadge";
 
 /** Icono de respaldo cuando el sitio no tiene portada. */
 const CATEGORY_ICON: Record<string, React.ElementType> = {
@@ -88,13 +89,16 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
           <CatIcon className="size-3.5 text-[#E63946]" aria-hidden="true" />
           {siteCategoryLabel(site.category)}
         </span>
-        {photoCount > 1 && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
-            <Camera className="size-3.5" aria-hidden="true" />
-            <span className="sr-only">Fotos:</span>
-            {photoCount}
-          </span>
-        )}
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
+          <TrustBadge site={site} className="justify-end shadow-sm" />
+          {photoCount > 1 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
+              <Camera className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">Fotos:</span>
+              {photoCount}
+            </span>
+          )}
+        </div>
 
         <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-end gap-1.5">
           {closedForNow ? (

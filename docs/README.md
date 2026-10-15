@@ -37,6 +37,7 @@ Cada documento distingue, cuando aplica:
 13. [Producción y app Android](./13-produccion-y-app-android.md): runbook completo en orden: facturación, reglas/índices/CORS, secretos, App Hosting, functions, dominio, datos iniciales y publicación en Google Play.
 14. [Marco legal y cumplimiento](./14-legal-y-cumplimiento.md): rol de intermediario, normas colombianas relevantes, mecanismos implementados y pendientes.
 15. [Runbook de lanzamiento a producción](./15-runbook-produccion.md): checklist ejecutable de facturación, APIs, reglas, secretos, dominio, rollout, pruebas y backups.
+16. [Sitios: confianza y reclamos](./16-sitios-confianza-y-reclamos.md): estados community/claimed/verified, flujo del reclamo, aprobación manual con script, evidencia, reversión y riesgos legales.
 
 ## Fuente de verdad vigente
 

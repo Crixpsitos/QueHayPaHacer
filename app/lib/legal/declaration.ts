@@ -6,3 +6,9 @@ export const hasDeclared = (declaration: unknown): declaration is true => declar
 /** Un doc por contenido: republicar lo sobrescribe (merge). */
 export const declarationDocId = (targetType: "event" | "site", targetId: string) =>
   `${targetType}_${targetId}`;
+
+export type DeclarationVariant = "owner" | "proposer" | "qhpa";
+
+/** Variante efectiva de la declaración: "owner" se respeta; si no, una cuenta admin publica como QHPA. */
+export const declarationVariant = (publishedAs: unknown, isAdmin: boolean): DeclarationVariant =>
+  publishedAs === "owner" ? "owner" : isAdmin ? "qhpa" : "proposer";
