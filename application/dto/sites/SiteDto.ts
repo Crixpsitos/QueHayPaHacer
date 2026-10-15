@@ -1,3 +1,4 @@
+import { SITE_KINDS, SITE_PUBLISHED_AS_FORM } from "@/domain/entities/sites/value-objects/SiteListing"
 import * as v from "valibot"
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
 
@@ -60,6 +61,9 @@ const fields = {
   ),
   temporarilyClosed: v.optional(v.object({ isClosed: v.boolean(), reason: text(300, "Motivo de cierre") })),
   bookingUrl: v.optional(OptionalHttpUrl),
+  kind: v.optional(v.picklist(SITE_KINDS)),
+  // "qhpa" no está: lo decide el servidor, nunca el cliente.
+  publishedAs: v.optional(v.picklist(SITE_PUBLISHED_AS_FORM)),
 }
 
 /** Borrador: mismos límites de formato, pero nombre/categoría/ubicación pueden faltar. */

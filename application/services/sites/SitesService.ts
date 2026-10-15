@@ -24,6 +24,8 @@ function contentFields(data: SiteInput) {
     socialMedia: data.socialMedia,
     temporarilyClosed: data.temporarilyClosed,
     bookingUrl: data.bookingUrl,
+    // publishedAs/verification NO se editan: respaldan la declaración ya registrada.
+    kind: data.kind,
   }
 }
 

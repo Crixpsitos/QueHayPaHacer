@@ -135,6 +135,10 @@ export class SiteFirebaseMapper {
       socialMedia: dto.socialMedia ?? {},
       temporarilyClosed: dto.temporarilyClosed ?? { isClosed: false, reason: "" },
       bookingUrl: dto.bookingUrl ?? "",
+      // Sin dato = no se afirma ningún vínculo con el lugar.
+      kind: dto.kind ?? "business",
+      publishedAs: dto.publishedAs ?? "proposer",
+      verification: dto.verification ?? "community",
       city: dto.location.city ? { name: dto.location.city.name, slug: dto.location.city.slug } : undefined,
       department: dto.location.department ? { name: dto.location.department.name, slug: dto.location.department.slug } : undefined,
       country: dto.location.country ? { name: dto.location.country.name, slug: dto.location.country.slug } : undefined,

@@ -122,4 +122,8 @@ export interface FirebaseSiteDto {
     reason: string
   }
   bookingUrl?: string
+  // Tipo y confianza de la ficha (ver SiteListing). Opcionales: los sitios viejos no los traen.
+  kind?: "public" | "business"
+  publishedAs?: "owner" | "proposer" | "qhpa"
+  verification?: "community" | "claimed" | "verified"
 }

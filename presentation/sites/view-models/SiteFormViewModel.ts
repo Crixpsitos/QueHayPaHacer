@@ -1,3 +1,4 @@
+import type { SiteKind, SitePublishedAs, SitePublishedAsForm, SiteVerification } from "@/domain/entities/sites/value-objects/SiteListing"
 export type SiteCategory =
   | "cafe"
   | "restaurant"
@@ -59,6 +60,10 @@ export interface SiteFormViewModel {
   socialMedia: SiteSocialMedia
   temporarilyClosed: SiteTemporarilyClosed
   bookingUrl: string
+  /** Atractivo público o negocio privado. */
+  kind: SiteKind
+  /** En qué calidad publica quien llena el formulario (qhpa lo fija el servidor). */
+  publishedAs: SitePublishedAsForm
 }
 
 // uploading → subiendo deopt (local) · processing → subido, CF optimizando · ready → CF listo
@@ -144,6 +149,9 @@ export interface SiteDetail extends SiteListItem {
   socialMedia?: SiteSocialMedia
   temporarilyClosed?: SiteTemporarilyClosed
   bookingUrl?: string
+  kind?: SiteKind
+  publishedAs?: SitePublishedAs
+  verification?: SiteVerification
   /** Geo de la location — se recarga al editar para no borrarla al guardar. */
   city?: { name: string; slug: string }
   department?: { name: string; slug: string }
