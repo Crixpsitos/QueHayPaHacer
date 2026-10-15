@@ -64,6 +64,8 @@ import { ReportService } from "@/application/services/report/ReportService";
 import { ContentDeclarationFirebaseRepository } from "../firebase/repositories/contentDeclaration/ContentDeclarationFirebaseRepository";
 import { SiteClaimFirebaseRepository } from "../firebase/repositories/siteClaim/SiteClaimFirebaseRepository";
 import { SiteClaimService } from "@/application/services/siteClaim/SiteClaimService";
+import { SiteSuggestionFirebaseRepository } from "../firebase/repositories/siteSuggestion/SiteSuggestionFirebaseRepository";
+import { SiteSuggestionService } from "@/application/services/siteSuggestion/SiteSuggestionService";
 import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
@@ -184,6 +186,12 @@ export const createServerContainer = () => {
     sitesService,
   );
 
+  // sugerencias de cambio de sitios (las revisa el administrador)
+  const siteSuggestionService = new SiteSuggestionService(
+    new SiteSuggestionFirebaseRepository(getFirebaseFirestore()),
+    sitesService,
+  );
+
   return {
     userService,
     campaignService,
@@ -204,6 +212,7 @@ export const createServerContainer = () => {
     reportService,
     contentDeclarationService,
     siteClaimService,
+    siteSuggestionService,
   };
 };
 

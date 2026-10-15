@@ -15,6 +15,7 @@ import { getSiteOpenStatus } from "../lib/openStatus"
 import { TrustBadge } from "./TrustBadge"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
 import { SiteClaimCta } from "./claim/SiteClaimCta"
+import { SiteSuggestCta } from "./suggest/SiteSuggestCta"
 import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
@@ -362,7 +363,10 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       </div>
 
       <ConfirmBeforeGoingNotice site={site} className="mt-4" />
-      <div className="mt-3 empty:hidden"><SiteClaimCta site={site} /></div>
+      <div className="mt-3 flex flex-col gap-2 empty:hidden sm:flex-row sm:flex-wrap">
+        <SiteClaimCta site={site} />
+        <SiteSuggestCta site={site} />
+      </div>
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />

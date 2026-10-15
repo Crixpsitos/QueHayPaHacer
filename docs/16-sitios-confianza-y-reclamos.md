@@ -24,6 +24,17 @@ Definidos en `domain/entities/sites/value-objects/SiteListing.ts`.
 
 Límite conocido: la comprobación "ya hay un pendiente" no es atómica; dos envíos simultáneos podrían duplicar. Al aprobar uno, el script rechaza los demás pendientes del mismo sitio.
 
+## Sugerencias de cambio
+
+Cualquier usuario con sesión, salvo el autor de la ficha (que la edita directo), puede pulsar "Sugerir un cambio" en el detalle de un sitio publicado. Es el camino para corregir fichas comunitarias sin ser su dueño.
+
+- Flujo: formulario (campo: horario, dirección, contacto, precios, acceso, cerró, otro; descripción 10-600; fuente opcional ≤300; declaración) -> acción `suggestSiteChangeAction` -> colección `siteSuggestions` (solo Admin SDK; `firebase/firestore.rules` niega todo lo no listado) con `status: pending`. Autor y nombre salen del token, nunca del cliente.
+- Reglas (`domain/entities/siteSuggestion/SiteSuggestion.ts`): sesión obligatoria, sitio existente y publicado, no ser el autor, 1 pendiente por usuario+sitio+campo, máximo 10 pendientes por usuario. No hay rate limiting adicional (el repo no tiene helper); las reglas anteriores son el único freno.
+- Nunca se aplica solo: la sugerencia no toca el sitio.
+- Revisar: `pnpm exec tsx scripts/list-site-suggestions.ts` lista pendientes con sitio (nombre, id, slug, URL local `/donde-ir/<slug>`). El administrador edita la ficha aparte y marca el estado:
+  `pnpm exec tsx scripts/list-site-suggestions.ts --resolve <id> --status applied|rejected [--note "..."] --apply` (sin `--apply` es dry-run; guarda `resolvedAt`, `resolvedBy`, `resolutionNote`).
+- Límites: no se avisa al sugeridor del resultado; en sitios `verified` la revisa hoy solo el administrador de QHPA (pendiente notificar al dueño verificado); mientras haya una pendiente en el sitio la UI muestra "Sugerencia enviada" en vez del botón (para otro campo, tras resolverse); no hay panel (pendiente). Texto libre de terceros: no aplicar sin comprobar y no copiar datos personales.
+
 ## Operación (dry-run por defecto)
 
 ```bash

@@ -25,6 +25,7 @@ import { getInitials } from "@/app/lib/utils/getInitials";
 import { TrustBadge } from "../TrustBadge";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
 import { SiteClaimCta } from "../claim/SiteClaimCta";
+import { SiteSuggestCta } from "../suggest/SiteSuggestCta";
 import type { WeekDay, DaySchedule } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 const SITE_CATEGORY_LABELS: Record<string, string> = {
@@ -171,7 +172,10 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       </div>
 
       <ConfirmBeforeGoingNotice site={site} className="mb-4" />
-      <div className="mb-6 empty:hidden"><SiteClaimCta site={site} /></div>
+      <div className="mb-6 flex flex-col gap-2 empty:hidden sm:flex-row sm:flex-wrap">
+        <SiteClaimCta site={site} />
+        <SiteSuggestCta site={site} />
+      </div>
 
       {site!.temporarilyClosed?.isClosed && (
         <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3">
