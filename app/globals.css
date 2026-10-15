@@ -3,6 +3,11 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
+/* La app es solo tema claro. Sin esto, Tailwind aplica `dark:` según el modo oscuro del
+   teléfono y los badges/inputs salían oscuros sobre fondo blanco. `dark:` solo actúa con
+   una clase `.dark` (que hoy nadie pone); si algún día hay tema oscuro, se activa con ella. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -78,6 +83,7 @@
 :root {
   /* Canvas & Surfaces */
   --background: #FAFAFC;
+  color-scheme: light;
   --foreground: #09090B;
   --card: #FFFFFF;
   --card-foreground: #09090B;
@@ -155,14 +161,11 @@
 }
 
 @layer utilities {
-  /* Skeleton: un solo shimmer (transform en pseudo-elemento, estático con reduced motion) */
-  .skeleton-shimmer { position: relative; overflow: hidden; }
-  .skeleton-shimmer::after {
-    content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.65), transparent);
-    animation: skeleton-sweep 1.6s ease-in-out infinite;
-  }
-  @keyframes skeleton-sweep { to { transform: translateX(100%); } }
+  /* Pulso de opacidad. Antes era un brillo que barría de lado a lado: como todos los
+     bloques apilados lo hacían a la vez, se juntaban en una sola barra blanca vertical. */
+  .skeleton-shimmer { animation: skeleton-pulse 1.6s ease-in-out infinite; }
+  @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } }
 
   /* Entrada de tarjetas: solo CSS (0 KB de JS) y el contenido ya viene completo en el HTML,
      así que no afecta al SEO ni depende de la hidratación.

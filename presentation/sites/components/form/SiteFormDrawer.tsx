@@ -756,6 +756,10 @@ export function SiteFormDrawer({
             </AccordionSection>
           ))}
         </div>
+        {/* En el área con scroll (no en el pie): en móvil el pie fijo se comía los campos. */}
+        <div className="mt-4">
+          <AuthorDeclaration kind="sitio" checked={declared} onChange={setDeclared} />
+        </div>
       </div>
 
       {/* Footer */}
@@ -770,9 +774,6 @@ export function SiteFormDrawer({
             <span className="font-semibold">Rechazado.</span>{rejectionReason ? ` ${rejectionReason}` : ""} Corrige y reenvía a revisión.
           </p>
         )}
-        <div className="mb-3">
-          <AuthorDeclaration kind="sitio" checked={declared} onChange={setDeclared} />
-        </div>
         <div className="flex gap-3">
           {!showDraftActions ? (
             <>
@@ -799,6 +800,10 @@ export function SiteFormDrawer({
           <p className="mt-1.5 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
             <Loader2 className="size-3 animate-spin" aria-hidden />
             Optimizando media… no cierres esta ventana
+          </p>
+        ) : hasCoverReady && !declared && !isBusy ? (
+          <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+            Acepta la declaración al final del formulario para publicar
           </p>
         ) : !hasCoverReady && !isBusy ? (
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
@@ -853,10 +858,15 @@ export function SiteFormDrawer({
           ref={sheetRef}
           className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden rounded-t-2xl border-t border-border bg-background shadow-2xl lg:hidden"
           style={{ height: "calc(100dvh - 42dvh)", y }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
+          {/* Zona de arrastre = pastilla + cabecera. Los gestos NO van en toda la hoja:
+              si no, hacer scroll en el formulario también movía la hoja. */}
+          <div
+            className="shrink-0 touch-none"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
           {/* Drag pill */}
           <div
             className="flex justify-center pb-1 pt-2"
@@ -886,6 +896,7 @@ export function SiteFormDrawer({
             >
               <ChevronDown className={cn("size-4 transition-transform duration-200", !isSheetOpen && "rotate-180")} />
             </button>
+          </div>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
