@@ -681,6 +681,8 @@ export function SiteFormDrawer({
   const isBusy = submitState === "saving" || submitState === "publishing"
   const hasCoverReady = form.media.some((m) => m.type === "image" && m.isCover && m.status === "ready")
   const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared
+  // Qué impide publicar, para decirlo siempre (antes solo se veía la portada).
+  const missing = [!hasCoverReady && "la portada", !declared && "la declaración"].filter(Boolean) as string[]
 
   const toggle = (id: SectionKey) => setOpenSection((prev) => (prev === id ? ("" as SectionKey) : id))
 
@@ -801,13 +803,9 @@ export function SiteFormDrawer({
             <Loader2 className="size-3 animate-spin" aria-hidden />
             Optimizando media… no cierres esta ventana
           </p>
-        ) : hasCoverReady && !declared && !isBusy ? (
+        ) : missing.length > 0 && !isBusy ? (
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-            Acepta la declaración al final del formulario para publicar
-          </p>
-        ) : !hasCoverReady && !isBusy ? (
-          <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-            Agrega una imagen de portada para publicar
+            Falta: {missing.join(" y ")}
           </p>
         ) : null}
       </div>
