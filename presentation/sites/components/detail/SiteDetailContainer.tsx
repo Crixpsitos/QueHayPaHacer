@@ -13,6 +13,7 @@ import { fetchPublicSiteDetail, fetchSiteLinkedEvents } from "@/presentation/sit
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { getHolidaysAction } from "@/app/actions/config/get-holidays.action";
 import { OpeningPolicyNotes } from "./OpeningPolicyNotes";
+import { HowToGetThere } from "./HowToGetThere";
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
@@ -284,6 +285,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               <ExternalLink className="size-4" aria-hidden />
               Ver en Google Maps
             </a>
+
+            {hasMap && <HowToGetThere destination={{ latitude: lat!, longitude: lng! }} />}
 
             {hasMap && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-[#E4E4E7] bg-[#F4F4F5]">
