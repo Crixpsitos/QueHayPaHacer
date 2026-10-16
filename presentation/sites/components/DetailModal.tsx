@@ -515,7 +515,9 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
 
-      {/* ── Itinerario del sitio ─────────────────────────────────── */}
+      {/* ── Itinerario del sitio (solo si hay eventos o se están cargando) ── */}
+      {(eventsLoading || siteEvents.length > 0) && (
+      <>
       <section>
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-[#FDF2F4]">
@@ -539,15 +541,14 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
             <Loader2 className="size-5 animate-spin" aria-hidden />
           </div>
         ) : (
-          <SiteItineraryGrid
-            events={siteEvents}
-            emptyMessage="No hay eventos programados en este sitio."
-          />
+          <SiteItineraryGrid events={siteEvents} />
         )}
       </section>
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+      </>
+      )}
 
       {/* ── Autor + acciones ─────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">

@@ -386,19 +386,19 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         </aside>
       </div>
 
-      <>
-        <Separator className="my-10" />
-        <section>
-          <div className="mb-6">
-            <h2 className="font-heading text-2xl font-semibold tracking-tight text-[#09090B]">Próximos eventos aquí</h2>
-            <p className="mt-1 text-sm text-[#71717A]">Lo que se viene en {site!.name}</p>
-          </div>
-          <SiteItineraryGrid
-            events={linkedEvents}
-            emptyMessage="No hay eventos próximos en este lugar."
-          />
-        </section>
-      </>
+      {/* Sin eventos no se muestra el apartado (un vacío no le sirve a nadie). */}
+      {linkedEvents.length > 0 && (
+        <>
+          <Separator className="my-10" />
+          <section>
+            <div className="mb-6">
+              <h2 className="font-heading text-2xl font-semibold tracking-tight text-[#09090B]">Próximos eventos aquí</h2>
+              <p className="mt-1 text-sm text-[#71717A]">Lo que se viene en {site!.name}</p>
+            </div>
+            <SiteItineraryGrid events={linkedEvents} />
+          </section>
+        </>
+      )}
     </div>
   );
 }
