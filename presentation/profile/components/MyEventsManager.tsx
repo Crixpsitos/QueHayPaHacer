@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/app/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { fetchMyProfileData } from "@/app/lib/api/profile-fetcher";
-import type { UserEvent } from "@/domain/repository/profile/IProfileRepository";
+import { useCachedFetch } from "@/app/lib/clientCache/useCachedFetch";
 import { EventPosterCard } from "./my-events/EventPosterCard";
 import { matchesTab, sortEvents, TABS, totals, type EventTab } from "./my-events/myEvents";
 
@@ -22,17 +22,16 @@ const EMPTY: Record<EventTab, { title: string; body: string }> = {
 const numberFormat = new Intl.NumberFormat("es-CO");
 
 export function MyEventsManager() {
-  const { user } = useAuth();
+  const { user, isHydrating } = useAuth();
   const isPremium = user?.profile?.plan === "premium";
-  const [events, setEvents] = useState<UserEvent[] | null>(null);
-  const [hasError, setHasError] = useState(false);
   const [tab, setTab] = useState<EventTab>("all");
-
-  useEffect(() => {
-    fetchMyProfileData({ allEvents: true })
-      .then((data) => setEvents(sortEvents(data.events)))
-      .catch(() => setHasError(true));
-  }, []);
+  // Pinta al instante lo último visto (10 min) y refresca de fondo; la caché es de esta sesión (uid).
+  const { data, error } = useCachedFetch("my-events", () => fetchMyProfileData({ allEvents: true }).then((d) => sortEvents(d.events)), {
+    uid: isHydrating ? undefined : (user?.uid ?? null),
+    maxAgeMs: 10 * 60_000,
+  });
+  const events = data ?? null;
+  const hasError = !!error && !data;
 
   const summary = useMemo(() => (events ? totals(events) : null), [events]);
 

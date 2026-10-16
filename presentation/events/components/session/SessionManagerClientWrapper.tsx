@@ -14,6 +14,7 @@ import { SessionForm } from "./SessionForm";
 import { deleteEventSessionAction } from "@/app/actions/events/delete-event-session.action";
 import { setSessionStatusAction } from "@/app/actions/events/set-session-status.action";
 import { notify } from "@/presentation/shared/lib/notify";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 interface SessionManagerClientWrapperProps {
   event: EventViewModel;
@@ -69,6 +70,7 @@ export function SessionManagerClientWrapper({
       if (!confirm("¿Eliminar esta sesión? Esta acción no se puede deshacer.")) return;
       startTransition(async () => {
         const result = await deleteEventSessionAction(event.id, sessionId);
+        void invalidateMyData();
         if (result.success) {
           setSessions((prev) => prev.filter((s) => s.id !== sessionId));
           notify.success("Sesión eliminada.");
@@ -85,6 +87,7 @@ export function SessionManagerClientWrapper({
       const next = session.status === "published" ? "draft" : "published";
       startTransition(async () => {
         const result = await setSessionStatusAction(event.id, session.id, next);
+        void invalidateMyData();
         if (result.success) {
           setSessions((prev) =>
             prev.map((s) => (s.id === result.session.id ? result.session : s)),

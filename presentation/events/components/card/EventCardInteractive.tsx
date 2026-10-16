@@ -9,6 +9,7 @@ import type { EventViewModel } from "@/presentation/events/view-models/EventView
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useRef } from "react";
+import { readLikedIds, saveFreshLikes, setLikedId } from "@/app/lib/clientCache/likedIds";
 import { EventCard } from "./EventCard";
 import { cn } from "@/app/lib/utils/cn";
 
@@ -40,7 +41,7 @@ export function EventCardInteractive({
   columns = 4,
 }: EventCardInteractiveProps) {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, isHydrating, refreshUser } = useAuth();
   const [, startTransition] = useTransition();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<PendingLikeState | null>(null);
@@ -51,9 +52,23 @@ export function EventCardInteractive({
   // Ref de deduplicación: evita doble fetch cuando el efecto corre dos veces (StrictMode / Suspense)
   const fetchingRef = useRef<string | null>(null);
 
+  // Corazones ya pintados desde lo guardado en este navegador, antes de que responda el servidor.
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) return;
+    let cancelled = false;
+    void readLikedIds("events", uid).then((stored) => {
+      if (!cancelled) setDynamicLikes((prev) => ({ ...stored, ...prev }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
+
   useEffect(() => {
     if (!user?.uid || events.length === 0) return;
-    const key = `${user.uid}:${eventIdsKey}`;
+    const uid = user.uid;
+    const key = `${uid}:${eventIdsKey}`;
     if (fetchingRef.current === key) return; // ya en vuelo
     fetchingRef.current = key;
 
@@ -66,6 +81,7 @@ export function EventCardInteractive({
       .then((r) => r.json())
       .then((likes: Record<string, boolean>) => {
         setDynamicLikes(likes);
+        saveFreshLikes("events", uid, events.map((e) => e.id), likes);
         fetchingRef.current = null;
       })
       .catch(() => { fetchingRef.current = null; });
@@ -95,6 +111,12 @@ export function EventCardInteractive({
   };
 
   const handleLike = async (eventId: string, liked: boolean): Promise<boolean> => {
+    // Sin sesión no hace falta ir al servidor para saberlo: el modal abre al instante.
+    if (!user && !isHydrating) {
+      setPendingLike({ eventId, liked });
+      setIsLoginModalOpen(true);
+      return false;
+    }
     const result = await likeEventAction(eventId, liked);
 
     if (result.authRequired) {
@@ -108,6 +130,7 @@ export function EventCardInteractive({
       return false;
     }
 
+    setLikedId("events", user?.uid, eventId, liked);
     return true;
   };
 

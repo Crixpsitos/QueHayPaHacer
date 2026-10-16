@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/actions/auth/logout.action";
+import { clearClientCache } from "@/app/lib/clientCache/clientCache";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { SITE_NAME } from "@/app/lib/site";
 import { getActiveSectionLabel } from "../lib/navigation";
@@ -34,10 +35,12 @@ export function StudioHeader({ displayName, email, photoURL, limited = false }: 
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const handleLogout = async () => {
+    await clearClientCache(); // no dejar datos de la persona en este equipo
     setUser(null);
     // Cerrar también el SDK cliente (autenticado con custom token), no solo la cookie.
     await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
+    await clearClientCache(); // otra vez: barre lo que una petición en vuelo escribió mientras tanto
     router.push("/");
   };
 

@@ -29,6 +29,7 @@ import {
 import { dateParts, formatTimeRange } from "@/presentation/events/components/detail/format";
 import { CheckInQrDialog } from "./CheckInQrDialog";
 import { notify } from "@/presentation/shared/lib/notify";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const keyOf = (r: UserRegistrationItem) => `${r.eventId}/${r.sessionId ?? ""}`;
 const hrefOf = (r: UserRegistrationItem) =>
@@ -50,6 +51,7 @@ export function MyRegistrations({ items }: { items: UserRegistrationItem[] }) {
     const r = target;
     startTransition(async () => {
       const res = await cancelRegistrationAction({ eventId: r.eventId, sessionId: r.sessionId });
+      void invalidateMyData();
       if (res.success) {
         notify.success("Inscripción cancelada");
         setTarget(null);

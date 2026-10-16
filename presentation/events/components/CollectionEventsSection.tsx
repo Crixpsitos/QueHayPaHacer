@@ -1,6 +1,3 @@
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
@@ -11,8 +8,6 @@ import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCa
 import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
 import { getAllEventsPage } from "@/presentation/events/data/allEventsPage";
 import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
-import { fetchUserLiked, fetchEventDetailById } from "@/presentation/events/data/eventDetailFetchers";
-import { createServerContainer } from "@/infraestructure/di/container";
 import { SITE_URL } from "@/app/lib/site";
 import type { Events } from "@/domain/entities/events/Events";
 
@@ -44,30 +39,13 @@ function ItemListJsonLd({ events }: { events: Events[] }) {
 }
 
 /**
- * Hueco dinámico (PPR) de una landing: lee la cookie del usuario para pintar SU
- * estado de like. Va dentro de un <Suspense> — con Cache Components leer
- * `cookies()` obliga a un boundary. El shell (h1/meta/SEO) queda estático; esto
- * se streamea en la misma respuesta (crawlable).
+ * Contenido de una landing: igual para todos (se cachea en el CDN). El estado de "me gusta" de cada persona
+ * lo resuelve EventCardInteractive en el cliente (POST /api/events/likes), sin leer cookies aquí.
  */
 export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
-  const tokens = await getTokens(await cookies(), authConfig);
-  const userId = tokens?.decodedToken?.uid;
-
-  const likesFor = async (events: Events[]): Promise<Record<string, boolean>> => {
-    const map: Record<string, boolean> = {};
-    if (userId) {
-      const results = await Promise.all(
-        events.map(async (e) => ({ id: e.id, liked: await fetchUserLiked(e.id, userId) })),
-      );
-      for (const { id, liked } of results) map[id] = liked;
-    }
-    return map;
-  };
-
   // Categoría: query por slug del evento (cubre slugs en español e inglés).
   if (def.kind === "category" && def.categoryId) {
     const { events, nextCursor } = await getCategoryEventsPage(def.categoryId, null, undefined, def.categorySlug);
-    const likedByEventId = await likesFor(events);
     return (
       <Section spacing="sm" className="mt-4">
         <ItemListJsonLd events={events} />
@@ -76,7 +54,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
           categorySlug={def.categorySlug}
           initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
           initialCursor={nextCursor}
-          initialLikedByEventId={likedByEventId}
+          initialLikedByEventId={{}}
         />
       </Section>
     );
@@ -85,14 +63,13 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
   // "Todos": misma lista paginada que /eventos (primera página + "Cargar más").
   if (def.kind === "all") {
     const { events, nextCursor } = await getAllEventsPage(null);
-    const likedByEventId = await likesFor(events);
     return (
       <Section spacing="sm" className="mt-4">
         <ItemListJsonLd events={events} />
         <InfiniteEventList
           initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
           initialCursor={nextCursor}
-          initialLikedByEventId={likedByEventId}
+          initialLikedByEventId={{}}
         />
       </Section>
     );
@@ -100,7 +77,6 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
 
   // Destacados/fin de semana: agrupados por categoría.
   const events = await fetchCollectionEvents(def);
-  const likedByEventId = await likesFor(events);
 
   const collections = await getEventCollections();
   const groups = groupEventsByCategory(events, collections);
@@ -124,7 +100,6 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
         >
           <EventCardInteractive
             events={g.events.map((e) => EventViewModelMapper.toViewModel(e))}
-            likedByEventId={likedByEventId}
             info={EMPTY_INFO}
             variant="vertical"
           />

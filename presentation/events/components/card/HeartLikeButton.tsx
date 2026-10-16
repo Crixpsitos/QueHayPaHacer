@@ -8,7 +8,8 @@ import {
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
 import { Heart } from "lucide-react";
-import { memo, useCallback, useState } from "react";
+import { memo } from "react";
+import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 
 interface HeartLikeButtonProps {
   eventId: string;
@@ -25,28 +26,12 @@ export const HeartLikeButton = memo(function HeartLikeButton({
   className,
   onLike,
 }: HeartLikeButtonProps) {
-  const [liked, setLiked] = useState(initialLiked);
-  const [likes, setLikes] = useState(initialLikes);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleLike = useCallback(async () => {
-    if (isSubmitting) return;
-
-    const next = !liked;
-    setIsSubmitting(true);
-    setLiked(next);
-    setLikes((value) => (next ? value + 1 : value - 1));
-
-    try {
-      const accepted = await onLike?.(eventId, next);
-      if (accepted === false) {
-        setLiked(!next);
-        setLikes((value) => (next ? value - 1 : value + 1));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [eventId, isSubmitting, liked, onLike]);
+  // Optimista: corazón y contador cambian al instante; si onLike rechaza, vuelven solos.
+  const { liked, count: likes, toggle } = useOptimisticLike(
+    initialLiked,
+    initialLikes,
+    async (next) => (await onLike?.(eventId, next)) !== false,
+  );
 
   return (
     <Tooltip>
@@ -61,8 +46,7 @@ export const HeartLikeButton = memo(function HeartLikeButton({
               : "text-muted-foreground hover:text-foreground",
             className,
           )}
-          onClick={handleLike}
-          disabled={isSubmitting}
+          onClick={toggle}
           aria-label={`${liked ? "Quitar like" : "Dar like"} — ${likes.toLocaleString("es-CO")} likes`}
           aria-pressed={liked}
         >

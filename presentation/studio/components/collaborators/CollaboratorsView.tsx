@@ -27,6 +27,7 @@ import type {
   SentInvitationVM,
   StudioCollaboratorsViewModel,
 } from "../../view-models/StudioCollaboratorsViewModel";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 const formatDate = (iso: string) =>
@@ -105,6 +106,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
   const handleRespond = async (inv: InvitationVM, accept: boolean) => {
     setReceived((prev) => prev.filter((i) => i.id !== inv.id));
     const res = await respondCollaboratorInvitationAction(inv.id, accept);
+    void invalidateMyData();
     if (res.success) {
       if (accept) {
         // Relación bidireccional: quien me invitó entra a MI red también.
@@ -143,6 +145,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
   const handleRemove = async (c: CollaboratorVM) => {
     setNetwork((prev) => prev.filter((x) => x.refId !== c.refId));
     const res = await removeCollaboratorAction(c.refId, c.kind);
+    void invalidateMyData();
     if (res.success) notify.success(`${c.displayName} quitado de tu red.`);
     else {
       setNetwork((prev) => [c, ...prev]);

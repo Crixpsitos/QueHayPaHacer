@@ -3,7 +3,6 @@ import { Award, BadgeCheck, CalendarDays, ExternalLink } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { PublicProfileStats } from "./PublicProfileStats";
 import { ShareProfileButton } from "./ShareProfileButton";
-import { MotionFadeIn } from "./MotionFadeIn";
 import { ProfileBanner } from "./ProfileBanner";
 import type { PublicProfileViewModel } from "../view-models/PublicProfileViewModel";
 import { normalizeExternalUrl } from "../lib/normalizeExternalUrl";
@@ -30,7 +29,7 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
   const websiteHref = showDetails && profile.website ? normalizeExternalUrl(profile.website) : null;
 
   return (
-    <MotionFadeIn className="space-y-6">
+    <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <ProfileBanner bannerUrl={profile.bannerUrl}>
           <div className="absolute right-3 top-3">
@@ -114,7 +113,7 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
 
         </div>
       </div>
-    </MotionFadeIn>
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { Container } from "@/app/components/layout/shared/Container";
 import { PublicProfileContainer } from "@/presentation/profile/components/PublicProfileContainer";
 import { ServerBoundary } from "@/presentation/shared/components/ServerBoundary";
-import { resolvePublicUser } from "@/presentation/profile/lib/resolvePublicUser";
+import { getCachedPublicUser } from "@/presentation/profile/lib/cachedProfileData";
 import type { Metadata } from "next";
 
 interface PublicProfilePageProps {
@@ -10,7 +10,7 @@ interface PublicProfilePageProps {
 }
 
 export async function generateMetadata({ params }: PublicProfilePageProps): Promise<Metadata> {
-  const user = await resolvePublicUser((await params).handle);
+  const user = await getCachedPublicUser((await params).handle);
   if (!user) return { robots: { index: false, follow: false } };
   // displayName es el @username (ver PublicProfileViewModelMapper).
   const name = `${user.firstName} ${user.lastName}`.trim();

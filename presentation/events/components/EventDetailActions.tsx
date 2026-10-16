@@ -3,6 +3,7 @@
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/store/auth/AuthContext";
+import { setLikedId } from "@/app/lib/clientCache/likedIds";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
@@ -22,12 +23,20 @@ interface EventDetailActionsProps {
 
 export function EventDetailActions({ event, initialLiked, sessionId }: EventDetailActionsProps) {
   const router = useRouter();
-  const { refreshUser } = useAuth();
+  const { user, isHydrating, refreshUser } = useAuth();
   const [, startTransition] = useTransition();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<{ liked: boolean } | null>(null);
+  // Like que se aplicó al iniciar sesión desde el modal: gana sobre el estado que traiga la lectura de sesión (puede ir atrasada).
+  const [appliedLike, setAppliedLike] = useState<boolean | null>(null);
 
   const handleLike = useCallback(async (eventId: string, liked: boolean): Promise<boolean> => {
+    // Sin sesión no hace falta ir al servidor para saberlo: el modal abre al instante.
+    if (!user && !isHydrating) {
+      setPendingLike({ liked });
+      setIsLoginOpen(true);
+      return false;
+    }
     const result = await likeEventAction(eventId, liked);
 
     if (result.authRequired) {
@@ -38,14 +47,16 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
 
     if (result.error) return false;
 
+    setLikedId("events", user?.uid, eventId, liked);
     // HeartLikeButton already handles optimistic state — no router.refresh() needed
     return true;
-  }, []);
+  }, [user, isHydrating]);
 
   const handleLoginSuccess = useCallback(async () => {
     await refreshUser();
     if (pendingLike) {
-      await likeEventAction(event.id, pendingLike.liked);
+      const res = await likeEventAction(event.id, pendingLike.liked);
+      if (res.success) setAppliedLike(pendingLike.liked);
     }
     setIsLoginOpen(false);
     setPendingLike(null);
@@ -62,8 +73,9 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
         {!sessionId && (
           <HeartLikeButton
             eventId={event.id}
-            initialLiked={initialLiked}
-            initialLikes={analytics?.likes ?? 0}
+            key={appliedLike === null ? "viewer" : "applied"}
+            initialLiked={appliedLike ?? initialLiked}
+            initialLikes={(analytics?.likes ?? 0) + (appliedLike && !initialLiked ? 1 : 0)}
             onLike={handleLike}
             className="h-11 gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-5 text-sm font-semibold text-[#09090B] shadow-card transition-all hover:border-[#E63946] hover:bg-[#FDF2F4] hover:text-[#E63946]"
           />

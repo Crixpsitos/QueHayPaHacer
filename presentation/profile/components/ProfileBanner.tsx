@@ -26,6 +26,7 @@ import {
   resolveVariant,
   type BannerVariant,
 } from "../lib/bannerVariants";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -151,6 +152,7 @@ export function ProfileBanner({
       );
 
       const result = await updateBannerAction({ uid, bannerUrl: publicUrl, bannerPath: path });
+      void invalidateMyData();
       if (!result.success) throw new Error(result.error ?? "No se pudo guardar la portada.");
 
       // Preview optimista con el blob recortado
@@ -181,6 +183,7 @@ export function ProfileBanner({
 
     const deletePromise = (async () => {
       const result = await deleteBannerAction(uid);
+      void invalidateMyData();
       if (!result.success) throw new Error(result.error ?? "No se pudo eliminar la portada.");
       setLocalUrl(null);
       await refreshUser();

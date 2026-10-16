@@ -19,6 +19,7 @@ import type {
   SiteFormViewModel,
   WeekDay,
 } from "../view-models/SiteFormViewModel"
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache"
 
 export type SubmitState = "idle" | "saving" | "publishing" | "done"
 
@@ -162,6 +163,7 @@ export function useSiteForm() {
     const run = persistQueue.current.then(async () => {
       const id0 = await ensureDraftId()
       const r = await saveDraftSiteAction(formRef.current, id0)
+      void invalidateMyData()
       if (r.success) commitSiteId(r.siteId)
     }).catch((e) => console.error("[handleMediaUploaded persist]", e))
     persistQueue.current = run
@@ -210,6 +212,7 @@ export function useSiteForm() {
     if (existing) return Promise.resolve(existing)
     if (ensureRef.current) return ensureRef.current
     const p = saveDraftSiteAction(formRef.current).then((result) => {
+      void invalidateMyData()
       if (!result.success) throw new Error(result.error)
       commitSiteId(result.siteId)
       return result.siteId
@@ -222,6 +225,7 @@ export function useSiteForm() {
     setSubmitState("saving")
     // reuse the draft created during upload — never create a second doc
     const result = await saveDraftSiteAction(form, targetId() ?? undefined)
+    void invalidateMyData()
     if (result.success) {
       commitSiteId(result.siteId)
       notify.success("Borrador guardado")
@@ -238,6 +242,7 @@ export function useSiteForm() {
     setSubmitState("publishing")
     // a draft already exists (upload created it) → convert it in place, don't duplicate
     const result = await publishSiteAction(form, targetId() ?? undefined, declaration)
+    void invalidateMyData()
     if (!result.success) {
       notify.error("No se pudo publicar", { description: result.error })
       setSubmitState("idle")
@@ -303,6 +308,7 @@ export function useSiteForm() {
     if (!editId) { console.error("[saveEdit] no editId"); return }
     setSubmitState("publishing")
     const result = await updateSiteAction(editId, form, declaration)
+    void invalidateMyData()
     if (!result.success) {
       notify.error("No se pudo guardar los cambios", { description: result.error })
       setSubmitState("idle")

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { Button } from "@/app/components/ui/button";
 import { notify } from "@/presentation/shared/lib/notify";
 import type { InvitationVM } from "@/presentation/studio/view-models/StudioCollaboratorsViewModel";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
@@ -22,6 +23,7 @@ export function MyInvitations({ initial }: { initial: InvitationVM[] }) {
   const respond = async (inv: InvitationVM, accept: boolean) => {
     setBusy({ id: inv.id, accept });
     const res = await respondCollaboratorInvitationAction(inv.id, accept);
+    void invalidateMyData();
     setBusy(null);
     if (!res.success) {
       notify.error(res.error ?? "No se pudo procesar la invitación.");

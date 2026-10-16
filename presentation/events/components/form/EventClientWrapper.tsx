@@ -19,6 +19,7 @@ import { EventFormSkeleton } from "./EventFormSkeleton";
 import { ConvertToStandardDialog } from "./ConvertToStandardDialog";
 import { ConvertToMultiDateDialog } from "./ConvertToMultiDateDialog";
 import { Loader2 } from "lucide-react";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 interface EventFormClientWrapperProps {
   mode: "create" | "edit";
@@ -100,6 +101,7 @@ export const EventClientWrapper = ({
         currentFormData: formSnapshotRef.current ?? (initialData as Partial<FormEventDto>),
         selectedSessionId: selectedSessionId ?? undefined,
       });
+      void invalidateMyData();
 
       if (!result.success) {
         migrationStartedRef.current = false;
@@ -192,6 +194,7 @@ export const EventClientWrapper = ({
         id
           ? await updateEventAction(id, draftData)
           : await createDraftEventAction(draftData);
+      void invalidateMyData();
 
       if (result.success) {
         return result.eventInfo ?? null;
@@ -209,6 +212,7 @@ export const EventClientWrapper = ({
       try {
         const cleanDraft: FormEventDto = JSON.parse(JSON.stringify(eventDraft));
         const result = await publishEventAction(cleanDraft, declaration);
+        void invalidateMyData();
 
         if (result.success) {
           if (result.status === "pending") {

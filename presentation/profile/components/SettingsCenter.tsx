@@ -47,6 +47,7 @@ import { EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPass
 import { loginAction } from "@/app/actions/auth/login.action";
 import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
 import { MembershipSection } from "./MembershipSection";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 type selectedSectionSetting =
   | "main"
@@ -361,6 +362,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           photoURL: uploadResult.publicUrl,
           imagePath: uploadResult.path,
         });
+        void invalidateMyData();
 
         if (!updateResult.success) {
           throw new Error(updateResult.error ?? "No se pudo actualizar la foto de perfil.");
@@ -438,6 +440,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       socialLinks: editedUser.socialLinks,
       isUsernameCustomized: isUsernameChanged ? true : editedUser.isUsernameCustomized,
     });
+    void invalidateMyData();
 
     if (!result.success) {
       setSaveProfileMessage({
@@ -547,9 +550,11 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         uid: user.uid,
         isPublic: newVisibility,
       });
+      void invalidateMyData();
 
       if (result.success) {
         setIsPublic(newVisibility);
+        await refreshUser(); // reescribe también la sesión guardada en el navegador
         notify.success(result.message || "Visibilidad del perfil actualizada.");
       } else {
         notify.error(result.error || "Error al actualizar la visibilidad.");

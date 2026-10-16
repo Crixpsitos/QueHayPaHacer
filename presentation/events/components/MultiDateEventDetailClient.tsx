@@ -1,7 +1,6 @@
 "use client";
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
-import type { TeamViewerRole } from "./EventDetailClient";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
@@ -18,17 +17,16 @@ import { DateBlock, MobileCtaBar, Ticket, ctaClass } from "./detail/Ticket";
 import { Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { formatDateRange, formatPriceSummary } from "./detail/format";
+import { useEventViewer } from "../hooks/useEventViewer";
 
 interface MultiDateEventDetailClientProps {
   event: EventViewModel;
   sessions: SessionViewModel[];
-  initialLiked: boolean;
-  isOwner?: boolean;
-  /** Rol de equipo con acceso al Studio (calculado en servidor). */
-  teamRole?: TeamViewerRole;
 }
 
-export function MultiDateEventDetailClient({ event, sessions, initialLiked, isOwner = false, teamRole }: MultiDateEventDetailClientProps) {
+export function MultiDateEventDetailClient({ event, sessions }: MultiDateEventDetailClientProps) {
+  // La página es igual para todos (cacheable); lo de la persona (like, dueño, equipo) llega aparte.
+  const { liked: initialLiked, isOwner, teamRole } = useEventViewer(event.id);
   const parentRef = event.slug || event.id;
   const allPast = isMultiDateEventPast(sessions);
   const upcoming = sessions.filter((s) => !isSessionPast(s.endDate));

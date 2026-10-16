@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import { Clock, Heart, MapPin, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { cn } from "@/app/lib/utils/cn";
@@ -69,23 +70,15 @@ export const EventCard = ({
   className,
   prioritizeImage = false,
 }: EventCardProps) => {
-  const [liked, setLiked] = useState(initialLiked ?? false);
+  // Optimista: corazón y contador cambian al instante; si onLike rechaza (p. ej. sin sesión) vuelven solos.
+  // Cuando EventCardInteractive resuelve el fetch de likes, initialLiked se reaplica solo.
+  const { liked, count: likes, toggle: handleLike } = useOptimisticLike(
+    initialLiked ?? false,
+    event.analytics?.likes ?? 0,
+    async (next) => (await onLike?.(event.id, next)) !== false,
+  );
   const [imageFailed, setImageFailed] = useState(false);
   const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
-
-  // Sincroniza cuando EventCardInteractive resuelve el fetch de likes (ajuste en render, sin effect).
-  const [prevInitialLiked, setPrevInitialLiked] = useState(initialLiked);
-  if (initialLiked !== prevInitialLiked) {
-    setPrevInitialLiked(initialLiked);
-    setLiked(initialLiked ?? false);
-  }
-
-  const handleLike = useCallback(async () => {
-    const next = !liked;
-    setLiked(next);
-    const accepted = await onLike?.(event.id, next);
-    if (accepted === false) setLiked(!next);
-  }, [liked, event.id, onLike]);
 
   const isFree = event.price?.isFree ?? event.price?.amount === 0;
   const detailUrl = `/eventos/${event.slug || event.id}`;
@@ -97,7 +90,6 @@ export const EventCard = ({
   const timing = isClient ? timingBadge(event.startDate, event.endDate, new Date(), isMultiDate) : null;
   const spots = spotsInfo(event.capacity, event.analytics?.registrations ?? attendeeCount);
   const registered = event.analytics?.registrations ?? attendeeCount;
-  const likes = event.analytics?.likes ?? 0;
   const stub = event.startDate ? dateParts(event.startDate) : null;
   const authorName = event.author?.displayName?.trim() || "Organizador";
   const place = hasLocation ? [event.location.venue, event.location.city?.name].filter(Boolean).join(", ") : "";

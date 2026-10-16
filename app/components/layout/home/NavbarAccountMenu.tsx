@@ -9,6 +9,7 @@ import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.act
 import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
 import { getPendingSiteSuggestionsCountAction } from "@/app/actions/site-suggestions/get-pending-site-suggestions-count.action";
 import { logoutAction } from "@/app/actions/auth/logout.action";
+import { clearClientCache } from "@/app/lib/clientCache/clientCache";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { cn } from "@/app/lib/utils/cn";
@@ -91,10 +92,12 @@ export function NavbarAccountMenu({
   const avatarFallback = displayName[0]?.toUpperCase();
 
   const handleLogout = async () => {
+    await clearClientCache(); // no dejar datos de la persona en este equipo
     setUser(null);
     // Cerrar también la sesión del SDK cliente; si no, onIdTokenChanged puede restaurar la cookie.
     await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
+    await clearClientCache(); // otra vez: barre lo que una petición en vuelo escribió mientras tanto
     router.refresh();
   };
 

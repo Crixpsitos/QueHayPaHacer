@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Award, CalendarDays, Heart, MapPin } from "lucide-react";
-import { fetchMyProfileData, type MyProfileData } from "@/app/lib/api/profile-fetcher";
+import { fetchMyProfileData } from "@/app/lib/api/profile-fetcher";
+import { useAuth } from "@/app/store/auth/AuthContext";
+import { useCachedFetch } from "@/app/lib/clientCache/useCachedFetch";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   MissingEventCard,
@@ -32,16 +33,14 @@ const formatActivityDate = (date: Date) =>
   }).format(date);
 
 export function ProfileTimeline() {
-  const [data, setData] = useState<MyProfileData | null>(null);
-  const [hasError, setHasError] = useState(false);
+  const { user, isHydrating } = useAuth();
+  // Pinta al instante lo último visto (10 min) y refresca de fondo; la caché es de esta sesión (uid).
+  const { data, error } = useCachedFetch("my-profile", () => fetchMyProfileData(), {
+    uid: isHydrating ? undefined : (user?.uid ?? null),
+    maxAgeMs: 10 * 60_000,
+  });
 
-  useEffect(() => {
-    fetchMyProfileData()
-      .then(setData)
-      .catch(() => setHasError(true));
-  }, []);
-
-  if (hasError) {
+  if (error && !data) {
     return <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">No pudimos cargar tu trayectoria.</p>;
   }
 

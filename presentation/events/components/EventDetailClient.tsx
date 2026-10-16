@@ -21,6 +21,8 @@ import { DateBlock, MobileCtaBar, RegisteredChip, Ticket, ctaClass } from "./det
 import { AttentionRing, Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
+import { useEventViewer } from "../hooks/useEventViewer";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 // Lazy — solo se carga si el usuario abre el modal
 const EventRegistrationModal = lazy(() =>
@@ -35,14 +37,6 @@ export type TeamViewerRole = "editor" | "viewer" | "checkin";
 
 interface EventDetailClientProps {
   event: EventViewModel;
-  initialLiked: boolean;
-  initialRegistered: boolean;
-  /** True cuando el usuario que ve el evento es su organizador. */
-  isOwner?: boolean;
-  /** Rol de equipo de quien ve el evento (calculado en servidor); solo muestra accesos, no autoriza. */
-  teamRole?: TeamViewerRole;
-  /** True cuando el organizador tiene plan Premium (acceso al Estudio). */
-  isPremiumOwner?: boolean;
   /** Ruta a compartir (usada por el detalle de sesión para compartir la sesión). */
   shareUrl?: string;
   /** Enlace de regreso (p.ej. al evento padre desde una sesión). */
@@ -57,11 +51,6 @@ interface EventDetailClientProps {
 
 export function EventDetailClient({
   event,
-  initialLiked,
-  initialRegistered,
-  isOwner = false,
-  teamRole,
-  isPremiumOwner = false,
   shareUrl,
   backLink,
   editSessionHref,
@@ -70,7 +59,12 @@ export function EventDetailClient({
 }: EventDetailClientProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(initialRegistered);
+  // La página es igual para todos (cacheable); lo de la persona (like, inscripción, dueño, equipo) llega aparte.
+  const viewer = useEventViewer(event.id, sessionId);
+  const { isOwner, teamRole, isPremiumOwner, liked: initialLiked, registered: initialRegistered, ready } = viewer;
+  const [registeredOverride, setRegisteredOverride] = useState<boolean | null>(null);
+  const isRegistered = registeredOverride ?? initialRegistered;
+  const setIsRegistered = setRegisteredOverride;
 
   const isPast = isEventPast(event.endDate);
   const registrations = event.analytics?.registrations ?? 0;
@@ -105,7 +99,7 @@ export function EventDetailClient({
   };
 
   const ctaButton = (
-    <button type="button" onClick={register} className={ctaClass}>
+    <button type="button" onClick={register} disabled={!ready} className={cn(ctaClass, "disabled:opacity-60")}>
       Inscribirme
       {event.registrationType === "external" && <ExternalLink className="size-4" aria-hidden="true" />}
     </button>
@@ -216,6 +210,7 @@ export function EventDetailClient({
                 registrationType: event.registrationType as "internal" | "form",
                 ...(formData ? { formData: formData as Record<string, string | string[] | number | boolean | null | Record<string, unknown>> } : {}),
               });
+              void invalidateMyData();
               if (result.success || result.alreadyRegistered) setIsRegistered(true);
               return result;
             }}

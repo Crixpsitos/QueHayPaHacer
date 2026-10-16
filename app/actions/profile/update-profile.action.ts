@@ -191,6 +191,11 @@ export async function updateProfileAction(input: UpdateProfileInput): Promise<Up
     }
 
     updateTag(`user-profile-${input.uid}`);
+    if (usernameChanged) {
+      // El perfil público se cachea por @handle: liberar el viejo y el nuevo.
+      updateTag(`profile-handle-${currentUserDB.displayName}`);
+      updateTag(`profile-handle-${username}`);
+    }
 
     return { success: true };
   } catch (error) {

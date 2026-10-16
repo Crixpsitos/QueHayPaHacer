@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, MapPin, Heart, Share2, Layers } from "lucide-react";
@@ -8,6 +9,8 @@ import { cn } from "@/app/lib/utils/cn";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
+import { setLikedId } from "@/app/lib/clientCache/likedIds";
+import { useStoredLiked } from "@/app/lib/clientCache/useStoredLiked";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { formatPrice } from "../detail/format";
 import { dateLine, PosterFallback } from "./EventCard";
@@ -20,31 +23,23 @@ interface FeaturedEventCardProps {
 
 export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage = true }: FeaturedEventCardProps) {
   const { user } = useAuth();
-  const [liked, setLiked] = useState(initialLiked);
-  const [likes, setLikes] = useState(event.analytics?.likes ?? 0);
-  const [isPending, setIsPending] = useState(false);
+  // Optimista: corazón y contador cambian al instante; si el servidor rechaza, vuelven solos.
+  const storedLiked = useStoredLiked("events", user?.uid, event.id);
+  const { liked, count: likes, toggle } = useOptimisticLike(initialLiked || storedLiked, event.analytics?.likes ?? 0, async (next) => {
+    if (!user) return false;
+    try {
+      const res = await likeEventAction(event.id, next);
+      if (res?.success) setLikedId("events", user.uid, event.id, next);
+      return Boolean(res?.success);
+    } catch {
+      return false;
+    }
+  });
 
   const href = `/eventos/${event.slug || event.id}`;
   const isMultiDate = event.eventType === "multi-date";
   const dateLabel = dateLine(event);
   const [imageFailed, setImageFailed] = useState(false);
-
-  const handleLike = useCallback(async () => {
-    if (!user) return;
-    if (isPending) return;
-    setIsPending(true);
-    const next = !liked;
-    setLiked(next);
-    setLikes((n) => n + (next ? 1 : -1));
-    try {
-      await likeEventAction(event.id, next);
-    } catch {
-      setLiked(!next);
-      setLikes((n) => n + (next ? -1 : 1));
-    } finally {
-      setIsPending(false);
-    }
-  }, [user, liked, isPending, event.id]);
 
   const handleShare = useCallback(async () => {
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug || event.id}`;
@@ -129,8 +124,8 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleLike}
-                disabled={isPending}
+                onClick={() => user && toggle()}
+                aria-pressed={liked}
                 aria-label={liked ? "Quitar like" : "Dar like"}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",

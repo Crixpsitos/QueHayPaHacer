@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import { MapPin, Clock, CalendarDays, ExternalLink, Star, Eye, Share2, TrendingUp, Sparkles, Globe, AlertTriangle } from "lucide-react";
 import { Separator } from "@/app/components/ui/separator";
 import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
 import { fetchPublicSiteDetail, fetchSiteLinkedEvents } from "@/presentation/sites/data/siteDetailFetchers";
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { getHolidaysAction } from "@/app/actions/config/get-holidays.action";
@@ -68,23 +64,12 @@ function isTrending(analytics: { likes?: number; eventCount?: number }): boolean
 
 interface SiteDetailContainerProps {
   siteId: string;
-  initialLiked?: boolean;
 }
 
-export async function SiteDetailContainer({ siteId, initialLiked = false }: SiteDetailContainerProps) {
-  const { siteInteractionService } = createServerContainer();
+/** Ficha pública: igual para todos (se cachea en el CDN). El "me gusta" de la persona lo resuelve el cliente. */
+export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) {
   const site = await fetchPublicSiteDetail(siteId);
   if (!site) notFound();
-
-  let resolvedLiked = initialLiked;
-  try {
-    const tokens = await getTokens(await cookies(), authConfig);
-    const userId = tokens?.decodedToken?.uid;
-    if (userId) {
-      const liked = await siteInteractionService.findLikedByUser([siteId], userId);
-      resolvedLiked = liked[siteId] ?? false;
-    }
-  } catch { /* no auth */ }
 
   const linkedEvents = await fetchSiteLinkedEvents(siteId);
 
@@ -179,7 +164,6 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
         <SiteDetailActions
           siteId={siteId}
           siteName={site!.name}
-          initialLiked={resolvedLiked}
           initialLikes={site!.analytics.likes ?? 0}
           initialShares={site!.analytics.shares ?? 0}
         />

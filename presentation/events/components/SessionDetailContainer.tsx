@@ -1,25 +1,16 @@
 import { notFound } from "next/navigation";
 import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetchers";
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
-import { after } from "next/server";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { createServerContainer } from "@/infraestructure/di/container";
 import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "@/presentation/events/mapper/SessionViewModelMapper";
-import { EventDetailClient, type TeamViewerRole } from "./EventDetailClient";
+import { EventDetailClient } from "./EventDetailClient";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import {
   fetchEventDetailById,
   fetchEventDetailBySlug,
   fetchEventSessions,
-  fetchUserLiked,
-  fetchUserRegistered,
 } from "../data/eventDetailFetchers";
-import { getEventAccess } from "@/app/actions/_session";
-import { recordEventView } from "@/app/actions/events/_recordEventView";
 
 interface SessionDetailContainerProps {
   /** Slug o id del evento padre. */
@@ -30,8 +21,8 @@ interface SessionDetailContainerProps {
 
 /**
  * Detalle público de una sesión. Vive fuera de `page.tsx` para poder leerse
- * dentro del <Suspense> de `ServerBoundary`: lee cookies (datos sin cachear) y
- * con Cache Components eso fuera de un boundary rompe el prerender.
+ * dentro del <Suspense> de `ServerBoundary`. Igual para todos (cacheable en el CDN): lo de la persona
+ * (like, inscripción a esta fecha, dueño, equipo) lo pide el cliente a /api/events/[id]/viewer.
  */
 export async function SessionDetailContainer({
   eventId,
@@ -60,30 +51,6 @@ export async function SessionDetailContainer({
   );
   const mergedVM = SessionViewModelMapper.toEventViewModel(sessionVM, parentVM);
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  const userId = tokens?.decodedToken?.uid;
-
-  const [initialLiked, initialRegistered] =
-    userId && parent.id
-      ? await Promise.all([
-          // El like es del EVENTO (comparte caché con el detalle del evento);
-          // el registro sí es de esta fecha.
-          fetchUserLiked(parent.id, userId),
-          fetchUserRegistered(parent.id, userId, session.id),
-        ])
-      : [false, false];
-
-  const isOwner = Boolean(userId && parent.author?.id && userId === parent.author.id);
-
-  const teamRole = !isOwner && userId ? ((await getEventAccess(parent.id))?.role as TeamViewerRole | undefined) : undefined;
-
-  let isPremiumOwner = false;
-  if (isOwner && userId) {
-    const { userService } = createServerContainer();
-    const owner = await userService.getUserById(userId);
-    isPremiumOwner = owner?.plan === "premium";
-  }
-
   // Sitio vinculado (si la sesión tiene location.siteId)
   let linkedSite: LinkedSiteInfo | undefined;
   const siteId = session.location?.siteId;
@@ -96,20 +63,11 @@ export async function SessionDetailContainer({
     }
   }
 
-  after(async () => {
-    await recordEventView(parent.id, userId);
-  });
-
   const parentRef = parent.slug || parent.id;
 
   return (
     <EventDetailClient
       event={mergedVM}
-      initialLiked={initialLiked}
-      initialRegistered={initialRegistered}
-      isOwner={isOwner}
-      teamRole={teamRole}
-      isPremiumOwner={isPremiumOwner}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       backLink={{ href: `/eventos/${parentRef}`, label: parent.title }}
       editSessionHref={`/eventos/${parent.id}/edit?step=sessions`}
