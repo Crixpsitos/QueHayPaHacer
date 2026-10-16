@@ -1,6 +1,7 @@
 import { SITE_KINDS, SITE_PUBLISHED_AS_FORM } from "@/domain/entities/sites/value-objects/SiteListing"
 import * as v from "valibot"
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
+import { TRANSIT_MAX_ROUTES, TRANSIT_NOTE_MAX, TRANSIT_ROUTE_ID_RE } from "@/domain/entities/sites/value-objects/SiteTransit"
 import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 
 const SITE_CATEGORIES = [
@@ -50,6 +51,13 @@ const OpeningPolicy = v.object({
   rain: v.optional(v.object({ policy: v.picklist(RAIN_POLICIES), note: v.optional(text(RAIN_NOTE_MAX, "Nota de lluvia")) })),
 })
 
+const Transit = v.object({
+  routes: v.pipe(
+    v.array(v.object({ id: v.pipe(v.string(), v.regex(TRANSIT_ROUTE_ID_RE, "Ruta inválida")), note: v.optional(text(TRANSIT_NOTE_MAX, "Nota de bus")) })),
+    v.maxLength(TRANSIT_MAX_ROUTES, `Máximo ${TRANSIT_MAX_ROUTES} rutas de bus`),
+  ),
+})
+
 const fields = {
   name: text(120, "Nombre"),
   description: text(5000, "Descripción"),
@@ -73,6 +81,7 @@ const fields = {
   temporarilyClosed: v.optional(v.object({ isClosed: v.boolean(), reason: text(300, "Motivo de cierre") })),
   openingPolicy: v.optional(OpeningPolicy),
   bookingUrl: v.optional(OptionalHttpUrl),
+  transit: v.optional(Transit),
   kind: v.optional(v.picklist(SITE_KINDS)),
   // "qhpa" no está: lo decide el servidor, nunca el cliente.
   publishedAs: v.optional(v.picklist(SITE_PUBLISHED_AS_FORM)),

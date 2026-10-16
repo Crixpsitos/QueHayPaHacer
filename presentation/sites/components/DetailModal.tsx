@@ -14,6 +14,7 @@ import { cn } from "@/app/lib/utils/cn"
 import { getSiteOpenStatus } from "../lib/openStatus"
 import { useColombiaHolidays } from "../hooks/useColombiaHolidays"
 import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
+import { SiteTransitFromSite } from "./detail/SiteTransitSection"
 import { TrustBadge } from "./TrustBadge"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
 import { SiteClaimCta } from "./claim/SiteClaimCta"
@@ -440,6 +441,8 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
         </div>
         <OpeningPolicyNotes policy={site.openingPolicy} status={openStatus} className="mt-3" />
       </section>
+
+      <SiteTransitFromSite site={site} className="mt-5" />
 
       {/* ── Motivo de rechazo ────────────────────────────────────── */}
       {status === "rejected" && site.rejectionReason && (

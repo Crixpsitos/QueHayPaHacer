@@ -7,6 +7,7 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteSchema, validateSiteForm } from "@/application/dto/sites/SiteDto"
 import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration"
 import { buildSiteInput } from "./buildSiteInput"
+import { withTransit } from "./_transit"
 import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
@@ -27,7 +28,7 @@ export async function updateSiteAction(siteId: string, form: SiteFormViewModel, 
   try {
     // Evidencia antes de aplicar; solo si el sitio es del autor (ver publishSiteAction).
     if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo actualizar el sitio" }
-    const input = buildSiteInput(uid, tokens.decodedToken, form, "published")
+    const input = await withTransit(buildSiteInput(uid, tokens.decodedToken, form, "published"), form, siteId)
     await contentDeclarationService.record(uid, "site", siteId, {
       variant: input.publishedAs as "owner" | "proposer" | "qhpa",
       siteKind: input.kind,

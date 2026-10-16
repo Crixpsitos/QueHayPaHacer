@@ -22,6 +22,7 @@ Avisos cortos dentro de la app. Sin correo, sin push, sin preferencias, sin tiem
 | `claim_resolved` | reclamante (y reclamos que pierden) | `scripts/list-site-claims.ts` (`--approve` / `--reject`) |
 | `event_moderation` | autor del evento | `app/api/events/moderation/route.ts` (webhook) |
 | `site_moderation` | autor del sitio | **Cloud Function** `notifySiteModeration` (ver abajo) |
+| `transit_outdated` | autor del sitio | `reportTransitOutdatedAction` (al llegar a 3 reportes de personas distintas; id idempotente por versión del bloque de buses) |
 | `event_moderation` (baja) | autor del evento | **Cloud Function** `notifyEventChanges` (publicado → rechazado) |
 
 Los avisos de moderación de **sitios** salen de un trigger porque la decisión se toma a mano en Firestore (o con el futuro panel) y no pasa por código de la app. Avisa de `pending→approved`, `pending→rejected`, `approved→rejected` ("dieron de baja") y `published→draft` ("ya no está publicado", lo haya hecho el autor u otra persona); editar un sitio aprobado lo devuelve a revisión y no avisa.

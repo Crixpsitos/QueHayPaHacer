@@ -1,4 +1,5 @@
 import type { SiteKind, SitePublishedAs, SitePublishedAsForm, SiteVerification } from "@/domain/entities/sites/value-objects/SiteListing"
+import type { SiteTransit, SiteTransitDraft } from "@/domain/entities/sites/value-objects/SiteTransit"
 import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 export type SiteCategory =
   | "cafe"
@@ -63,6 +64,8 @@ export interface SiteFormViewModel {
   /** Festivos y lluvia; vacío = sin confirmar. */
   openingPolicy: SiteOpeningPolicy
   bookingUrl: string
+  /** Buses que llegan (rutas del catálogo); el servidor valida y fija `updatedAt`. */
+  transit: SiteTransitDraft
   /** Atractivo público o negocio privado. */
   kind: SiteKind
   /** En qué calidad publica quien llena el formulario (qhpa lo fija el servidor). */
@@ -153,6 +156,7 @@ export interface SiteDetail extends SiteListItem {
   temporarilyClosed?: SiteTemporarilyClosed
   openingPolicy?: SiteOpeningPolicy
   bookingUrl?: string
+  transit?: SiteTransit
   kind?: SiteKind
   publishedAs?: SitePublishedAs
   verification?: SiteVerification

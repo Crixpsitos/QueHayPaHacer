@@ -109,6 +109,7 @@ export function createInitialForm() {
     temporarilyClosed: { isClosed: false, reason: "" },
     openingPolicy: {},
     bookingUrl: "",
+    transit: { routes: [] },
     kind: "business" as const,
     // Lo más conservador: no se afirma ser dueño hasta que la persona lo elija.
     publishedAs: "proposer" as const,

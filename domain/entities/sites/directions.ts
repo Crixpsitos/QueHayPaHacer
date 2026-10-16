@@ -2,7 +2,7 @@
  * "¿Cómo llego?": distancia desde donde está la persona y qué medio conviene. Todo se calcula en el navegador
  * con la ubicación que la persona comparte; no se guarda ni se envía a ningún servidor.
  * Es una aproximación honesta: distancia en línea recta × factor de recorrido, y velocidades urbanas típicas.
- * No usa datos de rutas de bus (aún no hay datos verificados): nunca recomienda una ruta concreta.
+ * Los buses salen solo de lo que el dueño del sitio informó (ver SiteTransit): nunca se calculan ni se estima su tiempo.
  */
 export interface LatLng {
   latitude: number
@@ -64,3 +64,18 @@ export function adviseTravel(straightKm: number): DirectionsAdvice {
 /** Enlace de ruta de Google Maps hacia el sitio; sin `travelmode` para que la persona elija el medio allí. */
 export const googleMapsDirectionsUrl = (to: LatLng) =>
   `https://www.google.com/maps/dir/?api=1&destination=${to.latitude},${to.longitude}`
+
+/** Desde esta distancia por calle (km) vale la pena ofrecer el bus. */
+export const BUS_MIN_KM = 1
+
+/**
+ * Nombres de las rutas de bus a ofrecer en "¿Cómo llego?". Solo si el sitio tiene buses informados, la distancia por
+ * calle supera BUS_MIN_KM y el estado NO es "por confirmar". Sin tiempos: no se estima el tiempo de un bus.
+ */
+export function busRoutesToOffer(
+  routeKm: number,
+  transit: { unconfirmed: boolean; routes: { label: string }[] } | null | undefined,
+): string[] {
+  if (!transit || transit.unconfirmed || routeKm <= BUS_MIN_KM) return []
+  return transit.routes.map((r) => r.label)
+}

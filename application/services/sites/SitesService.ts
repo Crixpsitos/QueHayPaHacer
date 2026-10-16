@@ -1,6 +1,7 @@
 import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
+import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTransit"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
@@ -26,6 +27,8 @@ function contentFields(data: SiteInput) {
     temporarilyClosed: data.temporarilyClosed,
     openingPolicy: data.openingPolicy,
     bookingUrl: data.bookingUrl,
+    // undefined = no tocar (merge); null = quitar el bloque
+    ...(data.transit !== undefined ? { transit: data.transit } : {}),
     // publishedAs/verification NO se editan: respaldan la declaración ya registrada.
     kind: data.kind,
   }
@@ -99,6 +102,18 @@ export class SitesService {
   async getTitleAndAuthor(id: string): Promise<{ title: string; authorId: string | null } | null> {
     const dto = await this.adapter.findRawById(id)
     return dto ? { title: dto.name, authorId: authorIdOf(dto) ?? null } : null
+  }
+
+  /** Datos mínimos para los buses (guardar y reportar): autor, si es público y el bloque actual. */
+  async getTransitSnapshot(id: string): Promise<{ name: string; authorId: string | null; isPublic: boolean; transit: SiteTransit | null } | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    return {
+      name: dto.name,
+      authorId: authorIdOf(dto) ?? null,
+      isPublic: dto.publicationStatus === "published" && dto.moderationStatus === "approved" && dto.isActive === true,
+      transit: dto.transit ?? null,
+    }
   }
 
   async getClaimSnapshot(id: string): Promise<ClaimSiteSnapshot | null> {

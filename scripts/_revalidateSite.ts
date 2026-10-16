@@ -24,7 +24,7 @@ export async function revalidateSite(siteId: string, authorIds: string[] = []): 
 }
 
 /** Invalida la caché de una configuración editable ("holidays"...). Mismas variables y mismo no-fallo que `revalidateSite`. */
-export async function revalidateConfig(key: "holidays"): Promise<void> {
+export async function revalidateConfig(key: "holidays" | "transit"): Promise<void> {
   const base = process.env.REVALIDATE_APP_URL
   const secret = process.env.SITE_REVALIDATE_WEBHOOK_SECRET
   if (!base || !secret) {

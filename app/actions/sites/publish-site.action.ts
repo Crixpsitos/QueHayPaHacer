@@ -6,6 +6,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteSchema, validateSiteForm } from "@/application/dto/sites/SiteDto"
 import { buildSiteInput } from "./buildSiteInput"
+import { withTransit } from "./_transit"
 import { revalidateSite } from "./_revalidate"
 import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration"
 import { updateTag } from "next/cache"
@@ -28,7 +29,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
 
   const uid = tokens.decodedToken.uid
   const { sitesService, userService, contentDeclarationService } = createServerContainer()
-  const input = buildSiteInput(uid, tokens.decodedToken, form, "published")
+  const input = await withTransit(buildSiteInput(uid, tokens.decodedToken, form, "published"), form, siteId)
 
   const evidence = { variant: input.publishedAs as "owner" | "proposer" | "qhpa", siteKind: input.kind }
 

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 import * as v from "valibot"
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth"
-import { HOLIDAYS_TAG } from "@/app/actions/config/_tags"
+import { HOLIDAYS_TAG, TRANSIT_TAG } from "@/app/actions/config/_tags"
 
 // Claves de configuración con caché → su etiqueta. Aquí se suman las nuevas (p. ej. rutas de bus).
-const TAGS: Record<string, string> = { holidays: HOLIDAYS_TAG }
+const TAGS: Record<string, string> = { holidays: HOLIDAYS_TAG, transit: TRANSIT_TAG }
 
 const Body = v.object({ key: v.picklist(Object.keys(TAGS) as [string, ...string[]]) })
 

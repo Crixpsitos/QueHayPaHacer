@@ -287,6 +287,7 @@ export function useSiteForm() {
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
       openingPolicy: site.openingPolicy ?? {},
       bookingUrl: site.bookingUrl ?? "",
+      transit: { routes: site.transit?.routes ?? [] },
       kind: site.kind ?? "business",
       publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",
     })
