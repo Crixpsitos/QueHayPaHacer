@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   // App Hosting ya fuerza standalone en su build; explícito por si cambia el adaptador.
   output: "standalone",
   cacheComponents: true,
+  // Metadatos (og:title, og:image…) SIEMPRE dentro de <head>. Next solo lo hace para los rastreadores que reconoce por
+  // User-Agent, pero App Hosting (Google Frontend) reemplaza el User-Agent de TODOS los clientes por "Google": WhatsApp,
+  // Facebook y Twitter nunca se reconocían y recibían los metadatos en streaming, fuera de <head> y cerca del byte
+  // 100.000, donde no los leen (sin vista previa de enlaces). Costo: la página espera sus metadatos antes de
+  // transmitirse (vienen de lecturas cacheadas). Ver docs/24-vistas-previas-og.md.
+  htmlLimitedBots: /.*/,
   // ponytail: sin cacheHandlers → handler en memoria por instancia (los tags sí invalidan).
   // El handler Redis anterior no implementaba updateTags/refreshTags (P0-D). Volver a un
   // handler compartido solo con invalidación por tags real + fallback si Redis cae.
