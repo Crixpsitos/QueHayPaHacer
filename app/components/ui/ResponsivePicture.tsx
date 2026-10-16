@@ -5,6 +5,10 @@ type ResponsivePictureProps = ImageVariants & {
   pictureClassName?: string;
   imageClassName?: string;
   loading?: "lazy" | "eager";
+  /** Imagen LCP: carga ansiosa y fetchPriority alta. */
+  priority?: boolean;
+  /** `sizes` de cada variante; por defecto el ancho completo de la pantalla. */
+  sizes?: string;
   // 🚀 NUEVO: Permite definir una relación de aspecto fija (ej: "16/9", "1/1") o pasar "auto"
   aspectRatio?: string; 
 };
@@ -16,6 +20,8 @@ export const ResponsivePicture = ({
   pictureClassName,
   imageClassName,
   loading = "lazy",
+  priority = false,
+  sizes = "100vw",
   aspectRatio, 
 }: ResponsivePictureProps) => {
   const desktopImage = getImageProps({
@@ -23,11 +29,13 @@ export const ResponsivePicture = ({
     width: desktop.width,
     height: desktop.height,
     alt: desktop.alt,
-    loading,
+    loading: priority ? "eager" : loading,
+    fetchPriority: priority ? "high" : undefined,
+    sizes,
   });
 
-  const tabletImage = tablet ? getImageProps({ src: tablet.url, width: tablet.width, height: tablet.height, alt: tablet.alt, loading }) : null;
-  const mobileImage = mobile ? getImageProps({ src: mobile.url, width: mobile.width, height: mobile.height, alt: mobile.alt, loading }) : null;
+  const tabletImage = tablet ? getImageProps({ src: tablet.url, width: tablet.width, height: tablet.height, alt: tablet.alt, loading, sizes }) : null;
+  const mobileImage = mobile ? getImageProps({ src: mobile.url, width: mobile.width, height: mobile.height, alt: mobile.alt, loading, sizes }) : null;
 
   const {
     width: intrinsicWidth,
@@ -42,15 +50,10 @@ export const ResponsivePicture = ({
       className={`block w-full overflow-hidden ${pictureClassName || ""}`}
       style={finalAspectRatio !== "auto" ? { aspectRatio: finalAspectRatio } : undefined}
     >
-      {desktopImage.props.srcSet && (
-        <source media="(min-width: 1024px)" srcSet={desktopImage.props.srcSet} />
-      )}
-      {tabletImage?.props.srcSet && (
-        <source media="(min-width: 768px)" srcSet={tabletImage.props.srcSet} />
-      )}
-      {mobileImage?.props.srcSet && (
-        <source media="(max-width: 767px)" srcSet={mobileImage.props.srcSet} />
-      )}
+      {/* Sin optimizador (srcSet vacío) se usa la URL de cada variante: el celular no baja la de escritorio. */}
+      <source media="(min-width: 1024px)" srcSet={desktopImage.props.srcSet ?? desktop.url} />
+      {tablet && <source media="(min-width: 768px)" srcSet={tabletImage?.props.srcSet ?? tablet.url} />}
+      {mobile && <source media="(max-width: 767px)" srcSet={mobileImage?.props.srcSet ?? mobile.url} />}
 
       <img
         {...desktopImageProps}

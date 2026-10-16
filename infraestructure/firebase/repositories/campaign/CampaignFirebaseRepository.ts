@@ -1,4 +1,4 @@
-import type { Firestore } from "firebase-admin/firestore";
+import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import type { FirebaseCampaignDto } from "@/infraestructure/firebase/dto/FirebaseCampaignDto";
 import { CampaignStatus } from "@/domain/entities/campaign/CampaignStatus";
 import { FirebaseBaseRepository } from "@/infraestructure/firebase/repositories/FirebaseBaseRepository";
@@ -47,5 +47,17 @@ export class CampaignFirebaseRepository extends FirebaseBaseRepository implement
   async getAllCampaigns(): Promise<FirebaseCampaignDto[]> {
     const snapshot = await this.collection.orderBy("priority", "desc").get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirebaseCampaignDto));
+  }
+
+  async recordStats(id: string, views: number, clicks: number, day: string): Promise<void> {
+    const ref = this.collection.doc(id);
+    const inc = { views: FieldValue.increment(views), clicks: FieldValue.increment(clicks) };
+    try {
+      await ref.update({ "analytics.views": inc.views, "analytics.clicks": inc.clicks });
+    } catch (e) {
+      if ((e as { code?: number }).code === 5) return; // NOT_FOUND: id inventado, no se crea nada
+      throw e;
+    }
+    await ref.collection("stats").doc(day).set({ day, ...inc }, { merge: true });
   }
 }

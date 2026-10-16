@@ -22,6 +22,10 @@ export class CampaignAdapter implements ICampaignRepository {
     return dtos.map((dto) => this.mapper.toDomain(dto));
   }
 
+  recordStats(id: string, views: number, clicks: number, day: string): Promise<void> {
+    return this.repository.recordStats(id, views, clicks, day);
+  }
+
   async create(campaign: Campaign): Promise<Campaign> {
     throw new Error("Not implemented");
   }

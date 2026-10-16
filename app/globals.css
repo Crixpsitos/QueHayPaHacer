@@ -194,13 +194,13 @@
     }
   }
 
-  /* Bounce horizontal para el swipe hint del carousel en mobile */
-  .animate-bounce-x {
-    animation: bounce-x 1s ease-in-out infinite;
+  /* Bounce vertical (hacia arriba) para el swipe hint del banner en mobile */
+  .animate-bounce-y {
+    animation: bounce-y 1s ease-in-out infinite;
   }
-  @keyframes bounce-x {
-    0%, 100% { transform: translateX(-6px); animation-timing-function: cubic-bezier(0.8,0,1,1); }
-    50%       { transform: translateX(0);   animation-timing-function: cubic-bezier(0,0,0.2,1); }
+  @keyframes bounce-y {
+    0%, 100% { transform: translateY(6px); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+    50%       { transform: translateY(-6px); animation-timing-function: cubic-bezier(0,0,0.2,1); }
   }
 
   .bg-grad-primary {    background: var(--grad-primary);
