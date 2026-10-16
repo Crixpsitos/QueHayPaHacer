@@ -56,9 +56,12 @@ env:
     availability:
       - RUNTIME
 
-  # PENDIENTE (se activa al cerrar, ver docs/17-notificaciones.md): SITE_REVALIDATE_WEBHOOK_SECRET <- secreto
-  # siteRevalidateWebhookSecret. NO declararlo antes de crear el secreto: un secreto inexistente rompe el rollout.
-  # Mientras tanto /api/sites/revalidate y /api/events/revalidate responden 503 (inofensivo).
+  # La llaman las Cloud Functions notifySiteModeration y notifyEventChanges (y los scripts de reclamos y configuración)
+  # para refrescar cachés al instante. Debe existir en Secret Manager antes de desplegar (docs/17-notificaciones.md).
+  - variable: SITE_REVALIDATE_WEBHOOK_SECRET
+    secret: siteRevalidateWebhookSecret
+    availability:
+      - RUNTIME
 
   # Android TWA (Digital Asset Links → /.well-known/assetlinks.json).
   # Ver docs/12-pwa-y-google-play.md. Las huellas son públicas (se sirven en

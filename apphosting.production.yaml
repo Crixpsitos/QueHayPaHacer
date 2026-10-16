@@ -40,6 +40,6 @@ env:
     availability:
       - RUNTIME
 
-  # PENDIENTE (se activa al cerrar, ver docs/17-notificaciones.md): SITE_REVALIDATE_WEBHOOK_SECRET <- secreto
-  # siteRevalidateWebhookSecret. NO declararlo antes de crear el secreto: un secreto inexistente rompe el rollout.
-  # Mientras tanto /api/sites/revalidate y /api/events/revalidate responden 503 (inofensivo).
+  # PENDIENTE hasta crear el secreto EN PROD: SITE_REVALIDATE_WEBHOOK_SECRET <- secreto siteRevalidateWebhookSecret
+  # (mismo valor que el secreto SITE_REVALIDATE_WEBHOOK_SECRET de las functions de prod; ver docs/17 y docs/15).
+  # NO declararlo antes: un secreto inexistente rompe el rollout. Sin él, los endpoints de refresco responden 503.

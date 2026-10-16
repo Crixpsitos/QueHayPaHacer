@@ -72,7 +72,7 @@ Variante para el `firebase.json` del repo: mismas claves con `"firebase/firestor
 ## 4. Secretos de App Hosting **[U]** (valores: los pone el usuario, nunca en chat)
 
 Nombres exigidos por `apphosting.production.yaml` (los 4 primeros existen en develop; `siteRevalidateWebhookSecret` es nuevo, ver `docs/17-notificaciones.md`):
-`firebaseServiceAccountJson` (JSON de cuenta de servicio de **prod**, no la de develop), `cookieSecretCurrent`, `cookieSecretPrevious` (generar valores nuevos, no reutilizar develop), `eventModerationWebhookSecret`, `siteRevalidateWebhookSecret` (el mismo valor va como secreto `SITE_REVALIDATE_WEBHOOK_SECRET` de las Cloud Functions de prod).
+`firebaseServiceAccountJson` (JSON de cuenta de servicio de **prod**, no la de develop), `cookieSecretCurrent`, `cookieSecretPrevious` (generar valores nuevos, no reutilizar develop), `eventModerationWebhookSecret`, `siteRevalidateWebhookSecret` (el mismo valor va como secreto `SITE_REVALIDATE_WEBHOOK_SECRET` de las Cloud Functions de prod). **Después de crearlo y darle acceso, descomenta su bloque en `apphosting.production.yaml`** (hoy está como comentario "PENDIENTE": en develop ya está activo).
 ```
 ! firebase apphosting:secrets:set firebaseServiceAccountJson --project quehaypahacer-prod
 ! firebase apphosting:secrets:set cookieSecretCurrent --project quehaypahacer-prod
