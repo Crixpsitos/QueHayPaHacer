@@ -6,9 +6,11 @@ import { Button } from "@/app/components/ui/button/button";
 import { EventCardInteractive } from "./card/EventCardInteractive";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import { loadMoreCategoryEventsAction } from "@/app/actions/events/load-more-category.action";
+import { loadMoreAllEventsAction } from "@/app/actions/events/load-more-all.action";
 
 interface InfiniteEventListProps {
-  categoryId: string;
+  /** Sin categoryId → lista "Todos los eventos". */
+  categoryId?: string;
   categorySlug?: string;
   initialEvents: EventViewModel[];
   initialCursor: string | null;
@@ -35,7 +37,9 @@ export function InfiniteEventList({
     if (!cursor || loading) return;
     setLoading(true);
     try {
-      const res = await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug);
+      const res = categoryId
+        ? await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug)
+        : await loadMoreAllEventsAction(cursor);
       setEvents((prev) => [...prev, ...res.events.filter((e) => !prev.some((p) => p.id === e.id))]);
       setLikedByEventId((prev) => ({ ...prev, ...res.likedByEventId }));
       setCursor(res.nextCursor);
@@ -50,9 +54,13 @@ export function InfiniteEventList({
         events={events}
         likedByEventId={likedByEventId}
         info={{
-          title: "Todavía no hay eventos en esta categoría",
-          description: "Estamos sumando planes nuevos. Vuelve pronto.",
-          action: { href: "/eventos", label: "Ver todos los eventos" },
+          title: categoryId ? "Todavía no hay eventos en esta categoría" : "Todavía no hay eventos publicados",
+          description: categoryId
+            ? "Estamos sumando planes nuevos. Vuelve pronto."
+            : "Mientras tanto, mira los sitios para salir en Ibagué.",
+          action: categoryId
+            ? { href: "/eventos", label: "Ver todos los eventos" }
+            : { href: "/donde-ir", label: "Ver sitios" },
         }}
         variant="vertical"
       />

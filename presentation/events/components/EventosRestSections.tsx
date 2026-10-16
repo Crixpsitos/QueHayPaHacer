@@ -22,10 +22,8 @@ export async function EventosRestSections() {
 
       <Separator className="my-6" />
 
-      <ContentSection
-        title="Todos los eventos"
-        action={{ href: "/eventos-todos-ibague" }}
-      >
+      {/* Sin "Ver más": la lista carga más en sitio (la landing sigue existiendo por SEO) */}
+      <ContentSection title="Todos los eventos">
         <AllEventsContainer />
       </ContentSection>
     </>

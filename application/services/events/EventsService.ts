@@ -164,6 +164,11 @@ export class EventsService {
     return this.eventsRepository.findByCategoryPaginated(categoryId, categorySlug, limit, cursor);
   }
 
+  /** Página por cursor de "Todos los eventos". Devuelve IDs + nextCursor. */
+  async getAllEventsPaginated(limit: number, cursor: string | null) {
+    return this.eventsRepository.findAllPaginated(limit, cursor);
+  }
+
   async syncSiteIds(eventId: string, siteIds: string[]): Promise<void> {
     await this.eventsRepository.updateSiteIds(eventId, siteIds);
   }

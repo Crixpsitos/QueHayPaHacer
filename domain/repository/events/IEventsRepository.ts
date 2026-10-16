@@ -15,6 +15,8 @@ export interface IEventsRepository extends IBaseRepository<Events>{
      *  fueron seeded con categoryInfo.id = slug). orderBy score + tiebreaker documentId. */
     findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findAllPublished(): Promise<string[]>;
+    /** "Todos los eventos": próximos (endDate >= ahora) por score desc, desempate por id. Cursor opaco. */
+    findAllPaginated(limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findLastDraftEventToUser(userId: string): Promise<Events | null>;
     findDraftEventByIdAndUser(id: string, userId: string): Promise<Events | null>;
     findBySlug(slug: string): Promise<Events | null>;
