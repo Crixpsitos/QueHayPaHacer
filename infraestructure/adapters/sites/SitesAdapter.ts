@@ -62,6 +62,10 @@ export class SitesAdapter implements ISiteRepository {
     return this.repo.findFeaturedSiteIds()
   }
 
+  findSitemapEntries(limit: number) {
+    return this.repo.findSitemapEntries(limit)
+  }
+
   findAllSiteIds(): Promise<string[]> {
     return this.repo.findAllSiteIds()
   }

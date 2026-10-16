@@ -91,6 +91,10 @@ export class EventsAdapter implements IEventsRepository {
     return await this.repository.findAllPaginated(limit, cursor);
   }
 
+  async findSitemapEntries(limit: number) {
+    return await this.repository.findSitemapEntries(limit);
+  }
+
   async findAllPublished(): Promise<string[]> {
     return await this.repository.findAllEvents();
   }

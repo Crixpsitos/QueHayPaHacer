@@ -16,6 +16,8 @@ export interface ISitesFirebaseRepository {
   // Discovery público: solo sitios published + approved + activos, orden por score.
   findFeaturedSiteIds(): Promise<string[]>
   findAllSiteIds(): Promise<string[]>
+  /** Sitios públicos para el sitemap (slug + última edición). */
+  findSitemapEntries(limit: number): Promise<{ id: string; slug: string; updatedAt: Date | null }[]>
   /** Paginación por cursor de TODOS los sitios públicos (score desc, tiebreaker documentId). */
   findAllSiteIdsPage(limit: number, cursor: string | null): Promise<PaginatedSiteIds>
   /** Paginación por cursor de un tipo de sitio (category). Tiebreaker documentId. */

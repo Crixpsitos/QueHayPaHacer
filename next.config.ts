@@ -61,7 +61,15 @@ const nextConfig: NextConfig = {
   // Service worker: nunca cachear el script (las actualizaciones dependen de ello).
   // CSP propia del SW: sus fetch() a imágenes externas cuentan como connect-src.
   async headers() {
+    // Cachés de archivos que antes salían con max-age=0 (el navegador y el CDN los pedían siempre).
+    // Íconos: sus nombres no llevan hash, así que 1 semana + revalidar; el CDN sirve el resto.
+    const edge = (value: string) => [{ key: "Cache-Control", value }];
     return [
+      { source: "/icons/:path*", headers: edge("public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400") },
+      { source: "/favicon.ico", headers: edge("public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400") },
+      { source: "/manifest.webmanifest", headers: edge("public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400") },
+      { source: "/robots.txt", headers: edge("public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400") },
+      { source: "/sitemap.xml", headers: edge("public, max-age=0, s-maxage=3600, stale-while-revalidate=86400") },
       {
         source: "/sw.js",
         headers: [

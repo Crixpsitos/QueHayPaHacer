@@ -68,6 +68,15 @@ export class SitesFirebaseRepository
     return snap.docs.map((d) => d.id)
   }
 
+  async findSitemapEntries(limit: number) {
+    const snap = await this.publishedSites.select("slug", "updatedAt").limit(limit).get()
+    return snap.docs.map((d) => ({
+      id: d.id,
+      slug: (d.get("slug") as string | undefined) ?? "",
+      updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
+    }))
+  }
+
   async findAllSiteIds(): Promise<string[]> {
     const snap = await this.publishedSites
       .orderBy("analytics.score", "desc")

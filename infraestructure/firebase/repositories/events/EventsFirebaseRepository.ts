@@ -255,6 +255,20 @@ export class EventsFirebaseRepository
     return { ids: page.map((d) => d.id), nextCursor };
   }
 
+  async findSitemapEntries(limit: number) {
+    const snapshot = await this.collection
+      .where("status", "==", "published")
+      .where("endDate", ">=", new Date())
+      .select("slug", "updatedAt")
+      .limit(limit)
+      .get();
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      slug: (d.get("slug") as string | undefined) ?? "",
+      updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
+    }));
+  }
+
   async findAllEvents(): Promise<string[]> {
     const now = new Date();
     const snapshot = await this.collection

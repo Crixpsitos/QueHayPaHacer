@@ -154,6 +154,11 @@ export class SitesService {
     return this.adapter.findFeaturedSiteIds()
   }
 
+  /** Para el sitemap: sitios públicos. */
+  getSitemapEntries(limit = 1000) {
+    return this.adapter.findSitemapEntries(limit)
+  }
+
   getAllSites(): Promise<string[]> {
     return this.adapter.findAllSiteIds()
   }

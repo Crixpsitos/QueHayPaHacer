@@ -147,6 +147,11 @@ export class EventsService {
     return this.eventsRepository.findBySlug(slug);
   }
 
+  /** Para el sitemap: eventos publicados y vigentes. */
+  getSitemapEntries(limit = 1000) {
+    return this.eventsRepository.findSitemapEntries(limit);
+  }
+
   async getAllEvents(): Promise<string[]> {
     return this.eventsRepository.findAllPublished();
   }
