@@ -29,11 +29,38 @@ Límite conocido: la comprobación "ya hay un pendiente" no es atómica; dos env
 Cualquier usuario con sesión, salvo el autor de la ficha (que la edita directo), puede pulsar "Sugerir un cambio" en el detalle de un sitio publicado. Es el camino para corregir fichas comunitarias sin ser su dueño.
 
 - Flujo: formulario (campo: horario, dirección, contacto, precios, acceso, cerró, otro; descripción 10-600; fuente opcional ≤300; declaración) -> acción `suggestSiteChangeAction` -> colección `siteSuggestions` (solo Admin SDK; `firebase/firestore.rules` niega todo lo no listado) con `status: pending`. Autor y nombre salen del token, nunca del cliente.
-- Reglas (`domain/entities/siteSuggestion/SiteSuggestion.ts`): sesión obligatoria, sitio existente y publicado, no ser el autor, 1 pendiente por usuario+sitio+campo, máximo 10 pendientes por usuario. No hay rate limiting adicional (el repo no tiene helper); las reglas anteriores son el único freno.
-- Nunca se aplica solo: la sugerencia no toca el sitio.
-- Revisar: `pnpm exec tsx scripts/list-site-suggestions.ts` lista pendientes con sitio (nombre, id, slug, URL local `/donde-ir/<slug>`). El administrador edita la ficha aparte y marca el estado:
-  `pnpm exec tsx scripts/list-site-suggestions.ts --resolve <id> --status applied|rejected [--note "..."] --apply` (sin `--apply` es dry-run; guarda `resolvedAt`, `resolvedBy`, `resolutionNote`).
-- Límites: no se avisa al sugeridor del resultado; en sitios `verified` la revisa hoy solo el administrador de QHPA (pendiente notificar al dueño verificado); mientras haya una pendiente en el sitio la UI muestra "Sugerencia enviada" en vez del botón (para otro campo, tras resolverse); no hay panel (pendiente). Texto libre de terceros: no aplicar sin comprobar y no copiar datos personales.
+- Reglas (`domain/entities/siteSuggestion/SiteSuggestion.ts`): sesión obligatoria, sitio existente y publicado, no ser el autor, 1 pendiente por usuario+sitio+campo, máximo 10 pendientes por usuario.
+- Nunca se aplica solo: la sugerencia no toca el sitio. "Aprobar" (`status: applied`) significa "la acepto y la voy a reflejar"; el autor edita la ficha después con su flujo normal.
+
+### Quién revisa
+
+- **El autor del sitio**: en "Mis sitios" (`/sites`) cada tarjeta muestra "N sugerencias pendientes", hay una fila "Sugerencias recibidas" y un panel (drawer en móvil, dialog en escritorio) con pestañas Pendientes / Resueltas. Cada una muestra campo, texto, fuente, quién la envió (solo nombre) y fecha, con nota opcional (máx. 200) y botones Aprobar / Rechazar. Tras aprobar aparece "Editar sitio" (abre `/sites/<id>/edit`). El menú de cuenta muestra un punto y la entrada "Sugerencias recibidas" (`/sites?sugerencias=1`) solo si hay pendientes.
+- **El administrador** (script, resuelve cualquiera):
+  `pnpm exec tsx scripts/list-site-suggestions.ts` lista pendientes con sitio (nombre, id, slug, URL local `/donde-ir/<slug>`); `--resolve <id> --status applied|rejected [--note "..."] --apply` (sin `--apply` es dry-run; guarda `resolvedAt`, `resolvedBy`, `resolutionNote`).
+- Servidor: `listMySiteSuggestionsAction` (sin caché; solo sitios con `author.id` = uid de sesión) y `resolveSiteSuggestionAction` (comprueba que la sugerencia exista, siga pendiente en una transacción y su sitio sea del uid de sesión; guarda `resolvedBy` = uid). El conteo del menú (`getPendingSiteSuggestionsCountAction`) se cachea por usuario con la etiqueta `site-suggestions-<uid>` y se invalida con `updateTag` al crear o resolver desde la app (no al resolver con el script: tarda unos minutos en bajar).
+
+### Frenos antispam (sugerencias y reclamos)
+
+Función pura `spamGuardError` y constantes `SPAM_LIMITS` en `domain/entities/spamGuard/spamGuard.ts` (único lugar para ajustar números). Se evalúan en el servicio con el historial del usuario leído de Firestore con una sola igualdad (`authorUid` / `claimantUid`), sin índice compuesto; ventana y orden en memoria.
+
+| Freno | Valor | Aplica a |
+|---|---|---|
+| Enfriamiento entre envíos | 30 s | sugerencias y reclamos |
+| Tope por hora | 5 | sugerencias |
+| Tope por día | 20 sugerencias, 3 reclamos | ambos |
+| Texto duplicado (minúsculas, espacios colapsados) en cualquier sitio | 7 días | sugerencias |
+| Antigüedad mínima de la cuenta (`metadata.creationTime` de Firebase Auth vía Admin SDK; si no se puede leer, se omite) | 10 min | ambos |
+
+Los reportes no se tocaron.
+
+### Límites que siguen existiendo
+
+- No hay notificación al sugeridor del resultado. Las constantes anteriores son por usuario, no por IP ni por dispositivo: alguien con varias cuentas (viejas) las esquiva.
+- Los frenos y la comprobación "ya hay una pendiente" no son atómicos: dos envíos simultáneos podrían colarse.
+- `recentByAuthor`/`recentByClaimant` leen todo el historial del usuario (solo 2 campos); con estos topes es pequeño, pero conviene ventana si crece.
+- El autor ve las sugerencias de hasta 50 de sus sitios (una consulta por sitio).
+- Mientras haya una pendiente en el sitio la UI muestra "Sugerencia enviada" en vez del botón (para otro campo, tras resolverse).
+- Un sitio reclamado y aprobado cambia de autor: sus sugerencias pasan a verlas el nuevo autor. Texto libre de terceros: no aplicar sin comprobar y no copiar datos personales.
 
 ## Operación (dry-run por defecto)
 

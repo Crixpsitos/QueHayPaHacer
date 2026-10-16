@@ -4,6 +4,7 @@ import { getTokens } from "next-firebase-auth-edge"
 import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
+import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt"
 import type { SiteClaimResult } from "@/application/services/siteClaim/SiteClaimService"
 
 export interface RequestSiteClaimInput {
@@ -23,7 +24,7 @@ export async function requestSiteClaimAction(input: RequestSiteClaimInput): Prom
   try {
     const { siteId, relation, contactPhone, evidence, declaration } = input
     return await createServerContainer().siteClaimService.submit(
-      { uid: t.uid, name: t.name || t.email, email: t.email },
+      { uid: t.uid, name: t.name || t.email, email: t.email, accountCreatedAt: await getAccountCreatedAt(t.uid) },
       { siteId, relation, contactPhone, evidence, declaration },
     )
   } catch (e) {

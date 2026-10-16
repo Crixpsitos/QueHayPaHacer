@@ -33,6 +33,24 @@ export interface SiteSuggestion {
   status: SuggestionStatus;
 }
 
+/** Sugerencia tal como la ve el autor del sitio (sin uid de quien la envió). Fechas en ms. */
+export interface SiteSuggestionItem {
+  id: string;
+  siteId: string;
+  siteName: string;
+  /** Solo displayName de quien sugiere. */
+  authorName: string;
+  field: SuggestionField;
+  description: string;
+  source?: string;
+  status: SuggestionStatus;
+  createdAt: number;
+  resolvedAt?: number;
+  resolutionNote?: string;
+}
+
+export const SUGGESTION_NOTE_MAX = 200;
+
 export interface SuggestionSiteSnapshot {
   name: string;
   published: boolean;

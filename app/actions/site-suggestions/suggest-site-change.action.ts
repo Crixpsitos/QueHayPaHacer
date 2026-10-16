@@ -4,7 +4,9 @@ import { getTokens } from "next-firebase-auth-edge"
 import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
-import type { SiteSuggestionResult } from "@/application/services/siteSuggestion/SiteSuggestionService"
+import { updateTag } from "next/cache"
+import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt"
+import { siteSuggestionsTag } from "./_tag"
 
 export interface SuggestSiteChangeInput {
   siteId: string
@@ -14,17 +16,21 @@ export interface SuggestSiteChangeInput {
   declaration: boolean
 }
 
-export async function suggestSiteChangeAction(input: SuggestSiteChangeInput): Promise<SiteSuggestionResult> {
+export async function suggestSiteChangeAction(input: SuggestSiteChangeInput): Promise<{ success: true } | { success: false; error: string }> {
   const tokens = await getTokens(await cookies(), authConfig)
   const t = tokens?.decodedToken
   if (!t?.uid) return { success: false, error: "Inicia sesión para sugerir un cambio." }
 
   try {
     const { siteId, field, description, source, declaration } = input
-    return await createServerContainer().siteSuggestionService.submit(
-      { uid: t.uid, name: t.name || t.email || "Usuario" },
+    const res = await createServerContainer().siteSuggestionService.submit(
+      { uid: t.uid, name: t.name || t.email || "Usuario", accountCreatedAt: await getAccountCreatedAt(t.uid) },
       { siteId, field, description, source, declaration },
     )
+    if (!res.success) return res
+    // El autor del sitio ve el aviso en su menú: invalida su conteo cacheado.
+    if (res.siteAuthorId) updateTag(siteSuggestionsTag(res.siteAuthorId))
+    return { success: true }
   } catch (e) {
     console.error("[suggestSiteChange]", e)
     return { success: false, error: "No se pudo enviar la sugerencia. Intenta nuevamente." }

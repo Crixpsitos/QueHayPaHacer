@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { AnimatePresence } from "motion/react"
-import { MapPinned, Plus } from "lucide-react"
+import { MapPinned, MessageSquareDiff, Plus } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { SiteCard } from "./SiteCard"
 import { FILTER_TABS } from "../../lib/constants"
@@ -21,6 +21,11 @@ interface ListPanelProps {
   onEdit: (id: string) => void
   onCreate: () => void
   isLoading: boolean
+  pendingBySite?: Record<string, number>
+  /** Total de sugerencias (para decidir si mostrar la entrada) y pendientes. */
+  suggestionsTotal?: number
+  suggestionsPending?: number
+  onOpenSuggestions?: () => void
 }
 
 const EMPTY: Record<SiteFilterTab, string> = {
@@ -34,6 +39,7 @@ const EMPTY: Record<SiteFilterTab, string> = {
 export function ListPanel({
   items, totalFiltered, counts, tab, onTabChange,
   hoveredId, onHover, onOpen, onEdit, onCreate, isLoading,
+  pendingBySite = {}, suggestionsTotal = 0, suggestionsPending = 0, onOpenSuggestions,
 }: ListPanelProps) {
   const noSites = !isLoading && counts.all === 0
   const tabsRef = useRef<HTMLDivElement>(null)
@@ -48,6 +54,23 @@ export function ListPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
+      {suggestionsTotal > 0 && onOpenSuggestions && (
+        <button
+          type="button"
+          onClick={onOpenSuggestions}
+          className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 text-left text-sm font-medium hover:bg-muted/50"
+        >
+          <MessageSquareDiff className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          Sugerencias recibidas
+          {suggestionsPending > 0 && (
+            <span className="ml-auto rounded-full bg-[#E63946] px-2 text-xs font-semibold text-white">
+              <span className="sr-only">{suggestionsPending} pendientes: </span>
+              {suggestionsPending}
+            </span>
+          )}
+        </button>
+      )}
+
       {/* Filter tabs — fades hint scroll on both sides */}
       <div className="relative shrink-0 border-b border-border">
         <div
@@ -117,7 +140,8 @@ export function ListPanel({
           <div className="flex flex-col gap-3">
             <AnimatePresence initial={false}>
               {items.map((site) => (
-                <SiteCard key={site.id} site={site} active={hoveredId === site.id} onEdit={onEdit} onOpen={onOpen} onHover={onHover} />
+                <SiteCard key={site.id} site={site} active={hoveredId === site.id} onEdit={onEdit} onOpen={onOpen} onHover={onHover}
+                  pendingSuggestions={pendingBySite[site.id]} onOpenSuggestions={onOpenSuggestions} />
               ))}
             </AnimatePresence>
           </div>

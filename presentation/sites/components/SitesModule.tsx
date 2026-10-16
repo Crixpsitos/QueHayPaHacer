@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { cn } from "@/app/lib/utils/cn"
 import { useSitesStore } from "../store/useSitesStore"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 
 import { SitesMap } from "./map/SitesMap"
@@ -11,6 +11,7 @@ import { PanelHeader } from "./PanelHeader"
 import { ListPanel } from "./list/ListPanel"
 import { SiteFormDrawer } from "./form/SiteFormDrawer"
 import { DetailModal } from "./DetailModal"
+import { MySuggestionsPanel, useMySuggestions } from "./suggest/MySuggestionsPanel"
 import { useSiteForm } from "../hooks/useSiteForm"
 import { NavbarAccountMenu } from "@/app/components/layout/home/NavbarAccountMenu"
 import { FILTER_TABS, getDisplayStatus } from "../lib/constants"
@@ -50,6 +51,15 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
     setDetailId(parsed.detailId)
     setEditId(parsed.editId)
   }, [pathname])
+
+  // ── Sugerencias recibidas en mis sitios ────────────────────────────────────
+  const suggestions = useMySuggestions()
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const openFromMenu = useSearchParams().get("sugerencias") === "1" // entrada del menú de cuenta
+  const handleSuggestionsOpen = (open: boolean) => {
+    setSuggestionsOpen(open)
+    if (!open && openFromMenu) router.replace("/sites")
+  }
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const { sites, fetchSites, loading, error } = useSitesStore()
@@ -227,6 +237,10 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
                 onCreate={goToCreate}
                 // solo la carga inicial: los refetch tras guardar no deben parpadear
                 isLoading={loading && sites.length === 0}
+                pendingBySite={suggestions.pendingBySite}
+                suggestionsTotal={suggestions.items.length}
+                suggestionsPending={suggestions.pendingTotal}
+                onOpenSuggestions={() => setSuggestionsOpen(true)}
               />
             </motion.div>
           ) : (
@@ -270,6 +284,14 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
           )}
         </AnimatePresence>
       </section>
+
+      <MySuggestionsPanel
+        open={suggestionsOpen || openFromMenu}
+        onOpenChange={handleSuggestionsOpen}
+        items={suggestions.items}
+        refresh={suggestions.refresh}
+        onEdit={goToEdit}
+      />
 
       <DetailModal
         site={selectedSite}
