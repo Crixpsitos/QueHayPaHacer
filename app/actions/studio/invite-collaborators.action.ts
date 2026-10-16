@@ -18,19 +18,27 @@ export async function inviteCollaboratorsAction(
       return { success: false, error: "Selecciona al menos un usuario." };
     }
 
-    const { userService, studioService } = createServerContainer();
+    const { userService, studioService, notificationService } = createServerContainer();
     const me = await userService.getUserById(tokens.decodedToken.uid);
     if (me?.plan !== "premium") {
       return { success: false, error: "Necesitas el plan Premium para invitar." };
     }
 
-    await studioService.inviteCollaborators(tokens.decodedToken.uid, invitees);
+    // Solo las invitaciones realmente creadas (el repositorio omite duplicados y no creadores).
+    const { inviterName, invited } = await studioService.inviteCollaborators(tokens.decodedToken.uid, invitees);
     revalidatePath("/studio/collaborators");
+    await Promise.all(
+      invited.map((toUid) =>
+        notificationService.notify(toUid, {
+          type: "invitation_received",
+          title: `${inviterName || "Alguien"} te invitó a su red de colaboradores`,
+          body: "Acepta para que pueda sumarte al equipo de sus eventos.",
+          href: "/mis-invitaciones",
+        }),
+      ),
+    );
     // El contador de "Mis invitaciones" de cada invitado se actualiza al instante.
-    for (const invitee of invitees) {
-      const toUid = (invitee as { uid?: string }).uid;
-      if (toUid) updateTag(`invitations-${toUid}`);
-    }
+    for (const toUid of invited) updateTag(`invitations-${toUid}`);
     return { success: true };
   } catch (error) {
     console.error("[INVITE COLLABORATORS ERROR]", error);

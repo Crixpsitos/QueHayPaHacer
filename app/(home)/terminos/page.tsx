@@ -100,6 +100,30 @@ export default function TerminosPage() {
       </section>
 
       <section>
+        <h2>Fichas de lugares</h2>
+        <ul>
+          <li>
+            <strong>Quién puede publicar:</strong> cualquier persona con cuenta puede publicar la ficha de un lugar,
+            sea el dueño o no. Quien no es dueño ni representante lo declara así al publicar y solo aporta datos
+            verificables o públicos y material propio o de uso libre.
+          </li>
+          <li>
+            <strong>Fichas no verificadas:</strong> las fichas que no publica el dueño se muestran como información
+            comunitaria no verificada. Las que publica {LEGAL_ENTITY.name} en nombre propio tampoco tienen vínculo con
+            el establecimiento.
+          </li>
+          <li>
+            <strong>Corrección o retiro:</strong> si eres titular o representante de un lugar y quieres corregir o
+            retirar su ficha, escribe a {reportChannel} y la revisamos.
+          </li>
+          <li>
+            <strong>Reclamar un lugar:</strong> quien reclama un lugar declara ser su dueño o representante y responde
+            por ello si la declaración es falsa.
+          </li>
+        </ul>
+      </section>
+
+      <section>
         <h2>Lo que no puedes publicar ni hacer</h2>
         <ul>
           <li>Eventos o sitios falsos, engañosos, fraudulentos o que ya no existen; estafas o cobros indebidos.</li>

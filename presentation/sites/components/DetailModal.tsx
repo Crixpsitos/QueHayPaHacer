@@ -12,6 +12,10 @@ import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplaySt
 import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
 import { getSiteOpenStatus } from "../lib/openStatus"
+import { TrustBadge } from "./TrustBadge"
+import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
+import { SiteClaimCta } from "./claim/SiteClaimCta"
+import { SiteSuggestCta } from "./suggest/SiteSuggestCta"
 import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
@@ -341,6 +345,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       >
         {site.name}
       </h2>
+      <TrustBadge site={site} withKind className="mt-2" />
 
       {/* ── Dirección + estado de apertura ──────────────────────── */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -355,6 +360,12 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           <Clock className="size-3.5 shrink-0" aria-hidden />
           {openStatus.label ?? "Horario no disponible"}
         </span>
+      </div>
+
+      <ConfirmBeforeGoingNotice site={site} className="mt-4" />
+      <div className="mt-3 flex flex-col gap-2 empty:hidden sm:flex-row sm:flex-wrap">
+        <SiteClaimCta site={site} />
+        <SiteSuggestCta site={site} />
       </div>
 
       {/* ── Separador ───────────────────────────────────────────── */}

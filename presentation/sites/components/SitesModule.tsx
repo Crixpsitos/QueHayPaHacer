@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { cn } from "@/app/lib/utils/cn"
 import { useSitesStore } from "../store/useSitesStore"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 
 import { SitesMap } from "./map/SitesMap"
@@ -11,8 +11,10 @@ import { PanelHeader } from "./PanelHeader"
 import { ListPanel } from "./list/ListPanel"
 import { SiteFormDrawer } from "./form/SiteFormDrawer"
 import { DetailModal } from "./DetailModal"
+import { MySuggestionsPanel, useMySuggestions } from "./suggest/MySuggestionsPanel"
 import { useSiteForm } from "../hooks/useSiteForm"
 import { NavbarAccountMenu } from "@/app/components/layout/home/NavbarAccountMenu"
+import { NotificationBell } from "@/app/components/layout/home/NotificationBell"
 import { FILTER_TABS, getDisplayStatus } from "../lib/constants"
 import type { Coordinates, MapSiteMarker, SiteDetail, SiteFilterTab } from "../view-models/SiteFormViewModel"
 
@@ -28,7 +30,7 @@ function parsePathname(p: string): { panelMode: PanelMode; formMode: FormMode; d
   return { panelMode: "list", formMode: "create", detailId: null, editId: null }
 }
 
-export function SitesModule() {
+export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) {
   const pathname = usePathname()
   const router   = useRouter()
 
@@ -50,6 +52,15 @@ export function SitesModule() {
     setDetailId(parsed.detailId)
     setEditId(parsed.editId)
   }, [pathname])
+
+  // ── Sugerencias recibidas en mis sitios ────────────────────────────────────
+  const suggestions = useMySuggestions()
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const openFromMenu = useSearchParams().get("sugerencias") === "1" // entrada del menú de cuenta
+  const handleSuggestionsOpen = (open: boolean) => {
+    setSuggestionsOpen(open)
+    if (!open && openFromMenu) router.replace("/sites")
+  }
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const { sites, fetchSites, loading, error } = useSitesStore()
@@ -171,9 +182,10 @@ export function SitesModule() {
         {/* Cuenta — esquina sup-derecha del mapa. En form solo en lg (en móvil manda el drawer). Oculto con detalle abierto. */}
         {!detailId && (
           <div className={cn(
-            "absolute right-3 top-3 z-30 sm:right-4 sm:top-4",
-            panelMode === "form" && "hidden lg:block",
+            "absolute right-3 top-3 z-30 flex items-center gap-2 sm:right-4 sm:top-4",
+            panelMode === "form" && "hidden lg:flex",
           )}>
+            <NotificationBell compact />
             <NavbarAccountMenu compact showHome />
           </div>
         )}
@@ -227,6 +239,10 @@ export function SitesModule() {
                 onCreate={goToCreate}
                 // solo la carga inicial: los refetch tras guardar no deben parpadear
                 isLoading={loading && sites.length === 0}
+                pendingBySite={suggestions.pendingBySite}
+                suggestionsTotal={suggestions.items.length}
+                suggestionsPending={suggestions.pendingTotal}
+                onOpenSuggestions={() => setSuggestionsOpen(true)}
               />
             </motion.div>
           ) : (
@@ -264,11 +280,20 @@ export function SitesModule() {
                 onPublish={formMode === "edit" && !isDraftEdit && !isRejectedEdit ? siteForm.handleSaveEdit : siteForm.handlePublish}
                 onReset={goToList}
                 onEnsureDraftId={siteForm.ensureDraftId}
+                isQhpaAdmin={isQhpaAdmin}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </section>
+
+      <MySuggestionsPanel
+        open={suggestionsOpen || openFromMenu}
+        onOpenChange={handleSuggestionsOpen}
+        items={suggestions.items}
+        refresh={suggestions.refresh}
+        onEdit={goToEdit}
+      />
 
       <DetailModal
         site={selectedSite}

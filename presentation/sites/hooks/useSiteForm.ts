@@ -281,6 +281,8 @@ export function useSiteForm() {
       socialMedia: site.socialMedia ?? {},
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
       bookingUrl: site.bookingUrl ?? "",
+      kind: site.kind ?? "business",
+      publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",
     })
     setErrors({})
     setSubmitState("idle")

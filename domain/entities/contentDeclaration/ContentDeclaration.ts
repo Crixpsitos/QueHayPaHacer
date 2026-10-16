@@ -7,4 +7,7 @@ export interface ContentDeclaration {
   targetId: string;
   /** LEGAL_VERSION vigente al declarar. */
   termsVersion: string;
+  /** Solo sitios: variante efectiva de la declaración y tipo de lugar (ausente en docs antiguos y eventos). */
+  variant?: "owner" | "proposer" | "qhpa";
+  siteKind?: "public" | "business";
 }

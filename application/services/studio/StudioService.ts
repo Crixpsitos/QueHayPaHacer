@@ -95,7 +95,7 @@ export class StudioService {
     return this.repository.searchPotentialCollaborators(uid, query, limit);
   }
 
-  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
+  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<{ inviterName: string; invited: string[] }> {
     return this.repository.inviteCollaborators(fromUid, invitees);
   }
 
@@ -111,7 +111,7 @@ export class StudioService {
     return this.repository.getCollaborators(uid);
   }
 
-  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<void> {
+  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<{ fromUid: string; responderName: string; accepted: boolean } | null> {
     return this.repository.respondCollaboratorInvitation(inviteId, uid, accept);
   }
 

@@ -128,25 +128,27 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     };
   }, []);
 
+  // `?ajustes=1` abre el panel UNA vez; al cerrar se borra de la URL. Sin el flag,
+  // el panel se reabría solo mientras el parámetro seguía en la URL (no se podía cerrar).
+  const queryHandledRef = useRef(false);
   useEffect(() => {
-    if (searchParams.get("ajustes") === "1" && !openSettings) {
+    const hasQuery = searchParams.get("ajustes") === "1";
+    if (!hasQuery) {
+      queryHandledRef.current = false;
+    } else if (!queryHandledRef.current) {
+      queryHandledRef.current = true;
       onOpenSettings(true);
     }
-  }, [onOpenSettings, openSettings, searchParams]);
+  }, [onOpenSettings, searchParams]);
 
   useEffect(() => {
-    const hasSettingsQuery = searchParams.get("ajustes") === "1";
-    if (hasSettingsQuery && !openSettings) return;
-    if (hasSettingsQuery === openSettings) return;
-
     const url = new URL(window.location.href);
-    if (openSettings) {
-      url.searchParams.set("ajustes", "1");
-    } else {
-      url.searchParams.delete("ajustes");
-    }
+    const hasQuery = url.searchParams.get("ajustes") === "1";
+    if (openSettings === hasQuery) return;
+    if (openSettings) url.searchParams.set("ajustes", "1");
+    else url.searchParams.delete("ajustes");
     window.history.replaceState(null, "", url.pathname + (url.search || ""));
-  }, [openSettings, searchParams]);
+  }, [openSettings]);
 
   // Form states
   const [editedUser, setEditedUser] = useState<UserData>({

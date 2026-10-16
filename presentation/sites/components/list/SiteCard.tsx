@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "motion/react"
-import { AlertTriangle, CalendarDays, Eye, EyeOff, Heart, Loader2, MousePointerClick, Pencil, Share2, Trash2 } from "lucide-react"
+import { AlertTriangle, CalendarDays, Eye, EyeOff, Heart, Loader2, MessageSquareDiff, MousePointerClick, Pencil, Share2, Trash2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -18,6 +18,9 @@ interface SiteCardProps {
   onEdit: (id: string) => void
   onOpen: (id: string) => void
   onHover: (id: string | null) => void
+  /** Sugerencias pendientes de otras personas sobre este sitio. */
+  pendingSuggestions?: number
+  onOpenSuggestions?: () => void
 }
 
 const fmt = (n: number) => new Intl.NumberFormat("es-CO").format(n)
@@ -26,7 +29,7 @@ const CATEGORY_LABELS = Object.fromEntries(CATEGORY_OPTIONS.map((c) => [c.value,
 
 const stop = (e: React.MouseEvent) => e.stopPropagation()
 
-export function SiteCard({ site, active, onEdit, onOpen, onHover }: SiteCardProps) {
+export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggestions = 0, onOpenSuggestions }: SiteCardProps) {
   const status = getDisplayStatus(site.publicationStatus, site.moderationStatus)
   const color  = STATUS_COLORS[status]
   const label  = STATUS_LABELS[status]
@@ -118,6 +121,17 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover }: SiteCardProp
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden />
           <p className="text-[11px] leading-relaxed text-destructive/90">{site.rejectionReason}</p>
         </div>
+      )}
+
+      {pendingSuggestions > 0 && onOpenSuggestions && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenSuggestions() }}
+          className="mt-2.5 flex min-h-11 w-full items-center gap-2 rounded-xl border border-[#E63946]/30 bg-[#FDF2F4] px-3 text-left text-xs font-medium text-[#9B0A26]"
+        >
+          <MessageSquareDiff className="size-4 shrink-0" aria-hidden />
+          {pendingSuggestions === 1 ? "1 sugerencia pendiente" : `${pendingSuggestions} sugerencias pendientes`}
+        </button>
       )}
 
       <div className="mt-2.5 flex items-center justify-between gap-2">

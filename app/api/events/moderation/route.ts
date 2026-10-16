@@ -1,8 +1,8 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import * as v from "valibot";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { hasValidBearer } from "@/app/api/_lib/bearerAuth";
 
 const ModerationDecisionSchema = v.object({
   eventId: v.pipe(v.string(), v.nonEmpty()),
@@ -11,19 +11,12 @@ const ModerationDecisionSchema = v.object({
   reviewer: v.pipe(v.string(), v.nonEmpty()),
 });
 
-function hasValidSecret(request: Request, expected: string) {
-  const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  const suppliedBuffer = Buffer.from(supplied);
-  const expectedBuffer = Buffer.from(expected);
-  return suppliedBuffer.length === expectedBuffer.length && timingSafeEqual(suppliedBuffer, expectedBuffer);
-}
-
 export async function POST(request: Request) {
   const secret = process.env.EVENT_MODERATION_WEBHOOK_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "Moderation webhook is not configured." }, { status: 503 });
   }
-  if (!hasValidSecret(request, secret)) {
+  if (!hasValidBearer(request, secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -33,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { eventsService, userService, badgeService, profileService } = createServerContainer();
+    const { eventsService, userService, badgeService, profileService, notificationService } = createServerContainer();
     const before = await eventsService.getEventById(parsed.output.eventId);
     if (!before) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
@@ -44,6 +37,25 @@ export async function POST(request: Request) {
       parsed.output.decision,
       parsed.output.reviewer,
       parsed.output.reason,
+    );
+
+    // Aviso al autor: la decisión ya quedó guardada; si falla el aviso no se revierte.
+    const { event: moderated } = result;
+    await notificationService.notify(
+      moderated.author.id,
+      parsed.output.decision === "approved"
+        ? {
+            type: "event_moderation",
+            title: `Aprobaron tu evento "${moderated.title}"`,
+            body: "Ya está publicado.",
+            href: `/eventos/${moderated.id}`,
+          }
+        : {
+            type: "event_moderation",
+            title: `No aprobaron tu evento "${moderated.title}"`,
+            body: moderated.rejectionReason ?? undefined,
+            href: `/eventos/${moderated.id}/edit`,
+          },
     );
 
     if (parsed.output.decision === "approved" && result.wasPrePublication) {

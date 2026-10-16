@@ -22,6 +22,10 @@ import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "
 import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
 import { getInitials } from "@/app/lib/utils/getInitials";
+import { TrustBadge } from "../TrustBadge";
+import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
+import { SiteClaimCta } from "../claim/SiteClaimCta";
+import { SiteSuggestCta } from "../suggest/SiteSuggestCta";
 import type { WeekDay, DaySchedule } from "@/presentation/sites/view-models/SiteFormViewModel";
 
 const SITE_CATEGORY_LABELS: Record<string, string> = {
@@ -143,6 +147,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold sm:text-3xl">{site!.name}</h1>
+          <TrustBadge site={site} withKind />
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", catColor.bg)}>
               <CatIcon className={cn("size-3.5", catColor.icon)} />
@@ -164,6 +169,12 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
           initialLikes={site!.analytics.likes ?? 0}
           initialShares={site!.analytics.shares ?? 0}
         />
+      </div>
+
+      <ConfirmBeforeGoingNotice site={site} className="mb-4" />
+      <div className="mb-6 flex flex-col gap-2 empty:hidden sm:flex-row sm:flex-wrap">
+        <SiteClaimCta site={site} />
+        <SiteSuggestCta site={site} />
       </div>
 
       {site!.temporarilyClosed?.isClosed && (
@@ -199,7 +210,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       )}
 
       <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-[#E4E4E7] px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* basis 16rem: con flex-1 (basis 0) el texto nunca pasaba a otra línea y quedaba en una columna angosta */}
+        <div className="flex min-w-0 flex-[1_1_16rem] items-center gap-3">
           <StatusIcon
             className={cn("size-5 shrink-0", trending ? "text-[#E63946]" : openStatus.isOpen ? "text-emerald-600" : "text-[#71717A]")}
             strokeWidth={1.75}

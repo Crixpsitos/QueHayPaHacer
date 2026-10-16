@@ -17,6 +17,7 @@ import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadTo
 import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import type { SubmitState } from "../../hooks/useSiteForm"
+import { declarationVariant } from "@/app/lib/legal/declaration"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -114,18 +115,81 @@ function LocationContent({
   )
 }
 
+/** Selector de una opción (radiogroup) con targets >= 44px para móvil. */
+function ChoiceGroup<T extends string>({
+  label, value, options, onChange, disabled = false,
+}: {
+  label: string
+  value: T
+  options: { value: T; title: string; hint: string }[]
+  onChange: (v: T) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-1.5" role="radiogroup" aria-label={label}>
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      {options.map((o) => {
+        const active = value === o.value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "flex min-h-11 flex-col items-start justify-center rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
+              active ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted",
+              disabled && !active && "opacity-50",
+            )}
+          >
+            <span className="text-sm font-medium text-foreground">{o.title}</span>
+            <span className="text-[11px] text-muted-foreground">{o.hint}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const KIND_OPTIONS = [
+  { value: "public" as const, title: "Atractivo público", hint: "Mirador, parque, cascada de acceso libre" },
+  { value: "business" as const, title: "Negocio privado", hint: "Restaurante, finca, glamping, tienda" },
+]
+const RELATION_OPTIONS = [
+  { value: "owner" as const, title: "Soy dueño o represento este lugar", hint: "Quedará marcado como reclamado por su dueño" },
+  { value: "proposer" as const, title: "Lo propongo, no soy el dueño", hint: "Se mostrará como información comunitaria no verificada" },
+]
+
 function BasicInfoContent({
-  form, errors,
-  onNameChange, onDescriptionChange, onCategoryChange,
+  form, errors, relationLocked,
+  onNameChange, onDescriptionChange, onCategoryChange, onKindChange, onPublishedAsChange,
 }: {
   form: SiteFormViewModel
   errors: FormErrors
+  relationLocked: boolean
+  onKindChange: (v: SiteFormViewModel["kind"]) => void
+  onPublishedAsChange: (v: SiteFormViewModel["publishedAs"]) => void
   onNameChange: (v: string) => void
   onDescriptionChange: (v: string) => void
   onCategoryChange: (v: SiteCategory) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
+      <ChoiceGroup label="¿Qué tipo de lugar es?" value={form.kind} options={KIND_OPTIONS} onChange={onKindChange} />
+      <ChoiceGroup
+        label="¿Cuál es tu relación con el lugar?"
+        value={form.publishedAs}
+        options={RELATION_OPTIONS}
+        onChange={onPublishedAsChange}
+        disabled={relationLocked}
+      />
+      {relationLocked && (
+        <p className="text-[11px] text-muted-foreground">
+          No se puede cambiar: respalda la declaración registrada al publicar.
+        </p>
+      )}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-foreground" htmlFor="site-name">Nombre</label>
         <Input id="site-name" value={form.name} onChange={(e) => onNameChange(e.target.value)} placeholder="Ej. Café Berlín" aria-invalid={!!errors.name} className="rounded-lg" />
@@ -490,6 +554,8 @@ export interface SiteFormDrawerProps {
   onPublish: (declaration: boolean) => void
   onReset: () => void
   onEnsureDraftId: () => Promise<string>
+  /** Calculado en servidor (QHPA_ADMIN_UIDS): la declaración pasa a la variante "qhpa". */
+  isQhpaAdmin?: boolean
 }
 
 // ── Redes sociales ────────────────────────────────────────────────────────────
@@ -637,11 +703,14 @@ export function SiteFormDrawer({
   mode = "create", isDraft = false, isRejected = false, rejectionReason = null,
   onBack, onAddressChange, onUpdateField, onClearError,
   onReplaceCover, onAddMedia, onMediaUploaded, onUpdateMedia, onRemoveMedia, onSetCover,
-  onUpdateSchedule, onSaveDraft, onPublish, onReset, onEnsureDraftId,
+  onUpdateSchedule, onSaveDraft, onPublish, onReset, onEnsureDraftId, isQhpaAdmin = false,
 }: SiteFormDrawerProps) {
   const isEdit = mode === "edit"
   // create OR editing a draft → mostrar [Guardar borrador] [Publicar]
   const showDraftActions = !isEdit || isDraft
+  // Ya publicado: la relación respalda la declaración registrada y no se edita.
+  const relationLocked = isEdit && !isDraft
+  const variant = declarationVariant(form.publishedAs, isQhpaAdmin)
   const [openSection, setOpenSection] = useState<SectionKey>("location")
   const [isSheetOpen, setIsSheetOpen] = useState(true)
   // Declaración del autor: nunca pre-marcada; exigida para publicar/guardar cambios.
@@ -681,6 +750,8 @@ export function SiteFormDrawer({
   const isBusy = submitState === "saving" || submitState === "publishing"
   const hasCoverReady = form.media.some((m) => m.type === "image" && m.isCover && m.status === "ready")
   const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared
+  // Qué impide publicar, para decirlo siempre (antes solo se veía la portada).
+  const missing = [!hasCoverReady && "la portada", !declared && "la declaración"].filter(Boolean) as string[]
 
   const toggle = (id: SectionKey) => setOpenSection((prev) => (prev === id ? ("" as SectionKey) : id))
 
@@ -715,7 +786,9 @@ export function SiteFormDrawer({
               )}
               {s.id === "info" && (
                 <BasicInfoContent
-                  form={form} errors={errors}
+                  form={form} errors={errors} relationLocked={relationLocked}
+                  onKindChange={(v) => onUpdateField("kind", v)}
+                  onPublishedAsChange={(v) => onUpdateField("publishedAs", v)}
                   onNameChange={(v) => { onUpdateField("name", v); onClearError("name") }}
                   onDescriptionChange={(v) => { onUpdateField("description", v); onClearError("description") }}
                   onCategoryChange={(v) => { onUpdateField("category", v); onClearError("category") }}
@@ -756,6 +829,10 @@ export function SiteFormDrawer({
             </AccordionSection>
           ))}
         </div>
+        {/* En el área con scroll (no en el pie): en móvil el pie fijo se comía los campos. */}
+        <div className="mt-4">
+          <AuthorDeclaration kind="sitio" variant={variant} checked={declared} onChange={setDeclared} />
+        </div>
       </div>
 
       {/* Footer */}
@@ -770,9 +847,6 @@ export function SiteFormDrawer({
             <span className="font-semibold">Rechazado.</span>{rejectionReason ? ` ${rejectionReason}` : ""} Corrige y reenvía a revisión.
           </p>
         )}
-        <div className="mb-3">
-          <AuthorDeclaration kind="sitio" checked={declared} onChange={setDeclared} />
-        </div>
         <div className="flex gap-3">
           {!showDraftActions ? (
             <>
@@ -800,9 +874,9 @@ export function SiteFormDrawer({
             <Loader2 className="size-3 animate-spin" aria-hidden />
             Optimizando media… no cierres esta ventana
           </p>
-        ) : !hasCoverReady && !isBusy ? (
+        ) : missing.length > 0 && !isBusy ? (
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-            Agrega una imagen de portada para publicar
+            Falta: {missing.join(" y ")}
           </p>
         ) : null}
       </div>
@@ -853,10 +927,15 @@ export function SiteFormDrawer({
           ref={sheetRef}
           className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden rounded-t-2xl border-t border-border bg-background shadow-2xl lg:hidden"
           style={{ height: "calc(100dvh - 42dvh)", y }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
+          {/* Zona de arrastre = pastilla + cabecera. Los gestos NO van en toda la hoja:
+              si no, hacer scroll en el formulario también movía la hoja. */}
+          <div
+            className="shrink-0 touch-none"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
           {/* Drag pill */}
           <div
             className="flex justify-center pb-1 pt-2"
@@ -886,6 +965,7 @@ export function SiteFormDrawer({
             >
               <ChevronDown className={cn("size-4 transition-transform duration-200", !isSheetOpen && "rotate-180")} />
             </button>
+          </div>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">

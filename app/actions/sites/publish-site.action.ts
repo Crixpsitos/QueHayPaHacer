@@ -30,6 +30,8 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
   const { sitesService, userService, contentDeclarationService } = createServerContainer()
   const input = buildSiteInput(uid, tokens.decodedToken, form, "published")
 
+  const evidence = { variant: input.publishedAs as "owner" | "proposer" | "qhpa", siteKind: input.kind }
+
   try {
     const markContribution = async () => {
       try {
@@ -45,7 +47,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
       // Evidencia ANTES de publicar (si falla, no se publica) y solo si el sitio es del autor:
       // si no, un tercero podría pisar la evidencia de otro.
       if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo publicar el sitio" }
-      await contentDeclarationService.record(uid, "site", siteId)
+      await contentDeclarationService.record(uid, "site", siteId, evidence)
       await sitesService.publishExisting(uid, siteId, input)
       await markContribution()
       revalidateSite(uid, siteId)
@@ -54,7 +56,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
     // Sin id previo el sitio se crea al publicar: evidencia después; si falla, se borra el sitio recién creado.
     const newId = await sitesService.publish(input)
     try {
-      await contentDeclarationService.record(uid, "site", newId)
+      await contentDeclarationService.record(uid, "site", newId, evidence)
     } catch (e) {
       await sitesService.deleteSite(uid, newId).catch(() => {})
       throw e

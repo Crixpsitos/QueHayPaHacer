@@ -94,6 +94,8 @@ Eliminados el **2026-10-10**: `POST /api/revalidation/events` (handler vacío), 
 | `/api/profile/{badges,events,sites}` | `canViewProfile(uid)`: perfil público o propio. |
 | `generateUploadUrl` (`presentation/shared/actions/`) | Sesión + allowlists de entidad (`profile`/`support` solo al propio uid), subcarpeta, mime (sin SVG) y metadata; `fileName` sanitizado. Sin tope de tamaño. |
 | `POST /api/events/moderation` | Bearer `EVENT_MODERATION_WEBHOOK_SECRET` (comparación timing-safe). |
+| `POST /api/sites/revalidate` | Bearer `SITE_REVALIDATE_WEBHOOK_SECRET` (timing-safe); solo refresca cachés de un sitio. La llaman la Cloud Function `notifySiteModeration` y `scripts/list-site-claims.ts`. |
+| `POST /api/events/revalidate` | Mismo secreto; refresca cachés de un evento (baja). La llama la Cloud Function `notifyEventChanges`. |
 | `update-tag` | Allowlist `featured-events`. |
 
 ### Auth

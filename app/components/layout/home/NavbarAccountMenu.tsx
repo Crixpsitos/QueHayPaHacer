@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
 import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.action";
 import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
+import { getPendingSiteSuggestionsCountAction } from "@/app/actions/site-suggestions/get-pending-site-suggestions-count.action";
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -53,15 +54,19 @@ export function NavbarAccountMenu({
   const router = useRouter();
   const { user, isHydrating, setUser } = useAuth();
   const [rawPending, setPendingInvites] = useState(0);
+  const [rawSuggestions, setPendingSuggestions] = useState(0);
   const uid = user?.uid;
   const [rawHasTeam, setHasTeam] = useState(false);
   const isPremiumPlan = user?.profile?.plan === "premium";
   const hasTeamEvents = uid && !isPremiumPlan ? rawHasTeam : false;
   const pendingInvites = uid ? rawPending : 0; // logout oculta el punto sin setState en efecto
+  const pendingSuggestions = uid ? rawSuggestions : 0;
+  const pendingAlerts = pendingInvites + pendingSuggestions; // el punto del botón avisa de ambos
 
   // Conteo cacheado en servidor por usuario (ver la action); se refresca al abrir el menú.
   const refreshInvites = () => {
     void getPendingInvitationsCountAction().then(setPendingInvites).catch(() => {});
+    void getPendingSiteSuggestionsCountAction().then(setPendingSuggestions).catch(() => {});
     // Sin Premium propio: el acceso a "Eventos del equipo" depende de ser miembro de algún evento.
     if (!isPremiumPlan) void hasTeamEventsAction().then(setHasTeam).catch(() => {});
   };
@@ -102,7 +107,7 @@ export function NavbarAccountMenu({
             aria-label="Abrir menu de cuenta"
             className="relative size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
           >
-            {pendingInvites > 0 && <InviteDot />}
+            {pendingAlerts > 0 && <InviteDot />}
             <Avatar className="size-9">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
@@ -136,11 +141,11 @@ export function NavbarAccountMenu({
                 )}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden max-w-28 truncate text-sm sm:inline">
+            <span className="hidden max-w-28 truncate text-sm sm:inline md:hidden lg:inline">
               {username ? `@${username}` : displayName}
             </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-            {pendingInvites > 0 && <InviteDot />}
+            {pendingAlerts > 0 && <InviteDot />}
           </Button>
         )}
       </DropdownMenuTrigger>
@@ -230,6 +235,18 @@ export function NavbarAccountMenu({
                 Mis sitios
               </Link>
             </DropdownMenuItem>
+            {pendingSuggestions > 0 && (
+              <DropdownMenuItem asChild>
+                <Link href="/sites?sugerencias=1" className={cn("flex items-center gap-2")}>
+                  <MessageSquareDiff className="size-4" aria-hidden="true" />
+                  Sugerencias recibidas
+                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                    <span className="sr-only">{pendingSuggestions} pendientes: </span>
+                    {pendingSuggestions}
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             {isPremium ? (
               <DropdownMenuItem asChild>
                 <Link href="/studio" className={cn("flex items-center gap-2")}>

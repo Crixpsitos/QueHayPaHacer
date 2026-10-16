@@ -5,6 +5,7 @@ import { Menu, Plus, X } from "lucide-react";
 import { NavLink } from "../../ui/navigation/NavLink";
 import { Button } from "../../ui/button/button";
 import { NavbarAccountMenu } from "./NavbarAccountMenu";
+import { NotificationBell } from "./NotificationBell";
 import { Container } from "../shared/Container";
 import {
   DropdownMenu,
@@ -104,7 +105,7 @@ export const Navbar = () => {
             <Link
               href="/"
               aria-label="Ir al inicio"
-              className="font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
+              className="whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               Que Hay Pa Hacer?
@@ -116,7 +117,7 @@ export const Navbar = () => {
               <li key={route.name}>
                 <NavLink
                   href={route.href}
-                  className="rounded-full px-3 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="whitespace-nowrap rounded-full px-2 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:px-3"
                   activeClassName="bg-[#FDF2F4] text-primary font-semibold"
                 >
                   {route.name}
@@ -185,6 +186,7 @@ export const Navbar = () => {
               </DropdownMenu>
             )}
 
+            <NotificationBell />
             <NavbarAccountMenu />
           </div>
         </div>
