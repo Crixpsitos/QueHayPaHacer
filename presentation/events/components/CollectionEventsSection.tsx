@@ -9,6 +9,7 @@ import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewMode
 import { getEventCollections, type CollectionDef } from "@/presentation/events/lib/eventCollections";
 import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCategory";
 import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
+import { getAllEventsPage } from "@/presentation/events/data/allEventsPage";
 import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
 import { fetchUserLiked, fetchEventDetailById } from "@/presentation/events/data/eventDetailFetchers";
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -81,23 +82,25 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
     );
   }
 
-  const events = await fetchCollectionEvents(def);
-  const likedByEventId = await likesFor(events);
-
-  // "Todos": lista plana (catálogo). Destacados/fin de semana: agrupados por categoría.
+  // "Todos": misma lista paginada que /eventos (primera página + "Cargar más").
   if (def.kind === "all") {
+    const { events, nextCursor } = await getAllEventsPage(null);
+    const likedByEventId = await likesFor(events);
     return (
       <Section spacing="sm" className="mt-4">
         <ItemListJsonLd events={events} />
-        <EventCardInteractive
-          events={events.map((e) => EventViewModelMapper.toViewModel(e))}
-          likedByEventId={likedByEventId}
-          info={EMPTY_INFO}
-          variant="vertical"
+        <InfiniteEventList
+          initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
+          initialCursor={nextCursor}
+          initialLikedByEventId={likedByEventId}
         />
       </Section>
     );
   }
+
+  // Destacados/fin de semana: agrupados por categoría.
+  const events = await fetchCollectionEvents(def);
+  const likedByEventId = await likesFor(events);
 
   const collections = await getEventCollections();
   const groups = groupEventsByCategory(events, collections);

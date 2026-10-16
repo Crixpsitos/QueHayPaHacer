@@ -5,6 +5,7 @@ export interface IEventsFirebaseRepository {
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
     findAllEvents(): Promise<string[]>;
+    findAllPaginated(limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
     findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findLastDraftEventToUser(userId: string): Promise<FirebaseEventsDto | null>;
