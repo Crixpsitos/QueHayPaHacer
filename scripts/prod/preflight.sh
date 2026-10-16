@@ -54,7 +54,7 @@ if grep -q " $BACKEND " <<<"$BL"; then row OK "Backend App Hosting $BACKEND" "";
 # --- Secretos por nombre (sin leer valores)
 SEC="$(gcloud secrets list --project "$P" --format='value(name.basename())' 2>/dev/null)"
 if [ -z "$SEC" ]; then row N/D "Secretos" "no se pudo listar (¿sin facturación/permisos?)"; else
-  for s in firebaseServiceAccountJson cookieSecretCurrent cookieSecretPrevious eventModerationWebhookSecret; do
+  for s in firebaseServiceAccountJson cookieSecretCurrent cookieSecretPrevious eventModerationWebhookSecret siteRevalidateWebhookSecret; do
     if grep -qx "$s" <<<"$SEC"; then row OK "Secreto $s" ""; else row FALTA "Secreto $s" "firebase apphosting:secrets:set $s"; fi
   done
 fi

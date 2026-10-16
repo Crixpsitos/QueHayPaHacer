@@ -47,11 +47,11 @@ function Row({ n, onNavigate }: { n: NotificationItem; onNavigate: () => void })
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className={cn("block text-sm leading-snug", n.read ? "text-foreground/80" : "font-semibold text-foreground")}>
+        <span className={cn("block text-sm leading-snug [overflow-wrap:anywhere]", n.read ? "text-foreground/80" : "font-semibold text-foreground")}>
           {!n.read && <span className="sr-only">Nueva: </span>}
           {n.title}
         </span>
-        {n.body && <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{n.body}</span>}
+        {n.body && <span className="mt-0.5 block text-xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">{n.body}</span>}
         <span className="mt-1 block text-xs text-muted-foreground/80">{timeAgo(n.createdAt)}</span>
       </span>
     </>
@@ -79,7 +79,7 @@ function List({ items, onNavigate }: { items: NotificationItem[] | null; onNavig
   if (items.length === 0) {
     return <p className="px-4 py-10 text-center text-sm text-muted-foreground">Aún no tienes avisos. Aquí verás invitaciones, revisiones de tus eventos y sitios, y respuestas a tus sugerencias.</p>;
   }
-  return <ul className="grid gap-0.5">{items.map((n) => <Row key={n.id} n={n} onNavigate={onNavigate} />)}</ul>;
+  return <ul className="grid grid-cols-[minmax(0,1fr)] gap-0.5">{items.map((n) => <Row key={n.id} n={n} onNavigate={onNavigate} />)}</ul>;
 }
 
 /** Campanita de avisos (`compact`: flotante sobre el mapa). Escritorio: popover; móvil: drawer. Al cerrar se marcan como leídos. */
@@ -150,7 +150,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                 <XIcon />
               </Button>
             </DrawerClose>
-            <DrawerHeader className="pr-14 text-left">
+            <DrawerHeader className="pr-14 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
               <DrawerTitle>{TITLE}</DrawerTitle>
               <DrawerDescription>{DESCRIPTION}</DrawerDescription>
             </DrawerHeader>

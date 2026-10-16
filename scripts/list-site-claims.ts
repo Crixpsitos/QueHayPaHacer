@@ -16,6 +16,7 @@ import { getFirebaseFirestore } from "@/infraestructure/firebase/config/admin/fi
 import { NotificationFirebaseRepository } from "@/infraestructure/firebase/repositories/notification/NotificationFirebaseRepository";
 import { NotificationService } from "@/application/services/notification/NotificationService";
 import { claimResolvedNotification } from "@/domain/entities/notification/messages";
+import { revalidateSite } from "./_revalidateSite";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
@@ -31,8 +32,10 @@ async function approve(claimId: string) {
   const claimRef = db.collection("siteClaims").doc(claimId);
   // Se llenan dentro de la transacción (que puede reintentar) y se usan solo si se aplicó.
   let toNotify: { uid: string; siteName: string; approved: boolean; reason?: string; id: string }[] = [];
+  let stale: { siteId: string; authorIds: string[] } | null = null;
   await db.runTransaction(async (tx) => {
     toNotify = [];
+    stale = null;
     const claimSnap = await tx.get(claimRef);
     if (!claimSnap.exists) throw new Error(`No existe el reclamo ${claimId}`);
     const claim = claimSnap.data()!;
@@ -74,6 +77,7 @@ async function approve(claimId: string) {
       previousSite: previous,
     });
     toNotify.push({ uid: claim.claimantUid, siteName: site.name, approved: true, id: claimId });
+    stale = { siteId: claim.siteId, authorIds: [claim.claimantUid, previous.author?.id ?? previous.author?.uid] };
     for (const d of others) {
       tx.update(d.ref, {
         status: "rejected",
@@ -87,6 +91,9 @@ async function approve(claimId: string) {
   for (const n of toNotify) {
     await notifications.notify(n.uid, claimResolvedNotification(n), `claim-resolved-${n.id}`);
   }
+  // TS no ve que la transacción asigna `stale`; el cast evita que lo estreche a `never`.
+  const s = stale as { siteId: string; authorIds: string[] } | null;
+  if (s) await revalidateSite(s.siteId, s.authorIds);
   if (toNotify.length) console.log(`ok: approved. Avisos enviados: ${toNotify.length}. Cachés: ver docs (se refrescan por TTL).`);
 }
 

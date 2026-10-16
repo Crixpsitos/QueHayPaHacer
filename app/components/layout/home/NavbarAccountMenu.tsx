@@ -141,7 +141,7 @@ export function NavbarAccountMenu({
                 )}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden max-w-28 truncate text-sm sm:inline">
+            <span className="hidden max-w-28 truncate text-sm sm:inline md:hidden lg:inline">
               {username ? `@${username}` : displayName}
             </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />

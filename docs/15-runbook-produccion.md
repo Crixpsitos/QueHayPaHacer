@@ -71,14 +71,15 @@ Variante para el `firebase.json` del repo: mismas claves con `"firebase/firestor
 
 ## 4. Secretos de App Hosting **[U]** (valores: los pone el usuario, nunca en chat)
 
-Nombres exigidos por `apphosting.production.yaml` (existen los 4 en develop):
-`firebaseServiceAccountJson` (JSON de cuenta de servicio de **prod**, no la de develop), `cookieSecretCurrent`, `cookieSecretPrevious` (generar valores nuevos, no reutilizar develop), `eventModerationWebhookSecret`.
+Nombres exigidos por `apphosting.production.yaml` (los 4 primeros existen en develop; `siteRevalidateWebhookSecret` es nuevo, ver `docs/17-notificaciones.md`):
+`firebaseServiceAccountJson` (JSON de cuenta de servicio de **prod**, no la de develop), `cookieSecretCurrent`, `cookieSecretPrevious` (generar valores nuevos, no reutilizar develop), `eventModerationWebhookSecret`, `siteRevalidateWebhookSecret` (el mismo valor va como secreto `SITE_REVALIDATE_WEBHOOK_SECRET` de las Cloud Functions de prod).
 ```
 ! firebase apphosting:secrets:set firebaseServiceAccountJson --project quehaypahacer-prod
 ! firebase apphosting:secrets:set cookieSecretCurrent --project quehaypahacer-prod
 ! firebase apphosting:secrets:set cookieSecretPrevious --project quehaypahacer-prod
 ! firebase apphosting:secrets:set eventModerationWebhookSecret --project quehaypahacer-prod
-! firebase apphosting:secrets:grantaccess firebaseServiceAccountJson,cookieSecretCurrent,cookieSecretPrevious,eventModerationWebhookSecret --backend que-hay-pa-hacer --project quehaypahacer-prod
+! firebase apphosting:secrets:set siteRevalidateWebhookSecret --project quehaypahacer-prod
+! firebase apphosting:secrets:grantaccess firebaseServiceAccountJson,cookieSecretCurrent,cookieSecretPrevious,eventModerationWebhookSecret,siteRevalidateWebhookSecret --backend que-hay-pa-hacer --project quehaypahacer-prod
 ```
 (el CLI pide el valor de forma interactiva; `set` también ofrece añadir la referencia al yaml: decir que NO, ya están). Verificar **[A]**: preflight (secretos por nombre). Rollback: `firebase apphosting:secrets:destroy <nombre>` / nueva versión con `set`.
 Variantes de develop `firebaseAdminClientEmail`/`firebaseAdminPrivateKey` no las usa ningún yaml: no crear en prod.

@@ -31,9 +31,29 @@ Los avisos de moderación de **sitios** salen de un trigger porque la decisión 
 - El conteo se pide al cargar y al volver a la pestaña (consulta `count()`, sin caché: webhooks y Cloud Functions no pueden invalidar etiquetas de Next).
 - Se muestran los 30 más recientes.
 
+## Caché de la ficha pública tras una moderación a mano
+
+La ficha (`fetchPublicSiteDetail`) se cachea, y una aprobación/baja hecha en Firestore no puede invalidar la caché de Next. Se resuelve en dos capas:
+
+1. **Fichas no públicas** (en revisión, rechazadas, inexistentes) se cachean solo `minutes`: una aprobación aparece en ~1–2 min. Medido en develop: ~75 s (antes, hasta 1 h).
+2. **Bajas y cambios de fichas publicadas:** la Cloud Function llama a `POST /api/sites/revalidate` (Bearer `SITE_REVALIDATE_WEBHOOK_SECRET`) tras **cualquier** cambio de `moderationStatus`; invalida `site-<id>`, `site-list`, `featured-sites`, `explore` y las listas del autor. Medido en develop: la ficha pasa de pública a 404 al instante. Sin la configuración de abajo, una baja puede seguir visible hasta ~1 h.
+
 ## Operación (lo hace una persona)
 
-1. **Desplegar el trigger** (repo `functions`): `firebase deploy --only functions:notifySiteModeration` (develop primero; prod cuando exista).
+**Orden obligatorio** (si `apphosting.yaml` referencia un secreto que no existe, el despliegue de App Hosting falla): 1) crear el secreto, 2) desplegar la función, 3) fusionar/desplegar la app.
+
+0. **Secreto compartido** (mismo valor en App Hosting y en las functions; se genera en una variable y no se imprime). Los `.env.*` del repo `functions` están **versionados en git**: no pongas secretos ahí.
+   ```bash
+   P=quehaypahacer-develop
+   SECRET=$(openssl rand -base64 32)
+   printf %s "$SECRET" | firebase apphosting:secrets:set siteRevalidateWebhookSecret --data-file=- --project $P
+   firebase apphosting:secrets:grantaccess siteRevalidateWebhookSecret --backend quehaypahacerdev --project $P
+   printf %s "$SECRET" | firebase functions:secrets:set SITE_REVALIDATE_WEBHOOK_SECRET --data-file=- --project $P
+   unset SECRET
+   ```
+   La URL de la app (no es secreta) va en `functions/.env.<proyecto>` como `REVALIDATE_APP_URL=https://…` (develop: `https://quehaypahacerdev--quehaypahacer-develop.us-central1.hosted.app`; prod: el dominio propio).
+
+1. **Desplegar el trigger** (repo `functions`; con `secrets: [...]` el deploy ya lo enlaza al secreto): `firebase deploy --only functions:notifySiteModeration` (develop primero; prod cuando exista).
 2. **Activar TTL** para que Firestore borre los avisos a los 90 días (una sola vez por proyecto):
    `gcloud firestore fields ttls update expireAt --collection-group=notifications --enable-ttl --database=quehaypahacer-db --project=<proyecto>`
    Sin esto los avisos no se borran solos (no estorba: la lista muestra 30).
@@ -47,5 +67,4 @@ Los avisos de moderación de **sitios** salen de un trigger porque la decisión 
 - No hay aviso para "dar de baja" un **evento** (solo aprobado/rechazado vía webhook).
 - Un sitio que el autor despublica o que se baja cambiando `publicationStatus` (no `moderationStatus`) no genera aviso.
 - El panel de reclamos/sugerencias por script avisa solo si se ejecuta con `--apply`.
-- **El aviso de "aprobaron tu sitio" puede llevar a una ficha que aún da 404.** La ficha pública se cachea (`cacheLife("hours")`, ver `siteDetailFetchers.ts`) y una aprobación hecha en Firestore o por trigger no puede invalidar esa caché de Next. Hasta que expire (≤1 h; en Cloud Run también se pierde al reciclarse la instancia) la ficha puede seguir en 404. Solución si molesta: un endpoint protegido por secreto que la Cloud Function llame para hacer `revalidateTag("site-<id>")`, `site-list` y `explore`.
 - Un sitio con `isActive: false` (desactivado por su dueño) no es público aunque esté aprobado; el aviso de aprobación igual se envía.

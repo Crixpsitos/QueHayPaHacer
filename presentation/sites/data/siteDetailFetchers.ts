@@ -15,15 +15,21 @@ export function isSitePublic(site: Pick<SiteDetail, "publicationStatus" | "moder
  */
 export const fetchPublicSiteDetail = async (idOrSlug: string): Promise<SiteDetail | null> => {
   "use cache";
-  // ponytail: la moderación no invalida tags → un sitio recién aprobado tarda ≤1h en aparecer.
-  cacheLife("hours");
   cacheTag(`site-${idOrSlug}`);
   const { sitesService } = createServerContainer();
   const site =
     (await sitesService.getSiteDetailBySlug(idOrSlug)) ?? (await sitesService.getSiteDetailById(idOrSlug));
   // Las actions invalidan `site-<id>`, no el slug.
   if (site) cacheTag(`site-${site.id}`);
-  return site && isSitePublic(site) ? site : null;
+  if (!site || !isSitePublic(site)) {
+    // En revisión, rechazado o inexistente: puede publicarse pronto (aprobación a mano en Firestore, que no
+    // invalida tags). Se cachea poco para que aparezca en ~1 min en vez de hasta 1 h.
+    cacheLife("minutes");
+    return null;
+  }
+  // Publicado: caché larga; una baja o cambio externo se refresca con POST /api/sites/revalidate.
+  cacheLife("hours");
+  return site;
 };
 
 /** Próximos eventos vinculados a un sitio (itinerario del detalle). */

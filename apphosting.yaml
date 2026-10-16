@@ -56,6 +56,13 @@ env:
     availability:
       - RUNTIME
 
+  # La llama la Cloud Function notifySiteModeration (y los scripts de reclamos) para refrescar cachés.
+  # El secreto debe existir en Secret Manager ANTES de desplegar (ver docs/17-notificaciones.md).
+  - variable: SITE_REVALIDATE_WEBHOOK_SECRET
+    secret: siteRevalidateWebhookSecret
+    availability:
+      - RUNTIME
+
   # Android TWA (Digital Asset Links → /.well-known/assetlinks.json).
   # Ver docs/12-pwa-y-google-play.md. Las huellas son públicas (se sirven en
   # assetlinks.json), no hace falta secret. App Hosting rechaza entradas sin

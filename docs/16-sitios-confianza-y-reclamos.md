@@ -99,7 +99,7 @@ Se transfiere `site.author` para que el dueño edite desde Studio / Mis sitios. 
 
 ### Cachés (limitación)
 
-El script corre fuera de Next, no puede llamar `updateTag`/`revalidateTag` (`app/actions/sites/_revalidate.ts`). Tras aprobar, estas lecturas cacheadas quedan viejas hasta que venza su TTL: detalle `site-<id>` (horas), tarjetas `site-<id>` en donde-ir/home (semanas), listados `site-list` (días), Studio `sites-<uid>` y perfil `profile-sites-<uid>` de ambos usuarios (minutos). Opciones: esperar el TTL, que el nuevo dueño guarde una edición (eso sí invalida `site-<id>`, `explore`, `site-list`), o un redeploy. Mejora futura: un endpoint/acción admin que llame `revalidateSite` para el sitio y los dos uids.
+El script corre fuera de Next, no puede llamar `updateTag`/`revalidateTag` (`app/actions/sites/_revalidate.ts`). Tras aprobar, estas lecturas cacheadas quedan viejas hasta que venza su TTL: detalle `site-<id>` (horas), tarjetas `site-<id>` en donde-ir/home (semanas), listados `site-list` (días), Studio `sites-<uid>` y perfil `profile-sites-<uid>` de ambos usuarios (minutos). Opciones: esperar el TTL, que el nuevo dueño guarde una edición (eso sí invalida `site-<id>`, `explore`, `site-list`), o un redeploy. **Resuelto en parte:** si el script tiene `REVALIDATE_APP_URL` y `SITE_REVALIDATE_WEBHOOK_SECRET` en su entorno llama a `POST /api/sites/revalidate` (sitio + ambos autores) y refresca el detalle, `site-list`, `explore`, Studio y perfil. Las tarjetas "semanas" de donde-ir/home no usan esos tags y siguen venciendo por TTL. Ver `docs/17-notificaciones.md`.
 
 ## Cómo se revierte
 

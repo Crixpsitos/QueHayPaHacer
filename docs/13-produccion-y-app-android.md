@@ -81,6 +81,10 @@ npx firebase-tools apphosting:secrets:set firebaseServiceAccountJson --data-file
 openssl rand -base64 32 | npx firebase-tools apphosting:secrets:set cookieSecretCurrent  --data-file=- $P
 openssl rand -base64 32 | npx firebase-tools apphosting:secrets:set cookieSecretPrevious --data-file=- $P
 openssl rand -base64 32 | npx firebase-tools apphosting:secrets:set eventModerationWebhookSecret --data-file=- $P
+# mismo valor en App Hosting y en las functions (ver docs/17-notificaciones.md): se genera en una variable, sin imprimirla
+SECRET=$(openssl rand -base64 32)
+printf %s "$SECRET" | npx firebase-tools apphosting:secrets:set siteRevalidateWebhookSecret --data-file=- $P
+printf %s "$SECRET" | npx firebase-tools functions:secrets:set SITE_REVALIDATE_WEBHOOK_SECRET --data-file=- $P; unset SECRET
 shred -u ruta/al/sa-prod.json       # borra la llave local
 ```
 
@@ -97,7 +101,7 @@ El asistente pide: ID del backend (sugerido `quehaypahacer`), conectar el repo `
 Dale acceso a cada secreto:
 
 ```bash
-for s in firebaseServiceAccountJson cookieSecretCurrent cookieSecretPrevious eventModerationWebhookSecret; do
+for s in firebaseServiceAccountJson cookieSecretCurrent cookieSecretPrevious eventModerationWebhookSecret siteRevalidateWebhookSecret; do
   npx firebase-tools apphosting:secrets:grantaccess $s --backend quehaypahacer --project quehaypahacer-prod
 done
 ```
