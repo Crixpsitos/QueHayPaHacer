@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Bell, BadgeCheck, CalendarDays, MailPlus, MapPin, MessageSquareDiff, UserCheck, Users, XIcon } from "lucide-react";
+import { Bell, BadgeCheck, CalendarDays, MailPlus, MapPin, MessageSquareDiff, UserCheck, UserMinus, UserPlus, UserX, Users, XIcon } from "lucide-react";
 
 import { getUnreadNotificationsCountAction } from "@/app/actions/notifications/get-unread-notifications-count.action";
 import { listNotificationsAction } from "@/app/actions/notifications/list-notifications.action";
@@ -18,6 +18,9 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, Dr
 const ICONS: Record<NotificationType, typeof Bell> = {
   invitation_received: MailPlus,
   invitation_accepted: UserCheck,
+  invitation_declined: UserX,
+  team_added: UserPlus,
+  team_removed: UserMinus,
   team_role_changed: Users,
   suggestion_received: MessageSquareDiff,
   suggestion_resolved: MessageSquareDiff,

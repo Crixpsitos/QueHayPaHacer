@@ -5,6 +5,9 @@
 export const NOTIFICATION_TYPES = [
   "invitation_received",
   "invitation_accepted",
+  "invitation_declined",
+  "team_added",
+  "team_removed",
   "team_role_changed",
   "suggestion_received",
   "suggestion_resolved",

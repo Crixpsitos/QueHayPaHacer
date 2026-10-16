@@ -14,15 +14,19 @@ Avisos cortos dentro de la app. Sin correo, sin push, sin preferencias, sin tiem
 | Tipo | Destinatario | Se crea en |
 |---|---|---|
 | `invitation_received` | invitado | `inviteCollaboratorsAction` (solo invitaciones realmente creadas) |
-| `invitation_accepted` | quien invitó | `respondCollaboratorInvitationAction` (un rechazo no avisa) |
+| `invitation_accepted` / `invitation_declined` | quien invitó | `respondCollaboratorInvitationAction` |
+| `team_added` / `team_removed` | la persona agregada, acreditada o quitada del equipo de un evento | **Cloud Function** `notifyEventChanges` (compara `collaborators` antes/después) |
 | `team_role_changed` | miembro del equipo | `changeCollaboratorRoleAction` (solo si el rol cambia) |
 | `suggestion_received` | autor del sitio | `suggestSiteChangeAction` |
 | `suggestion_resolved` | quien sugirió | `resolveSiteSuggestionAction` y `scripts/list-site-suggestions.ts` |
 | `claim_resolved` | reclamante (y reclamos que pierden) | `scripts/list-site-claims.ts` (`--approve` / `--reject`) |
 | `event_moderation` | autor del evento | `app/api/events/moderation/route.ts` (webhook) |
 | `site_moderation` | autor del sitio | **Cloud Function** `notifySiteModeration` (ver abajo) |
+| `event_moderation` (baja) | autor del evento | **Cloud Function** `notifyEventChanges` (publicado → rechazado) |
 
-Los avisos de moderación de **sitios** salen de un trigger porque la decisión se toma a mano en Firestore (o con el futuro panel) y no pasa por código de la app. Avisa de `pending→approved`, `pending→rejected` y `approved→rejected` ("dieron de baja"); editar un sitio aprobado lo devuelve a revisión y no avisa.
+Los avisos de moderación de **sitios** salen de un trigger porque la decisión se toma a mano en Firestore (o con el futuro panel) y no pasa por código de la app. Avisa de `pending→approved`, `pending→rejected`, `approved→rejected` ("dieron de baja") y `published→draft` ("ya no está publicado", lo haya hecho el autor u otra persona); editar un sitio aprobado lo devuelve a revisión y no avisa.
+
+Los avisos de **eventos** que no pasan por una acción (altas/bajas del equipo, baja de un evento publicado) salen de `notifyEventChanges`. El rechazo de un evento *pendiente* lo avisa el webhook `/api/events/moderation`, así que no se duplica. La lógica vive en `functions/src/modules/notifications/notices.ts` (pura, con tests: `npm test` en `functions`).
 
 ## Cómo se ve
 
@@ -36,7 +40,7 @@ Los avisos de moderación de **sitios** salen de un trigger porque la decisión 
 La ficha (`fetchPublicSiteDetail`) se cachea, y una aprobación/baja hecha en Firestore no puede invalidar la caché de Next. Se resuelve en dos capas:
 
 1. **Fichas no públicas** (en revisión, rechazadas, inexistentes) se cachean solo `minutes`: una aprobación aparece en ~1–2 min. Medido en develop: ~75 s (antes, hasta 1 h).
-2. **Bajas y cambios de fichas publicadas:** la Cloud Function llama a `POST /api/sites/revalidate` (Bearer `SITE_REVALIDATE_WEBHOOK_SECRET`) tras **cualquier** cambio de `moderationStatus`; invalida `site-<id>`, `site-list`, `featured-sites`, `explore` y las listas del autor. Medido en develop: la ficha pasa de pública a 404 al instante. Sin la configuración de abajo, una baja puede seguir visible hasta ~1 h.
+2. **Bajas y cambios de fichas publicadas:** la Cloud Function llama a `POST /api/sites/revalidate` (o `/api/events/revalidate` para eventos) (Bearer `SITE_REVALIDATE_WEBHOOK_SECRET`) tras **cualquier** cambio de `moderationStatus`; invalida `site-<id>`, `site-list`, `featured-sites`, `explore` y las listas del autor. Medido en develop: la ficha pasa de pública a 404 al instante. Sin la configuración de abajo, una baja puede seguir visible hasta ~1 h.
 
 ## Operación (lo hace una persona)
 
@@ -53,18 +57,17 @@ La ficha (`fetchPublicSiteDetail`) se cachea, y una aprobación/baja hecha en Fi
    ```
    La URL de la app (no es secreta) va en `functions/.env.<proyecto>` como `REVALIDATE_APP_URL=https://…` (develop: `https://quehaypahacerdev--quehaypahacer-develop.us-central1.hosted.app`; prod: el dominio propio).
 
-1. **Desplegar el trigger** (repo `functions`; con `secrets: [...]` el deploy ya lo enlaza al secreto): `firebase deploy --only functions:notifySiteModeration` (develop primero; prod cuando exista).
+1. **Desplegar el trigger** (repo `functions`; con `secrets: [...]` el deploy ya lo enlaza al secreto): `firebase deploy --only functions:notifySiteModeration,functions:notifyEventChanges` (develop primero; prod cuando exista).
 2. **Activar TTL** para que Firestore borre los avisos a los 90 días (una sola vez por proyecto):
    `gcloud firestore fields ttls update expireAt --collection-group=notifications --enable-ttl --database=quehaypahacer-db --project=<proyecto>`
    Sin esto los avisos no se borran solos (no estorba: la lista muestra 30).
 
 ## Límites conocidos
 
+- Los avisos de equipo (agregar/quitar), baja de evento y "despublicado" dependen de la Cloud Function: hasta desplegarla con su secreto no se generan.
+- Quitar a alguien de la red de colaboradores lo saca de los eventos y genera un aviso `team_removed` por cada evento.
+- Un evento que el autor cancela (`cancelled`) o borra no avisa a los inscritos.
 - Sin tiempo real: un aviso nuevo aparece al recargar, abrir la campanita o volver a la pestaña.
 - Cerrar el panel marca todo como leído aunque no se haya abierto cada aviso.
-- Rechazar una invitación no avisa a quien invitó (decisión de producto).
-- No hay aviso al agregar a alguien a un evento (solo cambio de rol), ni al quitarlo.
-- No hay aviso para "dar de baja" un **evento** (solo aprobado/rechazado vía webhook).
-- Un sitio que el autor despublica o que se baja cambiando `publicationStatus` (no `moderationStatus`) no genera aviso.
 - El panel de reclamos/sugerencias por script avisa solo si se ejecuta con `--apply`.
 - Un sitio con `isActive: false` (desactivado por su dueño) no es público aunque esté aprobado; el aviso de aprobación igual se envía.

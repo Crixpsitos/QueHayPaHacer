@@ -26,17 +26,23 @@ export async function respondCollaboratorInvitationAction(
       tokens.decodedToken.uid,
       accept,
     );
-    // Solo se avisa la aceptación: un rechazo no genera aviso.
-    if (answered?.accepted) {
+    if (answered) {
+      const who = answered.responderName || "Alguien";
       await notificationService.notify(
         answered.fromUid,
-        {
-          type: "invitation_accepted",
-          title: `${answered.responderName || "Alguien"} aceptó tu invitación`,
-          body: "Ya puedes sumarle al equipo de tus eventos.",
-          href: "/studio/collaborators",
-        },
-        `invite-accepted-${invitationId}`,
+        answered.accepted
+          ? {
+              type: "invitation_accepted",
+              title: `${who} aceptó tu invitación`,
+              body: "Ya puedes sumarle al equipo de tus eventos.",
+              href: "/studio/collaborators",
+            }
+          : {
+              type: "invitation_declined",
+              title: `${who} rechazó tu invitación`,
+              href: "/studio/collaborators",
+            },
+        `invite-${answered.accepted ? "accepted" : "declined"}-${invitationId}`,
       );
     }
     revalidatePath("/studio/collaborators");
