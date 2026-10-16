@@ -66,6 +66,8 @@ import { SiteClaimFirebaseRepository } from "../firebase/repositories/siteClaim/
 import { SiteClaimService } from "@/application/services/siteClaim/SiteClaimService";
 import { SiteSuggestionFirebaseRepository } from "../firebase/repositories/siteSuggestion/SiteSuggestionFirebaseRepository";
 import { SiteSuggestionService } from "@/application/services/siteSuggestion/SiteSuggestionService";
+import { NotificationFirebaseRepository } from "../firebase/repositories/notification/NotificationFirebaseRepository";
+import { NotificationService } from "@/application/services/notification/NotificationService";
 import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
@@ -192,6 +194,11 @@ export const createServerContainer = () => {
     sitesService,
   );
 
+  // campanita de avisos (invitaciones, moderación, sugerencias)
+  const notificationService = new NotificationService(
+    new NotificationFirebaseRepository(getFirebaseFirestore()),
+  );
+
   return {
     userService,
     campaignService,
@@ -213,6 +220,7 @@ export const createServerContainer = () => {
     contentDeclarationService,
     siteClaimService,
     siteSuggestionService,
+    notificationService,
   };
 };
 

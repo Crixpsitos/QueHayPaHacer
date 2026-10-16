@@ -19,13 +19,26 @@ export async function respondCollaboratorInvitationAction(
     const tokens = await getTokens(await cookies(), authConfig);
     if (!tokens) return { success: false, error: "No hay sesión activa." };
 
-    const { studioService } = createServerContainer();
+    const { studioService, notificationService } = createServerContainer();
     // El uid de sesión debe ser el invitado; el repo lo verifica.
-    await studioService.respondCollaboratorInvitation(
+    const answered = await studioService.respondCollaboratorInvitation(
       invitationId,
       tokens.decodedToken.uid,
       accept,
     );
+    // Solo se avisa la aceptación: un rechazo no genera aviso.
+    if (answered?.accepted) {
+      await notificationService.notify(
+        answered.fromUid,
+        {
+          type: "invitation_accepted",
+          title: `${answered.responderName || "Alguien"} aceptó tu invitación`,
+          body: "Ya puedes sumarle al equipo de tus eventos.",
+          href: "/studio/collaborators",
+        },
+        `invite-accepted-${invitationId}`,
+      );
+    }
     revalidatePath("/studio/collaborators");
     updateTag(`invitations-${tokens.decodedToken.uid}`);
     return { success: true };

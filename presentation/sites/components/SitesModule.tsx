@@ -14,6 +14,7 @@ import { DetailModal } from "./DetailModal"
 import { MySuggestionsPanel, useMySuggestions } from "./suggest/MySuggestionsPanel"
 import { useSiteForm } from "../hooks/useSiteForm"
 import { NavbarAccountMenu } from "@/app/components/layout/home/NavbarAccountMenu"
+import { NotificationBell } from "@/app/components/layout/home/NotificationBell"
 import { FILTER_TABS, getDisplayStatus } from "../lib/constants"
 import type { Coordinates, MapSiteMarker, SiteDetail, SiteFilterTab } from "../view-models/SiteFormViewModel"
 
@@ -181,9 +182,10 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
         {/* Cuenta — esquina sup-derecha del mapa. En form solo en lg (en móvil manda el drawer). Oculto con detalle abierto. */}
         {!detailId && (
           <div className={cn(
-            "absolute right-3 top-3 z-30 sm:right-4 sm:top-4",
-            panelMode === "form" && "hidden lg:block",
+            "absolute right-3 top-3 z-30 flex items-center gap-2 sm:right-4 sm:top-4",
+            panelMode === "form" && "hidden lg:flex",
           )}>
+            <NotificationBell compact />
             <NavbarAccountMenu compact showHome />
           </div>
         )}

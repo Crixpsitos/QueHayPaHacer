@@ -5,9 +5,14 @@ import { spamGuardError } from "@/domain/entities/spamGuard/spamGuard";
 import { parseSiteSuggestionInput } from "@/application/dto/siteSuggestion/SiteSuggestionDto";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 
-/** `siteAuthorId` (solo éxito): lo usa la action para invalidar el conteo del autor; la action no lo devuelve al cliente. */
-export type SiteSuggestionResult = { success: true; siteAuthorId?: string | null } | { success: false; error: string };
-export type ResolveSuggestionResult = { success: true } | { success: false; error: string };
+/** `siteAuthorId`/`siteName` (solo éxito): los usa la action para invalidar y avisar al autor; la action no los devuelve al cliente. */
+export type SiteSuggestionResult =
+  | { success: true; siteAuthorId?: string | null; siteName?: string }
+  | { success: false; error: string };
+/** `suggester` (solo éxito): a quién avisar de la resolución; la action no lo devuelve al cliente. */
+export type ResolveSuggestionResult =
+  | { success: true; suggester?: { uid: string; siteName: string; field: string } }
+  | { success: false; error: string };
 
 // ponytail: un autor con muchísimos sitios haría muchas queries; limitar/paginar si pasa de ~50.
 const MAX_SITES_SCANNED = 50;
@@ -53,7 +58,7 @@ export class SiteSuggestionService {
       termsVersion: LEGAL_VERSION,
       status: "pending",
     });
-    return { success: true, siteAuthorId: site.authorId };
+    return { success: true, siteAuthorId: site.authorId, siteName: site.name };
   }
 
   /** Sugerencias de los sitios del autor (pendientes primero, luego más recientes). Autoriza por `uid` de sesión. */
@@ -84,7 +89,9 @@ export class SiteSuggestionService {
       resolvedBy: uid,
       ...(cleanNote ? { note: cleanNote } : {}),
     });
-    return res === "ok" ? { success: true } : { success: false, error: "Esta sugerencia ya fue resuelta." };
+    return res === "ok"
+      ? { success: true, suggester: { uid: s.authorUid, siteName: s.siteName, field: s.field } }
+      : { success: false, error: "Esta sugerencia ya fue resuelta." };
   }
 
   async hasPending(uid: string, siteId: string): Promise<boolean> {

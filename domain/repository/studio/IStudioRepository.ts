@@ -74,7 +74,8 @@ export interface IStudioRepository {
   /** Busca usuarios para invitar (pipeline de búsqueda sobre `users`). Excluye a uno mismo. */
   searchPotentialCollaborators(uid: string, query: string, limit?: number): Promise<UserSearchItem[]>;
   /** Envía invitaciones a varios usuarios a la vez (a mi red). Dedup + no auto-invitar. */
-  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void>;
+  /** Devuelve las invitaciones realmente creadas (se omiten duplicados, auto-invitación y no creadores) y el nombre de quien invita. */
+  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<{ inviterName: string; invited: string[] }>;
   /** Invitaciones pendientes que YO recibí. */
   getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]>;
   /** Invitaciones pendientes que YO envié (para poder cancelarlas). */
@@ -82,7 +83,8 @@ export interface IStudioRepository {
   /** Mi red: usuarios que invité y aceptaron + mis perfiles externos. */
   getCollaborators(uid: string): Promise<Collaborator[]>;
   /** Aceptar/rechazar una invitación recibida. `uid` debe ser el invitado (`toUid`). */
-  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<void>;
+  /** Devuelve quién invitó cuando la respuesta cambió el estado; null si ya estaba respondida. */
+  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<{ fromUid: string; responderName: string; accepted: boolean } | null>;
   /** Cancelar una invitación que YO envié (pendiente). `uid` = quien invitó (`fromUid`). */
   cancelInvitation(inviteId: string, uid: string): Promise<void>;
   /** Quitar de mi red a un colaborador (user aceptado o externo mío). */

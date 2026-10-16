@@ -10,6 +10,9 @@ import "./_loadEnv";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getFirebaseFirestore } from "@/infraestructure/firebase/config/admin/firebase";
 import { SUGGESTION_FIELD_LABELS, type SuggestionField } from "@/domain/entities/siteSuggestion/SiteSuggestion";
+import { NotificationFirebaseRepository } from "@/infraestructure/firebase/repositories/notification/NotificationFirebaseRepository";
+import { NotificationService } from "@/application/services/notification/NotificationService";
+import { suggestionResolvedNotification } from "@/domain/entities/notification/messages";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
@@ -19,6 +22,7 @@ const flag = (name: string) => {
 };
 const REVIEWER = "script:list-site-suggestions";
 const db = getFirebaseFirestore();
+const notifications = new NotificationService(new NotificationFirebaseRepository(db));
 
 async function resolve(id: string, status?: string, note?: string) {
   if (status !== "applied" && status !== "rejected")
@@ -35,7 +39,12 @@ async function resolve(id: string, status?: string, note?: string) {
     resolvedBy: REVIEWER,
     ...(note?.trim() ? { resolutionNote: note.trim() } : {}),
   });
-  console.log(`ok: ${status} (el sitio NO se modificó)`);
+  await notifications.notify(
+    snap.get("authorUid"),
+    suggestionResolvedNotification({ siteName: snap.get("siteName"), field: snap.get("field"), accepted: status === "applied", note }),
+    `suggestion-resolved-${id}`,
+  );
+  console.log(`ok: ${status} (el sitio NO se modificó; se avisó a quien sugirió)`);
 }
 
 async function list() {

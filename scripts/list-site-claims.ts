@@ -13,6 +13,9 @@
 import "./_loadEnv";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getFirebaseFirestore } from "@/infraestructure/firebase/config/admin/firebase";
+import { NotificationFirebaseRepository } from "@/infraestructure/firebase/repositories/notification/NotificationFirebaseRepository";
+import { NotificationService } from "@/application/services/notification/NotificationService";
+import { claimResolvedNotification } from "@/domain/entities/notification/messages";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
@@ -22,10 +25,14 @@ const flag = (name: string) => {
 };
 const REVIEWER = "script:list-site-claims";
 const db = getFirebaseFirestore();
+const notifications = new NotificationService(new NotificationFirebaseRepository(db));
 
 async function approve(claimId: string) {
   const claimRef = db.collection("siteClaims").doc(claimId);
+  // Se llenan dentro de la transacción (que puede reintentar) y se usan solo si se aplicó.
+  let toNotify: { uid: string; siteName: string; approved: boolean; reason?: string; id: string }[] = [];
   await db.runTransaction(async (tx) => {
+    toNotify = [];
     const claimSnap = await tx.get(claimRef);
     if (!claimSnap.exists) throw new Error(`No existe el reclamo ${claimId}`);
     const claim = claimSnap.data()!;
@@ -66,6 +73,7 @@ async function approve(claimId: string) {
       reviewedBy: REVIEWER,
       previousSite: previous,
     });
+    toNotify.push({ uid: claim.claimantUid, siteName: site.name, approved: true, id: claimId });
     for (const d of others) {
       tx.update(d.ref, {
         status: "rejected",
@@ -73,9 +81,13 @@ async function approve(claimId: string) {
         reviewedAt: FieldValue.serverTimestamp(),
         reviewedBy: REVIEWER,
       });
+      toNotify.push({ uid: d.get("claimantUid"), siteName: site.name, approved: false, reason: "Otro reclamo fue aprobado primero.", id: d.id });
     }
-    console.log("ok: approved. Cachés: ver docs (se refrescan por TTL).");
   });
+  for (const n of toNotify) {
+    await notifications.notify(n.uid, claimResolvedNotification(n), `claim-resolved-${n.id}`);
+  }
+  if (toNotify.length) console.log(`ok: approved. Avisos enviados: ${toNotify.length}. Cachés: ver docs (se refrescan por TTL).`);
 }
 
 async function reject(claimId: string, reason?: string) {
@@ -92,7 +104,12 @@ async function reject(claimId: string, reason?: string) {
     reviewedAt: FieldValue.serverTimestamp(),
     reviewedBy: REVIEWER,
   });
-  console.log("ok: rejected");
+  await notifications.notify(
+    snap.get("claimantUid"),
+    claimResolvedNotification({ siteName: snap.get("siteName"), approved: false, reason }),
+    `claim-resolved-${claimId}`,
+  );
+  console.log("ok: rejected (se avisó al reclamante)");
 }
 
 async function list() {

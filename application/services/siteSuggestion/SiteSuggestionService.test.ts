@@ -5,7 +5,7 @@ import { SiteSuggestionService } from "./SiteSuggestionService";
 function make(opts: { owner?: string; status?: string } = {}) {
   const resolved: unknown[] = [];
   const repo = {
-    getSiteIdAndStatus: async (id: string) => (id === "nope" ? null : { siteId: "s1", status: opts.status ?? "pending" }),
+    getSiteIdAndStatus: async (id: string) => (id === "nope" ? null : { siteId: "s1", status: opts.status ?? "pending", authorUid: "u9", siteName: "Café", field: "hours" }),
     resolve: async (_id: string, r: unknown) => {
       if ((opts.status ?? "pending") !== "pending") return "not_pending" as const;
       resolved.push(r);

@@ -54,7 +54,15 @@ export class SiteSuggestionFirebaseRepository extends FirebaseBaseRepository imp
 
   async getSiteIdAndStatus(id: string) {
     const snap = await this.collection.doc(id).get();
-    return snap.exists ? { siteId: snap.get("siteId") as string, status: snap.get("status") as string } : null;
+    return snap.exists
+      ? {
+          siteId: snap.get("siteId") as string,
+          status: snap.get("status") as string,
+          authorUid: snap.get("authorUid") as string,
+          siteName: snap.get("siteName") as string,
+          field: snap.get("field") as string,
+        }
+      : null;
   }
 
   async resolve(id: string, r: { status: "applied" | "rejected"; resolvedBy: string; note?: string }) {

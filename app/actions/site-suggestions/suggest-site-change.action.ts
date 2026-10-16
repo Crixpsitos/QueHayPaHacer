@@ -7,6 +7,7 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { updateTag } from "next/cache"
 import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt"
 import { siteSuggestionsTag } from "./_tag"
+import { SUGGESTION_FIELD_LABELS, type SuggestionField } from "@/domain/entities/siteSuggestion/SiteSuggestion"
 
 export interface SuggestSiteChangeInput {
   siteId: string
@@ -29,7 +30,15 @@ export async function suggestSiteChangeAction(input: SuggestSiteChangeInput): Pr
     )
     if (!res.success) return res
     // El autor del sitio ve el aviso en su menú: invalida su conteo cacheado.
-    if (res.siteAuthorId) updateTag(siteSuggestionsTag(res.siteAuthorId))
+    if (res.siteAuthorId) {
+      updateTag(siteSuggestionsTag(res.siteAuthorId))
+      await createServerContainer().notificationService.notify(res.siteAuthorId, {
+        type: "suggestion_received",
+        title: `Nueva sugerencia en "${res.siteName ?? "tu sitio"}"`,
+        body: SUGGESTION_FIELD_LABELS[field as SuggestionField],
+        href: "/sites?sugerencias=1",
+      })
+    }
     return { success: true }
   } catch (e) {
     console.error("[suggestSiteChange]", e)

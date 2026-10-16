@@ -1778,8 +1778,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    * emisor e invitado en la invitación. Salta auto-invitación y duplicados
    * (pendientes o ya aceptados). Account-level: sin eventId.
    */
-  async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
-    if (invitees.length === 0) return;
+  async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<{ inviterName: string; invited: string[] }> {
+    if (invitees.length === 0) return { inviterName: "", invited: [] };
     if (invitees.length > 20) throw new Error("Máximo 20 invitaciones a la vez.");
 
     const meSnap = await this.db.collection("users").doc(fromUid).get();
@@ -1821,7 +1821,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     );
 
     const batch = this.db.batch();
-    let added = 0;
+    const invited: string[] = [];
     for (const inv of invitees) {
       const invitee = creators.get(inv.uid);
       if (inv.uid === fromUid || seen.has(inv.uid) || !invitee) continue;
@@ -1841,9 +1841,10 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         respondedAt: null,
       });
       seen.add(inv.uid);
-      added++;
+      invited.push(inv.uid);
     }
-    if (added > 0) await batch.commit();
+    if (invited.length > 0) await batch.commit();
+    return { inviterName: me.displayName ?? "", invited };
   }
 
   /** Invitaciones pendientes que YO recibí. Emisor ya denormalizado en el doc. */
@@ -1932,19 +1933,20 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     inviteId: string,
     uid: string,
     accept: boolean,
-  ): Promise<void> {
+  ): Promise<{ fromUid: string; responderName: string; accepted: boolean } | null> {
     const inviteRef = this.db.collection("collaborationInvites").doc(inviteId);
-    await this.db.runTransaction(async (tx) => {
+    return this.db.runTransaction(async (tx) => {
       const snap = await tx.get(inviteRef);
       if (!snap.exists) throw new Error("Invitación no encontrada.");
-      const inv = snap.data() as { toUid?: string; status?: string };
+      const inv = snap.data() as { toUid?: string; status?: string; fromUid?: string; toDisplayName?: string };
       if (inv.toUid !== uid) throw new Error("No autorizado.");
-      if (inv.status !== "pending") return; // ya respondida → no-op
+      if (inv.status !== "pending") return null; // ya respondida → no-op
 
       tx.update(inviteRef, {
         status: accept ? "accepted" : "declined",
         respondedAt: FieldValue.serverTimestamp(),
       });
+      return { fromUid: inv.fromUid ?? "", responderName: inv.toDisplayName ?? "", accepted: accept };
     });
   }
 

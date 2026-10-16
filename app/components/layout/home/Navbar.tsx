@@ -5,6 +5,7 @@ import { Menu, Plus, X } from "lucide-react";
 import { NavLink } from "../../ui/navigation/NavLink";
 import { Button } from "../../ui/button/button";
 import { NavbarAccountMenu } from "./NavbarAccountMenu";
+import { NotificationBell } from "./NotificationBell";
 import { Container } from "../shared/Container";
 import {
   DropdownMenu,
@@ -185,6 +186,7 @@ export const Navbar = () => {
               </DropdownMenu>
             )}
 
+            <NotificationBell />
             <NavbarAccountMenu />
           </div>
         </div>

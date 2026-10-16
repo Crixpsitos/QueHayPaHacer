@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { eventsService, userService, badgeService, profileService } = createServerContainer();
+    const { eventsService, userService, badgeService, profileService, notificationService } = createServerContainer();
     const before = await eventsService.getEventById(parsed.output.eventId);
     if (!before) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
@@ -44,6 +44,25 @@ export async function POST(request: Request) {
       parsed.output.decision,
       parsed.output.reviewer,
       parsed.output.reason,
+    );
+
+    // Aviso al autor: la decisión ya quedó guardada; si falla el aviso no se revierte.
+    const { event: moderated } = result;
+    await notificationService.notify(
+      moderated.author.id,
+      parsed.output.decision === "approved"
+        ? {
+            type: "event_moderation",
+            title: `Aprobaron tu evento "${moderated.title}"`,
+            body: "Ya está publicado.",
+            href: `/eventos/${moderated.id}`,
+          }
+        : {
+            type: "event_moderation",
+            title: `No aprobaron tu evento "${moderated.title}"`,
+            body: moderated.rejectionReason ?? undefined,
+            href: `/eventos/${moderated.id}/edit`,
+          },
     );
 
     if (parsed.output.decision === "approved" && result.wasPrePublication) {
