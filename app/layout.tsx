@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
-import { SITE_URL, SITE_NAME } from "./lib/site";
+import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "./lib/site";
 import "./globals.css";
 
 const DEFAULT_DESCRIPTION =
@@ -30,10 +30,11 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "es_CO",
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
-    // "summary" hasta que haya imágenes OG; luego "summary_large_image".
-    card: "summary",
+    card: "summary_large_image",
+    images: [DEFAULT_OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
 };

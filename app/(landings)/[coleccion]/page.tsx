@@ -7,7 +7,7 @@ import { CollectionEventsSection } from "@/presentation/events/components/Collec
 import { SiteCollectionContent } from "@/presentation/sites/components/discovery/SiteCollectionContent";
 import { getEventCollectionBySlug } from "@/presentation/events/lib/eventCollections";
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
-import { SITE_NAME } from "@/app/lib/site";
+import { SITE_NAME, DEFAULT_OG_IMAGE } from "@/app/lib/site";
 import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
 import { MapPin } from "lucide-react";
 
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: def.metaTitle,
       description: def.metaDescription,
       alternates: { canonical: url },
-      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
+      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO", images: [DEFAULT_OG_IMAGE] },
     };
   }
 
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: def.metaTitle,
     description: def.metaDescription,
     alternates: { canonical: url },
-    openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
+    openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO", images: [DEFAULT_OG_IMAGE] },
   };
 }
 

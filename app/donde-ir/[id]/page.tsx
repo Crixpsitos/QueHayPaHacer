@@ -6,7 +6,7 @@ import { SiteCollectionContent } from "@/presentation/sites/components/discovery
 import { SiteDetailContainer } from "@/presentation/sites/components/detail/SiteDetailContainer";
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
 import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetchers";
-import { SITE_NAME } from "@/app/lib/site";
+import { DEFAULT_OG_IMAGE, SITE_NAME } from "@/app/lib/site";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: def.metaTitle,
       description: def.metaDescription,
       alternates: { canonical: url },
-      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
+      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO", images: [DEFAULT_OG_IMAGE] },
     };
   }
 
@@ -31,9 +31,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const siteUrl = `/donde-ir/${site.slug || id}`;
   const description = site.description || `Descubre ${site.name} en Ibagué: horarios, ubicación y eventos.`;
-  const images = site.coverUrl
-    ? [{ url: site.coverUrl, width: 1200, height: 630, alt: site.name }]
-    : [];
+  // JPEG ligero de la portada (WebP/PNG pesados no se ven en WhatsApp): ver app/og/site/[id].
+  const images = [{ url: `/og/site/${site.id}`, width: 1200, height: 630, alt: site.name }];
 
   return {
     title: site.name,
@@ -52,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: site.name,
       description,
-      ...(images[0] ? { images: [images[0].url] } : {}),
+      images: [images[0].url],
     },
   };
 }
