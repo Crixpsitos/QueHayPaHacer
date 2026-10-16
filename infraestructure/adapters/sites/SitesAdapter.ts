@@ -66,6 +66,10 @@ export class SitesAdapter implements ISiteRepository {
     return this.repo.findAllSiteIds()
   }
 
+  findAllSiteIdsPage(limit: number, cursor: string | null) {
+    return this.repo.findAllSiteIdsPage(limit, cursor)
+  }
+
   findSiteIdsByCategory(category: string, limit: number, cursor: string | null) {
     return this.repo.findSiteIdsByCategory(category, limit, cursor)
   }

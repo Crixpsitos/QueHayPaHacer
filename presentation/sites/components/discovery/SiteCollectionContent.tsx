@@ -2,6 +2,7 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { SiteDiscoveryGrid } from "./SiteDiscovery";
 import { InfiniteSiteList } from "./InfiniteSiteList";
+import { fetchAllSitesPage } from "../../data/siteListFetchers";
 import { getSiteCollections, type SiteCollectionDef } from "../../lib/siteCollections";
 import { groupSitesByCategory } from "../../lib/groupSitesByCategory";
 import { createServerContainer } from "@/infraestructure/di/container";
@@ -66,7 +67,17 @@ export async function SiteCollectionContent({ def }: { def: SiteCollectionDef })
     );
   }
 
-  // Destacados / todos → agrupados por tipo, cada grupo con "Ver más".
+  // Todos → misma lista paginada que el índice (se puede ver todo sin cambiar de página).
+  if (def.kind === "all") {
+    const { sites, nextCursor } = await fetchAllSitesPage();
+    return (
+      <Section spacing="sm" className="mt-4">
+        <InfiniteSiteList category="all" initialSites={sites} initialCursor={nextCursor} />
+      </Section>
+    );
+  }
+
+  // Destacados → agrupados por tipo, cada grupo con "Ver más".
   const sites = await fetchCollectionSites(def);
   const groups = groupSitesByCategory(sites, getSiteCollections());
 

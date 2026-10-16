@@ -135,4 +135,6 @@ export interface FirebaseSiteDto {
   kind?: "public" | "business"
   publishedAs?: "owner" | "proposer" | "qhpa"
   verification?: "community" | "claimed" | "verified"
+  // La ficha cumple todas las reglas del medidor (siteCompleteness). Se calcula al guardar; da un bono al ranking.
+  listingComplete?: boolean
 }

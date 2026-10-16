@@ -2,6 +2,7 @@ import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
 import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTransit"
+import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
@@ -26,6 +27,7 @@ function contentFields(data: SiteInput) {
     socialMedia: data.socialMedia,
     temporarilyClosed: data.temporarilyClosed,
     openingPolicy: data.openingPolicy,
+    listingComplete: data.listingComplete,
     recommendations: data.recommendations,
     bookingUrl: data.bookingUrl,
     // undefined = no tocar (merge); null = quitar el bloque
@@ -54,7 +56,20 @@ export class SitesService {
   /** Merge only content fields into an existing doc — never touches status/analytics/slug/author. */
   async updateDraft(uid: string, id: string, data: SiteInput): Promise<void> {
     await this.assertOwner(uid, id)
-    return this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
+    await this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
+    await this.recomputeScore(id)
+  }
+
+  /**
+   * Recalcula `analytics.score` desde los contadores y `listingComplete` (ver siteRanking). Escribe solo si cambió.
+   * Se llama al guardar un sitio y al registrar un "me gusta" o un compartido.
+   */
+  async recomputeScore(id: string): Promise<void> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return
+    const score = siteScore(dto.analytics, dto.listingComplete)
+    if (dto.analytics?.score === score) return
+    await this.adapter.updateRaw({ id, analytics: { score } } as unknown as FirebaseSiteDto)
   }
 
   async publish(data: SiteInput): Promise<string> {
@@ -66,7 +81,7 @@ export class SitesService {
     const current = await this.assertOwner(uid, id)
     // el borrador nace con nombre vacío → slug "-xxxx"; se regenera al publicar
     const regenerateSlug = current.publicationStatus === "draft" || !current.slug || current.slug.startsWith("-")
-    return this.adapter.updateRaw({
+    await this.adapter.updateRaw({
       id,
       ...contentFields(data),
       ...(regenerateSlug ? { slug: data.slug } : {}),
@@ -75,11 +90,13 @@ export class SitesService {
       rejectionReason: null,
       rejectedAt: null,
     } as FirebaseSiteDto)
+    await this.recomputeScore(id)
   }
 
   async updateSite(uid: string, id: string, data: SiteInput): Promise<void> {
     await this.assertOwner(uid, id)
-    return this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
+    await this.adapter.updateRaw({ id, ...contentFields(data) } as FirebaseSiteDto)
+    await this.recomputeScore(id)
   }
 
   /** Toggle public visibility — owner only. */
@@ -144,6 +161,10 @@ export class SitesService {
   async getRandomSites(limit: number): Promise<string[]> {
     const ids = await this.adapter.findAllSiteIds()
     return [...ids].sort(() => Math.random() - 0.5).slice(0, limit)
+  }
+
+  getAllSitesPage(limit: number, cursor: string | null) {
+    return this.adapter.findAllSiteIdsPage(limit, cursor)
   }
 
   getSitesByCategory(category: string, limit: number, cursor: string | null) {

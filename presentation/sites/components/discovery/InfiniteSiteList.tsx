@@ -9,14 +9,19 @@ import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { loadMoreSitesAction } from "@/app/actions/sites/load-more-sites.action";
 
 interface InfiniteSiteListProps {
+  /** Tipo de sitio, o "all" para todos. */
   category: string;
   initialSites: SiteDetail[];
   initialCursor: string | null;
+  /** Sitios que ya se ven en otra sección de la página (p. ej. destacados): no se repiten. */
+  excludeIds?: string[];
 }
 
 /** Lista de sitios con "Cargar más" (cursor). Primera página del server (cacheada). */
-export function InfiniteSiteList({ category, initialSites, initialCursor }: InfiniteSiteListProps) {
-  const [sites, setSites] = useState(initialSites);
+export function InfiniteSiteList({ category, initialSites, initialCursor, excludeIds = [] }: InfiniteSiteListProps) {
+  const skip = new Set(excludeIds);
+  const [loaded, setSites] = useState(initialSites);
+  const sites = loaded.filter((s) => !skip.has(s.id));
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +37,7 @@ export function InfiniteSiteList({ category, initialSites, initialCursor }: Infi
     }
   };
 
-  if (sites.length === 0) {
+  if (sites.length === 0 && !cursor) {
     return (
       <div className="py-16 text-center">
         <h3 className="text-xl font-semibold text-foreground">Todavía no hay lugares aquí</h3>

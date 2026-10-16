@@ -8,6 +8,9 @@ import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/Si
 import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteInput } from "@/application/services/sites/SitesService"
+import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
+import { siteScore } from "@/domain/entities/sites/siteRanking"
+import { completenessFromForm } from "@/presentation/sites/lib/completeness"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 /**
@@ -30,6 +33,9 @@ export function buildSiteInput(
     cityName: form.city,
     citySlug: form.citySlug,
   })
+
+  const listingComplete = getSiteCompleteness(completenessFromForm(form)).complete
+  const noInteractions = { clicks: 0, likes: 0, shares: 0, eventCount: 0 }
 
   return {
     name: form.name.trim(),
@@ -60,7 +66,8 @@ export function buildSiteInput(
     publicationStatus,
     moderationStatus: "pending",
     isActive: false,
-    analytics: { clicks: 0, likes: 0, shares: 0, eventCount: 0, score: 0 },
+    listingComplete,
+    analytics: { ...noInteractions, score: siteScore(noInteractions, listingComplete) },
     publishedAt: null,
     reviewedAt: null,
     reviewedBy: null,
