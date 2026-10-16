@@ -44,7 +44,7 @@ La ficha (`fetchPublicSiteDetail`) se cachea, y una aprobación/baja hecha en Fi
 
 ## Operación (lo hace una persona)
 
-**Orden obligatorio** (si `apphosting.yaml` referencia un secreto que no existe, el despliegue de App Hosting falla): 1) crear el secreto, 2) desplegar la función, 3) fusionar/desplegar la app.
+**Orden obligatorio** (si `apphosting.yaml` referencia un secreto que no existe, el despliegue de App Hosting falla): 1) crear el secreto, 2) desplegar la función, 3) **descomentar** en `apphosting.yaml` y `apphosting.production.yaml` el bloque `SITE_REVALIDATE_WEBHOOK_SECRET` (hoy está como comentario "PENDIENTE" para poder fusionar la rama sin el secreto) y desplegar la app.
 
 0. **Secreto compartido** (mismo valor en App Hosting y en las functions; se genera en una variable y no se imprime). Los `.env.*` del repo `functions` están **versionados en git**: no pongas secretos ahí.
    ```bash

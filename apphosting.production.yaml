@@ -40,9 +40,6 @@ env:
     availability:
       - RUNTIME
 
-  # La llama la Cloud Function notifySiteModeration (y los scripts de reclamos) para refrescar cachés.
-  # El secreto debe existir en Secret Manager ANTES de desplegar (ver docs/17-notificaciones.md).
-  - variable: SITE_REVALIDATE_WEBHOOK_SECRET
-    secret: siteRevalidateWebhookSecret
-    availability:
-      - RUNTIME
+  # PENDIENTE (se activa al cerrar, ver docs/17-notificaciones.md): SITE_REVALIDATE_WEBHOOK_SECRET <- secreto
+  # siteRevalidateWebhookSecret. NO declararlo antes de crear el secreto: un secreto inexistente rompe el rollout.
+  # Mientras tanto /api/sites/revalidate y /api/events/revalidate responden 503 (inofensivo).
