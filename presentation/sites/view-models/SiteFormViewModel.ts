@@ -1,5 +1,6 @@
 import type { SiteKind, SitePublishedAs, SitePublishedAsForm, SiteVerification } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 export type SiteCategory =
   | "cafe"
   | "restaurant"
@@ -62,6 +63,8 @@ export interface SiteFormViewModel {
   temporarilyClosed: SiteTemporarilyClosed
   /** Festivos y lluvia; vacío = sin confirmar. */
   openingPolicy: SiteOpeningPolicy
+  /** Consejos para quien visita; opcional. */
+  recommendations: SiteRecommendations
   bookingUrl: string
   /** Atractivo público o negocio privado. */
   kind: SiteKind
@@ -152,6 +155,7 @@ export interface SiteDetail extends SiteListItem {
   socialMedia?: SiteSocialMedia
   temporarilyClosed?: SiteTemporarilyClosed
   openingPolicy?: SiteOpeningPolicy
+  recommendations?: SiteRecommendations
   bookingUrl?: string
   kind?: SiteKind
   publishedAs?: SitePublishedAs

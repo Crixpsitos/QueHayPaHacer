@@ -6,7 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
-  Share2, Link, AlertTriangle,
+  Share2, Link, AlertTriangle, Lightbulb,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -22,6 +22,11 @@ import {
   HOLIDAY_POLICIES, HOLIDAY_POLICY_LABELS, RAIN_NOTE_MAX, RAIN_POLICIES, RAIN_POLICY_LABELS,
   type HolidayPolicy, type RainPolicy, type SiteOpeningPolicy,
 } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import {
+  SITE_TIP_OPTIONS, TIP_NOTE_MAX, type SiteRecommendations, type TipId,
+} from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
+import { completenessFromForm } from "../../lib/completeness"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -671,6 +676,87 @@ function SocialMediaContent({
   )
 }
 
+// ── Recomendaciones ───────────────────────────────────────────────────────────
+
+/** Casillas del catálogo + nota corta. Opcional: sin elegir nada simplemente no se muestra en la ficha. */
+function TipsContent({
+  value, onChange,
+}: {
+  value: SiteRecommendations
+  onChange: (v: SiteRecommendations) => void
+}) {
+  const uid = useId()
+  const note = value.note ?? ""
+  const toggleTip = (id: TipId) =>
+    onChange({ ...value, tips: value.tips.includes(id) ? value.tips.filter((t) => t !== id) : [...value.tips, id] })
+
+  return (
+    <div className="grid gap-3">
+      <p className="text-xs text-muted-foreground">Opcional, pero ayuda a quien va a visitarte. Marca lo que aplique.</p>
+      <div role="group" aria-label="Recomendaciones" className="flex flex-wrap gap-2">
+        {SITE_TIP_OPTIONS.map(({ id, label }) => {
+          const on = value.tips.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => toggleTip(id)}
+              className={cn(
+                "inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-left text-sm transition-colors",
+                on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+              )}
+            >
+              {on ? <CheckCircle2 className="size-4 shrink-0 text-[#E63946]" aria-hidden /> : <Lightbulb className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+              <span className="[overflow-wrap:anywhere]">{label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="grid gap-1">
+        <label htmlFor={`${uid}-note`} className="text-xs font-medium">Nota para quien te visite (opcional)</label>
+        <Input
+          id={`${uid}-note`}
+          value={note}
+          maxLength={TIP_NOTE_MAX}
+          placeholder="Ej: la entrada es por la calle de atrás"
+          onChange={(e) => onChange({ ...value, note: e.target.value })}
+        />
+        <p className="text-right text-[11px] tabular-nums text-muted-foreground" aria-live="polite">{note.length}/{TIP_NOTE_MAX}</p>
+      </div>
+    </div>
+  )
+}
+
+// ── Medidor de ficha completa ─────────────────────────────────────────────────
+
+/** Barra + pistas pendientes. Solo orienta: nunca bloquea guardar ni publicar. */
+function CompletenessMeter({ form }: { form: SiteFormViewModel }) {
+  const labelId = useId()
+  const c = getSiteCompleteness(completenessFromForm(form))
+  return (
+    <div className="mb-3 rounded-xl border border-border p-3">
+      <p id={labelId} className="text-sm font-semibold">
+        {c.complete ? "Tu ficha está completa" : `Tu ficha está al ${c.percent} %`}
+      </p>
+      <div
+        role="progressbar" aria-labelledby={labelId} aria-valuemin={0} aria-valuemax={100} aria-valuenow={c.percent}
+        className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
+      >
+        <div className={cn("h-full rounded-full transition-all", c.complete ? "bg-emerald-500" : "bg-[#E63946]")} style={{ width: `${c.percent}%` }} />
+      </div>
+      {c.pending.length > 0 ? (
+        <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+          {c.pending.map((r) => <li key={r.id} className="[overflow-wrap:anywhere]">{r.hint}</li>)}
+        </ul>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">Mostrará la insignia &quot;Ficha completa&quot; en tu sitio.</p>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">Es una guía: puedes guardar y publicar sin completarla.</p>
+    </div>
+  )
+}
+
 // ── Botón de reserva ──────────────────────────────────────────────────────────
 
 function BookingContent({
@@ -763,13 +849,14 @@ function TemporarilyClosedContent({
 
 // ── Sections config ───────────────────────────────────────────────────────────
 
-type SectionKey = "location" | "info" | "media" | "schedule" | "social" | "booking" | "status" | "social" | "booking" | "status"
+type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "social" | "booking" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
   { id: "info",     title: "Información básica",    icon: <Info className="size-4" /> },
   { id: "media",    title: "Fotos y videos",         icon: <ImageIcon className="size-4" /> },
   { id: "schedule", title: "Horario",                icon: <Clock className="size-4" /> },
+  { id: "tips",     title: "Recomendaciones",        icon: <Lightbulb className="size-4" /> },
   { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
   { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
   { id: "status",   title: "Estado temporal",        icon: <AlertTriangle className="size-4" /> },
@@ -837,6 +924,7 @@ export function SiteFormDrawer({
     info:     !!(errors.name || errors.description || errors.category),
     media:    !!errors.media,
     schedule: false,
+    tips:     false,
     social:   false,
     booking:  false,
     status:   false,
@@ -847,6 +935,7 @@ export function SiteFormDrawer({
     <aside className="relative flex h-full w-full flex-col bg-background">
       {/* Accordion */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <CompletenessMeter form={form} />
         <div className="flex flex-col gap-2">
           {SECTIONS.map((s) => (
             <AccordionSection
@@ -885,6 +974,9 @@ export function SiteFormDrawer({
                 />
               )}
               {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} openingPolicy={form.openingPolicy} onUpdateOpeningPolicy={onUpdateOpeningPolicy} />}
+              {s.id === "tips" && (
+                <TipsContent value={form.recommendations} onChange={(v) => onUpdateField("recommendations", v)} />
+              )}
               {s.id === "social" && (
                 <SocialMediaContent
                   socialMedia={form.socialMedia ?? {}}

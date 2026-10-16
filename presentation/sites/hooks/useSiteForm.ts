@@ -286,6 +286,7 @@ export function useSiteForm() {
       socialMedia: site.socialMedia ?? {},
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
       openingPolicy: site.openingPolicy ?? {},
+      recommendations: site.recommendations ?? { tips: [] },
       bookingUrl: site.bookingUrl ?? "",
       kind: site.kind ?? "business",
       publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",

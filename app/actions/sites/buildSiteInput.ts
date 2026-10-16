@@ -5,6 +5,7 @@ import { buildSiteMedia } from "./buildSiteMedia"
 import { declarationVariant } from "@/app/lib/legal/declaration"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteInput } from "@/application/services/sites/SitesService"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
@@ -49,6 +50,8 @@ export function buildSiteInput(
     socialMedia: form.socialMedia ?? {},
     temporarilyClosed: form.temporarilyClosed ?? { isClosed: false, reason: "" },
     openingPolicy: normalizeOpeningPolicy(form.openingPolicy),
+    // note "" (no omitida) para que el set(merge) de la edición pueda borrar una nota anterior
+    recommendations: { note: "", ...normalizeRecommendations(form.recommendations) },
     bookingUrl: form.bookingUrl ?? "",
     kind: form.kind ?? "business",
     publishedAs,

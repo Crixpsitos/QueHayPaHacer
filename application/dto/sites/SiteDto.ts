@@ -1,5 +1,6 @@
 import { SITE_KINDS, SITE_PUBLISHED_AS_FORM } from "@/domain/entities/sites/value-objects/SiteListing"
 import * as v from "valibot"
+import { SITE_TIP_IDS, TIP_NOTE_MAX } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 
@@ -72,6 +73,7 @@ const fields = {
   ),
   temporarilyClosed: v.optional(v.object({ isClosed: v.boolean(), reason: text(300, "Motivo de cierre") })),
   openingPolicy: v.optional(OpeningPolicy),
+  recommendations: v.optional(v.object({ tips: v.array(v.picklist(SITE_TIP_IDS)), note: v.optional(text(TIP_NOTE_MAX, "Nota de recomendaciones")) })),
   bookingUrl: v.optional(OptionalHttpUrl),
   kind: v.optional(v.picklist(SITE_KINDS)),
   // "qhpa" no está: lo decide el servidor, nunca el cliente.
