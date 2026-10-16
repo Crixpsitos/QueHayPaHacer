@@ -14,6 +14,7 @@ import { cn } from "@/app/lib/utils/cn"
 import { getSiteOpenStatus } from "../lib/openStatus"
 import { useColombiaHolidays } from "../hooks/useColombiaHolidays"
 import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
+import { SiteTransitFromSite } from "./detail/SiteTransitSection"
 import { TrustBadge } from "./TrustBadge"
 import { CompleteBadge } from "./CompleteBadge"
 import { RecommendationsSection } from "./detail/RecommendationsSection"
@@ -450,6 +451,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       {hasRecommendations(site.recommendations) && (
         <RecommendationsSection recommendations={site.recommendations} compact className="mt-5" />
       )}
+      <SiteTransitFromSite site={site} className="mt-5" />
 
       {/* ── Motivo de rechazo ────────────────────────────────────── */}
       {status === "rejected" && site.rejectionReason && (

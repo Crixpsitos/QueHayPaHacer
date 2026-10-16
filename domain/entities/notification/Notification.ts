@@ -14,6 +14,7 @@ export const NOTIFICATION_TYPES = [
   "claim_resolved",
   "event_moderation",
   "site_moderation",
+  "transit_outdated",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

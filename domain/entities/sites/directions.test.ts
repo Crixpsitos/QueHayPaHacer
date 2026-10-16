@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { adviseTravel, FAR_KM, googleMapsDirectionsUrl, haversineKm, isUsableCoordinates } from "./directions"
+import { adviseTravel, busRoutesToOffer, FAR_KM, googleMapsDirectionsUrl, haversineKm, isUsableCoordinates } from "./directions"
 
 const parque = { latitude: 4.4389, longitude: -75.2322 } // centro de Ibagué (IBAGUE_CENTER)
 
@@ -48,4 +48,14 @@ test("enlace de Google Maps no fuerza el modo de transporte", () => {
   const url = googleMapsDirectionsUrl(parque)
   assert.equal(url, "https://www.google.com/maps/dir/?api=1&destination=4.4389,-75.2322")
   assert.ok(!url.includes("travelmode"))
+})
+
+test("bus: solo con buses informados, más de 1 km por calle y sin 'por confirmar'", () => {
+  const t = { unconfirmed: false, routes: [{ label: "Ruta 2" }, { label: "Ruta 6" }] }
+  assert.deepEqual(busRoutesToOffer(2, t), ["Ruta 2", "Ruta 6"])
+  assert.deepEqual(busRoutesToOffer(1, t), [])
+  assert.deepEqual(busRoutesToOffer(0.4, t), [])
+  assert.deepEqual(busRoutesToOffer(3, { ...t, unconfirmed: true }), [])
+  assert.deepEqual(busRoutesToOffer(3, null), [])
+  assert.deepEqual(busRoutesToOffer(3, undefined), [])
 })

@@ -6,6 +6,7 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteDraftSchema, validateSiteForm } from "@/application/dto/sites/SiteDto"
 import { buildSiteInput } from "./buildSiteInput"
+import { withTransit } from "./_transit"
 import { revalidateSite } from "./_revalidate"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
 
@@ -20,7 +21,7 @@ export async function saveDraftSiteAction(form: SiteFormViewModel, siteId?: stri
 
   const uid = tokens.decodedToken.uid
   const { sitesService } = createServerContainer()
-  const input = buildSiteInput(uid, tokens.decodedToken, form, "draft")
+  const input = await withTransit(buildSiteInput(uid, tokens.decodedToken, form, "draft"), form, siteId)
 
   try {
     // siteId present → update the SAME doc (autosave during upload / re-save). Otherwise create one.

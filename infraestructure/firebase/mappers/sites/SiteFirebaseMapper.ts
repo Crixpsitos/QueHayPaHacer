@@ -139,6 +139,7 @@ export class SiteFirebaseMapper {
       openingPolicy: normalizeOpeningPolicy(dto.openingPolicy),
       recommendations: normalizeRecommendations(dto.recommendations),
       bookingUrl: dto.bookingUrl ?? "",
+      transit: dto.transit ?? undefined,
       // Sin dato = no se afirma ningún vínculo con el lugar.
       kind: dto.kind ?? "business",
       publishedAs: dto.publishedAs ?? "proposer",

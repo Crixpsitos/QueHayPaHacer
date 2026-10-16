@@ -14,6 +14,8 @@ import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { getHolidaysAction } from "@/app/actions/config/get-holidays.action";
 import { OpeningPolicyNotes } from "./OpeningPolicyNotes";
 import { HowToGetThere } from "./HowToGetThere";
+import { SiteTransitSection } from "./SiteTransitSection";
+import { getSiteTransitViewAction } from "@/app/actions/site-transit/get-site-transit.action";
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
@@ -87,6 +89,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
   const linkedEvents = await fetchSiteLinkedEvents(siteId);
 
   const { holidays } = await getHolidaysAction();
+  // Buses: estado calculado al leer (cache corto, etiqueta site-<id>); sin dato no se consulta.
+  const transitView = site.transit ? await getSiteTransitViewAction(siteId) : null;
   const openStatus = getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy });
   const trending = isTrending(site.analytics);
 
@@ -299,7 +303,9 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
               Ver en Google Maps
             </a>
 
-            {hasMap && <HowToGetThere destination={{ latitude: lat!, longitude: lng! }} />}
+            {hasMap && <HowToGetThere destination={{ latitude: lat!, longitude: lng! }} transit={transitView} />}
+
+            <SiteTransitSection view={transitView} siteId={siteId} authorId={site!.author.id} className="mt-4" />
 
             {hasMap && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-[#E4E4E7] bg-[#F4F4F5]">

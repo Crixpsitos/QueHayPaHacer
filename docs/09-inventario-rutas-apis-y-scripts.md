@@ -98,6 +98,10 @@ Eliminados el **2026-10-10**: `POST /api/revalidation/events` (handler vacío), 
 | `POST /api/events/revalidate` | Mismo secreto; refresca cachés de un evento (baja). La llama la Cloud Function `notifyEventChanges`. |
 | `getHolidaysAction` (`app/actions/config/`) | Pública (festivos no son datos personales); `use cache` días, etiqueta `config-holidays`. |
 | `admin-holidays.action.ts` | `getAdminUid()` (QHPA_ADMIN_UIDS): editar/restablecer festivos e invalidar caché. |
+| `getTransitRoutesAction` (`app/actions/config/`) | Pública (catálogo de rutas de bus); `use cache` días, etiqueta `config-transit`. |
+| `admin-transit.action.ts` | `getAdminUid()`: ver/guardar el catálogo, `markRouteChangedAction(id)` e invalidar caché. |
+| `getSiteTransitViewAction` (`app/actions/site-transit/`) | Pública; `use cache` minutos, etiquetas `site-<id>` y `config-transit`. Estado "por confirmar" calculado al leer. |
+| `reportTransitOutdatedAction` | `getSessionUid()`: "Está desactualizado" (una vez por persona y sitio, no el autor); a los 3 avisa al autor. |
 | `update-tag` | Allowlist `featured-events`. |
 
 ### Auth
@@ -243,6 +247,7 @@ close-support-ticket.action.ts
 - `seed-bulk-events.ts`
 - `seed-bulk-sites.ts`
 - `seed-holidays.ts` (festivos de Colombia → `appConfig`; dry-run por defecto, opcional)
+- `seed-transit-routes.ts` (catálogo de rutas de bus → `appConfig/transit-routes`; dry-run por defecto, no pisa; lista a revisar por una persona de Ibagué)
 - `seed-campaigns.ts`
 - `seed-categories.ts`
 - `seed-event-analytics.ts`

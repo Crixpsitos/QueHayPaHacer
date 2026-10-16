@@ -288,6 +288,7 @@ export function useSiteForm() {
       openingPolicy: site.openingPolicy ?? {},
       recommendations: site.recommendations ?? { tips: [] },
       bookingUrl: site.bookingUrl ?? "",
+      transit: { routes: site.transit?.routes ?? [] },
       kind: site.kind ?? "business",
       publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",
     })

@@ -6,7 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
-  Share2, Link, AlertTriangle, Lightbulb,
+  Share2, Link, AlertTriangle, Lightbulb, Bus,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -27,6 +27,7 @@ import {
 } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
 import { completenessFromForm } from "../../lib/completeness"
+import { TransitContent } from "./TransitContent"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -849,7 +850,7 @@ function TemporarilyClosedContent({
 
 // ── Sections config ───────────────────────────────────────────────────────────
 
-type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "social" | "booking" | "status"
+type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "social" | "booking" | "transit" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
@@ -859,6 +860,7 @@ const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "tips",     title: "Recomendaciones",        icon: <Lightbulb className="size-4" /> },
   { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
   { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
+  { id: "transit",  title: "Cómo llegar en bus",     icon: <Bus className="size-4" /> },
   { id: "status",   title: "Estado temporal",        icon: <AlertTriangle className="size-4" /> },
 ]
 
@@ -927,6 +929,7 @@ export function SiteFormDrawer({
     tips:     false,
     social:   false,
     booking:  false,
+    transit:  false,
     status:   false,
   }
 
@@ -987,6 +990,12 @@ export function SiteFormDrawer({
                 <BookingContent
                   bookingUrl={form.bookingUrl ?? ""}
                   onChange={(v) => onUpdateField("bookingUrl", v)}
+                />
+              )}
+              {s.id === "transit" && (
+                <TransitContent
+                  transit={form.transit ?? { routes: [] }}
+                  onChange={(v) => onUpdateField("transit", v)}
                 />
               )}
               {s.id === "status" && (
