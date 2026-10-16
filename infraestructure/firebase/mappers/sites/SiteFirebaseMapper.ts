@@ -8,6 +8,7 @@ import { Site } from "@/domain/entities/sites/Site"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteDetail, SiteMediaItem } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 
 export class SiteFirebaseMapper {
   toDomain(dto: FirebaseSiteDto): Site {
@@ -136,6 +137,7 @@ export class SiteFirebaseMapper {
       socialMedia: dto.socialMedia ?? {},
       temporarilyClosed: dto.temporarilyClosed ?? { isClosed: false, reason: "" },
       openingPolicy: normalizeOpeningPolicy(dto.openingPolicy),
+      recommendations: normalizeRecommendations(dto.recommendations),
       bookingUrl: dto.bookingUrl ?? "",
       // Sin dato = no se afirma ningún vínculo con el lugar.
       kind: dto.kind ?? "business",

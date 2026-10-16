@@ -26,6 +26,9 @@ import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
 import { getInitials } from "@/app/lib/utils/getInitials";
 import { TrustBadge } from "../TrustBadge";
+import { CompleteBadge } from "../CompleteBadge";
+import { RecommendationsSection } from "./RecommendationsSection";
+import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
 import { SiteClaimCta } from "../claim/SiteClaimCta";
 import { SiteSuggestCta } from "../suggest/SiteSuggestCta";
@@ -151,7 +154,10 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold sm:text-3xl">{site!.name}</h1>
-          <TrustBadge site={site} withKind />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TrustBadge site={site} withKind />
+            <CompleteBadge site={site!} />
+          </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", catColor.bg)}>
               <CatIcon className={cn("size-3.5", catColor.icon)} />
@@ -254,6 +260,13 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
           )}
 
           <Separator />
+
+          {hasRecommendations(site!.recommendations) && (
+            <>
+              <RecommendationsSection recommendations={site!.recommendations} />
+              <Separator />
+            </>
+          )}
 
           <section>
             <h2 className="mb-4 text-lg font-semibold">Publicado por</h2>

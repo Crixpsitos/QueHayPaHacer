@@ -15,6 +15,9 @@ import { getSiteOpenStatus } from "../lib/openStatus"
 import { useColombiaHolidays } from "../hooks/useColombiaHolidays"
 import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
 import { TrustBadge } from "./TrustBadge"
+import { CompleteBadge } from "./CompleteBadge"
+import { RecommendationsSection } from "./detail/RecommendationsSection"
+import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
 import { SiteClaimCta } from "./claim/SiteClaimCta"
 import { SiteSuggestCta } from "./suggest/SiteSuggestCta"
@@ -351,7 +354,10 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       >
         {site.name}
       </h2>
-      <TrustBadge site={site} withKind className="mt-2" />
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <TrustBadge site={site} withKind />
+        <CompleteBadge site={site} />
+      </div>
 
       {/* ── Dirección + estado de apertura ──────────────────────── */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -440,6 +446,10 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
         </div>
         <OpeningPolicyNotes policy={site.openingPolicy} status={openStatus} className="mt-3" />
       </section>
+
+      {hasRecommendations(site.recommendations) && (
+        <RecommendationsSection recommendations={site.recommendations} compact className="mt-5" />
+      )}
 
       {/* ── Motivo de rechazo ────────────────────────────────────── */}
       {status === "rejected" && site.rejectionReason && (

@@ -108,6 +108,7 @@ export function createInitialForm() {
     socialMedia: {},
     temporarilyClosed: { isClosed: false, reason: "" },
     openingPolicy: {},
+    recommendations: { tips: [] },
     bookingUrl: "",
     kind: "business" as const,
     // Lo más conservador: no se afirma ser dueño hasta que la persona lo elija.
