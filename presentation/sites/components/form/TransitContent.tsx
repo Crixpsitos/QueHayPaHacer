@@ -39,18 +39,23 @@ export function TransitContent({ transit, onChange }: { transit: SiteTransitDraf
               const on = selected.has(r.id)
               const disabled = !on && full
               return (
-                <label
+                // Botón (no un <input class="sr-only"> dentro de un <label>): al enfocar un input escondido el
+                // navegador desplazaba un contenedor exterior de la hoja móvil y todo el formulario quedaba en blanco.
+                <button
                   key={r.id}
+                  type="button"
+                  aria-pressed={on}
+                  disabled={disabled}
+                  onClick={() => toggle(r.id)}
                   className={cn(
-                    "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors",
-                    "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary",
+                    "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                     on ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground hover:bg-muted",
                     disabled && "cursor-not-allowed opacity-50",
                   )}
                 >
-                  <input type="checkbox" className="sr-only" checked={on} disabled={disabled} onChange={() => toggle(r.id)} />
                   {r.label}
-                </label>
+                </button>
               )
             })}
           </div>
