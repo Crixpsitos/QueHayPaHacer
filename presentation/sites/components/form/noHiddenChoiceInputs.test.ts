@@ -10,6 +10,6 @@ test("el formulario de sitios no usa casillas/radios escondidos con sr-only", ()
   const dir = __dirname
   const offenders = readdirSync(dir)
     .filter((f) => f.endsWith(".tsx"))
-    .filter((f) => /<input[^>]*type=["'](?:checkbox|radio)["'][^>]*className=["'][^"']*\bsr-only\b|<input[^>]*className=["'][^"']*\bsr-only\b[^>]*type=["'](?:checkbox|radio)["']/s.test(readFileSync(join(dir, f), "utf8")))
+    .filter((f) => /<input[^>]*type=["'](?:checkbox|radio)["'][^>]*className=["'][^"']*\bsr-only\b|<input[^>]*className=["'][^"']*\bsr-only\b[^>]*type=["'](?:checkbox|radio)["']/.test(readFileSync(join(dir, f), "utf8").replace(/\s+/g, " ")))
   assert.deepEqual(offenders, [])
 })
