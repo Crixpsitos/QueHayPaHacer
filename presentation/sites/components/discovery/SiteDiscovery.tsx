@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { compactCount, plainText } from "@/presentation/events/components/card/cardMeta";
 import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
+import { useColombiaHolidays } from "../../hooks/useColombiaHolidays";
 import { TrustBadge } from "../TrustBadge";
 
 /** Icono de respaldo cuando el sitio no tiene portada. */
@@ -60,7 +61,8 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
 
   // Solo en el cliente: new Date() no está permitido durante el prerender (y evita mismatch de hidratación).
   const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const openStatus = isClient ? getSiteOpenStatus(site.schedule) : null;
+  const holidays = useColombiaHolidays();
+  const openStatus = isClient ? getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy }) : null;
   const closedForNow = site.temporarilyClosed?.isClosed === true;
 
   return (

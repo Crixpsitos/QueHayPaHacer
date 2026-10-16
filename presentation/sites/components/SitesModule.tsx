@@ -276,6 +276,7 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
                 onRemoveMedia={siteForm.removeMedia}
                 onSetCover={siteForm.setCover}
                 onUpdateSchedule={siteForm.updateSchedule}
+                onUpdateOpeningPolicy={siteForm.updateOpeningPolicy}
                 onSaveDraft={siteForm.handleSaveDraft}
                 onPublish={formMode === "edit" && !isDraftEdit && !isRejectedEdit ? siteForm.handleSaveEdit : siteForm.handlePublish}
                 onReset={goToList}

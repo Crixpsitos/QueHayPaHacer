@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
@@ -18,6 +18,10 @@ import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import type { SubmitState } from "../../hooks/useSiteForm"
 import { declarationVariant } from "@/app/lib/legal/declaration"
+import {
+  HOLIDAY_POLICIES, HOLIDAY_POLICY_LABELS, RAIN_NOTE_MAX, RAIN_POLICIES, RAIN_POLICY_LABELS,
+  type HolidayPolicy, type RainPolicy, type SiteOpeningPolicy,
+} from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -477,13 +481,83 @@ function MediaContent({
   )
 }
 
+const timeInputCls = "rounded border border-border bg-background px-1.5 py-0.5 text-xs outline-none focus-visible:border-ring"
+const optionCls = (on: boolean) => cn(
+  "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
+  on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+)
+
+/** Qué hace el sitio en festivos y con lluvia. Opcional: sin elegir queda "sin confirmar" en la ficha. */
+function OpeningPolicyFields({
+  policy, onChange,
+}: {
+  policy: SiteOpeningPolicy
+  onChange: (partial: Partial<SiteOpeningPolicy>) => void
+}) {
+  const uid = useId()
+  const h = policy.holidays
+  const r = policy.rain
+  const pickHoliday = (p: HolidayPolicy) =>
+    onChange({ holidays: p === "custom" ? { policy: p, open: h?.open ?? "09:00", close: h?.close ?? "14:00" } : { policy: p } })
+  const pickRain = (p: RainPolicy) => onChange({ rain: { policy: p, ...(r?.note ? { note: r.note } : {}) } })
+
+  return (
+    <div className="mt-4 grid gap-4">
+      <p className="text-xs text-muted-foreground">Opcional, pero ayuda a quien va a visitarte a no llevarse sorpresas.</p>
+
+      <fieldset className="grid gap-2">
+        <legend className="mb-1 text-xs font-semibold">¿Abres los festivos?</legend>
+        {HOLIDAY_POLICIES.map((p) => (
+          <label key={p} className={optionCls(h?.policy === p)}>
+            <input type="radio" name={`${uid}-holidays`} checked={h?.policy === p} onChange={() => pickHoliday(p)} className="size-4 accent-[#E63946]" />
+            {HOLIDAY_POLICY_LABELS[p]}
+          </label>
+        ))}
+        {h?.policy === "custom" && (
+          <div className="flex items-center gap-2 pl-1 text-xs">
+            <span className="text-muted-foreground">Horario en festivos</span>
+            <input type="time" aria-label="Apertura en festivos" value={h.open ?? ""} onChange={(e) => onChange({ holidays: { ...h, open: e.target.value } })} className={timeInputCls} />
+            <span className="text-muted-foreground">–</span>
+            <input type="time" aria-label="Cierre en festivos" value={h.close ?? ""} onChange={(e) => onChange({ holidays: { ...h, close: e.target.value } })} className={timeInputCls} />
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset className="grid gap-2">
+        <legend className="mb-1 text-xs font-semibold">¿Qué pasa si llueve?</legend>
+        {RAIN_POLICIES.map((p) => (
+          <label key={p} className={optionCls(r?.policy === p)}>
+            <input type="radio" name={`${uid}-rain`} checked={r?.policy === p} onChange={() => pickRain(p)} className="size-4 accent-[#E63946]" />
+            {RAIN_POLICY_LABELS[p]}
+          </label>
+        ))}
+        {r && (
+          <>
+            <label htmlFor={`${uid}-rain-note`} className="sr-only">Nota sobre la lluvia</label>
+            <Input
+              id={`${uid}-rain-note`}
+              value={r.note ?? ""}
+              maxLength={RAIN_NOTE_MAX}
+              placeholder="Ej: cerramos las canchas al aire libre (opcional)"
+              onChange={(e) => onChange({ rain: { policy: r.policy, note: e.target.value } })}
+            />
+          </>
+        )}
+      </fieldset>
+    </div>
+  )
+}
+
 function ScheduleContent({
-  schedule, onUpdateSchedule,
+  schedule, onUpdateSchedule, openingPolicy, onUpdateOpeningPolicy,
 }: {
   schedule: SiteFormViewModel["schedule"]
   onUpdateSchedule: (day: WeekDay, partial: Partial<DaySchedule>) => void
+  openingPolicy: SiteOpeningPolicy
+  onUpdateOpeningPolicy: (partial: Partial<SiteOpeningPolicy>) => void
 }) {
   return (
+    <>
     <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
       {WEEK_DAYS.map(({ key, label }) => {
         const day = schedule[key]
@@ -523,6 +597,8 @@ function ScheduleContent({
         )
       })}
     </div>
+    <OpeningPolicyFields policy={openingPolicy} onChange={onUpdateOpeningPolicy} />
+    </>
   )
 }
 
@@ -550,6 +626,7 @@ export interface SiteFormDrawerProps {
   onRemoveMedia: (id: string) => void
   onSetCover: (id: string) => void
   onUpdateSchedule: (day: WeekDay, partial: Partial<DaySchedule>) => void
+  onUpdateOpeningPolicy: (partial: Partial<SiteOpeningPolicy>) => void
   onSaveDraft: () => void
   onPublish: (declaration: boolean) => void
   onReset: () => void
@@ -703,7 +780,7 @@ export function SiteFormDrawer({
   mode = "create", isDraft = false, isRejected = false, rejectionReason = null,
   onBack, onAddressChange, onUpdateField, onClearError,
   onReplaceCover, onAddMedia, onMediaUploaded, onUpdateMedia, onRemoveMedia, onSetCover,
-  onUpdateSchedule, onSaveDraft, onPublish, onReset, onEnsureDraftId, isQhpaAdmin = false,
+  onUpdateSchedule, onUpdateOpeningPolicy, onSaveDraft, onPublish, onReset, onEnsureDraftId, isQhpaAdmin = false,
 }: SiteFormDrawerProps) {
   const isEdit = mode === "edit"
   // create OR editing a draft → mostrar [Guardar borrador] [Publicar]
@@ -807,7 +884,7 @@ export function SiteFormDrawer({
                   onEnsureDraftId={onEnsureDraftId}
                 />
               )}
-              {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} />}
+              {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} openingPolicy={form.openingPolicy} onUpdateOpeningPolicy={onUpdateOpeningPolicy} />}
               {s.id === "social" && (
                 <SocialMediaContent
                   socialMedia={form.socialMedia ?? {}}

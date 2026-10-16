@@ -9,6 +9,7 @@ import { updateSiteAction } from "@/app/actions/sites/update-site.action"
 import { notify } from "@/presentation/shared/lib/notify"
 import { createClientContainer } from "@/infraestructure/di/container.client"
 import { useSitesStore } from "../store/useSitesStore"
+import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import type {
   Coordinates,
   DaySchedule,
@@ -187,6 +188,10 @@ export function useSiteForm() {
     setForm((prev) => ({ ...prev, schedule: { ...prev.schedule, [day]: { ...prev.schedule[day], ...partial } } }))
   }, [])
 
+  const updateOpeningPolicy = useCallback((partial: Partial<SiteOpeningPolicy>) => {
+    setForm((prev) => ({ ...prev, openingPolicy: { ...prev.openingPolicy, ...partial } }))
+  }, [])
+
   const validate = useCallback((requireMedia = false): FormErrors => {
     const e: FormErrors = {}
     if (!form.coordinates) e.coordinates = "Selecciona una ubicación en el mapa"
@@ -280,6 +285,7 @@ export function useSiteForm() {
       schedule: structuredClone(site.schedule),
       socialMedia: site.socialMedia ?? {},
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
+      openingPolicy: site.openingPolicy ?? {},
       bookingUrl: site.bookingUrl ?? "",
       kind: site.kind ?? "business",
       publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",
@@ -309,7 +315,7 @@ export function useSiteForm() {
     form, errors, submitState, addressAutoDetected, coverUrl, isMediaProcessing,
     editId,
     clearError, updateField, handlePick, handleAddressChange,
-    addMedia, replaceCover, updateMedia, handleMediaUploaded, removeMedia, setCover, updateSchedule,
+    addMedia, replaceCover, updateMedia, handleMediaUploaded, removeMedia, setCover, updateSchedule, updateOpeningPolicy,
     ensureDraftId, handleSaveDraft, handlePublish, handleSaveEdit, load, reset,
   }
 }

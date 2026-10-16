@@ -68,6 +68,8 @@ import { SiteSuggestionFirebaseRepository } from "../firebase/repositories/siteS
 import { SiteSuggestionService } from "@/application/services/siteSuggestion/SiteSuggestionService";
 import { NotificationFirebaseRepository } from "../firebase/repositories/notification/NotificationFirebaseRepository";
 import { NotificationService } from "@/application/services/notification/NotificationService";
+import { ConfigFirebaseRepository } from "../firebase/repositories/config/ConfigFirebaseRepository";
+import { HolidayService } from "@/application/services/config/HolidayService";
 import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
@@ -199,6 +201,9 @@ export const createServerContainer = () => {
     new NotificationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // configuración editable por el administrador (festivos; luego rutas de bus)
+  const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
+
   return {
     userService,
     campaignService,
@@ -221,6 +226,7 @@ export const createServerContainer = () => {
     siteClaimService,
     siteSuggestionService,
     notificationService,
+    holidayService,
   };
 };
 

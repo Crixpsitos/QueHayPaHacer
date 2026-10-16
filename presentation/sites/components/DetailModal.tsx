@@ -12,6 +12,8 @@ import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplaySt
 import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
 import { getSiteOpenStatus } from "../lib/openStatus"
+import { useColombiaHolidays } from "../hooks/useColombiaHolidays"
+import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
 import { TrustBadge } from "./TrustBadge"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
 import { SiteClaimCta } from "./claim/SiteClaimCta"
@@ -284,7 +286,11 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
   const status     = getDisplayStatus(site.publicationStatus, site.moderationStatus)
   const color      = STATUS_COLORS[status]
   const label      = STATUS_LABELS[status]
-  const openStatus = useMemo(() => getSiteOpenStatus(site.schedule), [site.schedule])
+  const holidays   = useColombiaHolidays()
+  const openStatus = useMemo(
+    () => getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy }),
+    [site.schedule, site.openingPolicy, holidays],
+  )
   const todayKey   = openStatus.todayKey
   const isApproved = status === "approved"
 
@@ -404,8 +410,11 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
         </h3>
         <div className="overflow-hidden rounded-xl border border-[#E4E4E7]">
           {WEEK_DAYS.map(({ key, label: dayLabel }, i) => {
-            const day     = site.schedule?.[key]
             const isToday = key === todayKey
+            // Hoy festivo: la fila muestra el horario real de hoy (puede ser el de festivos), no el del día de la semana.
+            const day     = isToday && openStatus.holiday
+              ? (() => { const [open = "", close = ""] = (openStatus.todayHours ?? "").split(" – "); return { open, close, closed: !openStatus.todayHours } })()
+              : site.schedule?.[key]
             return (
               <div
                 key={key}
@@ -417,7 +426,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
               >
                 <span className={cn("font-medium", isToday ? "text-[#E63946]" : "text-[#52525B]")}>
                   {dayLabel}
-                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">hoy</span>}
+                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">{openStatus.holiday ? "hoy · festivo" : "hoy"}</span>}
                 </span>
                 {!day || day.closed
                   ? <span className="text-xs font-semibold text-[#E63946]">Cerrado</span>
@@ -429,6 +438,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
             )
           })}
         </div>
+        <OpeningPolicyNotes policy={site.openingPolicy} status={openStatus} className="mt-3" />
       </section>
 
       {/* ── Motivo de rechazo ────────────────────────────────────── */}

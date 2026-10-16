@@ -1,6 +1,7 @@
 import { SITE_KINDS, SITE_PUBLISHED_AS_FORM } from "@/domain/entities/sites/value-objects/SiteListing"
 import * as v from "valibot"
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
+import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 
 const SITE_CATEGORIES = [
   "cafe", "restaurant", "bar", "discotheque", "mall", "park", "museum", "hostel",
@@ -39,6 +40,16 @@ const Coordinates = (msg: string) =>
 
 const Time = v.pipe(v.string(), v.regex(/^(\d{2}:\d{2})?$/, "Horario inválido"))
 
+const OpeningPolicy = v.object({
+  holidays: v.optional(
+    v.pipe(
+      v.object({ policy: v.picklist(HOLIDAY_POLICIES), open: v.optional(Time), close: v.optional(Time) }),
+      v.check((h) => h.policy !== "custom" || (!!h.open && !!h.close), "Indica el horario de los festivos"),
+    ),
+  ),
+  rain: v.optional(v.object({ policy: v.picklist(RAIN_POLICIES), note: v.optional(text(RAIN_NOTE_MAX, "Nota de lluvia")) })),
+})
+
 const fields = {
   name: text(120, "Nombre"),
   description: text(5000, "Descripción"),
@@ -60,6 +71,7 @@ const fields = {
     }),
   ),
   temporarilyClosed: v.optional(v.object({ isClosed: v.boolean(), reason: text(300, "Motivo de cierre") })),
+  openingPolicy: v.optional(OpeningPolicy),
   bookingUrl: v.optional(OptionalHttpUrl),
   kind: v.optional(v.picklist(SITE_KINDS)),
   // "qhpa" no está: lo decide el servidor, nunca el cliente.

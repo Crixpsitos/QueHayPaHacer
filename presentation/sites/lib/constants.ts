@@ -107,6 +107,7 @@ export function createInitialForm() {
     schedule: structuredClone(DEFAULT_SCHEDULE),
     socialMedia: {},
     temporarilyClosed: { isClosed: false, reason: "" },
+    openingPolicy: {},
     bookingUrl: "",
     kind: "business" as const,
     // Lo más conservador: no se afirma ser dueño hasta que la persona lo elija.

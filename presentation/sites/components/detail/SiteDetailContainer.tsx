@@ -11,6 +11,8 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { fetchPublicSiteDetail, fetchSiteLinkedEvents } from "@/presentation/sites/data/siteDetailFetchers";
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
+import { getHolidaysAction } from "@/app/actions/config/get-holidays.action";
+import { OpeningPolicyNotes } from "./OpeningPolicyNotes";
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard";
 import { SiteDetailActions } from "./SiteDetailActions";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
@@ -80,7 +82,8 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
 
   const linkedEvents = await fetchSiteLinkedEvents(siteId);
 
-  const openStatus = getSiteOpenStatus(site.schedule);
+  const { holidays } = await getHolidaysAction();
+  const openStatus = getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy });
   const trending = isTrending(site.analytics);
 
   const categoryLabel = SITE_CATEGORY_LABELS[site.category] ?? site.category;
@@ -315,12 +318,15 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
             </div>
             <div className="space-y-1">
               {WEEK_ORDER.map((day) => {
-                const sched: DaySchedule = site!.schedule?.[day] ?? { open: "", close: "", closed: true };
                 const isToday = openStatus.todayKey === day;
+                // Hoy festivo: la fila muestra el horario real de hoy (puede ser el de festivos).
+                const sched: DaySchedule = isToday && openStatus.holiday
+                  ? (() => { const [open = "", close = ""] = (openStatus.todayHours ?? "").split(" – "); return { open, close, closed: !openStatus.todayHours }; })()
+                  : site!.schedule?.[day] ?? { open: "", close: "", closed: true };
                 return (
                   <div key={day} className={cn("flex items-center justify-between gap-4 rounded-lg px-2 py-1.5 text-sm", isToday && "bg-primary/5")}>
                     <span className={cn("font-medium", isToday ? "text-primary" : "text-muted-foreground")}>
-                      {WEEK_LABELS[day]}{isToday && <span className="ml-1 text-xs">(hoy)</span>}
+                      {WEEK_LABELS[day]}{isToday && <span className="ml-1 text-xs">{openStatus.holiday ? "(hoy · festivo)" : "(hoy)"}</span>}
                     </span>
                     {sched.closed
                       ? <span className="text-xs text-muted-foreground/60">Cerrado</span>
@@ -330,6 +336,7 @@ export async function SiteDetailContainer({ siteId, initialLiked = false }: Site
                 );
               })}
             </div>
+            <OpeningPolicyNotes policy={site!.openingPolicy} status={openStatus} className="mt-3" />
             <Separator className="my-4" />
             <div className="space-y-1.5 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">

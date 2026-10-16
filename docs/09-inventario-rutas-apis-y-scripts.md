@@ -96,6 +96,8 @@ Eliminados el **2026-10-10**: `POST /api/revalidation/events` (handler vacío), 
 | `POST /api/events/moderation` | Bearer `EVENT_MODERATION_WEBHOOK_SECRET` (comparación timing-safe). |
 | `POST /api/sites/revalidate` | Bearer `SITE_REVALIDATE_WEBHOOK_SECRET` (timing-safe); solo refresca cachés de un sitio. La llaman la Cloud Function `notifySiteModeration` y `scripts/list-site-claims.ts`. |
 | `POST /api/events/revalidate` | Mismo secreto; refresca cachés de un evento (baja). La llama la Cloud Function `notifyEventChanges`. |
+| `getHolidaysAction` (`app/actions/config/`) | Pública (festivos no son datos personales); `use cache` días, etiqueta `config-holidays`. |
+| `admin-holidays.action.ts` | `getAdminUid()` (QHPA_ADMIN_UIDS): editar/restablecer festivos e invalidar caché. |
 | `update-tag` | Allowlist `featured-events`. |
 
 ### Auth
@@ -240,6 +242,7 @@ close-support-ticket.action.ts
 
 - `seed-bulk-events.ts`
 - `seed-bulk-sites.ts`
+- `seed-holidays.ts` (festivos de Colombia → `appConfig`; dry-run por defecto, opcional)
 - `seed-campaigns.ts`
 - `seed-categories.ts`
 - `seed-event-analytics.ts`

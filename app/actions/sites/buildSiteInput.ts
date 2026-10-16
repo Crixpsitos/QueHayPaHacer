@@ -4,6 +4,7 @@ import { buildLocationDetails } from "@/app/lib/utils/geoLocation"
 import { buildSiteMedia } from "./buildSiteMedia"
 import { declarationVariant } from "@/app/lib/legal/declaration"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
+import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteInput } from "@/application/services/sites/SitesService"
 import type { SiteFormViewModel } from "@/presentation/sites/view-models/SiteFormViewModel"
@@ -47,6 +48,7 @@ export function buildSiteInput(
     schedule: form.schedule,
     socialMedia: form.socialMedia ?? {},
     temporarilyClosed: form.temporarilyClosed ?? { isClosed: false, reason: "" },
+    openingPolicy: normalizeOpeningPolicy(form.openingPolicy),
     bookingUrl: form.bookingUrl ?? "",
     kind: form.kind ?? "business",
     publishedAs,

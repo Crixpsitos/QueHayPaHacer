@@ -24,6 +24,7 @@ function contentFields(data: SiteInput) {
     schedule: data.schedule,
     socialMedia: data.socialMedia,
     temporarilyClosed: data.temporarilyClosed,
+    openingPolicy: data.openingPolicy,
     bookingUrl: data.bookingUrl,
     // publishedAs/verification NO se editan: respaldan la declaración ya registrada.
     kind: data.kind,
