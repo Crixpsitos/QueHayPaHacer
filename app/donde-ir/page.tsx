@@ -16,10 +16,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/donde-ir" },
 };
 
+// Los destacados (8) salen de los primeros: se pide de más para que "Todos" empiece con una tanda completa.
+const FIRST_PAGE = 20;
+
 export default async function DondeIrIndexPage() {
   const typeCollections = getSiteCollections().filter((c) => c.kind === "type");
 
-  const [featured, allPage] = await Promise.all([fetchFeaturedSites(), fetchAllSitesPage()]);
+  const [featured, allPage] = await Promise.all([fetchFeaturedSites(), fetchAllSitesPage(FIRST_PAGE)]);
   const featuredIds = featured.map((s) => s.id);
 
   return (

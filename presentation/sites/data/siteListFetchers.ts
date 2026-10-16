@@ -23,11 +23,14 @@ export const fetchFeaturedSites = async (): Promise<SiteDetail[]> => {
   return present(await Promise.all(ids.map(fetchSiteDetailById)))
 }
 
-/** Primera página de TODOS los sitios públicos; las siguientes salen de `loadMoreSitesAction("all", cursor)`. */
-export const fetchAllSitesPage = async (): Promise<{ sites: SiteDetail[]; nextCursor: string | null }> => {
+/**
+ * Primera página de TODOS los sitios públicos; las siguientes salen de `loadMoreSitesAction("all", cursor)`.
+ * En el índice se pide más (los destacados salen de los primeros y se ocultan de esta lista).
+ */
+export const fetchAllSitesPage = async (size: number = SITES_PAGE_SIZE): Promise<{ sites: SiteDetail[]; nextCursor: string | null }> => {
   "use cache"
   cacheLife("days")
   cacheTag("site-list", "site-collection-all")
-  const { ids, nextCursor } = await createServerContainer().sitesService.getAllSitesPage(SITES_PAGE_SIZE, null)
+  const { ids, nextCursor } = await createServerContainer().sitesService.getAllSitesPage(size, null)
   return { sites: present(await Promise.all(ids.map(fetchSiteDetailById))), nextCursor }
 }
