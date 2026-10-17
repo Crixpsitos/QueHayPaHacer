@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
   // App Hosting ya fuerza standalone en su build; explícito por si cambia el adaptador.
   output: "standalone",
   cacheComponents: true,
+  experimental: {
+    // Con Cache Components el router guarda "navegaciones en caché" por ruta y las reutiliza al abrir otro enlace
+    // a la MISMA ruta dinámica (/donde-ir/[id], /donde-ir-[coleccion]-ibague, /eventos/[id]): abrir el sitio 2 tras
+    // el sitio 1 mostraba el sitio 1 (y una categoría mostraba otra) sin pedir nada al servidor; en la PWA se
+    // notaba más porque se vuelve a páginas ya vistas. Apagado, cada navegación pide su contenido. Probado con
+    // navegación secuencial y en carrera (clic rápido) en sitios, categorías y eventos.
+    cachedNavigations: false,
+  },
   // Metadatos (og:title, og:image…) SIEMPRE dentro de <head>. Next solo lo hace para los rastreadores que reconoce por
   // User-Agent, pero App Hosting (Google Frontend) reemplaza el User-Agent de TODOS los clientes por "Google": WhatsApp,
   // Facebook y Twitter nunca se reconocían y recibían los metadatos en streaming, fuera de <head> y cerca del byte
