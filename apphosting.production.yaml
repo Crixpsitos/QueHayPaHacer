@@ -1,6 +1,7 @@
 env:
+  # URL temporal de App Hosting (sitemap, robots, canónicas y vistas previas). Cambiar al dominio propio cuando exista.
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://quehaypahacer.web.app
+    value: https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app
     availability:
       - BUILD
       - RUNTIME
