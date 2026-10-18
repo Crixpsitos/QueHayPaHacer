@@ -3,6 +3,7 @@ import type { FirebaseUserDto } from "@/infraestructure/firebase/dto/FirebaseUse
 export interface IUserFirebaseRepository {
   findById(id: string): Promise<FirebaseUserDto | null>;
   findAll(): Promise<FirebaseUserDto[]>;
+  findVerifiedCreators(limit: number): Promise<FirebaseUserDto[]>;
   findByEmail(email: string): Promise<FirebaseUserDto | null>;
   findByUsername(username: string): Promise<FirebaseUserDto | null>;
   create(dto: FirebaseUserDto): Promise<FirebaseUserDto>;

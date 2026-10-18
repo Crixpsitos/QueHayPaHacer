@@ -1,8 +1,10 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import type { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
 import { MediaItem } from "@/domain/entities/events/value-objects/Media";
 import type { Price } from "@/domain/entities/events/value-objects/Price";
 import type { ImageVariants } from "@/domain/shared/ImageVariants";
+import type { EventModerationMode, EventModerationStatus, EventStatus } from "@/domain/entities/events/Events";
 
 /**
  * ViewModel de Events para la capa de presentación.
@@ -39,7 +41,13 @@ export interface EventViewModel {
     photoURL: string;
   };
   location: Location;
-  status: "draft" | "published" | "cancelled" | "ended";
+  status: EventStatus;
+  moderationStatus: EventModerationStatus;
+  moderationMode: EventModerationMode;
+  rejectionReason?: string | null;
+  submittedAt?: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
   registrationType: "none" | "internal" | "external" | "form";
   registrationEventForm?: {
     fields: {
@@ -72,7 +80,7 @@ export interface EventViewModel {
   collaborators?: { refId: string; kind: "user" | "external" }[];
   collaboratorsData?: Record<
     string,
-    { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+    { displayName: string; photoURL?: string; role: TeamRole }
   >;
   metadata?: {
     isFirstEvent?: boolean;

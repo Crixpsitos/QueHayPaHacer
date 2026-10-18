@@ -1,7 +1,9 @@
 "use server";
 
+import { getSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 interface UpdateBannerInput {
   uid: string;
@@ -18,11 +20,19 @@ export async function updateBannerAction(
   input: UpdateBannerInput,
 ): Promise<UpdateBannerResult> {
   try {
+    if (!input.uid || (await getSessionUid()) !== input.uid) return { success: false, error: "No autorizado." };
     if (!input.uid || !input.bannerUrl || !input.bannerPath) {
       return { success: false, error: "Faltan datos para actualizar el banner." };
     }
 
     const { userService, storageService } = createServerContainer();
+    // Solo archivos propios: el path anterior se borra con credenciales admin.
+    const ownPrefix = `public/profile/${input.uid}/banner/`;
+    const expectedUrl = `https://storage.googleapis.com/${storageService.getBucketName}/${input.bannerPath}`;
+    if (!input.bannerPath.startsWith(ownPrefix) || input.bannerPath.includes("..") || input.bannerUrl !== expectedUrl) {
+      return { success: false, error: "Archivo de banner no válido." };
+    }
+
     const currentUser = await userService.getUserById(input.uid);
 
     if (!currentUser) {
@@ -40,7 +50,7 @@ export async function updateBannerAction(
       await storageService.delete(previousBannerPath);
     }
 
-    revalidateTag(`user-profile-${input.uid}`, "max");
+    updateTag(`user-profile-${input.uid}`);
 
     return { success: true };
   } catch (error) {

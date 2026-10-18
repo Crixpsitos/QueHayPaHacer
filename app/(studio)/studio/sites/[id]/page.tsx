@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { isStudioSiteOwner, redirectLimitedToEvents } from "@/app/actions/_session";
 import { SiteDetail } from "@/presentation/studio/components/sites/SiteDetail";
 import type {
   SiteDetailViewModel,
@@ -7,6 +9,9 @@ import type {
 import type { SiteAnalytics, SiteEventsPage } from "@/domain/entities/studio/Studio";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
+
+// Panel privado por usuario (cookies + chequeo de dueño): nunca prerenderizable, puede bloquear.
+export const instant = false;
 
 // ponytail: en dev, page size 1 por defecto (+opción en el select) para probar
 // la paginación del itinerario con pocos eventos. En prod arranca en 20.
@@ -75,13 +80,24 @@ function toViewModel(
   };
 }
 
+export async function generateMetadata({ params }: SiteDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  // Mismo fetch cacheado que la página: no suma lecturas.
+  const analytics = await getCachedSiteAnalytics(id).catch(() => null);
+  return { title: analytics?.name ?? "Sitio" };
+}
+
 interface SiteDetailPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ q?: string; cursor?: string; direction?: string; limit?: string }>;
 }
 
 export default async function SiteDetailPage({ params, searchParams }: SiteDetailPageProps) {
+  await redirectLimitedToEvents();
+
   const { id } = await params;
+  // Dueño + Premium aquí (no basta el layout): stats e inscritos traen PII.
+  if (!(await isStudioSiteOwner(id))) notFound();
   const sp = await searchParams;
   const search = sp.q?.trim() || undefined;
   const direction = sp.direction === "prev" ? "prev" : "next";

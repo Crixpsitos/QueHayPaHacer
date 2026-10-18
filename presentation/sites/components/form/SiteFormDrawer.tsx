@@ -1,12 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
-  Share2, Link, AlertTriangle,
+  Share2, Link, AlertTriangle, Lightbulb, Bus,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -17,6 +17,18 @@ import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadTo
 import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import type { SubmitState } from "../../hooks/useSiteForm"
+import { declarationVariant } from "@/app/lib/legal/declaration"
+import {
+  HOLIDAY_POLICIES, HOLIDAY_POLICY_LABELS, RAIN_NOTE_MAX, RAIN_POLICIES, RAIN_POLICY_LABELS,
+  type HolidayPolicy, type RainPolicy, type SiteOpeningPolicy,
+} from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import {
+  SITE_TIP_OPTIONS, TIP_NOTE_MAX, type SiteRecommendations, type TipId,
+} from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
+import { completenessFromForm } from "../../lib/completeness"
+import { TransitContent } from "./TransitContent"
+import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
   SiteFormViewModel, SiteSocialMedia, SiteTemporarilyClosed, WeekDay,
@@ -113,18 +125,81 @@ function LocationContent({
   )
 }
 
+/** Selector de una opción (radiogroup) con targets >= 44px para móvil. */
+function ChoiceGroup<T extends string>({
+  label, value, options, onChange, disabled = false,
+}: {
+  label: string
+  value: T
+  options: { value: T; title: string; hint: string }[]
+  onChange: (v: T) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-1.5" role="radiogroup" aria-label={label}>
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      {options.map((o) => {
+        const active = value === o.value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "flex min-h-11 flex-col items-start justify-center rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
+              active ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted",
+              disabled && !active && "opacity-50",
+            )}
+          >
+            <span className="text-sm font-medium text-foreground">{o.title}</span>
+            <span className="text-[11px] text-muted-foreground">{o.hint}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const KIND_OPTIONS = [
+  { value: "public" as const, title: "Atractivo público", hint: "Mirador, parque, cascada de acceso libre" },
+  { value: "business" as const, title: "Negocio privado", hint: "Restaurante, finca, glamping, tienda" },
+]
+const RELATION_OPTIONS = [
+  { value: "owner" as const, title: "Soy dueño o represento este lugar", hint: "Quedará marcado como reclamado por su dueño" },
+  { value: "proposer" as const, title: "Lo propongo, no soy el dueño", hint: "Se mostrará como información comunitaria no verificada" },
+]
+
 function BasicInfoContent({
-  form, errors,
-  onNameChange, onDescriptionChange, onCategoryChange,
+  form, errors, relationLocked,
+  onNameChange, onDescriptionChange, onCategoryChange, onKindChange, onPublishedAsChange,
 }: {
   form: SiteFormViewModel
   errors: FormErrors
+  relationLocked: boolean
+  onKindChange: (v: SiteFormViewModel["kind"]) => void
+  onPublishedAsChange: (v: SiteFormViewModel["publishedAs"]) => void
   onNameChange: (v: string) => void
   onDescriptionChange: (v: string) => void
   onCategoryChange: (v: SiteCategory) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
+      <ChoiceGroup label="¿Qué tipo de lugar es?" value={form.kind} options={KIND_OPTIONS} onChange={onKindChange} />
+      <ChoiceGroup
+        label="¿Cuál es tu relación con el lugar?"
+        value={form.publishedAs}
+        options={RELATION_OPTIONS}
+        onChange={onPublishedAsChange}
+        disabled={relationLocked}
+      />
+      {relationLocked && (
+        <p className="text-[11px] text-muted-foreground">
+          No se puede cambiar: respalda la declaración registrada al publicar.
+        </p>
+      )}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-foreground" htmlFor="site-name">Nombre</label>
         <Input id="site-name" value={form.name} onChange={(e) => onNameChange(e.target.value)} placeholder="Ej. Café Berlín" aria-invalid={!!errors.name} className="rounded-lg" />
@@ -412,13 +487,83 @@ function MediaContent({
   )
 }
 
+const timeInputCls = "rounded border border-border bg-background px-1.5 py-0.5 text-xs outline-none focus-visible:border-ring"
+const optionCls = (on: boolean) => cn(
+  "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
+  on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+)
+
+/** Qué hace el sitio en festivos y con lluvia. Opcional: sin elegir queda "sin confirmar" en la ficha. */
+function OpeningPolicyFields({
+  policy, onChange,
+}: {
+  policy: SiteOpeningPolicy
+  onChange: (partial: Partial<SiteOpeningPolicy>) => void
+}) {
+  const uid = useId()
+  const h = policy.holidays
+  const r = policy.rain
+  const pickHoliday = (p: HolidayPolicy) =>
+    onChange({ holidays: p === "custom" ? { policy: p, open: h?.open ?? "09:00", close: h?.close ?? "14:00" } : { policy: p } })
+  const pickRain = (p: RainPolicy) => onChange({ rain: { policy: p, ...(r?.note ? { note: r.note } : {}) } })
+
+  return (
+    <div className="mt-4 grid gap-4">
+      <p className="text-xs text-muted-foreground">Opcional, pero ayuda a quien va a visitarte a no llevarse sorpresas.</p>
+
+      <fieldset className="grid gap-2">
+        <legend className="mb-1 text-xs font-semibold">¿Abres los festivos?</legend>
+        {HOLIDAY_POLICIES.map((p) => (
+          <label key={p} className={optionCls(h?.policy === p)}>
+            <input type="radio" name={`${uid}-holidays`} checked={h?.policy === p} onChange={() => pickHoliday(p)} className="size-4 accent-[#E63946]" />
+            {HOLIDAY_POLICY_LABELS[p]}
+          </label>
+        ))}
+        {h?.policy === "custom" && (
+          <div className="flex items-center gap-2 pl-1 text-xs">
+            <span className="text-muted-foreground">Horario en festivos</span>
+            <input type="time" aria-label="Apertura en festivos" value={h.open ?? ""} onChange={(e) => onChange({ holidays: { ...h, open: e.target.value } })} className={timeInputCls} />
+            <span className="text-muted-foreground">–</span>
+            <input type="time" aria-label="Cierre en festivos" value={h.close ?? ""} onChange={(e) => onChange({ holidays: { ...h, close: e.target.value } })} className={timeInputCls} />
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset className="grid gap-2">
+        <legend className="mb-1 text-xs font-semibold">¿Qué pasa si llueve?</legend>
+        {RAIN_POLICIES.map((p) => (
+          <label key={p} className={optionCls(r?.policy === p)}>
+            <input type="radio" name={`${uid}-rain`} checked={r?.policy === p} onChange={() => pickRain(p)} className="size-4 accent-[#E63946]" />
+            {RAIN_POLICY_LABELS[p]}
+          </label>
+        ))}
+        {r && (
+          <>
+            <label htmlFor={`${uid}-rain-note`} className="sr-only">Nota sobre la lluvia</label>
+            <Input
+              id={`${uid}-rain-note`}
+              value={r.note ?? ""}
+              maxLength={RAIN_NOTE_MAX}
+              placeholder="Ej: cerramos las canchas al aire libre (opcional)"
+              onChange={(e) => onChange({ rain: { policy: r.policy, note: e.target.value } })}
+            />
+          </>
+        )}
+      </fieldset>
+    </div>
+  )
+}
+
 function ScheduleContent({
-  schedule, onUpdateSchedule,
+  schedule, onUpdateSchedule, openingPolicy, onUpdateOpeningPolicy,
 }: {
   schedule: SiteFormViewModel["schedule"]
   onUpdateSchedule: (day: WeekDay, partial: Partial<DaySchedule>) => void
+  openingPolicy: SiteOpeningPolicy
+  onUpdateOpeningPolicy: (partial: Partial<SiteOpeningPolicy>) => void
 }) {
   return (
+    <>
     <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
       {WEEK_DAYS.map(({ key, label }) => {
         const day = schedule[key]
@@ -458,6 +603,8 @@ function ScheduleContent({
         )
       })}
     </div>
+    <OpeningPolicyFields policy={openingPolicy} onChange={onUpdateOpeningPolicy} />
+    </>
   )
 }
 
@@ -485,10 +632,13 @@ export interface SiteFormDrawerProps {
   onRemoveMedia: (id: string) => void
   onSetCover: (id: string) => void
   onUpdateSchedule: (day: WeekDay, partial: Partial<DaySchedule>) => void
+  onUpdateOpeningPolicy: (partial: Partial<SiteOpeningPolicy>) => void
   onSaveDraft: () => void
-  onPublish: () => void
+  onPublish: (declaration: boolean) => void
   onReset: () => void
   onEnsureDraftId: () => Promise<string>
+  /** Calculado en servidor (QHPA_ADMIN_UIDS): la declaración pasa a la variante "qhpa". */
+  isQhpaAdmin?: boolean
 }
 
 // ── Redes sociales ────────────────────────────────────────────────────────────
@@ -523,6 +673,87 @@ function SocialMediaContent({
           />
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Recomendaciones ───────────────────────────────────────────────────────────
+
+/** Casillas del catálogo + nota corta. Opcional: sin elegir nada simplemente no se muestra en la ficha. */
+function TipsContent({
+  value, onChange,
+}: {
+  value: SiteRecommendations
+  onChange: (v: SiteRecommendations) => void
+}) {
+  const uid = useId()
+  const note = value.note ?? ""
+  const toggleTip = (id: TipId) =>
+    onChange({ ...value, tips: value.tips.includes(id) ? value.tips.filter((t) => t !== id) : [...value.tips, id] })
+
+  return (
+    <div className="grid gap-3">
+      <p className="text-xs text-muted-foreground">Opcional, pero ayuda a quien va a visitarte. Marca lo que aplique.</p>
+      <div role="group" aria-label="Recomendaciones" className="flex flex-wrap gap-2">
+        {SITE_TIP_OPTIONS.map(({ id, label }) => {
+          const on = value.tips.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => toggleTip(id)}
+              className={cn(
+                "inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-left text-sm transition-colors",
+                on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+              )}
+            >
+              {on ? <CheckCircle2 className="size-4 shrink-0 text-[#E63946]" aria-hidden /> : <Lightbulb className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+              <span className="[overflow-wrap:anywhere]">{label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="grid gap-1">
+        <label htmlFor={`${uid}-note`} className="text-xs font-medium">Nota para quien te visite (opcional)</label>
+        <Input
+          id={`${uid}-note`}
+          value={note}
+          maxLength={TIP_NOTE_MAX}
+          placeholder="Ej: la entrada es por la calle de atrás"
+          onChange={(e) => onChange({ ...value, note: e.target.value })}
+        />
+        <p className="text-right text-[11px] tabular-nums text-muted-foreground" aria-live="polite">{note.length}/{TIP_NOTE_MAX}</p>
+      </div>
+    </div>
+  )
+}
+
+// ── Medidor de ficha completa ─────────────────────────────────────────────────
+
+/** Barra + pistas pendientes. Solo orienta: nunca bloquea guardar ni publicar. */
+function CompletenessMeter({ form }: { form: SiteFormViewModel }) {
+  const labelId = useId()
+  const c = getSiteCompleteness(completenessFromForm(form))
+  return (
+    <div className="mb-3 rounded-xl border border-border p-3">
+      <p id={labelId} className="text-sm font-semibold">
+        {c.complete ? "Tu ficha está completa" : `Tu ficha está al ${c.percent} %`}
+      </p>
+      <div
+        role="progressbar" aria-labelledby={labelId} aria-valuemin={0} aria-valuemax={100} aria-valuenow={c.percent}
+        className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
+      >
+        <div className={cn("h-full rounded-full transition-all", c.complete ? "bg-emerald-500" : "bg-[#E63946]")} style={{ width: `${c.percent}%` }} />
+      </div>
+      {c.pending.length > 0 ? (
+        <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+          {c.pending.map((r) => <li key={r.id} className="[overflow-wrap:anywhere]">{r.hint}</li>)}
+        </ul>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">Mostrará la insignia &quot;Ficha completa&quot; en tu sitio.</p>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">Es una guía: puedes guardar y publicar sin completarla.</p>
     </div>
   )
 }
@@ -619,15 +850,17 @@ function TemporarilyClosedContent({
 
 // ── Sections config ───────────────────────────────────────────────────────────
 
-type SectionKey = "location" | "info" | "media" | "schedule" | "social" | "booking" | "status" | "social" | "booking" | "status"
+type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "social" | "booking" | "transit" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
   { id: "info",     title: "Información básica",    icon: <Info className="size-4" /> },
   { id: "media",    title: "Fotos y videos",         icon: <ImageIcon className="size-4" /> },
   { id: "schedule", title: "Horario",                icon: <Clock className="size-4" /> },
+  { id: "tips",     title: "Recomendaciones",        icon: <Lightbulb className="size-4" /> },
   { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
   { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
+  { id: "transit",  title: "Cómo llegar en bus",     icon: <Bus className="size-4" /> },
   { id: "status",   title: "Estado temporal",        icon: <AlertTriangle className="size-4" /> },
 ]
 
@@ -636,13 +869,18 @@ export function SiteFormDrawer({
   mode = "create", isDraft = false, isRejected = false, rejectionReason = null,
   onBack, onAddressChange, onUpdateField, onClearError,
   onReplaceCover, onAddMedia, onMediaUploaded, onUpdateMedia, onRemoveMedia, onSetCover,
-  onUpdateSchedule, onSaveDraft, onPublish, onReset, onEnsureDraftId,
+  onUpdateSchedule, onUpdateOpeningPolicy, onSaveDraft, onPublish, onReset, onEnsureDraftId, isQhpaAdmin = false,
 }: SiteFormDrawerProps) {
   const isEdit = mode === "edit"
   // create OR editing a draft → mostrar [Guardar borrador] [Publicar]
   const showDraftActions = !isEdit || isDraft
+  // Ya publicado: la relación respalda la declaración registrada y no se edita.
+  const relationLocked = isEdit && !isDraft
+  const variant = declarationVariant(form.publishedAs, isQhpaAdmin)
   const [openSection, setOpenSection] = useState<SectionKey>("location")
   const [isSheetOpen, setIsSheetOpen] = useState(true)
+  // Declaración del autor: nunca pre-marcada; exigida para publicar/guardar cambios.
+  const [declared, setDeclared] = useState(false)
   const [mounted, setMounted] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const y = useMotionValue(0)
@@ -677,7 +915,9 @@ export function SiteFormDrawer({
 
   const isBusy = submitState === "saving" || submitState === "publishing"
   const hasCoverReady = form.media.some((m) => m.type === "image" && m.isCover && m.status === "ready")
-  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady
+  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared
+  // Qué impide publicar, para decirlo siempre (antes solo se veía la portada).
+  const missing = [!hasCoverReady && "la portada", !declared && "la declaración"].filter(Boolean) as string[]
 
   const toggle = (id: SectionKey) => setOpenSection((prev) => (prev === id ? ("" as SectionKey) : id))
 
@@ -686,8 +926,10 @@ export function SiteFormDrawer({
     info:     !!(errors.name || errors.description || errors.category),
     media:    !!errors.media,
     schedule: false,
+    tips:     false,
     social:   false,
     booking:  false,
+    transit:  false,
     status:   false,
   }
 
@@ -696,6 +938,7 @@ export function SiteFormDrawer({
     <aside className="relative flex h-full w-full flex-col bg-background">
       {/* Accordion */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <CompletenessMeter form={form} />
         <div className="flex flex-col gap-2">
           {SECTIONS.map((s) => (
             <AccordionSection
@@ -712,7 +955,9 @@ export function SiteFormDrawer({
               )}
               {s.id === "info" && (
                 <BasicInfoContent
-                  form={form} errors={errors}
+                  form={form} errors={errors} relationLocked={relationLocked}
+                  onKindChange={(v) => onUpdateField("kind", v)}
+                  onPublishedAsChange={(v) => onUpdateField("publishedAs", v)}
                   onNameChange={(v) => { onUpdateField("name", v); onClearError("name") }}
                   onDescriptionChange={(v) => { onUpdateField("description", v); onClearError("description") }}
                   onCategoryChange={(v) => { onUpdateField("category", v); onClearError("category") }}
@@ -731,7 +976,10 @@ export function SiteFormDrawer({
                   onEnsureDraftId={onEnsureDraftId}
                 />
               )}
-              {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} />}
+              {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} openingPolicy={form.openingPolicy} onUpdateOpeningPolicy={onUpdateOpeningPolicy} />}
+              {s.id === "tips" && (
+                <TipsContent value={form.recommendations} onChange={(v) => onUpdateField("recommendations", v)} />
+              )}
               {s.id === "social" && (
                 <SocialMediaContent
                   socialMedia={form.socialMedia ?? {}}
@@ -744,6 +992,12 @@ export function SiteFormDrawer({
                   onChange={(v) => onUpdateField("bookingUrl", v)}
                 />
               )}
+              {s.id === "transit" && (
+                <TransitContent
+                  transit={form.transit ?? { routes: [] }}
+                  onChange={(v) => onUpdateField("transit", v)}
+                />
+              )}
               {s.id === "status" && (
                 <TemporarilyClosedContent
                   value={form.temporarilyClosed ?? { isClosed: false, reason: "" }}
@@ -752,6 +1006,10 @@ export function SiteFormDrawer({
               )}
             </AccordionSection>
           ))}
+        </div>
+        {/* En el área con scroll (no en el pie): en móvil el pie fijo se comía los campos. */}
+        <div className="mt-4">
+          <AuthorDeclaration kind="sitio" variant={variant} checked={declared} onChange={setDeclared} />
         </div>
       </div>
 
@@ -771,7 +1029,7 @@ export function SiteFormDrawer({
           {!showDraftActions ? (
             <>
               <Button variant="outline" className="flex-1" onClick={onBack} disabled={isBusy}>Cancelar</Button>
-              <Button className="flex-1" onClick={onPublish} disabled={publishDisabled}>
+              <Button className="flex-1" onClick={() => onPublish(declared)} disabled={publishDisabled}>
                 {submitState === "publishing" ? <Loader2 className="size-4 animate-spin" /> : isMediaProcessing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 {isRejected ? "Reenviar a revisión" : "Guardar cambios"}
               </Button>
@@ -782,7 +1040,7 @@ export function SiteFormDrawer({
                 {(submitState === "saving" || isMediaProcessing) ? <Loader2 className="size-4 animate-spin" /> : null}
                 Guardar borrador
               </Button>
-              <Button className="flex-1" onClick={onPublish} disabled={publishDisabled} title={!hasCoverReady ? "Agrega una imagen de portada para publicar" : undefined}>
+              <Button className="flex-1" onClick={() => onPublish(declared)} disabled={publishDisabled} title={!hasCoverReady ? "Agrega una imagen de portada para publicar" : undefined}>
                 {submitState === "publishing" ? <Loader2 className="size-4 animate-spin" /> : isMediaProcessing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 Publicar
               </Button>
@@ -794,9 +1052,9 @@ export function SiteFormDrawer({
             <Loader2 className="size-3 animate-spin" aria-hidden />
             Optimizando media… no cierres esta ventana
           </p>
-        ) : !hasCoverReady && !isBusy ? (
+        ) : missing.length > 0 && !isBusy ? (
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-            Agrega una imagen de portada para publicar
+            Falta: {missing.join(" y ")}
           </p>
         ) : null}
       </div>
@@ -847,10 +1105,15 @@ export function SiteFormDrawer({
           ref={sheetRef}
           className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden rounded-t-2xl border-t border-border bg-background shadow-2xl lg:hidden"
           style={{ height: "calc(100dvh - 42dvh)", y }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
+          {/* Zona de arrastre = pastilla + cabecera. Los gestos NO van en toda la hoja:
+              si no, hacer scroll en el formulario también movía la hoja. */}
+          <div
+            className="shrink-0 touch-none"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
           {/* Drag pill */}
           <div
             className="flex justify-center pb-1 pt-2"
@@ -880,6 +1143,7 @@ export function SiteFormDrawer({
             >
               <ChevronDown className={cn("size-4 transition-transform duration-200", !isSheetOpen && "rotate-180")} />
             </button>
+          </div>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">

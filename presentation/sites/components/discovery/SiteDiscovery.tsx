@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useSyncExternalStore, type CSSProperties } from "react";
 import {
   MapPin,
   CalendarDays,
-  Heart,
-  Share2,
+  CalendarCheck,
+  Camera,
   Clock,
-  Flame,
+  Heart,
   Coffee,
   UtensilsCrossed,
   Beer,
@@ -24,533 +24,207 @@ import {
   Dumbbell,
   Sparkles,
   MapPinned,
-  CheckCircle2,
-  XCircle,
-  Loader2,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { getInitials } from "@/app/lib/utils/getInitials";
-import { SiteLocalBusinessJsonLd, SiteItemListJsonLd } from "./SiteJsonLd";
-import { recordSiteInteractionAction } from "@/app/actions/sites/record-site-interaction.action";
-import type { SiteDetail, SiteSchedule, WeekDay } from "../../view-models/SiteFormViewModel";
+import { SiteItemListJsonLd } from "./SiteJsonLd";
+import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { cn } from "@/app/lib/utils/cn";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { compactCount, plainText } from "@/presentation/events/components/card/cardMeta";
+import { siteCategoryLabel } from "../../lib/constants";
+import { getSiteOpenStatus } from "../../lib/openStatus";
+import { useColombiaHolidays } from "../../hooks/useColombiaHolidays";
+import { TrustBadge } from "../TrustBadge";
 
-// ─── Category config ─────────────────────────────────────────────────────────
-
-const CATEGORY_CONFIG: Record<
-  string,
-  { label: string; Icon: React.ElementType; color: string }
-> = {
-  restaurant:  { label: "Restaurante",       Icon: UtensilsCrossed, color: "text-orange-500" },
-  cafe:        { label: "Café",              Icon: Coffee,          color: "text-amber-600"  },
-  bar:         { label: "Bar",               Icon: Beer,            color: "text-yellow-500" },
-  discotheque: { label: "Discoteca",         Icon: Music2,          color: "text-purple-500" },
-  mall:        { label: "Centro comercial",  Icon: ShoppingBag,     color: "text-pink-500"   },
-  park:        { label: "Parque",            Icon: Trees,           color: "text-green-600"  },
-  museum:      { label: "Museo",             Icon: Landmark,        color: "text-blue-600"   },
-  cultural:    { label: "Cultural",          Icon: Theater,         color: "text-indigo-500" },
-  viewpoint:   { label: "Mirador",           Icon: Mountain,        color: "text-teal-500"   },
-  hostel:      { label: "Hostal",            Icon: BedDouble,       color: "text-cyan-600"   },
-  hotel:       { label: "Hotel",             Icon: Building2,       color: "text-sky-600"    },
-  gym:         { label: "Gimnasio",          Icon: Dumbbell,        color: "text-red-500"    },
-  spa:         { label: "Spa",               Icon: Sparkles,        color: "text-rose-400"   },
-  theater:     { label: "Teatro",            Icon: Theater,         color: "text-violet-500" },
-  other:       { label: "Otro",              Icon: MapPinned,       color: "text-zinc-500"   },
+/** Icono de respaldo cuando el sitio no tiene portada. */
+const CATEGORY_ICON: Record<string, React.ElementType> = {
+  restaurant: UtensilsCrossed, cafe: Coffee, bar: Beer, discotheque: Music2,
+  mall: ShoppingBag, park: Trees, museum: Landmark, cultural: Theater,
+  viewpoint: Mountain, hostel: BedDouble, hotel: Building2, gym: Dumbbell,
+  spa: Sparkles, theater: Theater, other: MapPinned,
 };
 
-// ─── Open/closed logic ───────────────────────────────────────────────────────
+/** Columnas del grid y `sizes` de la imagen van juntos: si cambias uno, cambia el otro. */
+const GRID_CLASS = "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+const CARD_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 300px";
 
-const DAY_KEYS: WeekDay[] = [
-  "sunday", "monday", "tuesday", "wednesday",
-  "thursday", "friday", "saturday",
-];
-
-const DAY_SHORT: Record<WeekDay, string> = {
-  monday: "Lun", tuesday: "Mar", wednesday: "Mié",
-  thursday: "Jue", friday: "Vie", saturday: "Sáb", sunday: "Dom",
-};
-
-function getOpenStatus(schedule: SiteSchedule | null | undefined) {
-  if (!schedule) return { isOpen: false, label: null, todayHours: null };
-
-  const now = new Date();
-  const todayKey = DAY_KEYS[now.getDay()];
-  const todaySchedule = schedule[todayKey];
-
-  if (!todaySchedule || todaySchedule.closed) {
-    return { isOpen: false, label: `Cerrado hoy (${DAY_SHORT[todayKey]})`, todayHours: null };
-  }
-
-  const toMinutes = (t: string) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + (m ?? 0);
-  };
-
-  const current = now.getHours() * 60 + now.getMinutes();
-  const openMin = toMinutes(todaySchedule.open);
-  const closeMin = toMinutes(todaySchedule.close);
-  const isOpen = current >= openMin && current < closeMin;
-  const todayHours = `${todaySchedule.open} – ${todaySchedule.close}`;
-
-  return {
-    isOpen,
-    label: isOpen
-      ? `Abierto · Cierra ${todaySchedule.close}`
-      : `Cerrado · Abre ${todaySchedule.open}`,
-    todayHours,
-  };
-}
-
-// ─── Editorial card (featured) ───────────────────────────────────────────────
-
-export function SiteDiscoveryCardEditorial({
-  site,
-  initialLiked = false,
-  isLikesLoading = false,
-  prioritize = false,
-  isTrending = false,
-}: {
-  site: SiteDetail;
-  initialLiked?: boolean;
-  isLikesLoading?: boolean;
-  prioritize?: boolean;
-  isTrending?: boolean;
-}) {
-  const cat = CATEGORY_CONFIG[site.category] ?? CATEGORY_CONFIG.other;
-  const [openStatus, setOpenStatus] = useState<ReturnType<typeof getOpenStatus> | null>(null);
-  useEffect(() => { setOpenStatus(getOpenStatus(site.schedule)); }, [site.schedule]);
-
-  const isOpen = openStatus?.isOpen ?? false;
-  const statusLabel = openStatus?.label ?? null;
-  const [liked, setLiked] = useState(initialLiked);
-  const [likes, setLikes] = useState(site.analytics?.likes ?? 0);
-  const [likeLoading, setLikeLoading] = useState(false);
-
-  useEffect(() => { setLiked(initialLiked); }, [initialLiked]);
-
-  const handleLike = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    if (likeLoading) return;
-    const next = !liked;
-    setLiked(next); setLikes((n) => n + (next ? 1 : -1)); setLikeLoading(true);
-    const result = await recordSiteInteractionAction(site.id, next ? "like" : "unlike");
-    if (!result.success) { setLiked(!next); setLikes((n) => n + (next ? -1 : 1)); }
-    setLikeLoading(false);
-  }, [liked, likeLoading, site.id]);
-
-  return (
-    <article className="group relative overflow-hidden rounded-2xl shadow-card">
-      <Link href={`/donde-ir/${site.slug || site.id}`} className="block relative aspect-3/4 sm:aspect-4/5">
-        {site.coverUrl ? (
-          <Image
-            src={site.coverUrl}
-            alt={site.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, 50vw"
-            loading={prioritize ? "eager" : "lazy"}
-          />
-        ) : (
-          <div className={cn("flex h-full items-center justify-center bg-[#09090B]")}>
-            <cat.Icon className="size-16 opacity-10 text-white" />
-          </div>
-        )}
-
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent" />
-
-        {/* Badges top-left */}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-          {isTrending && (
-            <span className="flex items-center gap-1 rounded-full bg-[#FFB703]/90 px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow backdrop-blur-sm">
-              <Flame className="size-3.5" /> Tendencia
-            </span>
-          )}
-          {site.isNew && (
-            <span className="rounded-full bg-sky-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow backdrop-blur-sm">
-              ✨ Nuevo
-            </span>
-          )}
-        </div>
-
-        {/* Content overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          <span className="mb-2 flex w-fit items-center gap-1.5 rounded-full bg-[#FDF2F4] px-2.5 py-1 text-xs font-semibold text-[#E63946]">
-            <cat.Icon className="size-3.5" />
-            {cat.label}
-          </span>
-          <h3 className="mt-1 text-xl font-bold leading-tight text-white group-hover:underline decoration-white/60">
-            {site.name}
-          </h3>
-          {site.address && (
-            <p className="mt-1.5 flex items-center gap-1 text-sm text-white/75 line-clamp-1">
-              <MapPin className="size-3.5 shrink-0" />
-              {site.address}
-            </p>
-          )}
-          {statusLabel && (
-            <p className={cn(
-              "mt-1.5 flex items-center gap-1 text-xs font-semibold",
-              isOpen ? "text-emerald-400" : "text-white/60",
-            )}>
-              {isOpen ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
-              {statusLabel}
-            </p>
-          )}
-        </div>
-      </Link>
-
-      {/* Like button */}
-      <button
-        type="button"
-        onClick={handleLike}
-        disabled={likeLoading || isLikesLoading}
-        aria-label={liked ? "Quitar me gusta" : "Me gusta"}
-        aria-pressed={liked}
-        className={cn(
-          "absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full shadow-dark-float transition-all",
-          isLikesLoading ? "animate-pulse bg-white/60" : liked ? "bg-white" : "bg-white/80 hover:bg-white",
-        )}
-      >
-        {likeLoading
-          ? <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          : <Heart className={cn("size-5 transition-all", liked ? "fill-[#E63946] text-[#E63946]" : "text-[#09090B]")} />
-        }
-      </button>
-    </article>
-  );
-}
+const noopSubscribe = () => () => {};
 
 // ─── Card ────────────────────────────────────────────────────────────────────
 
-export function SiteDiscoveryCard({
-  site,
-  initialLiked = false,
-  isLikesLoading = false,
-  prioritize = false,
-  isTrending = false,
-}: {
-  site: SiteDetail;
-  initialLiked?: boolean;
-  isLikesLoading?: boolean;
-  prioritize?: boolean;
-  isTrending?: boolean;
-}) {
-  const cat = CATEGORY_CONFIG[site.category] ?? CATEGORY_CONFIG.other;
+export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDetail; prioritize?: boolean }) {
+  const CatIcon = CATEGORY_ICON[site.category] ?? MapPinned;
+  const eventCount = site.analytics?.eventCount ?? 0;
+  const likes = site.analytics?.likes ?? 0;
+  const photoCount = site.mediaItems?.length ?? site.mediaUrls?.length ?? 0;
+  const description = plainText(site.description);
+  const authorName = site.author?.displayName?.trim() || "Comunidad";
 
-  // Open/closed computed client-side after mount (new Date() not allowed during prerender)
-  const [openStatus, setOpenStatus] = useState<ReturnType<typeof getOpenStatus> | null>(null);
-  useEffect(() => {
-    setOpenStatus(getOpenStatus(site.schedule));
-  }, [site.schedule]);
-
-  const isOpen = openStatus?.isOpen ?? false;
-  const statusLabel = openStatus?.label ?? null;
-
-  const [likes, setLikes] = useState(site.analytics?.likes ?? 0);
-  const [liked, setLiked] = useState(initialLiked);
-  const [shared, setShared] = useState(false);
-  const [likeLoading, setLikeLoading] = useState(false);
-  const [authError, setAuthError] = useState(false);
-
-  // Sync when parent resolves the server-side liked state after mount
-  useEffect(() => {
-    setLiked(initialLiked);
-  }, [initialLiked]);
-
-  const handleLike = useCallback(
-    async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (likeLoading) return;
-      setAuthError(false);
-      const next = !liked;
-      // Optimistic update
-      setLiked(next);
-      setLikes((n) => n + (next ? 1 : -1));
-      setLikeLoading(true);
-      const result = await recordSiteInteractionAction(site.id, next ? "like" : "unlike");
-      if (!result.success) {
-        // Revert on failure
-        setLiked(!next);
-        setLikes((n) => n + (next ? -1 : 1));
-        if (result.authRequired) setAuthError(true);
-      }
-      setLikeLoading(false);
-    },
-    [liked, likeLoading, site.id],
-  );
-
-  const handleShare = useCallback(
-    async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const url = `${window.location.origin}/donde-ir/${site.slug || site.id}`;
-      try {
-        if (navigator.share) {
-          await navigator.share({ title: site.name, url });
-        } else {
-          await navigator.clipboard.writeText(url);
-        }
-      } catch {
-        // User cancelled share dialog — do nothing
-        return;
-      }
-      setShared(true);
-      void recordSiteInteractionAction(site.id, "share");
-      // Auto-reset after 2s so the user can share again
-      setTimeout(() => setShared(false), 2000);
-    },
-    [site.id, site.name],
-  );
+  // Solo en el cliente: new Date() no está permitido durante el prerender (y evita mismatch de hidratación).
+  const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const holidays = useColombiaHolidays();
+  const openStatus = isClient ? getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy }) : null;
+  const closedForNow = site.temporarilyClosed?.isClosed === true;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover">
-      <SiteLocalBusinessJsonLd site={site} />
-
-      {/* Image wrapper — relative para el like button absoluto */}
-      <div className="relative">
-        <Link href={`/donde-ir/${site.slug || site.id}`} className="block relative aspect-4/3 w-full overflow-hidden bg-muted">
+    <Link
+      href={`/donde-ir/${site.slug || site.id}`}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,border-color,box-shadow] duration-300 motion-reduce:transition-none hover:border-[#09090B] hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+    >
+      <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F4F5]">
         {site.coverUrl ? (
           <Image
             src={site.coverUrl}
-            alt={site.name}
+            alt=""
             fill
-            className="object-cover transition-transform group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            className="object-cover transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100"
+            sizes={CARD_SIZES}
             priority={prioritize}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <cat.Icon className={cn("size-12 opacity-20", cat.color)} aria-hidden="true" />
+            <CatIcon className="size-10 text-[#A1A1AA]" aria-hidden="true" />
           </div>
         )}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/45 to-transparent" />
 
-        {/* Trending + Open badges — top-left, apiladas verticalmente */}
-        {(isTrending || site.isNew || statusLabel) && (
-          <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-            {statusLabel && (
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow-sm">
+          <CatIcon className="size-3.5 text-[#E63946]" aria-hidden="true" />
+          {siteCategoryLabel(site.category)}
+        </span>
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
+          <TrustBadge site={site} className="justify-end shadow-sm" />
+          {photoCount > 1 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
+              <Camera className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">Fotos:</span>
+              {photoCount}
+            </span>
+          )}
+        </div>
+
+        <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-end gap-1.5">
+          {closedForNow ? (
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
+              <span className="size-1.5 shrink-0 rounded-full bg-[#E63946]" aria-hidden="true" />
+              Cerrado temporalmente
+            </span>
+          ) : openStatus?.label ? (
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
               <span
-                className={cn(
-                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shadow backdrop-blur-sm transition-opacity duration-200",
-                  isOpen ? "bg-emerald-500/90 text-white" : "bg-zinc-800/80 text-zinc-200",
-                )}
-              >
-                {isOpen ? <CheckCircle2 className="size-3.5" /> : <XCircle className="size-3.5" />}
-                {statusLabel}
-              </span>
-            )}
-            {isTrending && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow backdrop-blur-sm">
-                <Flame className="size-3.5" />
-                Tendencia
+                className={cn("size-1.5 shrink-0 rounded-full", openStatus.isOpen ? "bg-emerald-500" : "bg-[#A1A1AA]")}
+                aria-hidden="true"
+              />
+              {openStatus.label}
+            </span>
+          ) : (
+            <span />
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {site.bookingUrl && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow-sm">
+                <CalendarCheck className="size-3.5 text-[#E63946]" aria-hidden="true" />
+                Reservas
               </span>
             )}
             {site.isNew && (
-              <span className="flex items-center gap-1 rounded-full bg-sky-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow backdrop-blur-sm">
-                ✨ Nuevo
-              </span>
+              <span className="rounded-full bg-[#FFB703] px-2.5 py-1 text-xs font-semibold text-[#09090B]">Nuevo</span>
             )}
           </div>
-        )}
-      </Link>
-
-      {/* Like button — top-right, grande estilo Airbnb */}
-      <button
-        type="button"
-        onClick={(e) => { handleLike(e); }}
-        disabled={likeLoading || isLikesLoading}
-        aria-label={liked ? "Quitar me gusta" : "Me gusta"}
-        aria-pressed={liked}
-        className={cn(
-          "absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full shadow-dark-float transition-all",
-          isLikesLoading ? "animate-pulse bg-white/60" :
-          liked ? "bg-white" : "bg-white/80 hover:bg-white",
-        )}
-      >
-        {likeLoading ? (
-          <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
-        ) : (
-          <Heart
-            className={cn(
-              "size-5 transition-all",
-              liked ? "fill-[#E63946] text-[#E63946]" : "text-[#09090B]",
-              "group-hover:scale-110",
-            )}
-            aria-hidden="true"
-          />
-        )}
-      </button>
+        </div>
       </div>
 
-      {/* Body */}
-      <Link href={`/donde-ir/${site.slug || site.id}`} className="flex flex-1 flex-col gap-2 px-4 pt-3 pb-2">
-        {/* Category chip */}
-        <span className={cn("flex w-fit items-center gap-1 rounded-full bg-[#FDF2F4] px-2.5 py-1 text-xs font-semibold text-[#E63946]")}>
-          <cat.Icon className="size-3.5" aria-hidden="true" />
-          {cat.label}
-        </span>
-
-        {/* Name */}
-        <h3 className="font-semibold leading-snug group-hover:underline line-clamp-2">
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#E63946] decoration-2 underline-offset-4 group-hover:underline group-focus-visible:underline">
           {site.name}
         </h3>
 
-        {/* Address */}
-        {site.address && (
-          <p className="flex items-start gap-1 text-sm text-muted-foreground line-clamp-1">
-            <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            {site.address}
-          </p>
-        )}
+        {description && <p className="line-clamp-2 text-sm leading-relaxed text-[#52525B]">{description}</p>}
 
-        {/* Today's hours — min-h reservado, fade-in para evitar CLS */}
-        <p className={cn(
-          "flex h-4 items-center gap-1 text-xs text-muted-foreground transition-opacity duration-300",
-          openStatus?.todayHours ? "opacity-100" : "opacity-0",
-        )}>
-          <Clock className="size-3.5 shrink-0" aria-hidden="true" />
-          {openStatus?.todayHours ? `Hoy: ${openStatus.todayHours}` : "\u00a0"}
-        </p>
-
-        {/* Event count */}
-        {(site.analytics?.eventCount ?? 0) > 0 && (
-          <p className="flex items-center gap-1 text-xs text-primary font-medium">
-            <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
-            {site.analytics.eventCount}{" "}
-            {site.analytics.eventCount === 1 ? "evento" : "eventos"}
-          </p>
-        )}
-      </Link>
-
-        {authError && (
-          <p className="px-4 pb-1 text-xs text-amber-600">Inicia sesión para dar me gusta.</p>
-        )}
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          {'author' in site && site.author && (
-            <div className="flex min-w-0 items-center gap-2">
-              <Avatar size="sm">
-                {site.author.photoURL && (
-                  <AvatarImage src={site.author.photoURL} alt={site.author.displayName} />
-                )}
-                <AvatarFallback className="text-[10px]">
-                  {getInitials(site.author.displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate text-xs text-muted-foreground">@{site.author.displayName}</span>
-            </div>
+        <ul className="mt-1 space-y-1.5 text-sm text-[#3F3F46]">
+          {site.address && (
+            <li className="flex items-start gap-2">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-[#A1A1AA]" aria-hidden="true" />
+              <span className="line-clamp-1">{site.address}</span>
+            </li>
           )}
-          <button
-            type="button"
-            onClick={handleShare}
-            aria-label="Compartir sitio"
-            className={cn(
-              "ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
-              shared ? "bg-emerald-50 text-emerald-600" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Share2 className="size-3.5" aria-hidden="true" />
-            {shared ? "¡Copiado!" : "Compartir"}
-          </button>
+          {/* El horario de hoy se calcula en el cliente: se reserva la fila para no mover el diseño. */}
+          <li className="flex min-h-5 items-start gap-2">
+            <Clock className="mt-0.5 size-4 shrink-0 text-[#A1A1AA]" aria-hidden="true" />
+            <span className="line-clamp-1 tabular-nums">
+              {closedForNow
+                ? site.temporarilyClosed?.reason?.trim() || "Cerrado por ahora"
+                : openStatus?.todayHours
+                  ? `Hoy ${openStatus.todayHours}`
+                  : openStatus?.label === "Cerrado hoy"
+                    ? "Hoy cerrado"
+                    : "\u00a0"}
+            </span>
+          </li>
+        </ul>
+
+        <div className="mt-auto border-t border-dashed border-[#E4E4E7] pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2">
+              <Avatar className="size-6">
+                {site.author?.photoURL && <AvatarImage src={site.author.photoURL} alt="" />}
+                <AvatarFallback className="text-[10px]">{authorName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="truncate text-xs text-[#52525B]">{authorName}</span>
+            </span>
+            <span className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-[#52525B]">
+              {eventCount > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDays className="size-3.5" aria-hidden="true" />
+                  {eventCount} {eventCount === 1 ? "evento" : "eventos"}
+                </span>
+              )}
+              {likes > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Heart className="size-3.5" aria-hidden="true" />
+                  {compactCount(likes)}
+                  <span className="sr-only">me gusta</span>
+                </span>
+              )}
+            </span>
+          </div>
         </div>
-    </article>
+      </div>
+    </Link>
   );
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
-
-const EMPTY = (
-  <div className="py-16 text-center">
-    <h3 className="text-xl font-semibold text-foreground">Todavía no hay lugares aquí</h3>
-    <p className="mt-2 text-sm text-muted-foreground">
-      Estamos sumando sitios constantemente. Vuelve pronto para descubrir dónde ir.
-    </p>
-  </div>
-);
-
 // ─── Grid ─────────────────────────────────────────────────────────────────────
 
-export function SiteDiscoveryGrid({
-  sites,
-  showTrending = false,
-  layout = "grid",
-}: {
-  sites: SiteDetail[];
-  showTrending?: boolean;
-  layout?: "grid" | "featured";
-}) {
-  const [likedBysite, setLikedBySite] = useState<Record<string, boolean>>({});
-  const [isLikesLoading, setIsLikesLoading] = useState(false);
-
-  useEffect(() => {
-    const ids = sites.map((s) => s.id);
-    if (ids.length === 0) return;
-    setIsLikesLoading(true);
-    fetch(`/api/sites/likes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids }),
-    })      .then((r) => r.json())
-      .then((likes: Record<string, boolean>) => {
-        setLikedBySite(likes);
-        setIsLikesLoading(false);
-      })
-      .catch(() => setIsLikesLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sites.map((s) => s.id).join(",")]);
-
-  if (sites.length === 0) return EMPTY;
-
-  if (layout === "featured") {
+export function SiteDiscoveryGrid({ sites }: { sites: SiteDetail[] }) {
+  if (sites.length === 0) {
     return (
-      <div className="space-y-6">
-        <SiteItemListJsonLd sites={sites} />
-        {/* Primeros 2: editorial card con imagen de fondo y contenido overlay */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {sites.slice(0, 2).map((s, i) => (
-            <SiteDiscoveryCardEditorial
-              key={s.id}
-              site={s}
-              initialLiked={likedBysite[s.id] ?? false}
-              isLikesLoading={isLikesLoading}
-              prioritize={i < 2}
-              isTrending={showTrending}
-            />
-          ))}
-        </div>
-        {/* Resto en 3 columnas */}
-        {sites.length > 2 && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sites.slice(2).map((s) => (
-              <SiteDiscoveryCard
-                key={s.id}
-                site={s}
-                initialLiked={likedBysite[s.id] ?? false}
-                isLikesLoading={isLikesLoading}
-                prioritize={false}
-                isTrending={false}
-              />
-            ))}
-          </div>
-        )}
+      <div className="py-16 text-center">
+        <h3 className="text-xl font-semibold text-[#09090B]">Todavía no hay lugares aquí</h3>
+        <p className="mt-2 text-sm text-[#71717A]">
+          Estamos sumando sitios constantemente. Vuelve pronto para descubrir dónde ir.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className={GRID_CLASS}>
       <SiteItemListJsonLd sites={sites} />
-      {sites.map((s, index) => (
-        <SiteDiscoveryCard
-          key={s.id}
-          site={s}
-          initialLiked={likedBysite[s.id] ?? false}
-          isLikesLoading={isLikesLoading}
-          prioritize={index < 4}
-          isTrending={showTrending && index < 4}
-        />
-      ))}
+      {sites.map((s, index) =>
+        index < 4 ? (
+          <div
+            key={s.id}
+            className={cn("card-rise h-full", index === 0 && "card-rise-first")}
+            style={{ "--i": index } as CSSProperties}
+          >
+            <SiteDiscoveryCard site={s} prioritize />
+          </div>
+        ) : (
+          <div key={s.id} className="card-reveal h-full">
+            <SiteDiscoveryCard site={s} />
+          </div>
+        ),
+      )}
     </div>
   );
 }
-

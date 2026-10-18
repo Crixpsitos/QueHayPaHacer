@@ -1,9 +1,11 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import { CategoryInfo } from "@/domain/entities/events/value-objects/CategoryInfo";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
 import { MediaItem } from "@/domain/entities/events/value-objects/Media";
 import type { Price } from "@/domain/entities/events/value-objects/Price";
 import type { ImageVariants } from "@/domain/shared/ImageVariants";
 import type { Timestamp } from "firebase-admin/firestore";
+import type { EventModerationMode, EventModerationStatus, EventStatus } from "@/domain/entities/events/Events";
 
 export interface FirebasePromotionDto {
     isPromoted: boolean;
@@ -42,7 +44,13 @@ export interface FirebaseEventsDto {
         photoURL: string;
     };
     location: Location;
-    status: "draft" | "published" | "cancelled" | "ended";
+    status: EventStatus;
+    moderationStatus?: EventModerationStatus;
+    moderationMode?: EventModerationMode;
+    rejectionReason?: string | null;
+    submittedAt?: Timestamp;
+    reviewedAt?: Timestamp | null;
+    reviewedBy?: string | null;
     registrationType: "none" | "internal" | "external" | "form";
     externalUrl?: string;
     registrationEventForm?: {
@@ -64,7 +72,7 @@ export interface FirebaseEventsDto {
     collaborators?: { refId: string; kind: "user" | "external" }[];
     collaboratorsData?: Record<
         string,
-        { displayName: string; photoURL?: string | null; role: "editor" | "viewer" | "credit" }
+        { displayName: string; photoURL?: string | null; role: TeamRole }
     >;
     createdAt: Timestamp;
     updatedAt: Timestamp;

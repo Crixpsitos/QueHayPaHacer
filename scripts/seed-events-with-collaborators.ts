@@ -53,9 +53,9 @@ async function main() {
     photoURL: o.photoURL ?? avatar(o.displayName ?? "Org"),
   };
 
-  // 2) Colaboradores usuario: profesionales de prueba (excluye owner).
-  const prosSnap = await db.collection("users").where("accountType", "==", "professional").limit(6).get();
-  const userCollabs = prosSnap.docs
+  // 2) Colaboradores usuario: creadores de prueba (excluye owner).
+  const creatorsSnap = await db.collection("users").where("participation", "==", "creator").limit(6).get();
+  const userCollabs = creatorsSnap.docs
     .filter((d) => d.id !== ownerUid)
     .slice(0, 3)
     .map((d) => {

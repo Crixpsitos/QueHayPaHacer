@@ -153,7 +153,7 @@ interface EventFormProps {
   initialData?: Partial<FormEventDto>;
   /** Paso inicial (1-based). Usado para abrir el form directo en un paso (p.ej. Sesiones). */
   initialStep?: number;
-  onPublish: (data: FormEventDto) => Promise<void>;
+  onPublish: (data: FormEventDto, declaration: boolean) => Promise<void>;
   onSaveDraft: (data: FormEventDto) => Promise<Events | null>;
   /** Si se provee, el toggle “Varias fechas” llama este handler en lugar de hacer router.push directo. */
   onToggleEventType?: (formId?: string, formSnapshot?: FormEventDto) => void;
@@ -173,9 +173,9 @@ export const EventForm = ({
 }: EventFormProps) => {
   const isMultiDate = eventType === "multi-date";
   const { user } = useAuth();
-  // Step dinámico "Colaboradores": solo para cuentas profesionales, insertado antes
+  // Step dinámico "Colaboradores": solo para plan Premium, insertado antes
   // del último paso (Revisión / Promoción). Todo se deriva de `stepDefs`.
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
 
   const stepDefs: StepDef[] = useMemo(() => {
     const collab: StepDef = { key: "collab", label: "Colaboradores", icon: "Users", schema: step8Schema };
@@ -187,7 +187,7 @@ export const EventForm = ({
         { key: "sessions", label: "Sesiones", icon: "Calendar", schema: step8Schema },
         { key: "promo", label: "Promoción", icon: "Star", schema: step8Schema },
       ];
-      return isProfessional ? [...base.slice(0, 4), collab, base[4]] : base;
+      return isPremium ? [...base.slice(0, 4), collab, base[4]] : base;
     }
     const base: StepDef[] = [
       { key: "basic", label: "Información básica", icon: "FileText", schema: step1Schema },
@@ -199,8 +199,8 @@ export const EventForm = ({
       { key: "pricing", label: "Precios", icon: "DollarSign", schema: step7Schema },
       { key: "review", label: "Revisión", icon: "CheckCircle", schema: step8Schema },
     ];
-    return isProfessional ? [...base.slice(0, 7), collab, base[7]] : base;
-  }, [isMultiDate, isProfessional]);
+    return isPremium ? [...base.slice(0, 7), collab, base[7]] : base;
+  }, [isMultiDate, isPremium]);
 
   const stepSchema = useMemo(() => stepDefs.map((s) => s.schema), [stepDefs]);
   const ACTIVE_STEPS = useMemo(
@@ -235,6 +235,8 @@ export const EventForm = ({
     setCurrentStep(stepNumber);
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Declaración del autor: nunca pre-marcada; se exige para publicar/actualizar.
+  const [declared, setDeclared] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   // mountedRef prevents subsequent prop updates (saveDraft) from auto-advancing steps
   const mountedRef = useRef(false);
@@ -402,10 +404,6 @@ export const EventForm = ({
     const isValid = await form.trigger();
 
     if (!isValid) {
-      console.log(
-        "❌ Errores activos en el paso actual:",
-        form.formState.errors,
-      );
       const firstError = formRef.current?.querySelector(
         '[aria-invalid="true"]',
       );
@@ -514,10 +512,6 @@ export const EventForm = ({
 
     const isValid = await form.trigger();
     if (!isValid) {
-      console.log(
-        "❌ Errores activos en el paso actual:",
-        form.formState.errors,
-      );
       const firstError = formRef.current?.querySelector(
         '[aria-invalid="true"]',
       );
@@ -527,7 +521,7 @@ export const EventForm = ({
 
     try {
       setIsSubmitting(true);
-      await onPublish(form.getValues());
+      await onPublish(form.getValues(), declared);
     } catch (error) {
       console.error(error);
     } finally {
@@ -557,7 +551,7 @@ export const EventForm = ({
         return <StepCollaborators form={form} />;
       case "promo":
       case "review":
-        return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate={isMultiDate} />;
+        return <Step8Review form={form} onGoToStep={handleStepClick} isMultiDate={isMultiDate} declared={declared} onDeclaredChange={setDeclared} />;
       default:
         return null;
     }
@@ -1046,7 +1040,7 @@ export const EventForm = ({
             {currentStep === ACTIVE_STEPS.length ? (
               <Button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !declared}
                 onClick={handlePublishSubmit}
                 className="rounded-xl px-5 text-sm font-semibold bg-[#E63946] hover:bg-[#9B0A26] text-white shadow-primary-glow"
               >

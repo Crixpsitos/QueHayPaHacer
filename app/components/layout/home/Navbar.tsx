@@ -5,6 +5,7 @@ import { Menu, Plus, X } from "lucide-react";
 import { NavLink } from "../../ui/navigation/NavLink";
 import { Button } from "../../ui/button/button";
 import { NavbarAccountMenu } from "./NavbarAccountMenu";
+import { NotificationBell } from "./NotificationBell";
 import { Container } from "../shared/Container";
 import {
   DropdownMenu,
@@ -47,8 +48,10 @@ export const Navbar = () => {
     { name: "Inicio", href: "/" },
     { name: "Eventos", href: "/eventos" },
     { name: "¿Dónde ir?", href: "/donde-ir" },
-    { name: "Contactanos", href: "/contactanos" },
+    { name: "Contáctanos", href: "/contactanos" },
   ];
+
+  const isCreator = user?.profile?.participation === "creator";
 
   const handleLoginSuccess = async () => {
     try {
@@ -79,9 +82,9 @@ export const Navbar = () => {
             <X className="size-4" />
           </button>
 
-          <h3 className="mb-1 text-xl font-semibold">Inicia sesion para dar like</h3>
+          <h3 className="mb-1 text-xl font-semibold">Inicia sesión para aportar</h3>
           <p className="mb-5 text-sm text-muted-foreground">
-            Necesitamos autenticar tu cuenta para guardar tu interaccion.
+            Accede a tu cuenta para publicar un evento o proponer un sitio.
           </p>
 
           <LoginForm
@@ -102,7 +105,7 @@ export const Navbar = () => {
             <Link
               href="/"
               aria-label="Ir al inicio"
-              className="font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
+              className="whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               Que Hay Pa Hacer?
@@ -114,7 +117,7 @@ export const Navbar = () => {
               <li key={route.name}>
                 <NavLink
                   href={route.href}
-                  className="rounded-full px-3 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="whitespace-nowrap rounded-full px-2 py-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:px-3"
                   activeClassName="bg-[#FDF2F4] text-primary font-semibold"
                 >
                   {route.name}
@@ -143,10 +146,10 @@ export const Navbar = () => {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/eventos/create">Crear evento</Link>
+                  <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/sites/create">Crear nuevo sitio</Link>
+                  <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -161,28 +164,29 @@ export const Navbar = () => {
                     className="hidden! md:inline-flex!"
                   >
                     <Plus className="size-4" aria-hidden="true" />
-                    Crear
+                    {isCreator ? "Crear evento" : "Aportar"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={8}>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/eventos/create">Crear evento</Link>
+                      <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                     ) : (
-                      <button type="button" onClick={openLoginModal}>Crear evento</button>
+                      <button type="button" onClick={openLoginModal}>{isCreator ? "Crear evento" : "Aportar evento"}</button>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/sites/create">Crear nuevo sitio</Link>
+                      <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                     ) : (
-                      <button type="button" onClick={openLoginModal}>Crear nuevo sitio</button>
+                      <button type="button" onClick={openLoginModal}>{isCreator ? "Crear sitio" : "Proponer sitio"}</button>
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
 
+            <NotificationBell />
             <NavbarAccountMenu />
           </div>
         </div>

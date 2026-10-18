@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { Eye, Users, Heart, Share2, TrendingUp, Info, MousePointerClick } from "lucide-react";
 import type { EventStatsViewModel } from "../../view-models/StudioEventsViewModel";
-import { EventTeamCard } from "./EventTeamCard";
 import {
   Tooltip,
   TooltipContent,
@@ -21,12 +20,14 @@ const RegistrationRampChart = dynamic(() => import("../charts/RegistrationRampCh
 });
 
 const formatNumber = (n: number) => n.toLocaleString("es-CO");
+// Misma escala absoluta (0–150) que el ranking "Top 5 por puntuación" del resumen.
+const formatScore = (n: number) => n.toLocaleString("es-CO", { maximumFractionDigits: 1 });
 
 const SCORE_ITEM = {
   key: "score",
-  label: "Score",
+  label: "Puntuación",
   icon: TrendingUp,
-  hint: "Puntuación de rendimiento del evento. Mientras más alta, mejor le está yendo y más se recomienda frente a otros eventos.",
+  hint: "Rendimiento del evento en una escala de 0 a 150 (la misma del resumen). Mientras más alta, mejor le está yendo y más se recomienda frente a otros eventos.",
 } as const;
 
 const VIEWS_ITEM = { key: "views", label: "Vistas", icon: Eye } as const;
@@ -67,7 +68,7 @@ export function EventStatsPanel({ stats, hideLikes = false }: EventStatsPanelPro
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {statItems.map((item) => (
             <div key={item.key} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
                 <item.icon className="h-3.5 w-3.5" />
                 {item.label}
                 {"hint" in item && item.hint && (
@@ -85,23 +86,29 @@ export function EventStatsPanel({ stats, hideLikes = false }: EventStatsPanelPro
                   </Tooltip>
                 )}
               </p>
-              <p className="mt-1.5 text-2xl font-bold tabular-nums tracking-tight text-slate-900">
-                {formatNumber(stats[item.key])}
+              <p className="mt-1.5 font-heading text-2xl font-semibold tabular-nums tracking-tight text-zinc-950">
+                {item.key === "score" ? (
+                  <>
+                    {formatScore(stats.score)}
+                    <span className="ml-1 text-sm font-normal text-zinc-400">/ 150</span>
+                  </>
+                ) : (
+                  formatNumber(stats[item.key])
+                )}
               </p>
             </div>
           ))}
         </div>
       </TooltipProvider>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
         <header className="mb-4">
-          <h3 className="text-sm font-semibold text-slate-900">Ritmo de inscripción</h3>
-          <p className="mt-0.5 text-xs text-slate-400">Inscripciones acumuladas a medida que se acerca el evento</p>
+          <h3 className="font-heading text-base font-semibold text-zinc-950">¿Con cuánta anticipación se inscriben?</h3>
+          <p className="mt-0.5 text-xs text-zinc-500">Inscripciones acumuladas según el tiempo que faltaba para el evento</p>
         </header>
         <RegistrationRampChart data={stats.registrationRamp} unit={stats.rampUnit} />
       </div>
 
-      {stats.team.length > 0 && <EventTeamCard team={stats.team} />}
     </div>
   );
 }

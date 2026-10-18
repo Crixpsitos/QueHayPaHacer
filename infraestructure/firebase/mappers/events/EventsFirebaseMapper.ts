@@ -27,11 +27,14 @@ function cityDetail(c: unknown): CityDetail {
 
 /** coordinates: acepta GeoPoint (nuevo) o {lat,lng} (viejo) → {lat,lng} en dominio. */
 function toLatLng(coords: unknown): { lat: number; lng: number } {
-  const c = (coords ?? {}) as { lat?: unknown; lng?: unknown; latitude?: unknown; longitude?: unknown };
-  return {
-    lat: typeof c.latitude === "number" ? c.latitude : typeof c.lat === "number" ? c.lat : 0,
-    lng: typeof c.longitude === "number" ? c.longitude : typeof c.lng === "number" ? c.lng : 0,
+  // `_latitude/_longitude`: GeoPoints que se guardaron aplanados como map (bug de
+  // removeUndefinedProperties ya corregido); leerlos repara el doc en la próxima escritura.
+  const c = (coords ?? {}) as Record<string, unknown>;
+  const pick = (...keys: string[]) => {
+    for (const k of keys) if (typeof c[k] === "number") return c[k] as number;
+    return 0;
   };
+  return { lat: pick("latitude", "_latitude", "lat"), lng: pick("longitude", "_longitude", "lng") };
 }
 
 /** Firestore (GeoPoint, city string|objeto) → dominio (`{lat,lng}`, city objeto). Defensivo en transición. */
@@ -78,6 +81,12 @@ export class EventsFirebaseMapper implements IEventsMapper {
       author: dto.author,
       location: toDomainLocation(dto.location),
       status: dto.status,
+      moderationStatus: dto.moderationStatus ?? (dto.status === "published" ? "approved" : "pending"),
+      moderationMode: dto.moderationMode ?? "pre_publication",
+      rejectionReason: dto.rejectionReason ?? null,
+      submittedAt: dto.submittedAt?.toDate ? dto.submittedAt.toDate() : undefined,
+      reviewedAt: dto.reviewedAt?.toDate ? dto.reviewedAt.toDate() : null,
+      reviewedBy: dto.reviewedBy ?? null,
       registrationType: dto.registrationType,
       externalUrl: dto.externalUrl,
       registrationEventForm: dto.registrationEventForm,
@@ -156,6 +165,12 @@ export class EventsFirebaseMapper implements IEventsMapper {
       categoryInfo: domain.categoryInfo,
       author: domain.author,
       status: domain.status,
+      moderationStatus: domain.moderationStatus,
+      moderationMode: domain.moderationMode,
+      rejectionReason: domain.rejectionReason ?? null,
+      submittedAt: domain.submittedAt instanceof Date ? Timestamp.fromDate(domain.submittedAt) : undefined,
+      reviewedAt: domain.reviewedAt instanceof Date ? Timestamp.fromDate(domain.reviewedAt) : null,
+      reviewedBy: domain.reviewedBy ?? null,
       promotion: this.toStoredPromotion(domain.promotion),
       analytics: this.withScore(domain.analytics),
       eventType: domain.eventType,
@@ -196,6 +211,12 @@ export class EventsFirebaseMapper implements IEventsMapper {
       author: domain.author,
       location: toStoredLocation(domain.location),
       status: domain.status,
+      moderationStatus: domain.moderationStatus,
+      moderationMode: domain.moderationMode,
+      rejectionReason: domain.rejectionReason ?? null,
+      submittedAt: domain.submittedAt instanceof Date ? Timestamp.fromDate(domain.submittedAt) : undefined,
+      reviewedAt: domain.reviewedAt instanceof Date ? Timestamp.fromDate(domain.reviewedAt) : null,
+      reviewedBy: domain.reviewedBy ?? null,
       registrationType: domain.registrationType,
       externalUrl: domain.externalUrl,
       registrationEventForm: domain.registrationEventForm,

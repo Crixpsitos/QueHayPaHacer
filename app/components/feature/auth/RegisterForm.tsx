@@ -1,4 +1,6 @@
 "use client";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 import { useState, useTransition } from "react";
 
@@ -24,29 +26,30 @@ const registerSchema = v.pipe(
     email: v.pipe(
       v.string(),
       v.nonEmpty("El correo es obligatorio"),
-      v.email("Ingresa un correo valido"),
+      v.email("Ingresa un correo válido"),
     ),
     phoneNumber: v.pipe(
       v.string(),
-      v.nonEmpty("El numero de telefono es obligatorio"),
+      v.nonEmpty("El número de teléfono es obligatorio"),
       v.regex(/^\d{7,10}$/, "Solo digitos, sin prefijo +57"),
     ),
     password: v.pipe(
       v.string(),
-      v.nonEmpty("La contrasena es obligatoria"),
-      v.minLength(6, "La contrasena debe tener al menos 6 caracteres"),
+      v.nonEmpty("La contraseña es obligatoria"),
+      v.minLength(6, "La contraseña debe tener al menos 6 caracteres"),
     ),
     confirmPassword: v.pipe(
       v.string(),
-      v.nonEmpty("Confirma tu contrasena"),
+      v.nonEmpty("Confirma tu contraseña"),
     ),
-    acceptPersonalData: v.literal(true, "Debes aceptar el uso de datos personales"),
+    acceptTerms: v.literal(true, "Acepta los términos y confirma que eres mayor de 18 años para continuar"),
+    acceptPersonalData: v.literal(true, "Autoriza el tratamiento de tus datos personales para crear la cuenta"),
   }),
   v.forward(
     v.partialCheck(
       [["password"], ["confirmPassword"]],
       (input) => input.password === input.confirmPassword,
-      "Las contrasenas no coinciden",
+      "Las contraseñas no coinciden",
     ),
     ["confirmPassword"],
   ),
@@ -65,6 +68,8 @@ interface RegisterFormProps {
     email: string,
     phoneNumber: string,
     password: string,
+    acceptedTerms: boolean,
+    acceptedDataPolicy: boolean,
   ) => Promise<RegisterActionResult | void>;
 }
 
@@ -86,6 +91,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       phoneNumber: "",
       password: "",
       confirmPassword: "",
+      acceptTerms: undefined,
       acceptPersonalData: undefined,
     },
   });
@@ -100,6 +106,8 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         data.email,
         data.phoneNumber,
         data.password,
+        data.acceptTerms,
+        data.acceptPersonalData,
       );
       if (result?.error) {
         setSubmitError(result.error);
@@ -130,7 +138,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <EmailInput<RegisterFormValues>
         id="email"
         name="email"
-        label="Correo electronico"
+        label="Correo electrónico"
         register={register}
         error={errors.email}
       />
@@ -138,7 +146,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <TextInput<RegisterFormValues>
         id="phoneNumber"
         name="phoneNumber"
-        label="Numero de telefono"
+        label="Número de teléfono"
         type="tel"
         register={register}
         error={errors.phoneNumber}
@@ -147,7 +155,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <PasswordInput<RegisterFormValues>
         id="password"
         name="password"
-        label="Contrasena"
+        label="Contraseña"
         register={register}
         error={errors.password}
       />
@@ -155,10 +163,31 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       <PasswordInput<RegisterFormValues>
         id="confirmPassword"
         name="confirmPassword"
-        label="Repetir contrasena"
+        label="Repetir contraseña"
         register={register}
         error={errors.confirmPassword}
       />
+
+      <div className="flex flex-col gap-1">
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+          <input
+            {...register("acceptTerms")}
+            type="checkbox"
+            id="acceptTerms"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+          />
+          <span>
+            Acepto los{" "}
+            <Link href="/terminos" target="_blank" className="font-medium text-primary hover:underline">términos y condiciones</Link>
+            {" "}y declaro que soy mayor de 18 años.
+          </span>
+        </label>
+        {errors.acceptTerms && (
+          <p role="alert" className="text-xs text-primary">
+            <span className="font-medium">{errors.acceptTerms.message}</span>
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-1">
         <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
@@ -169,7 +198,10 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
           />
           <span>
-            Acepto el uso de mis datos personales conforme a la politica de privacidad.
+            Autorizo el tratamiento de mis datos personales según la{" "}
+            <Link href="/privacidad" target="_blank" className="font-medium text-primary hover:underline">política de privacidad</Link>
+            , incluida su transmisión a Google (Firebase) en Estados Unidos y su uso para prevenir y gestionar
+            incumplimientos de la ley y atender requerimientos de autoridades y reclamos de terceros.
           </span>
         </label>
         {errors.acceptPersonalData && (
@@ -189,12 +221,13 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "w-full rounded-full bg-gradient-to-br from-[#E63946] to-[#9B0A26] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
+          "flex w-full items-center justify-center gap-2 rounded-full bg-[#E63946] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
           !isValid || isPending
             ? "cursor-not-allowed opacity-50"
-            : "hover:from-[#FF4D5A] hover:to-[#B30E30]",
+            : "hover:bg-[#9B0A26]",
         )}
       >
+        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
         {isPending ? "Creando cuenta..." : "Crear cuenta"}
       </button>
     </form>

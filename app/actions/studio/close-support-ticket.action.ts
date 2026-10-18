@@ -1,8 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getPremiumSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 
 interface ActionResult {
@@ -20,13 +19,13 @@ export async function closeSupportTicketAction(
   }
 
   try {
-    const tokens = await getTokens(await cookies(), authConfig);
-    if (!tokens) {
+    const uid = await getPremiumSessionUid();
+    if (!uid) {
       return { success: false, error: "No hay sesión activa." };
     }
 
     const { studioService } = createServerContainer();
-    await studioService.closeSupportTicket(ticketId, tokens.decodedToken.uid, trimmed);
+    await studioService.closeSupportTicket(ticketId, uid, trimmed);
     return { success: true };
   } catch (error) {
     console.error("[CLOSE SUPPORT TICKET ERROR]", error);

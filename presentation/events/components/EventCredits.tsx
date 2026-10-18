@@ -1,10 +1,12 @@
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
+import { publicCredits } from "@/domain/entities/events/publicCredits";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
 type CollaboratorsData = Record<
   string,
-  { displayName: string; photoURL?: string; role: "editor" | "viewer" | "credit" }
+  { displayName: string; photoURL?: string; role: TeamRole }
 >;
 
 /**
@@ -20,7 +22,7 @@ export function EventCredits({
   className?: string;
   compact?: boolean;
 }) {
-  const list = Object.entries(collaboratorsData ?? {});
+  const list = Object.entries(publicCredits(collaboratorsData));
   if (list.length === 0) return null;
 
   if (compact) {

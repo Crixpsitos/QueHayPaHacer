@@ -1,8 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getPremiumSessionUid } from "@/app/actions/_session";
+
 import { createServerContainer } from "@/infraestructure/di/container";
 
 interface CreateSupportTicketPayload {
@@ -30,13 +29,13 @@ export async function createSupportTicketAction(
   }
 
   try {
-    const tokens = await getTokens(await cookies(), authConfig);
-    if (!tokens) {
+    const uid = await getPremiumSessionUid();
+    if (!uid) {
       return { success: false, error: "No hay sesión activa." };
     }
 
     const { studioService } = createServerContainer();
-    const id = await studioService.createSupportTicket(tokens.decodedToken.uid, {
+    const id = await studioService.createSupportTicket(uid, {
       subject,
       category: payload.category,
       description,

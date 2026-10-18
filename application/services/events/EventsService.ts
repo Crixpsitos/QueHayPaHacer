@@ -3,7 +3,7 @@ import { IEventsRepository } from "@/domain/repository/events/IEventsRepository"
 import { IStorageService } from "@/domain/services/storage/IStorageService";
 
 export class EventsService {
-  private static readonly PROFESSIONAL_AUTHOR_SCORE_BOOST = 10;
+  private static readonly PREMIUM_AUTHOR_SCORE_BOOST = 10;
 
   constructor(private readonly eventsRepository: IEventsRepository, private readonly storageService: IStorageService) {}
 
@@ -12,9 +12,9 @@ export class EventsService {
     return newEvent;
   }
 
-  async publishEvent(event: Partial<Events>, options?: { isProfessionalAuthor?: boolean }): Promise<Events> {
+  async publishEvent(event: Partial<Events>, options?: { isPremiumAuthor?: boolean }): Promise<Events> {
     if(!event.id) {
-      const boost = options?.isProfessionalAuthor ? EventsService.PROFESSIONAL_AUTHOR_SCORE_BOOST : 0;
+      const boost = options?.isPremiumAuthor ? EventsService.PREMIUM_AUTHOR_SCORE_BOOST : 0;
       const eventWithScore: Events = {
         ...event,
         analytics: {
@@ -33,6 +33,38 @@ export class EventsService {
 
   async updateEvent(event: Partial<Events>): Promise<void> {
     await this.eventsRepository.updateEvent(event as Events);
+  }
+
+  async applyModerationDecision(
+    eventId: string,
+    decision: "approved" | "rejected",
+    reviewer: string,
+    reason?: string,
+  ): Promise<{ event: Events; wasPrePublication: boolean }> {
+    const event = await this.eventsRepository.findById(eventId);
+    if (!event) throw new Error("Event not found");
+    if (event.moderationStatus !== "pending" && event.moderationStatus !== "pending_audit") {
+      throw new Error("Event is not awaiting moderation");
+    }
+    if (decision === "rejected" && !reason?.trim()) {
+      throw new Error("A rejection reason is required");
+    }
+
+    const reviewedAt = new Date();
+    const wasPrePublication = event.moderationMode === "pre_publication";
+    const moderatedEvent: Events = {
+      ...event,
+      status: decision === "approved" ? "published" : "rejected",
+      moderationStatus: decision,
+      rejectionReason: decision === "rejected" ? reason!.trim() : null,
+      reviewedAt,
+      reviewedBy: reviewer,
+      publishedAt: decision === "approved" ? (event.publishedAt ?? reviewedAt) : event.publishedAt,
+      updatedAt: reviewedAt,
+    };
+
+    await this.eventsRepository.updateEvent(moderatedEvent);
+    return { event: moderatedEvent, wasPrePublication };
   }
   async deleteEvent(id: string): Promise<void> {
     await this.eventsRepository.deleteEvent(id);
@@ -115,6 +147,11 @@ export class EventsService {
     return this.eventsRepository.findBySlug(slug);
   }
 
+  /** Para el sitemap: eventos publicados y vigentes. */
+  getSitemapEntries(limit = 1000) {
+    return this.eventsRepository.findSitemapEntries(limit);
+  }
+
   async getAllEvents(): Promise<string[]> {
     return this.eventsRepository.findAllPublished();
   }
@@ -130,6 +167,11 @@ export class EventsService {
   /** Página por cursor de una categoría (por docId). Devuelve IDs + nextCursor. */
   async getEventsByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null) {
     return this.eventsRepository.findByCategoryPaginated(categoryId, categorySlug, limit, cursor);
+  }
+
+  /** Página por cursor de "Todos los eventos". Devuelve IDs + nextCursor. */
+  async getAllEventsPaginated(limit: number, cursor: string | null) {
+    return this.eventsRepository.findAllPaginated(limit, cursor);
   }
 
   async syncSiteIds(eventId: string, siteIds: string[]): Promise<void> {

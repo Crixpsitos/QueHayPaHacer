@@ -3,6 +3,8 @@ import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 
+const FEATURED_LIMIT = 8
+
 export class SitesFirebaseRepository
   extends FirebaseBaseRepository
   implements ISitesFirebaseRepository
@@ -53,14 +55,26 @@ export class SitesFirebaseRepository
       .where("isActive", "==", true)
   }
 
+  /**
+   * Destacados: los mejor puntuados, sin umbral. Antes exigía score ≥ 20 y, como el score casi nunca llegaba,
+   * la sección salía vacía. El score ya incluye el bono por ficha completa (domain/entities/sites/siteRanking).
+   */
   async findFeaturedSiteIds(): Promise<string[]> {
     const snap = await this.publishedSites
-      .where("analytics.score", ">=", 20)
       .orderBy("analytics.score", "desc")
-      .limit(10)
+      .limit(FEATURED_LIMIT)
       .select()
       .get()
     return snap.docs.map((d) => d.id)
+  }
+
+  async findSitemapEntries(limit: number) {
+    const snap = await this.publishedSites.select("slug", "updatedAt").limit(limit).get()
+    return snap.docs.map((d) => ({
+      id: d.id,
+      slug: (d.get("slug") as string | undefined) ?? "",
+      updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
+    }))
   }
 
   async findAllSiteIds(): Promise<string[]> {
@@ -72,16 +86,14 @@ export class SitesFirebaseRepository
     return snap.docs.map((d) => d.id)
   }
 
-  async findSiteIdsByCategory(
-    category: string,
+  /** Página por cursor `score|id` de una consulta ya filtrada (publicados + lo que se agregue). */
+  private async pageByScore(
+    base: FirebaseFirestore.Query,
     limit: number,
     cursor: string | null,
   ): Promise<PaginatedSiteIds> {
-    let query = this.publishedSites
-      .where("category", "==", category)
-      .orderBy("analytics.score", "desc")
-      // Tiebreaker documentId → cursor estable sin índice extra (score con ties).
-      .orderBy(FieldPath.documentId(), "desc")
+    // Tiebreaker documentId → cursor estable sin índice extra (score con ties).
+    let query = base.orderBy("analytics.score", "desc").orderBy(FieldPath.documentId(), "desc")
 
     if (cursor) {
       const sep = cursor.indexOf("|")
@@ -99,6 +111,14 @@ export class SitesFirebaseRepository
         : null
 
     return { ids: page.map((d) => d.id), nextCursor }
+  }
+
+  findAllSiteIdsPage(limit: number, cursor: string | null): Promise<PaginatedSiteIds> {
+    return this.pageByScore(this.publishedSites, limit, cursor)
+  }
+
+  findSiteIdsByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteIds> {
+    return this.pageByScore(this.publishedSites.where("category", "==", category), limit, cursor)
   }
 
   async findBySlug(slug: string): Promise<FirebaseSiteDto | null> {

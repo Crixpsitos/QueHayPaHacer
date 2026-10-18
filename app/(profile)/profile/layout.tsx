@@ -1,17 +1,13 @@
 import { SettingsCenter } from "@/presentation/profile/components/SettingsCenter";
-import { ProfileLayoutHeader } from "@/app/components/layout/profile/ProfileLayoutHeader";
+import { Suspense } from "react";
 
-export default function EventDetailLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ProfileLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen">
-      <ProfileLayoutHeader />
-      {/* SettingsCenter solo monta el Drawer; el trigger vive en ProfileLayoutHeader */}
-      <SettingsCenter hideTrigger />
-      <main>{children}</main>
-    </div>
+    <>
+      <Suspense fallback={null}>
+        <SettingsCenter hideTrigger />
+      </Suspense>
+      {children}
+    </>
   );
 }

@@ -12,6 +12,10 @@ export class CampaignService {
     return this.campaignRepository.findAll();
   }
 
+  recordStats(id: string, views: number, clicks: number, day: string): Promise<void> {
+    return this.campaignRepository.recordStats(id, views, clicks, day);
+  }
+
   async getActiveCampaigns(): Promise<Campaign[]> {
     return this.campaignRepository.getActiveCampaigns();
   }

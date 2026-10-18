@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Home, LayoutDashboard, LogOut, MapPin, Settings, User as UserIcon } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
+import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.action";
+import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
+import { getPendingSiteSuggestionsCountAction } from "@/app/actions/site-suggestions/get-pending-site-suggestions-count.action";
 import { logoutAction } from "@/app/actions/auth/logout.action";
+import { clearClientCache } from "@/app/lib/clientCache/clientCache";
+import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { cn } from "@/app/lib/utils/cn";
 import { Button } from "../../ui/button/button";
@@ -35,6 +41,10 @@ function AccountTriggerSkeleton({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function InviteDot() {
+  return <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-[#E63946]" />;
+}
+
 export function NavbarAccountMenu({
   compact = false,
   showHome = false,
@@ -44,39 +54,67 @@ export function NavbarAccountMenu({
 } = {}) {
   const router = useRouter();
   const { user, isHydrating, setUser } = useAuth();
+  const [rawPending, setPendingInvites] = useState(0);
+  const [rawSuggestions, setPendingSuggestions] = useState(0);
+  const uid = user?.uid;
+  const [rawHasTeam, setHasTeam] = useState(false);
+  const isPremiumPlan = user?.profile?.plan === "premium";
+  const hasTeamEvents = uid && !isPremiumPlan ? rawHasTeam : false;
+  const pendingInvites = uid ? rawPending : 0; // logout oculta el punto sin setState en efecto
+  const pendingSuggestions = uid ? rawSuggestions : 0;
+  const pendingAlerts = pendingInvites + pendingSuggestions; // el punto del botón avisa de ambos
+
+  // Conteo cacheado en servidor por usuario (ver la action); se refresca al abrir el menú.
+  const refreshInvites = () => {
+    void getPendingInvitationsCountAction().then(setPendingInvites).catch(() => {});
+    void getPendingSiteSuggestionsCountAction().then(setPendingSuggestions).catch(() => {});
+    // Sin Premium propio: el acceso a "Eventos del equipo" depende de ser miembro de algún evento.
+    if (!isPremiumPlan) void hasTeamEventsAction().then(setHasTeam).catch(() => {});
+  };
+  useEffect(() => {
+    if (uid) refreshInvites();
+  }, [uid]);
 
   if (isHydrating) {
     return <AccountTriggerSkeleton compact={compact} />;
   }
 
-  const accountTypeLabel = user?.profile?.accountType
-    ? user.profile.accountType.toLowerCase().replace(/_/g, " ")
-    : "Cuenta personal";
-
-  const displayName = user?.displayName ?? user?.profile?.username ?? "Tu cuenta";
-
-  // El acceso al Estudio del Organizador es solo para cuentas profesionales.
-  const isProfessional = user?.customClaims?.role === "professional";
+  const isPremium = user?.profile?.plan === "premium";
+  const isCreatorVerified = user?.profile?.creatorVerified === true;
+  const participationLabel = user?.profile?.participation === "creator"
+    ? "Creador"
+    : "Consumidor";
+  const planLabel = isPremium ? "Premium" : "Básico";
+  const fullName = `${user?.profile?.firstName ?? ""} ${user?.profile?.lastName ?? ""}`.trim();
+  const username = user?.profile?.username ?? user?.displayName;
+  const displayName = fullName || user?.displayName || username || "Tu cuenta";
+  const avatarUrl = user?.profile?.photoURL ?? user?.photoURL;
+  const avatarFallback = displayName[0]?.toUpperCase();
 
   const handleLogout = async () => {
+    await clearClientCache(); // no dejar datos de la persona en este equipo
     setUser(null);
+    // Cerrar también la sesión del SDK cliente; si no, onIdTokenChanged puede restaurar la cookie.
+    await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
+    await clearClientCache(); // otra vez: barre lo que una petición en vuelo escribió mientras tanto
     router.refresh();
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => open && uid && refreshInvites()}>
       <DropdownMenuTrigger asChild>
         {compact ? (
           <Button
             variant="outline"
             aria-label="Abrir menu de cuenta"
-            className="size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
+            className="relative size-11 justify-center rounded-full border-border bg-background/95 p-0 shadow-md backdrop-blur"
           >
+            {pendingAlerts > 0 && <InviteDot />}
             <Avatar className="size-9">
-              {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
-                {user?.displayName?.[0]?.toUpperCase() ?? (
+                {avatarFallback ?? (
                   <UserIcon className="size-5" aria-hidden="true" />
                 )}
               </AvatarFallback>
@@ -96,18 +134,21 @@ export function NavbarAccountMenu({
           <Button
             variant="outline"
             aria-label="Abrir menu de cuenta"
-            className="h-9 gap-1.5 pl-1.5 pr-2"
+            className="relative h-9 gap-1.5 pl-1.5 pr-2"
           >
             <Avatar size="sm">
-              {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={`Foto de perfil de ${displayName}`} /> : null}
               <AvatarFallback>
-                {user?.displayName?.[0]?.toUpperCase() ?? (
+                {avatarFallback ?? (
                   <UserIcon className="size-3.5" aria-hidden="true" />
                 )}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden max-w-28 truncate text-sm sm:inline">{displayName}</span>
+            <span className="hidden max-w-28 truncate text-sm sm:inline md:hidden lg:inline">
+              {username ? `@${username}` : displayName}
+            </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            {pendingAlerts > 0 && <InviteDot />}
           </Button>
         )}
       </DropdownMenuTrigger>
@@ -116,11 +157,22 @@ export function NavbarAccountMenu({
         <DropdownMenuLabel className="pb-2 font-normal">
           <div className="flex flex-col gap-0.5">
             <span className="truncate font-semibold text-foreground">
-              {user?.profile?.username ? `@${user.profile.username}` : displayName}
+              {displayName}
             </span>
-            <span className="truncate text-xs capitalize text-muted-foreground">
-              {accountTypeLabel}
+            {username && (
+              <span className="truncate text-xs text-muted-foreground">
+                @{username}
+              </span>
+            )}
+            <span className="mt-1 truncate text-xs text-muted-foreground">
+              {participationLabel} · {planLabel}
             </span>
+            {isCreatorVerified && (
+              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                <BadgeCheck className="size-3.5" aria-hidden="true" />
+                Creador verificado por QHPA
+              </span>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -140,7 +192,7 @@ export function NavbarAccountMenu({
         {!user && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/login">Iniciar sesion</Link>
+              <Link href="/login">Iniciar sesión</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/register">Crear cuenta</Link>
@@ -157,18 +209,71 @@ export function NavbarAccountMenu({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link href="/mis-eventos" className={cn("flex items-center gap-2")}>
+                <CalendarDays className="size-4" aria-hidden="true" />
+                Mis eventos
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
+                <Ticket className="size-4" aria-hidden="true" />
+                Mis inscripciones
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/mis-invitaciones" className={cn("flex items-center gap-2")}>
+                <MailPlus className="size-4" aria-hidden="true" />
+                Mis invitaciones
+                {pendingInvites > 0 && (
+                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                    <span className="sr-only">{pendingInvites} pendientes: </span>
+                    {pendingInvites}
+                  </span>
+                )}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/sites" className={cn("flex items-center gap-2")}>
                 <MapPin className="size-4" aria-hidden="true" />
                 Mis sitios
               </Link>
             </DropdownMenuItem>
-            {isProfessional && (
+            {pendingSuggestions > 0 && (
+              <DropdownMenuItem asChild>
+                <Link href="/sites?sugerencias=1" className={cn("flex items-center gap-2")}>
+                  <MessageSquareDiff className="size-4" aria-hidden="true" />
+                  Sugerencias recibidas
+                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                    <span className="sr-only">{pendingSuggestions} pendientes: </span>
+                    {pendingSuggestions}
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {isPremium ? (
               <DropdownMenuItem asChild>
                 <Link href="/studio" className={cn("flex items-center gap-2")}>
                   <LayoutDashboard className="size-4" aria-hidden="true" />
                   Ir a estudio
                 </Link>
               </DropdownMenuItem>
+            ) : (
+              <>
+              {hasTeamEvents && (
+                <DropdownMenuItem asChild>
+                  <Link href="/studio/events" className={cn("flex items-center gap-2")}>
+                    <LayoutDashboard className="size-4" aria-hidden="true" />
+                    Eventos del equipo
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem asChild>
+                <Link href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
+                  <Sparkles className="size-4" aria-hidden="true" />
+                  Mejorar a Premium
+                </Link>
+              </DropdownMenuItem>
+              </>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

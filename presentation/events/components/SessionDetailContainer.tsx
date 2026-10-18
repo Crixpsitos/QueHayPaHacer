@@ -1,20 +1,16 @@
 import { notFound } from "next/navigation";
-import { after } from "next/server";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { createServerContainer } from "@/infraestructure/di/container";
+import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetchers";
+import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
+import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "@/presentation/events/mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import type { LinkedSiteInfo } from "./detail/EventPlace";
 import {
   fetchEventDetailById,
   fetchEventDetailBySlug,
   fetchEventSessions,
-  fetchUserLiked,
-  fetchUserRegistered,
 } from "../data/eventDetailFetchers";
-import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
 
 interface SessionDetailContainerProps {
   /** Slug o id del evento padre. */
@@ -25,8 +21,8 @@ interface SessionDetailContainerProps {
 
 /**
  * Detalle público de una sesión. Vive fuera de `page.tsx` para poder leerse
- * dentro del <Suspense> de `ServerBoundary`: lee cookies (datos sin cachear) y
- * con Cache Components eso fuera de un boundary rompe el prerender.
+ * dentro del <Suspense> de `ServerBoundary`. Igual para todos (cacheable en el CDN): lo de la persona
+ * (like, inscripción a esta fecha, dueño, equipo) lo pide el cliente a /api/events/[id]/viewer.
  */
 export async function SessionDetailContainer({
   eventId,
@@ -47,7 +43,7 @@ export async function SessionDetailContainer({
     sessions.find((s) => s.id === sessionRef);
   if (!session || session.status !== "published") return notFound();
 
-  const parentVM = EventViewModelMapper.toViewModel(parent);
+  const parentVM = { ...EventViewModelMapper.toViewModel(parent), ...publicTeam(parent.collaborators, parent.collaboratorsData) };
   const sessionVM = SessionViewModelMapper.toViewModel(
     session,
     parentVM.mainImage?.url,
@@ -55,59 +51,23 @@ export async function SessionDetailContainer({
   );
   const mergedVM = SessionViewModelMapper.toEventViewModel(sessionVM, parentVM);
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  const userId = tokens?.decodedToken?.uid;
-
-  const [initialLiked, initialRegistered] =
-    userId && parent.id
-      ? await Promise.all([
-          // El like es del EVENTO (comparte caché con el detalle del evento);
-          // el registro sí es de esta fecha.
-          fetchUserLiked(parent.id, userId),
-          fetchUserRegistered(parent.id, userId, session.id),
-        ])
-      : [false, false];
-
-  const isOwner = Boolean(userId && parent.author?.id && userId === parent.author.id);
-
-  let isProfessionalOwner = false;
-  if (isOwner && userId) {
-    const { userService } = createServerContainer();
-    const owner = await userService.getUserById(userId);
-    isProfessionalOwner = owner?.accountType === "professional";
-  }
-
   // Sitio vinculado (si la sesión tiene location.siteId)
-  let linkedSite: { id: string; slug: string; name: string; category: string; address: string; coverUrl: string; isOpen: boolean; openLabel: string } | undefined;
+  let linkedSite: LinkedSiteInfo | undefined;
   const siteId = session.location?.siteId;
   if (siteId) {
-    const { sitesService } = createServerContainer();
-    const site = await sitesService.getSiteDetailById(siteId);
+    // Solo sitios públicos (no borradores/rechazados), cacheado y con hora de Colombia.
+    const site = await fetchPublicSiteDetail(siteId);
     if (site) {
-      const DAY_MAP: Record<number, string> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
-      const now = new Date();
-      const sched = (site.schedule as Record<string, { open: string; close: string; closed: boolean }>)?.[DAY_MAP[now.getDay()]];
-      const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
-      const cur = now.getHours() * 60 + now.getMinutes();
-      const isOpen = !!(sched && !sched.closed && cur >= toMins(sched.open) && cur < toMins(sched.close));
-      const openLabel = !sched ? "Horario no disponible" : sched.closed ? "Cerrado hoy" : isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}`;
-      linkedSite = { id: site.id, slug: site.slug, name: site.name, category: site.category, address: site.address, coverUrl: site.coverUrl, isOpen, openLabel };
+      const { isOpen, label } = getSiteOpenStatus(site.schedule);
+      linkedSite = { id: site.id, slug: site.slug, name: site.name, category: site.category, address: site.address, coverUrl: site.coverUrl, isOpen, openLabel: label ?? "Horario no disponible" };
     }
   }
-
-  after(async () => {
-    await recordEventViewAction(parent.id, userId);
-  });
 
   const parentRef = parent.slug || parent.id;
 
   return (
     <EventDetailClient
       event={mergedVM}
-      initialLiked={initialLiked}
-      initialRegistered={initialRegistered}
-      isOwner={isOwner}
-      isProfessionalOwner={isProfessionalOwner}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       backLink={{ href: `/eventos/${parentRef}`, label: parent.title }}
       editSessionHref={`/eventos/${parent.id}/edit?step=sessions`}

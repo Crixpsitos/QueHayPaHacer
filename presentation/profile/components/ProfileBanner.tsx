@@ -26,6 +26,7 @@ import {
   resolveVariant,
   type BannerVariant,
 } from "../lib/bannerVariants";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -151,6 +152,7 @@ export function ProfileBanner({
       );
 
       const result = await updateBannerAction({ uid, bannerUrl: publicUrl, bannerPath: path });
+      void invalidateMyData();
       if (!result.success) throw new Error(result.error ?? "No se pudo guardar la portada.");
 
       // Preview optimista con el blob recortado
@@ -181,6 +183,7 @@ export function ProfileBanner({
 
     const deletePromise = (async () => {
       const result = await deleteBannerAction(uid);
+      void invalidateMyData();
       if (!result.success) throw new Error(result.error ?? "No se pudo eliminar la portada.");
       setLocalUrl(null);
       await refreshUser();
@@ -247,7 +250,7 @@ export function ProfileBanner({
                     type="button"
                     aria-label="Acciones de portada"
                     disabled={isBusy}
-                    className="inline-flex size-9 items-center justify-center rounded-lg border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-all hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
+                    className="inline-flex size-9 items-center justify-center rounded-lg border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
                   >
                     {isBusy ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -288,7 +291,7 @@ export function ProfileBanner({
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isBusy}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-black/30 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition-all hover:bg-red-600/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-black/30 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-red-600/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
                   aria-label="Eliminar portada"
                 >
                   {isDeleting ? (
@@ -303,7 +306,7 @@ export function ProfileBanner({
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={isBusy}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-black/30 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-black/30 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60"
                 aria-label="Cambiar portada"
               >
                 {isUploading ? (

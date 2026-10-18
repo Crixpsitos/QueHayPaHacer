@@ -14,32 +14,41 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/actions/auth/logout.action";
+import { clearClientCache } from "@/app/lib/clientCache/clientCache";
+import { createClientContainer } from "@/infraestructure/di/container.client";
+import { SITE_NAME } from "@/app/lib/site";
 import { getActiveSectionLabel } from "../lib/navigation";
 
 interface StudioHeaderProps {
   displayName: string;
   email?: string;
   photoURL?: string;
+  /** Miembro de equipo sin Premium propio: solo tiene "Eventos del equipo". */
+  limited?: boolean;
 }
 
-export function StudioHeader({ displayName, email, photoURL }: StudioHeaderProps) {
+export function StudioHeader({ displayName, email, photoURL, limited = false }: StudioHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setUser } = useAuth();
-  const section = getActiveSectionLabel(pathname);
+  const section = getActiveSectionLabel(pathname, limited);
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const handleLogout = async () => {
+    await clearClientCache(); // no dejar datos de la persona en este equipo
     setUser(null);
+    // Cerrar también el SDK cliente (autenticado con custom token), no solo la cookie.
+    await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
+    await clearClientCache(); // otra vez: barre lo que una petición en vuelo escribió mientras tanto
     router.push("/");
   };
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <Link href="/studio" className="shrink-0 text-base font-bold tracking-tight text-slate-900">
-          QueHayPaHacer
+        <Link href={limited ? "/studio/events" : "/studio"} className="shrink-0 font-heading text-base font-bold tracking-tight text-zinc-950">
+          {SITE_NAME}
         </Link>
         <span className="hidden items-center gap-1.5 text-sm text-slate-400 sm:flex">
           <ChevronRight className="h-4 w-4" />
@@ -66,10 +75,10 @@ export function StudioHeader({ displayName, email, photoURL }: StudioHeaderProps
         </Link>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-500">
+          <DropdownMenuTrigger className="rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary">
             <Avatar className="h-9 w-9 border border-gray-200">
               <AvatarImage src={photoURL} alt={displayName} />
-              <AvatarFallback className="bg-indigo-50 text-xs font-semibold text-indigo-700">
+              <AvatarFallback className="bg-zinc-100 text-xs font-semibold text-zinc-700">
                 {initials}
               </AvatarFallback>
             </Avatar>

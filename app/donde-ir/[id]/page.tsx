@@ -5,18 +5,11 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { SiteCollectionContent } from "@/presentation/sites/components/discovery/SiteCollectionContent";
 import { SiteDetailContainer } from "@/presentation/sites/components/detail/SiteDetailContainer";
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
-import { createServerContainer } from "@/infraestructure/di/container";
-import { SITE_NAME } from "@/app/lib/site";
-import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
+import { fetchPublicSiteDetail } from "@/presentation/sites/data/siteDetailFetchers";
+import { DEFAULT_OG_IMAGE, SITE_NAME } from "@/app/lib/site";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-async function getSiteDetail(id: string): Promise<SiteDetail | null> {
-  const { sitesService } = createServerContainer();
-  // Intenta por slug primero (URL canónica), luego por ID de Firestore
-  return (await sitesService.getSiteDetailBySlug(id)) ?? sitesService.getSiteDetailById(id);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -29,18 +22,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: def.metaTitle,
       description: def.metaDescription,
       alternates: { canonical: url },
-      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
+      openGraph: { title: def.metaTitle, description: def.metaDescription, url, type: "website", siteName: SITE_NAME, locale: "es_CO", images: [DEFAULT_OG_IMAGE] },
     };
   }
 
-  const site = await getSiteDetail(id);
+  const site = await fetchPublicSiteDetail(id);
   if (!site) return { robots: { index: false, follow: false } };
 
   const siteUrl = `/donde-ir/${site.slug || id}`;
   const description = site.description || `Descubre ${site.name} en Ibagué: horarios, ubicación y eventos.`;
-  const images = site.coverUrl
-    ? [{ url: site.coverUrl, width: 1200, height: 630, alt: site.name }]
-    : [];
+  // JPEG ligero de la portada (WebP/PNG pesados no se ven en WhatsApp): ver app/og/site/[id].
+  const images = [{ url: `/og/site/${site.id}`, width: 1200, height: 630, alt: site.name }];
 
   return {
     title: site.name,
@@ -59,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: site.name,
       description,
-      ...(images[0] ? { images: [images[0].url] } : {}),
+      images: [images[0].url],
     },
   };
 }
@@ -91,8 +83,8 @@ async function DondeIrDetail({ params }: PageProps) {
     );
   }
 
-  // Detalle de sitio individual — buscar por slug primero, luego por ID
-  const site = await getSiteDetail(id);
+  // Detalle de sitio individual (solo públicos) — por slug primero, luego por ID
+  const site = await fetchPublicSiteDetail(id);
   if (!site) notFound();
 
   // Pasar el Firestore ID real (no el slug del param) al contenedor

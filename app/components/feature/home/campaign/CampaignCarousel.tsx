@@ -1,344 +1,119 @@
 "use client";
-import {
-  Carousel,
-  CarouselApi,
-  CarouselContent,
-  CarouselItem,
-} from "@/app/components/ui/carousel";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { ResponsivePicture } from "@/app/components/ui/ResponsivePicture";
-import { Button } from "@/app/components/ui/button/button";
-import { ChevronDown, ChevronUp, Hand, Sparkles } from "lucide-react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, Hand } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem } from "@/app/components/ui/carousel";
 import { cn } from "@/app/lib/utils/cn";
-import { ctaRegistry } from "@/application/cta/cta-registry";
-import { CTA } from "@/application/cta/types";
-import { useRouter } from "next/navigation";
-import { CampaignViewModel } from "@/presentation/campaing/view-models/CampaingViewModel";
+import { trackCampaign } from "@/app/lib/campaignTrack";
+import { CampaignDots } from "./CampaignDots";
+import { useCampaignCarousel } from "./useCampaignCarousel";
 
-interface CampaignCarouselContainerProps {
-  campaings: CampaignViewModel[];
+interface CampaignCarouselProps {
+  /** Slides ya renderizados en el servidor (ver CampaignSlide). */
+  slides: { id: string; node: ReactNode }[];
 }
 
-const CampaignCarouselComponent = ({
-  campaings,
-}: CampaignCarouselContainerProps) => {
-  const carouselData = campaings;
-  const DOTS_GROUP_SIZE = 4;
+const arrow =
+  "group hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/50 active:scale-95 sm:flex lg:h-12 lg:w-12";
 
+const CampaignCarouselComponent = ({ slides }: CampaignCarouselProps) => {
+  const { setApi, currentIndex, totalItems, showSwipeHint, scrollTo, scrollPrev, scrollNext } = useCampaignCarousel();
+  const ids = slides.map((s) => s.id);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-  const router = useRouter();
-
-  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
-  const [showSwipeHint, setShowSwipeHint] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-
+  // Analítica: una vista por campaña y sesión, solo cuando el banner se ve (≥50%) y la pestaña está activa.
   useEffect(() => {
-    if (!carouselApi) return;
-
-    const updateCarouselState = () => {
-      setCurrentIndex(carouselApi.selectedScrollSnap());
-      setTotalItems(carouselApi.scrollSnapList().length);
-    };
-    updateCarouselState();
-
-    carouselApi.on("select", updateCarouselState);
-
-    return () => {
-      carouselApi.off("select", updateCarouselState);
-    };
-  }, [carouselApi]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 639px)");
-    const handleViewportChange = () => {
-      setIsMobile(mediaQuery.matches);
-      setShowSwipeHint(mediaQuery.matches);
-    };
-
-    handleViewportChange();
-    mediaQuery.addEventListener("change", handleViewportChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleViewportChange);
-    };
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.5 });
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
-
   useEffect(() => {
-    if (!carouselApi || !isMobile || !showSwipeHint) return;
+    const id = ids[currentIndex];
+    if (!visible || !id) return;
+    const key = `qhpa:banner-view:${id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {}
+    trackCampaign(id, "view");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, currentIndex]);
 
-    const hideHint = () => setShowSwipeHint(false);
-    const hintTimeout = setTimeout(hideHint, 3000);
-
-    carouselApi.on("select", hideHint);
-    carouselApi.on("pointerDown", hideHint);
-
-    return () => {
-      clearTimeout(hintTimeout);
-      carouselApi.off("select", hideHint);
-      carouselApi.off("pointerDown", hideHint);
-    };
-  }, [carouselApi, isMobile, showSwipeHint]);
-
-  const scrollToIndex = useCallback(
-    (index: number) => {
-      carouselApi?.scrollTo(index);
-      setShowSwipeHint(false);
-    },
-    [carouselApi],
-  );
-
-  const scrollPrev = useCallback(() => {
-    carouselApi?.scrollPrev();
-    setShowSwipeHint(false);
-  }, [carouselApi]);
-
-  const scrollNext = useCallback(() => {
-    carouselApi?.scrollNext();
-    setShowSwipeHint(false);
-  }, [carouselApi]);
-
-  const getProgressiveDotStyle = useCallback(
-    (index: number) => {
-      if (totalItems <= 1) {
-        return "h-2 w-2 opacity-100";
-      }
-
-      const rawDistance = Math.abs(currentIndex - index);
-      const loopDistance = Math.min(rawDistance, totalItems - rawDistance);
-
-      if (loopDistance === 0) {
-        return "h-5 w-2.5 opacity-100";
-      }
-
-      if (loopDistance === 1) {
-        return "h-3.5 w-2 opacity-80";
-      }
-
-      if (loopDistance === 2) {
-        return "h-2.5 w-2 opacity-55";
-      }
-
-      return "h-2 w-2 opacity-35";
-    },
-    [currentIndex, totalItems],
-  );
-
-  const visibleDots = useMemo(() => {
-    const groupStart = Math.floor(currentIndex / DOTS_GROUP_SIZE) * DOTS_GROUP_SIZE;
-    const groupEnd = Math.min(groupStart + DOTS_GROUP_SIZE, carouselData.length);
-
-    return carouselData.slice(groupStart, groupEnd).map((campaign, offset) => ({
-      campaign,
-      index: groupStart + offset,
-    }));
-  }, [carouselData, currentIndex, DOTS_GROUP_SIZE]);
-
-  const handleExecuteCta = useCallback(
-    (cta: CTA) => {
-      const registry = ctaRegistry({ router });
-
-      switch (cta.type) {
-        case "navigate":
-          registry.navigate(cta.entity);
-          return;
-        case "external_link":
-          registry.external_link(cta.entity);
-          return;
-        default:
-          return;
-      }
-    },
-    [router],
-  );
+  // Clics en los botones del slide (enlaces con data-campaign-id).
+  const onClickCapture = (e: React.MouseEvent) => {
+    const id = (e.target as HTMLElement).closest<HTMLElement>("[data-campaign-id]")?.dataset.campaignId;
+    if (id) trackCampaign(id, "click");
+  };
 
   return (
-    <div className="relative h-full w-full">
-      <Carousel
-        orientation="horizontal"
-        opts={{ loop: true, align: "start" }}
-        setApi={setCarouselApi}
-        className="h-full w-full"
-      >
-        <CarouselContent className="h-full">
-          {carouselData.map((campaign, index) => {
-            const isActive = currentIndex === index;
-            return (
-              <CarouselItem
-                key={campaign.id}
-                className="relative h-full overflow-hidden isolate"
+    <div ref={rootRef} onClickCapture={onClickCapture} className="relative h-full w-full">
+      {/* Vertical en todos los tamaños; sin gutter (mt-0/pt-0) para que no se asome el slide siguiente. */}
+      <Carousel orientation="vertical" opts={{ loop: true, align: "start" }} setApi={setApi} className="h-full w-full">
+        <CarouselContent className="mt-0 h-full">
+          {slides.map((slide, index) => (
+            <CarouselItem
+              key={slide.id}
+              data-active={currentIndex === index}
+              className="group/slide relative h-full overflow-hidden isolate pt-0"
+            >
+              {slide.node}
+              {/* Indicador numérico — solo en sm+ */}
+              <div
+                className={cn(
+                  "absolute left-4 top-4 z-20 hidden transition-all duration-500 sm:block sm:left-6 sm:top-6 lg:left-8 lg:top-8",
+                  currentIndex === index ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4",
+                )}
               >
-                {/* Imagen absoluta para llenar el container independientemente del height-chain de Embla */}
-                <div className="absolute inset-0">
-                  <ResponsivePicture
-                    desktop={campaign.images.desktop}
-                    tablet={campaign.images.tablet}
-                    mobile={campaign.images.mobile}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    aspectRatio="auto"
-                    pictureClassName="h-full"
-                  />
+                <div className="flex items-center gap-2 rounded-full bg-black/40 px-4 py-2 backdrop-blur-md">
+                  <span className="text-sm font-medium text-white">{String(currentIndex + 1).padStart(2, "0")}</span>
+                  <span className="h-px w-3 bg-white/40" />
+                  <span className="text-sm text-white/60">{String(totalItems).padStart(2, "0")}</span>
                 </div>
-                <div className="absolute inset-0 z-10 bg-linear-to-t from-black/95 via-black/50 to-transparent" />
-                {/* Indicador numérico — solo en sm+ */}
-                <div
-                  className={cn(
-                    "absolute left-4 top-4 z-20 hidden transition-all duration-500 sm:block sm:left-6 sm:top-6 lg:left-8 lg:top-8",
-                    isActive
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 -translate-y-4",
-                  )}
-                >
-                  <div className="flex items-center gap-2 rounded-full bg-black/40 px-4 py-2 backdrop-blur-md">
-                    <span className="text-sm font-medium text-white">
-                      {String(currentIndex + 1).padStart(2, "0")}
-                    </span>
-                    <span className="h-px w-3 bg-white/40" />
-                    <span className="text-sm text-white/60">
-                      {String(totalItems).padStart(2, "0")}
-                    </span>
-                  </div>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 z-20 p-6 pb-14 sm:p-5 sm:pb-6 sm:pr-6 lg:p-6 lg:pb-7 lg:pr-8">
-                  <div className="flex flex-col justify-end gap-3 sm:min-h-[240px] lg:min-h-0 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-                    <div className="max-w-xl sm:max-w-2xl lg:max-w-3xl">
-                      {campaign.isSponsored && (
-                        <div
-                          className={cn(
-                            "mb-3 transition-all duration-500 delay-75",
-                            isActive
-                              ? "opacity-100 translate-y-0"
-                              : "opacity-0 translate-y-4",
-                          )}
-                        >
-                          <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-400/30 bg-linear-to-r from-amber-500/20 to-orange-500/20 px-2.5 py-1 text-xs font-medium text-amber-300 backdrop-blur-sm">
-                            <Sparkles className="h-3 w-3" />
-                            Promocionado
-                          </span>
-                        </div>
-                      )}
-
-                      <h2
-                        className={cn(
-                          "text-lg leading-tight font-bold text-white transition-all duration-500 delay-100 sm:text-2xl lg:text-3xl xl:text-4xl",
-                          isActive
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-4",
-                        )}
-                      >
-                        {campaign.title}
-                      </h2>
-
-                      {campaign.description && (
-                        <p
-                          className={cn(
-                            "mt-2 hidden text-sm leading-relaxed text-white/70 transition-all duration-500 delay-150 sm:block sm:text-base lg:max-w-xl",
-                            isActive
-                              ? "opacity-100 translate-y-0"
-                              : "opacity-0 translate-y-4",
-                          )}
-                        >
-                          {campaign.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {campaign?.cta && campaign.cta?.length > 0 && (
-                      <div
-                        className={cn(
-                          "flex flex-row gap-3 transition-all duration-500 delay-200 lg:gap-4 lg:mt-4",
-                          isActive
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-4",
-                        )}
-                      >
-                        {campaign.cta.map((cta, ctaIndex) => (
-                          <Button
-                            key={`${cta.id}-${ctaIndex}`}
-                            variant={ctaIndex === 0 ? "default" : "outline"}
-                            onClick={() => handleExecuteCta(cta)}
-                            className="rounded-full px-5 py-2.5 text-sm font-semibold sm:px-6 lg:px-7 lg:py-3 lg:text-base"
-                          >
-                            {cta.label}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CarouselItem>
-            );
-          })}
+              </div>
+            </CarouselItem>
+          ))}
         </CarouselContent>
       </Carousel>
+
       <div
         className={cn(
           "absolute inset-x-0 bottom-1/2 z-20 flex translate-y-1/2 items-center justify-center transition-all duration-500 sm:hidden",
-          isMobile && showSwipeHint
-            ? "opacity-100"
-            : "pointer-events-none opacity-0",
+          showSwipeHint ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-black/50 px-6 py-4 backdrop-blur-md">
-          <div className="animate-bounce-x">
+          <div className="animate-bounce-y">
             <Hand className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xs font-medium text-white/80">
-            Desliza hacia los lados
-          </span>
+          <span className="text-xs font-medium text-white/80">Desliza hacia arriba</span>
         </div>
       </div>
 
-      {/* Dots mobile — centro-abajo, horizontal */}
-      <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 sm:hidden">
-        {visibleDots.map(({ campaign, index }) => (
-          <button
-            key={`dot-mobile-${campaign.id}-${index}`}
-            type="button"
-            onClick={() => scrollToIndex(index)}
-            className={cn(
-              "rounded-full bg-white transition-all duration-300",
-              currentIndex === index ? "h-2 w-5" : "h-2 w-2 opacity-60",
-            )}
-            aria-label={`Ir al slide ${index + 1}`}
-          />
-        ))}
-      </div>
+      {/* Celular: puntos a la derecha */}
+      <CampaignDots
+        ids={ids}
+        current={currentIndex}
+        total={totalItems}
+        onSelect={scrollTo}
+        className="absolute right-3 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1.5 sm:hidden"
+      />
 
-      {/* Dots desktop — derecha con flechas */}
+      {/* Escritorio: puntos con flechas */}
       <div className="absolute right-3 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-center gap-2 sm:flex sm:right-6 sm:gap-3 lg:right-8">
-        {/* Up Arrow */}
-        <button
-          onClick={scrollPrev}
-          className="group hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/50 active:scale-95 sm:flex lg:h-12 lg:w-12"
-          aria-label="Slide anterior"
-        >
+        <button onClick={scrollPrev} className={arrow} aria-label="Slide anterior">
           <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 lg:h-6 lg:w-6" />
         </button>
-
-        <div className="flex flex-col items-center gap-2 rounded-full bg-black/25 px-2 py-2.5 backdrop-blur-sm sm:px-2.5 sm:py-3">
-          {visibleDots.map(({ campaign, index }) => (
-            <button
-              key={`dot-${campaign.id}-${index}`}
-              type="button"
-              onClick={() => scrollToIndex(index)}
-              className={cn(
-                "rounded-full bg-white transition-all duration-300 hover:bg-white/90",
-                getProgressiveDotStyle(index),
-              )}
-              aria-label={`Ir al slide ${index + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Down Arrow */}
-        <button
-          onClick={scrollNext}
-          className="group hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/50 active:scale-95 sm:flex lg:h-12 lg:w-12"
-          aria-label="Siguiente slide"
-        >
+        <CampaignDots
+          ids={ids}
+          current={currentIndex}
+          total={totalItems}
+          onSelect={scrollTo}
+          progressive
+          className="flex flex-col items-center gap-2 rounded-full bg-black/25 px-2 py-2.5 backdrop-blur-sm sm:px-2.5 sm:py-3"
+        />
+        <button onClick={scrollNext} className={arrow} aria-label="Siguiente slide">
           <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5 lg:h-6 lg:w-6" />
         </button>
       </div>

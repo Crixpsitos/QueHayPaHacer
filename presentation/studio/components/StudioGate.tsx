@@ -2,43 +2,43 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { getMyTeamAccess } from "@/app/actions/_session";
 import { StudioShell } from "./StudioShell";
-import {
-  PROFESSIONAL_TYPE_LABEL,
-  isProfessionalType,
-} from "@/presentation/profile/lib/professionalType";
+import { createServerContainer } from "@/infraestructure/di/container";
 
 /**
- * Acceso a datos runtime (cookies/tokens) + gating profesional.
+ * Acceso a datos runtime (cookies/tokens) + gating Premium.
  * Va dentro de un <Suspense> (via ServerBoundary) para no bloquear el render.
  */
 export async function StudioGate({ children }: { children: ReactNode }) {
   const tokens = await getTokens(await cookies(), authConfig);
 
-  // Solo cuentas profesionales acceden al Estudio.
+  // Solo cuentas Premium acceden al Estudio.
   if (!tokens) {
-    redirect("/profile");
+    redirect("/premium");
   }
 
   const { decodedToken } = tokens;
-  const claims = filterStandardClaims(decodedToken);
+  const { userService } = createServerContainer();
+  const user = await userService.getUserById(decodedToken.uid);
 
-  if (claims.role !== "professional") {
-    redirect("/profile");
+  // Sin Premium propio: pasa solo si es miembro (editor/lector/control de acceso) de eventos de un
+  // dueño Premium → experiencia limitada. Si no, como siempre.
+  let limited = false;
+  if (user?.plan !== "premium") {
+    const { hasTeamEvents } = await getMyTeamAccess();
+    if (!hasTeamEvents) redirect("/profile");
+    limited = true;
   }
-
-  const professionalLabel = isProfessionalType(claims.professionalType)
-    ? PROFESSIONAL_TYPE_LABEL[claims.professionalType]
-    : "Profesional";
 
   return (
     <StudioShell
-      displayName={decodedToken.name ?? decodedToken.email ?? "Organizador"}
+      displayName={decodedToken.name ?? decodedToken.email ?? "Creador"}
       email={decodedToken.email ?? undefined}
       photoURL={decodedToken.picture ?? undefined}
-      professionalLabel={professionalLabel}
+      premiumLabel={limited ? "Equipo" : "Plan Premium"}
+      limited={limited}
     >
       {children}
     </StudioShell>

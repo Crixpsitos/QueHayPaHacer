@@ -1,4 +1,4 @@
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
+import type { TeamRole } from "@/domain/entities/events/teamAccess";
 
 /**
  * Tipos de dominio del "Estudio del Organizador".
@@ -183,8 +183,8 @@ export interface EventRegistration {
   /** Nombre de usuario opcional (se muestra como "@handle"). */
   displayName?: string;
   photoURL?: string;
-  /** True si la cuenta es profesional (accountType === "professional"). */
-  isProfessional: boolean;
+  /** True si la persona participa como creadora. */
+  isCreator: boolean;
   registeredAt: Date;
   attendanceConfirmed: boolean;
   /** Respuestas del formulario (solo para eventos tipo "form"). */
@@ -294,8 +294,6 @@ export interface OrganizerSiteListItem {
   likes: number;
   shares: number;
   eventsCount: number;
-  /** MOCK: tendencia semanal (%). Placeholder para probar la UI; aún no se calcula real. */
-  trend: number;
 }
 
 /** Parámetros comunes de las listas del Estudio: búsqueda full-text + tope. Sin paginación. */
@@ -304,11 +302,23 @@ export interface GetStudioListParams {
   limit?: number;
 }
 
+/** Evento donde el usuario es miembro del equipo (rol con acceso al Studio). */
+export interface TeamEventItem {
+  id: string;
+  title: string;
+  startDate: Date | null;
+  /** URL de la portada. */
+  mainImage?: string;
+  status: string;
+  role: TeamRole;
+  ownerId: string;
+}
+
 /** Tipo de colaborador: user real de la plataforma o perfil externo sin login. */
 export type CollaboratorKind = "user" | "external";
 /** Rol de un colaborador de user real (los externos siempre son "credit"). */
-export type UserCollaboratorRole = "editor" | "viewer";
-export type CollaboratorRole = UserCollaboratorRole | "credit";
+export type UserCollaboratorRole = Exclude<TeamRole, "credit">;
+export type CollaboratorRole = TeamRole;
 export type ExternalProfileType = "producer" | "artist" | "venue" | "person";
 
 /** Miembro de mi red de colaboradores: user que aceptó, o perfil externo mío. */
@@ -317,8 +327,7 @@ export interface Collaborator {
   kind: CollaboratorKind;
   displayName: string;
   photoURL?: string;
-  /** Solo para `kind: "user"`: tipo de cuenta profesional. */
-  professionalType?: ProfessionalType;
+  creatorVerified?: boolean;
 }
 
 /** Resultado de búsqueda de usuarios para invitar (pipeline sobre `users`). */
@@ -327,7 +336,7 @@ export interface UserSearchItem {
   displayName: string;
   photoURL?: string;
   email: string;
-  professionalType?: ProfessionalType;
+  creatorVerified?: boolean;
 }
 
 /** Datos de un usuario a invitar (denormalizados en la invitación). */
@@ -336,7 +345,7 @@ export interface InviteeInput {
   email: string;
   displayName: string;
   photoURL?: string;
-  professionalType?: ProfessionalType;
+  creatorVerified?: boolean;
 }
 
 /** Redes sociales opcionales de un perfil externo. */
@@ -379,7 +388,7 @@ export interface CollaboratorInvitation {
   fromUid: string;
   fromDisplayName: string;
   fromPhotoURL?: string;
-  fromProfessionalType?: ProfessionalType;
+  fromCreatorVerified?: boolean;
   invitedAt: Date;
 }
 

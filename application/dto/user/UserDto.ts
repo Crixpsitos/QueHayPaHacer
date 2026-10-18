@@ -1,5 +1,18 @@
 import * as v from "valibot";
-import type { ProfessionalRequestDetails } from "@/domain/entities/professional/ProfessionalRequest";
+
+// Solo http(s): estos enlaces se renderizan como href en perfiles públicos.
+const HttpUrl = v.pipe(
+    v.string(),
+    v.maxLength(500),
+    v.check((value) => {
+        try {
+            return ["http:", "https:"].includes(new URL(value).protocol);
+        } catch {
+            return false;
+        }
+    }, "Invalid URL"),
+);
+const SOCIAL_PLATFORMS = ["instagram", "facebook", "tiktok", "youtube", "twitter", "linkedin", "other"] as const;
 
 export const CreateUserSchema = v.object({
     uid: v.pipe(v.string(), v.nonEmpty("uid is required")),
@@ -13,8 +26,11 @@ export const CreateUserSchema = v.object({
     photoURL: v.optional(v.string()),
     imagePath: v.optional(v.string()),
     acceptedTerms: v.literal(true, "User must accept terms"),
-    accountType: v.optional(v.picklist(["personal", "professional"] as const)),
-    isPublic: v.optional(v.boolean(), true),
+    acceptedTermsVersion: v.optional(v.string()),
+    participation: v.optional(v.picklist(["consumer", "creator"] as const)),
+    creatorVerified: v.optional(v.boolean(), false),
+    plan: v.optional(v.picklist(["basic", "premium"] as const)),
+    isPublic: v.optional(v.boolean(), false),
 });
 
 export const UpdateUserSchema = v.partial(
@@ -27,18 +43,14 @@ export const UpdateUserSchema = v.partial(
         photoURL: v.string(),
         imagePath: v.string(),
         emailVerified: v.boolean(),
+        creatorVerified: v.boolean(),
         isPublic: v.boolean(),
-        brandName: v.string(),
-        website: v.string(),
-        mapsLink: v.string(),
-        socialLink: v.string(),
-        socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
+        website: v.union([v.literal(""), HttpUrl]),
+        socialLinks: v.pipe(
+            v.array(v.object({ platform: v.picklist(SOCIAL_PLATFORMS), url: HttpUrl })),
+            v.maxLength(20),
+        ),
         isUsernameCustomized: v.boolean(),
-        professionalDescription: v.string(),
-        professionalDetails: v.optional(v.pipe(
-            v.looseObject({}),
-            v.transform((val) => val as unknown as ProfessionalRequestDetails),
-        )),
         bannerUrl: v.nullable(v.string()),
         bannerPath: v.nullable(v.string()),
     })

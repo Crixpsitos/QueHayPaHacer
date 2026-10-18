@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useForm, useWatch } from "react-hook-form";
 import { createClientContainer } from "@/infraestructure/di/container.client";
 import { valibotResolver } from "@hookform/resolvers/valibot";
@@ -40,6 +40,7 @@ import { getVideoData } from "../../lib/video/getVideoData";
 import { AlertTriangleIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const RichTextEditor = dynamic(
   () => import("../editor/RichTextEditor").then((mod) => mod.RichTextEditor),
@@ -249,6 +250,7 @@ export function SessionForm({
     if (savedSessionIdRef.current) return savedSessionIdRef.current;
 
     const result = await saveDraftSessionAction(event.id, form.getValues());
+    void invalidateMyData();
     if (result.success) {
       savedSessionIdRef.current = result.session.id;
       form.setValue("id", result.session.id);
@@ -296,6 +298,7 @@ export function SessionForm({
       );
 
       await saveDraftSessionAction(event.id, form.getValues());
+      void invalidateMyData();
       return result;
     };
 
@@ -380,6 +383,7 @@ export function SessionForm({
       });
 
       await saveDraftSessionAction(event.id, form.getValues());
+      void invalidateMyData();
       return processedMedia;
     };
 
@@ -416,6 +420,7 @@ export function SessionForm({
           ...values,
           status: "draft",
         });
+        void invalidateMyData();
         if (result.success) {
           savedSessionIdRef.current = result.session.id;
           form.setValue("id", result.session.id);
@@ -469,6 +474,7 @@ export function SessionForm({
       const result = sessionId
         ? await updateEventSessionAction(event.id, sessionId, payload)
         : await createEventSessionAction(event.id, payload);
+      void invalidateMyData();
 
       if (result.success) {
         savedSessionIdRef.current = result.session.id;

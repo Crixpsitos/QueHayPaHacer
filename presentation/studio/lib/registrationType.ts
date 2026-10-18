@@ -11,5 +11,5 @@ export const REGISTRATION_TYPE_DESCRIPTION: Record<RegistrationType, string> = {
   none: "Evento solo informativo, sin registro.",
   internal: "Registro dentro de la plataforma.",
   external: "El registro se hace en una URL externa.",
-  form: "Registro con formulario personalizado (exclusivo profesional).",
+  form: "Registro con formulario personalizado (exclusivo Premium).",
 };

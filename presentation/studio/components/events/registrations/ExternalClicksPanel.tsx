@@ -13,7 +13,7 @@ export function ExternalClicksPanel({ clicks, url }: ExternalClicksPanelProps) {
       <h2 className="text-sm font-semibold text-slate-900">Registro externo</h2>
 
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
           <MousePointerClick className="h-3.5 w-3.5" />
           Clicks al botón de registro
         </p>

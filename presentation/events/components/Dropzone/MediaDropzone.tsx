@@ -2,7 +2,7 @@
 
 import { ImagePlus, X, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import { LazyMotion, motion, domAnimation, AnimatePresence } from "framer-motion";
+import { LazyMotion, motion, domAnimation, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/app/lib/utils/cn";

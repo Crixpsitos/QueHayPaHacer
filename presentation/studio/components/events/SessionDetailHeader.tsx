@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Pencil } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { can, type EventAccessRole } from "@/domain/entities/events/teamAccess";
 import type { RegistrationType } from "@/domain/entities/studio/Studio";
 import { REGISTRATION_TYPE_LABEL } from "../../lib/registrationType";
 
@@ -11,10 +12,11 @@ interface SessionDetailHeaderProps {
   status: string;
   date: string; // ISO
   registrationType: RegistrationType;
+  viewerRole?: EventAccessRole;
 }
 
 const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", {
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota",
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date(iso));
@@ -29,6 +31,7 @@ export function SessionDetailHeader({
   status,
   date,
   registrationType,
+  viewerRole,
 }: SessionDetailHeaderProps) {
   const published = status.toLowerCase() === "published";
 
@@ -58,7 +61,7 @@ export function SessionDetailHeader({
             >
               {published ? "Publicada" : "Borrador"}
             </span>
-            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+            <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
               Registro: {REGISTRATION_TYPE_LABEL[registrationType]}
             </span>
           </div>
@@ -72,13 +75,15 @@ export function SessionDetailHeader({
           </p>
         </div>
 
-        <Link
-          href={`/eventos/${eventId}/edit?step=sessions`}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-        >
-          <Pencil className="h-4 w-4" />
-          Editar fecha
-        </Link>
+        {(!viewerRole || can(viewerRole, "edit_event")) && (
+          <Link
+            href={`/eventos/${eventId}/edit?step=sessions`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar fecha
+          </Link>
+        )}
       </div>
     </div>
   );

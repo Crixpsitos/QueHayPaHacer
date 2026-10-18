@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// PROPUESTA versionada (P0-C). NO desplegada: comparar antes con las reglas
+// activas en consola (proyectos develop/prod, base `quehaypahacer-db`).
+//
+// Evidencia en código (2026-10-10): toda lectura/escritura pasa por Admin SDK
+// (ignora estas reglas). El SDK cliente solo hace `onSnapshot` de lectura en:
+//   - events/{id}                    EventForm (estado de media)
+//   - events/{id}/sessions/{sid}     SessionForm
+//   - sites/{id}                     estado del optimizer
+// siempre del propio autor mientras edita. Todo lo demás: denegado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthor(data) {
+      return request.auth != null && data.author.id == request.auth.uid;
+    }
+
+    // resource == null: el doc aún no existe (wizard recién abierto).
+    match /events/{eventId} {
+      allow read: if resource == null || isAuthor(resource.data);
+
+      match /sessions/{sessionId} {
+        allow read: if request.auth != null
+          && isAuthor(get(/databases/$(database)/documents/events/$(eventId)).data);
+      }
+    }
+
+    match /sites/{siteId} {
+      allow read: if resource == null || isAuthor(resource.data);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

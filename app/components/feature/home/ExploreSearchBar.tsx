@@ -126,7 +126,7 @@ export function ExploreSearchBar({
 
   const chipClass = (active: boolean) =>
     cn(
-      "flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer select-none",
+      "flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 cursor-pointer select-none active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2",
       active
         ? "border-transparent bg-[#09090B] text-white shadow-dark-float"
         : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#09090B]/30 hover:text-[#09090B] hover:shadow-subtle",
@@ -145,8 +145,8 @@ export function ExploreSearchBar({
       </div>
       {/* Fila principal: input + fechas + buscar */}
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="group/search relative flex-1">
+          <Search aria-hidden="true" className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -197,7 +197,7 @@ export function ExploreSearchBar({
           )}
         </div>
 
-        <Button type="submit" className="h-12 rounded-xl px-6 font-semibold">
+        <Button type="submit" className="h-12 rounded-xl px-6 font-semibold transition-transform duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
           <Search className="size-4" />
           <span className="ml-2">Buscar</span>
         </Button>

@@ -17,7 +17,6 @@ export async function uploadToGoogleStorage(
   },
 ) {
 
-  console.log("🚀 Subiendo archivo a Google Storage...", options.isPublic);
 
   const { uploadUrl, publicUrl, path } = await generateUploadUrl({
     entityName,

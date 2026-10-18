@@ -6,8 +6,9 @@ import { authConfig, getFirebaseAdminAuth } from "@/infraestructure/firebase/con
 import { refreshCookiesWithIdToken } from "next-firebase-auth-edge/next/cookies"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
-import { revalidateTag } from "next/cache"
-import { updateProfile } from "firebase/auth"
+import { updateTag } from "next/cache"
+import { ACCEPTANCE_REQUIRED_ERROR, hasValidAcceptance } from "@/app/lib/legal/acceptance"
+import { LEGAL_VERSION } from "@/app/lib/legal/version"
 
 interface RegisterActionResult {
     error?: string;
@@ -25,7 +26,13 @@ export async function registerAction(
     email: string,
     phoneNumber: string,
     password: string,
+    acceptedTerms: boolean,
+    acceptedDataPolicy: boolean,
 ): Promise<RegisterActionResult | void> {
+    if (!hasValidAcceptance(acceptedTerms, acceptedDataPolicy)) {
+        return { error: ACCEPTANCE_REQUIRED_ERROR }
+    }
+
     try {
         const { authService } = createClientContainer()
         const { userService, badgeService } = createServerContainer()
@@ -34,11 +41,6 @@ export async function registerAction(
         const uid = credentials.user.uid
         const idToken = await credentials.user.getIdToken()
         const fullPhoneNumber = `+57${phoneNumber}`
-
-        const displayName = `${name} ${lastName}`
-        await updateProfile(credentials.user, {
-            displayName,
-        })
 
         try {
             await getFirebaseAdminAuth().updateUser(uid, {
@@ -49,17 +51,22 @@ export async function registerAction(
         }
 
         try {
-            const displayName = `${name} ${lastName}`
-            await userService.createUser({
+            const createdUser = await userService.createUser({
                 uid,
                 email,
                 emailVerified: credentials.user.emailVerified,
-                displayName,
+                displayName: `${name} ${lastName}`,
                 firstName: name,
                 lastName,
                 phoneNumber: fullPhoneNumber,
                 acceptedTerms: true,
-                isPublic: true,
+                acceptedTermsVersion: LEGAL_VERSION,
+                creatorVerified: false,
+                isPublic: false,
+            })
+
+            await getFirebaseAdminAuth().updateUser(uid, {
+                displayName: createdUser.displayName,
             })
             
             // Asignar insignia "Usuario Nuevo" al registro
@@ -69,13 +76,18 @@ export async function registerAction(
                     "new-user",
                     "Registro completado"
                 )
-                revalidateTag(`profile-badges-${uid}`, "max")
-                revalidateTag(`profile-stats-${uid}`, "max")
+                updateTag(`profile-badges-${uid}`)
+                updateTag(`profile-stats-${uid}`)
             } catch (badgeError) {
                 console.warn("No se pudo asignar insignia de usuario nuevo:", badgeError)
             }
         } catch (dbError) {
             // Si falla la creacion en DB, eliminar el usuario de Firebase Auth para no dejar datos inconsistentes
+            try {
+                await userService.deleteUser(uid)
+            } catch {
+                // El perfil puede no haberse creado todavía.
+            }
             await getFirebaseAdminAuth().deleteUser(uid)
             throw dbError
         }

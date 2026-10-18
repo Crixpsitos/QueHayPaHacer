@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { safeRedirect } from "@/app/lib/utils/safeRedirect";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -15,12 +17,12 @@ const loginSchema = v.object({
   email: v.pipe(
     v.string(),
     v.nonEmpty("El correo es obligatorio"),
-    v.email("Ingresa un correo valido"),
+    v.email("Ingresa un correo válido"),
   ),
   password: v.pipe(
     v.string(),
-    v.nonEmpty("La contrasena es obligatoria"),
-    v.minLength(6, "La contrasena debe tener al menos 6 caracteres"),
+    v.nonEmpty("La contraseña es obligatoria"),
+    v.minLength(6, "La contraseña debe tener al menos 6 caracteres"),
   ),
 });
 
@@ -77,7 +79,7 @@ export const LoginForm = ({ loginAction, onSuccess, onError, redirectTo }: Login
       <EmailInput<LoginFormValues>
         id="email"
         name="email"
-        label="Correo electronico"
+        label="Correo electrónico"
         register={register}
         error={errors.email}
       />
@@ -85,7 +87,7 @@ export const LoginForm = ({ loginAction, onSuccess, onError, redirectTo }: Login
       <PasswordInput<LoginFormValues>
         id="password"
         name="password"
-        label="Contrasena"
+        label="Contraseña"
         register={register}
         error={errors.password}
       />
@@ -103,19 +105,15 @@ export const LoginForm = ({ loginAction, onSuccess, onError, redirectTo }: Login
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "w-full rounded-full bg-gradient-to-br from-[#E63946] to-[#9B0A26] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-all",
+          "flex w-full items-center justify-center gap-2 rounded-full bg-[#E63946] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
           (!isValid || isPending)
             ? "cursor-not-allowed opacity-50"
-            : "hover:from-[#FF4D5A] hover:to-[#B30E30]",
+            : "hover:bg-[#9B0A26]",
         )}
       >
-        {isPending ? "Ingresando..." : "Iniciar sesion"}
+        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+        {isPending ? "Ingresando..." : "Iniciar sesión"}
       </button>
     </form>
   );
 };
-
-function safeRedirect(to?: string): string {
-  if (!to || !to.startsWith("/") || to.startsWith("//")) return "/";
-  return to;
-}

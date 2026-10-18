@@ -12,6 +12,7 @@ import { SessionForm } from "../session/SessionForm";
 import { Button } from "@/app/components/ui/button";
 import { CalendarDaysIcon, PlusIcon, XIcon } from "lucide-react";
 import { notify } from "@/presentation/shared/lib/notify";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 interface StepSessionsManagerProps {
   form: UseFormReturn<FormEventDto>;
@@ -106,6 +107,7 @@ export function StepSessionsManager({
     const next = session.status === "published" ? "draft" : "published";
     startTransition(async () => {
       const result = await setSessionStatusAction(eventId, session.id, next);
+      void invalidateMyData();
       if (result.success) {
         setSessions((prev) =>
           sortByDate(
@@ -131,6 +133,7 @@ export function StepSessionsManager({
       return;
     startTransition(async () => {
       const result = await deleteEventSessionAction(eventId, sessionId);
+      void invalidateMyData();
       if (result.success) {
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
         notify.success("Sesión eliminada.");

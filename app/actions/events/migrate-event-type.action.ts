@@ -71,7 +71,15 @@ export async function migrateEventTypeAction(params: {
   const userId = tokens?.decodedToken?.uid;
   if (!userId) return { success: false, error: "Debes iniciar sesión." };
 
-  const { eventsService, eventSessionService } = createServerContainer();
+  const { eventsService, eventSessionService, userService } = createServerContainer();
+
+  // Multi-fecha es exclusivo del plan Premium.
+  if (targetType === "multi-date") {
+    const user = await userService.getUserById(userId);
+    if (user?.plan !== "premium") {
+      return { success: false, error: "Los eventos multi-fecha son exclusivos del plan Premium." };
+    }
+  }
 
   // Verificar que el evento original existe y pertenece al usuario.
   const oldEvent = await eventsService.getEventById(oldEventId);
@@ -93,6 +101,9 @@ export async function migrateEventTypeAction(params: {
     capacity: _cap, requiresAttendance: _ra, registrationEventForm: _ref,
     price: _price,
     eventType: _et,
+    // Server-owned: el cliente no los fija (promoción sin pago, moderación).
+    promotion: _promo, moderationStatus: _ms, moderationMode: _mm,
+    rejectionReason: _rr, submittedAt: _sa, reviewedAt: _rva, reviewedBy: _rvb,
     ...headerFormData
   } = safeFormData as Record<string, unknown>;
 

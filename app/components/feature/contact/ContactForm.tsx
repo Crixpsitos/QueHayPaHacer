@@ -5,24 +5,26 @@ import { useForm, Controller } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import * as v from "valibot";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, Bug, Calendar, CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
+import { AlertCircle, Loader2, Send } from "lucide-react";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { sendContactAction } from "@/app/actions/contact/send-contact.action";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/app/components/ui/select";
+import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";
 import { cn } from "@/app/lib/utils/cn";
 
 // ── Contact reasons ────────────────────────────────────────────────────────────
 
 const CONTACT_REASON_VALUES = [
-  "general_inquiry", "report_problem", "report_event", "report_site",
+  "premium", "general_inquiry", "report_problem", "report_event", "report_site",
   "account_problem", "suggestion", "advertising_partnership", "other",
 ] as const;
 
 type ContactReason = typeof CONTACT_REASON_VALUES[number];
 
 const CONTACT_REASONS: { value: ContactReason; label: string }[] = [
+  { value: "premium",                 label: "Quiero Premium" },
   { value: "general_inquiry",         label: "Consulta general" },
   { value: "report_problem",          label: "Reportar un problema" },
   { value: "report_event",            label: "Reportar un evento" },
@@ -31,12 +33,6 @@ const CONTACT_REASONS: { value: ContactReason; label: string }[] = [
   { value: "suggestion",              label: "Propuesta o sugerencia" },
   { value: "advertising_partnership", label: "Publicidad o alianzas" },
   { value: "other",                   label: "Otro" },
-];
-
-const QUICK_ACTIONS: { icon: React.ElementType; label: string; reason: ContactReason }[] = [
-  { icon: Bug,      label: "Reportar un problema",    reason: "report_problem" },
-  { icon: Calendar, label: "Problema con un evento",  reason: "report_event" },
-  { icon: MapPin,   label: "Problema con un sitio",   reason: "report_site" },
 ];
 
 // ── Validation schema ──────────────────────────────────────────────────────────
@@ -78,11 +74,11 @@ function FieldWrapper({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-[#71717A]"
+        className="flex items-center gap-1.5 text-sm font-medium text-[#09090B]"
       >
         {label}
         {optional && (
-          <span className="normal-case tracking-normal font-normal text-[#A1A1AA]">(opcional)</span>
+          <span className="font-normal text-[#71717A]">(opcional)</span>
         )}
       </label>
       {children}
@@ -107,11 +103,14 @@ function FieldWrapper({
 
 const inputCls = (hasError: boolean) =>
   cn(
-    "w-full rounded-xl border px-3.5 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-all bg-white focus:ring-2",
+    "w-full rounded-xl border px-3.5 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-[color,background-color,border-color,box-shadow,transform,opacity] bg-white focus:ring-2",
     hasError
       ? "border-red-400 focus:border-red-400 focus:ring-red-100"
       : "border-[#E4E4E7] focus:border-[#E63946] focus:ring-[#E63946]/10",
   );
+
+const premiumMessage = (username?: string) =>
+  `Hola, quiero activar Premium${username ? ` para @${username}` : ""}. Organizo: `;
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -130,6 +129,14 @@ export function ContactForm() {
     defaultValues: { contactReason: "" as ContactReason, email: "", phoneNumber: "", message: "" },
   });
 
+  // /contactanos?motivo=premium (CTAs de Premium) precarga el motivo.
+  // Se lee en efecto (no useSearchParams) para que el formulario siga en el HTML estático.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("motivo") !== "premium") return;
+    setValue("contactReason", "premium", { shouldValidate: true });
+    setValue("message", premiumMessage(user?.profile?.username), { shouldValidate: true });
+  }, [setValue, user?.profile?.username]);
+
   useEffect(() => {
     if (user?.email) setValue("email", user.email, { shouldValidate: true });
     if (user?.profile?.phoneNumber)
@@ -137,7 +144,6 @@ export function ContactForm() {
   }, [user, setValue]);
 
   const messageValue = watch("message") ?? "";
-  const selectedReason = watch("contactReason");
 
   const onSubmit = handleSubmit((data) => {
     setSubmitError(null);
@@ -160,13 +166,13 @@ export function ContactForm() {
   if (success) {
     return (
       <motion.div
+        role="status"
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, ease: EASE_OUT }}
         className="flex flex-col items-center gap-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-12 text-center"
       >
-        <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100">
-          <CheckCircle2 className="size-7 text-emerald-600" />
-        </div>
+        <SuccessCheck size={56} />
         <div>
           <h3
             className="text-lg font-bold text-emerald-800"
@@ -181,7 +187,7 @@ export function ContactForm() {
         <button
           type="button"
           onClick={() => setSuccess(false)}
-          className="rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+          className="min-h-11 rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
         >
           Enviar otro mensaje
         </button>
@@ -191,35 +197,6 @@ export function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
-
-      {/* Quick actions */}
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#71717A]">
-          ¿Qué necesitas?
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map(({ icon: Icon, label, reason }) => {
-            const isSelected = selectedReason === reason;
-            return (
-              <button
-                key={reason}
-                type="button"
-                onClick={() => setValue("contactReason", reason, { shouldValidate: true })}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]/20",
-                  isSelected
-                    ? "border-[#E63946] bg-[#FDF2F4] text-[#E63946] font-semibold shadow-sm"
-                    : "border-[#E4E4E7] bg-white text-[#52525B] hover:border-[#E63946] hover:bg-[#FDF2F4] hover:text-[#E63946]",
-                )}
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Contact reason */}
       <FieldWrapper
@@ -231,13 +208,14 @@ export function ContactForm() {
           name="contactReason"
           control={control}
           render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value ?? ""}>
+            // Radix emite "" al montar y borraría el motivo precargado por URL.
+            <Select onValueChange={(v) => v && field.onChange(v)} value={field.value ?? ""}>
               <SelectTrigger
                 id="contactReason"
                 aria-invalid={Boolean(errors.contactReason)}
                 className={cn(
                   // Override SelectTrigger defaults to match inputs exactly
-                  "w-full rounded-xl border bg-white px-3.5 py-2.5 h-auto text-sm text-[#09090B] transition-all",
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 h-auto text-sm text-[#09090B] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
                   "focus-visible:ring-2 focus-visible:outline-none",
                   errors.contactReason
                     ? "border-red-400 focus-visible:border-red-400 focus-visible:ring-red-100"
@@ -291,7 +269,7 @@ export function ContactForm() {
       {/* Message */}
       <FieldWrapper label="Mensaje" htmlFor="message" error={errors.message}>
         <div className={cn(
-          "overflow-hidden rounded-xl border transition-all focus-within:ring-2",
+          "overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,transform,opacity] focus-within:ring-2",
           errors.message
             ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
             : "border-[#E4E4E7] focus-within:border-[#E63946] focus-within:ring-[#E63946]/10",
@@ -341,7 +319,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={!isValid || isPending}
-        className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-all hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? (
           <>
@@ -357,7 +335,7 @@ export function ContactForm() {
       </button>
 
       <p className="text-center text-xs text-[#A1A1AA]">
-        Normalmente respondemos en poco tiempo.
+        Te responderemos al correo que indiques.
       </p>
     </form>
   );

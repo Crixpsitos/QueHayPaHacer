@@ -1,5 +1,8 @@
 // infrastructure/firebase/dtos/FirebaseSiteDto.ts
 import type { GeoPoint, Timestamp } from "firebase-admin/firestore"
+import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTransit"
 
 interface RawImageMediaDto {
   id: string
@@ -122,4 +125,16 @@ export interface FirebaseSiteDto {
     reason: string
   }
   bookingUrl?: string
+  // Buses que llegan (a mano, del catálogo). null = el autor lo quitó. `updatedAt` lo fija el servidor.
+  transit?: SiteTransit | null
+  // Qué hace el sitio en festivos y con lluvia (opcional: sin dato = sin confirmar).
+  openingPolicy?: SiteOpeningPolicy
+  // Consejos del autor para quien visita (opcional).
+  recommendations?: SiteRecommendations
+  // Tipo y confianza de la ficha (ver SiteListing). Opcionales: los sitios viejos no los traen.
+  kind?: "public" | "business"
+  publishedAs?: "owner" | "proposer" | "qhpa"
+  verification?: "community" | "claimed" | "verified"
+  // La ficha cumple todas las reglas del medidor (siteCompleteness). Se calcula al guardar; da un bono al ranking.
+  listingComplete?: boolean
 }

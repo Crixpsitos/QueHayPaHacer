@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { notify } from "@/presentation/shared/lib/notify";
-import { PROFESSIONAL_TYPE_LABEL } from "@/presentation/profile/lib/professionalType";
 import type { UserSearchItem } from "@/domain/entities/studio/Studio";
 import { searchCollaboratorsAction } from "@/app/actions/studio/search-collaborators.action";
 import { inviteCollaboratorsAction } from "@/app/actions/studio/invite-collaborators.action";
@@ -28,10 +27,11 @@ import type {
   SentInvitationVM,
   StudioCollaboratorsViewModel,
 } from "../../view-models/StudioCollaboratorsViewModel";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short" }).format(new Date(iso));
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short" }).format(new Date(iso));
 
 export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel }) {
   const [received, setReceived] = useState<InvitationVM[]>(data.received);
@@ -79,7 +79,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
         email: u.email,
         displayName: u.displayName,
         photoURL: u.photoURL,
-        professionalType: u.professionalType,
+        creatorVerified: u.creatorVerified,
       })),
     );
     setSending(false);
@@ -106,6 +106,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
   const handleRespond = async (inv: InvitationVM, accept: boolean) => {
     setReceived((prev) => prev.filter((i) => i.id !== inv.id));
     const res = await respondCollaboratorInvitationAction(inv.id, accept);
+    void invalidateMyData();
     if (res.success) {
       if (accept) {
         // Relación bidireccional: quien me invitó entra a MI red también.
@@ -118,7 +119,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
                   kind: "user",
                   displayName: inv.fromDisplayName,
                   photoURL: inv.fromPhotoURL,
-                  professionalType: inv.fromProfessionalType,
+                  creatorVerified: inv.fromCreatorVerified,
                 },
                 ...prev,
               ],
@@ -144,6 +145,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
   const handleRemove = async (c: CollaboratorVM) => {
     setNetwork((prev) => prev.filter((x) => x.refId !== c.refId));
     const res = await removeCollaboratorAction(c.refId, c.kind);
+    void invalidateMyData();
     if (res.success) notify.success(`${c.displayName} quitado de tu red.`);
     else {
       setNetwork((prev) => [c, ...prev]);
@@ -183,7 +185,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Nombre o correo…"
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-9 text-sm outline-none focus:border-indigo-400"
+            className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-9 text-sm outline-none focus:border-zinc-400"
           />
           {searching && (
             <Loader2 className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
@@ -213,7 +215,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded border ${
                       isSelected(u.uid)
-                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        ? "border-zinc-950 bg-zinc-950 text-white"
                         : "border-gray-300"
                     }`}
                   >
@@ -231,7 +233,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
             <button
               type="button"
               onClick={() => setShowExternal(true)}
-              className="font-semibold text-indigo-600 hover:underline"
+              className="font-semibold text-primary hover:underline"
             >
               Crear perfil externo
             </button>
@@ -244,7 +246,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
             {selected.map((u) => (
               <span
                 key={u.uid}
-                className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 py-1 pl-1 pr-2 text-xs font-medium text-indigo-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary-light py-1 pl-1 pr-2 text-xs font-medium text-primary"
               >
                 <Avatar className="h-5 w-5">
                   <AvatarImage src={u.photoURL} alt={u.displayName} />
@@ -260,7 +262,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
               type="button"
               onClick={() => void handleSend()}
               disabled={sending}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Enviar {selected.length}
@@ -279,7 +281,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
             <button
               type="button"
               onClick={() => setShowExternal(true)}
-              className="text-xs font-medium text-slate-500 hover:text-indigo-600"
+              className="text-xs font-medium text-slate-500 hover:text-primary"
             >
               + Crear un perfil externo (sin cuenta)
             </button>
@@ -295,7 +297,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
               <li key={inv.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 p-3">
                 <Avatar className="h-9 w-9 border border-gray-200">
                   <AvatarImage src={inv.fromPhotoURL} alt={inv.fromDisplayName} />
-                  <AvatarFallback className="bg-indigo-50 text-xs font-semibold text-indigo-700">
+                  <AvatarFallback className="bg-zinc-100 text-xs font-semibold text-zinc-700">
                     {initials(inv.fromDisplayName)}
                   </AvatarFallback>
                 </Avatar>
@@ -374,11 +376,7 @@ export function CollaboratorsView({ data }: { data: StudioCollaboratorsViewModel
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{c.displayName}</p>
                     <p className="text-xs text-slate-400">
-                      {c.kind === "external"
-                        ? "Externo"
-                        : c.professionalType
-                          ? PROFESSIONAL_TYPE_LABEL[c.professionalType]
-                          : "Profesional"}
+                      {c.kind === "external" ? "Externo" : "Creador"}
                     </p>
                   </div>
                   <button

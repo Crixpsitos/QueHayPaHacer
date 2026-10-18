@@ -6,26 +6,29 @@ interface StudioShellProps {
   displayName: string;
   email?: string;
   photoURL?: string;
-  professionalLabel: string;
+  premiumLabel: string;
+  /** Miembro de equipo sin Premium propio: experiencia reducida (la UI decide qué mostrar). */
+  limited?: boolean;
   children: ReactNode;
 }
 
 /**
- * Layout raíz del Estudio del Organizador: tema claro, header fijo y sidebar
+ * Layout raíz del Estudio: tema claro, header fijo y sidebar
  * fija. Completamente independiente del layout del home y del perfil.
  */
 export function StudioShell({
   displayName,
   email,
   photoURL,
-  professionalLabel,
+  premiumLabel,
+  limited = false,
   children,
 }: StudioShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans text-slate-900 antialiased">
-      <StudioHeader displayName={displayName} email={email} photoURL={photoURL} />
+      <StudioHeader displayName={displayName} email={email} photoURL={photoURL} limited={limited} />
       <div className="flex flex-1">
-        <StudioSidebar professionalLabel={professionalLabel} />
+        <StudioSidebar premiumLabel={premiumLabel} limited={limited} />
         <main className="min-w-0 flex-1 bg-gray-50/40">
           <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6">{children}</div>
         </main>

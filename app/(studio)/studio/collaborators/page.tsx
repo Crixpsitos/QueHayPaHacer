@@ -1,17 +1,20 @@
-import { cookies } from "next/headers";
-import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import type { Metadata } from "next";
+import { getPremiumSessionUid, redirectLimitedToEvents } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { CollaboratorsView } from "@/presentation/studio/components/collaborators/CollaboratorsView";
 import type { StudioCollaboratorsViewModel } from "@/presentation/studio/view-models/StudioCollaboratorsViewModel";
 
+export const metadata: Metadata = { title: "Colaboradores" };
+
 export default async function StudioCollaboratorsPage() {
+  await redirectLimitedToEvents();
+
   let data: StudioCollaboratorsViewModel = { received: [], sent: [], network: [] };
 
-  const tokens = await getTokens(await cookies(), authConfig);
-  if (tokens) {
+  // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
+  const uid = await getPremiumSessionUid();
+  if (uid) {
     const { studioService } = createServerContainer();
-    const uid = tokens.decodedToken.uid;
     const [received, sent, network] = await Promise.all([
       studioService.getReceivedInvitations(uid),
       studioService.getSentInvitations(uid),
@@ -24,7 +27,7 @@ export default async function StudioCollaboratorsPage() {
         fromUid: i.fromUid,
         fromDisplayName: i.fromDisplayName,
         fromPhotoURL: i.fromPhotoURL,
-        fromProfessionalType: i.fromProfessionalType,
+        fromCreatorVerified: i.fromCreatorVerified,
         invitedAt: i.invitedAt.toISOString(),
       })),
       sent: sent.map((i) => ({
@@ -39,7 +42,7 @@ export default async function StudioCollaboratorsPage() {
         kind: c.kind,
         displayName: c.displayName,
         photoURL: c.photoURL,
-        professionalType: c.professionalType,
+        creatorVerified: c.creatorVerified,
       })),
     };
   }

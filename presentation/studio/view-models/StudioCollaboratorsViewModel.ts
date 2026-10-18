@@ -9,7 +9,7 @@ export interface InvitationVM {
   fromUid: string;
   fromDisplayName: string;
   fromPhotoURL?: string;
-  fromProfessionalType?: "organizer" | "business" | "government";
+  fromCreatorVerified?: boolean;
   invitedAt: string; // ISO
 }
 
@@ -26,7 +26,7 @@ export interface CollaboratorVM {
   kind: "user" | "external";
   displayName: string;
   photoURL?: string;
-  professionalType?: "organizer" | "business" | "government";
+  creatorVerified?: boolean;
 }
 
 export interface StudioCollaboratorsViewModel {

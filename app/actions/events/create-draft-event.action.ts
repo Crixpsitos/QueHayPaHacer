@@ -1,5 +1,7 @@
 "use server";
 
+import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
+import { enforcePlanFeatures } from "./lib/eventModerationPolicy";
 import {
   FormEventDto,
   FormEventSchema,
@@ -10,7 +12,6 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
@@ -33,28 +34,33 @@ export async function createDraftEventAction(
     };
   }
 
-  // Multi-fecha es exclusivo de cuentas profesionales.
+  const { eventsService, userService } = createServerContainer();
+  const author = await userService.getUserById(tokens.decodedToken.uid);
+
+  // Multi-fecha es exclusivo del plan Premium.
   if (
     event.eventType === "multi-date" &&
-    filterStandardClaims(tokens.decodedToken).role !== "professional"
+    author?.plan !== "premium"
   ) {
     return {
       success: false,
-      error: "Los eventos multi-fecha son exclusivos de cuentas profesionales.",
+      error: "Los eventos multi-fecha son exclusivos del plan Premium.",
     };
   }
-
-  console.log("probandooooo", event)
 
   const resultParse = safeParse(FormEventSchema, {
     ...event,
     slug: event.title
       ? `${toSlug(event.title)}-${Date.now().toString(36)}`
       : undefined,
+    // Server-owned: siempre nace borrador (publicar pasa por moderación en
+    // publishEventAction) y sin promoción (no hay flujo de pago).
+    status: "draft",
+    promotion: undefined,
     author: {
       id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name ?? "pruebas evento",
-      photoURL: tokens.decodedToken.picture || undefined,
+      displayName: author?.displayName || tokens.decodedToken.name || "",
+      photoURL: author?.photoURL || tokens.decodedToken.picture || undefined,
     },
   });
 
@@ -68,20 +74,22 @@ export async function createDraftEventAction(
       })),
     );
 
-    console.log("probandooooo")
-
     return {
       success: false,
       error: resultParse.issues.map((issue) => issue.message).join(", "),
     };
   }
 
-  const parsedData = EventViewModelMapper.toDomain(
-    resultParse.output as unknown as EventViewModel,
+  // Evento nuevo: quien lo crea es el dueño; el equipo solo puede ser de su red.
+  const { event: withTeam, changedUids } = await applyTeamPolicy(
+    EventViewModelMapper.toDomain(resultParse.output as unknown as EventViewModel),
+    null,
+    "owner",
+    tokens.decodedToken.uid,
   );
+  const parsedData = enforcePlanFeatures(withTeam, author);
 
   try {
-    const { eventsService } = createServerContainer();
     const event = await eventsService.createDraftEvent(
       parsedData as unknown as Partial<Events>,
     );
@@ -89,7 +97,9 @@ export async function createDraftEventAction(
     const eventViewModel = EventViewModelMapper.toViewModel(event);
     const userId = tokens.decodedToken.uid;
 
-    updateTag(`user-events-${userId}`);
+    invalidateTeamAccess(changedUids);
+    updateTag(`profile-events-${userId}`);
+    updateTag(`profile-stats-${userId}`);
     revalidatePath("/profile/events", "layout");
     return { success: true, eventInfo: eventViewModel };
   } catch (error) {

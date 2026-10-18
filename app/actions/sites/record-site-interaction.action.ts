@@ -27,7 +27,7 @@ export async function recordSiteInteractionAction(
     return { success: false, authRequired: true, error: "Debes iniciar sesión para interactuar." };
   }
 
-  const { siteInteractionService } = createServerContainer();
+  const { siteInteractionService, sitesService } = createServerContainer();
 
   try {
     if (type === "like" || type === "unlike") {
@@ -36,6 +36,8 @@ export async function recordSiteInteractionAction(
       await siteInteractionService.registerShare(siteId, userId ?? "anonymous");
     }
 
+    // El ranking de los listados depende de likes y compartidos: se recalcula al registrarlos.
+    await sitesService.recomputeScore(siteId);
     updateTag(`site-${siteId}`);
     revalidateTag(`site-${siteId}`, "max");
     return { success: true };

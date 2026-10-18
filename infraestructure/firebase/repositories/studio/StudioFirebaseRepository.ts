@@ -1,5 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { IStudioFirebaseRepository } from "./IStudioFirebaseRepository";
+import type { CheckInByCodeResult } from "@/domain/repository/studio/IStudioRepository";
 import type {
   FirebaseSupportTicketDto,
   FirebaseSupportTicketDetailDto,
@@ -36,14 +37,16 @@ import type {
   ExternalProfileInput,
   CollaboratorKind,
   CollaboratorRole,
+  TeamEventItem,
   AudienceSummary,
   CreateSupportTicketInput,
   MultiDateEventStats,
   MultiDateSessionStats,
 } from "@/domain/entities/studio/Studio";
-import type { ProfessionalType } from "@/domain/entities/professional/ProfessionalRequest";
-import { Pipelines, FieldValue } from "@google-cloud/firestore";
+import { Pipelines, FieldValue, FieldPath } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { isRoleValidForKind } from "@/domain/entities/events/teamPolicy";
+import { isTeamRole } from "@/domain/entities/events/teamAccess";
 import { buildWeeklyInteractions, WEEK_SECONDS } from "./weeklyInteractions";
 
 const {
@@ -63,8 +66,7 @@ interface RegistrationUserInfo {
   lastName?: string;
   displayName?: string;
   photoURL?: string;
-  /** "personal" | "professional" — determina el "@handle" y el chulito. */
-  accountType?: string;
+  participation?: string;
 }
 
 /** Mapa `analytics` tal como llega del pipeline: cualquier clave puede faltar. */
@@ -107,27 +109,24 @@ interface PipelineRegistrationRow {
 /**
  * Repositorio Firebase del Estudio del Organizador.
  *
- * STUBS: las firmas están listas pero el cuerpo NO está implementado.
- * El desarrollador implementará aquí la conexión real a Firestore.
- * La UI funciona por ahora con datos MOCK en los ViewModels.
+ * Datos reales vía pipelines de Firestore Enterprise. Pendientes (sin UI que
+ * los consuma todavía): `getFormResponses` y `getAudienceSummary`.
  */
+// Colombia es UTC-5 fijo (sin horario de verano). Cloud Run corre en UTC: los
+// bordes de mes se calculan en hora de Ibagué, no del servidor.
+const BOGOTA_OFFSET_HOURS = 5;
+export function bogotaMonthStart(now: Date, monthDelta: number): Date {
+  const local = new Date(now.getTime() - BOGOTA_OFFSET_HOURS * 3_600_000);
+  return new Date(
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + monthDelta, 1, BOGOTA_OFFSET_HOURS),
+  );
+}
+
 export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   private readonly now = new Date();
-  private readonly startOfCurrentMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth(),
-    1,
-  );
-  private readonly startOfNextMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth() + 1,
-    1,
-  );
-  private readonly startOfPreviousMonth = new Date(
-    this.now.getFullYear(),
-    this.now.getMonth() - 1,
-    1,
-  );
+  private readonly startOfCurrentMonth = bogotaMonthStart(this.now, 0);
+  private readonly startOfNextMonth = bogotaMonthStart(this.now, 1);
+  private readonly startOfPreviousMonth = bogotaMonthStart(this.now, -1);
 
   constructor(private readonly db: Firestore) {}
 
@@ -257,14 +256,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthViews: number;
     viewsChangePct: number;
   }> {
-    const now = new Date();
-    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const startOfPreviousMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      1,
-    );
+    const { startOfCurrentMonth, startOfNextMonth, startOfPreviousMonth } = this;
 
     const memoryDebugEnabled = process.env.STUDIO_PIPELINE_MEM_DEBUG === "1";
     const heapBefore = memoryDebugEnabled ? process.memoryUsage().heapUsed : 0;
@@ -390,7 +382,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthLikes: number;
     likesChangePct: number;
   }> {
-    // TODO: implementar lógica real de likes
     const data = await this.db
       .pipeline()
       .collection("events")
@@ -436,51 +427,21 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     previousMonthActiveEvents: number;
     activeEventsChangePct: number;
   }> {
-    // TODO: implementar lógica real de eventos activos
-
+    // Activos = publicados que aún no terminan. Sin comparativa mensual: no hay
+    // histórico de "activos" por mes, y la UI la oculta con previous = 0.
     const data = await this.db
       .pipeline()
-      .collectionGroup("events")
+      .collection("events")
       .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
       .where(field("status").equal("published"))
-      .addFields(
-        field("createdAt")
-          .greaterThanOrEqual(this.startOfCurrentMonth)
-          .as("isCurrentMonth"),
-      )
-      .aggregate({
-        accumulators: [countAll().as("total")],
-        groups: [field("id").as("eventId")],
-      })
+      .where(field("endDate").greaterThanOrEqual(new Date()))
+      .aggregate(countAll().as("total"))
       .execute();
 
-    let activeEvents = 0;
-    let previousMonthActiveEvents = 0;
-    data.results.forEach((result) => {
-      const row = result.data() as {
-        eventId?: string;
-        total?: number;
-      };
-
-      const total = Number(row.total ?? 0);
-      if (row.eventId) {
-        activeEvents += total;
-      } else {
-        previousMonthActiveEvents += total;
-      }
-    });
-
-    return {
-      activeEvents,
-      previousMonthActiveEvents,
-      activeEventsChangePct: this.calculateChangePct(
-        activeEvents,
-        previousMonthActiveEvents,
-      ),
-    };
+    const activeEvents = Number((data.results[0]?.data() as { total?: number } | undefined)?.total ?? 0);
+    return { activeEvents, previousMonthActiveEvents: 0, activeEventsChangePct: 0 };
   }
+
 
   private async getViewsVsRegistrations(
     uid: string,
@@ -489,28 +450,39 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .pipeline()
       .collection("events")
       .where(field("author.id").equal(uid))
+      .where(field("status").equal("published"))
+      // Desempate por id: mismo orden en cada render aunque empaten en vistas.
+      .sort(field("analytics.views").descending(), field("__name__").ascending())
       .select(
         field("__name__").as("eventId"),
         field("title").as("eventName"),
         field("analytics.views").as("views"),
         field("analytics.registrations").as("registrations"),
+        field("registrationType").as("registrationType"),
       )
+      // Tope de 10: la lista deja de ser legible con más filas; sin tope lee todos los eventos.
+      .limit(10)
       .execute();
 
-    return result.results.map((r) => {
+    return result.results.flatMap((r) => {
       const row = r.data() as {
         eventId: unknown;
         eventName: string;
         views: number;
         registrations: number;
+        registrationType?: string;
       };
+      // Externos: la inscripción ocurre fuera (registrations = 0 siempre), así
+      // que su "conversión" sería falsa. ponytail: se filtran en memoria (puede
+      // quedar < 10 filas); mover al where si la mezcla lo vuelve notorio.
+      if (row.registrationType === "external") return [];
 
-      return {
+      return [{
         eventId: this.toDocId(row.eventId),
         eventName: row.eventName,
         views: Number(row.views ?? 0),
         registrations: Number(row.registrations ?? 0),
-      };
+      }];
     });
   }
 
@@ -521,8 +493,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       this.startOfCurrentMonth.getTime() / 1000,
     );
 
-    console.log("startOfMonthSeconds", startOfMonthSeconds);
-    console.log("uid", uid);
 
     const result = await this.db
       .pipeline()
@@ -534,6 +504,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           .where(
             field("registeredAt").greaterThanOrEqual(this.startOfCurrentMonth),
           )
+          .where(field("status").notEqual("canceled"))
           .addFields(
             field("registeredAt")
               .timestampToUnixSeconds()
@@ -559,8 +530,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         registrationsByDay: { day: number; total: number }[];
       };
 
-      console.log("row.registrationsByDay", row.registrationsByDay);
-
       row.registrationsByDay?.forEach(({ day, total }) => {
         dayMap.set(day, (dayMap.get(day) ?? 0) + Number(total));
       });
@@ -583,7 +552,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .where(field("author.id").equal(uid))
       .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
       .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .sort(field("analytics.score").descending())
+      .sort(field("analytics.score").descending(), field("__name__").ascending())
       .limit(5)
       .select(
         field("__name__").as("eventId"),
@@ -611,7 +580,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   }
 
   private async getInteractivity(uid: string): Promise<InteractivityPoint[]> {
-    // TODO: implementar lógica real de interactividad
     const interactivityData = await this.db
       .pipeline()
       .collection("events")
@@ -619,6 +587,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
       .where(field("createdAt").lessThan(this.startOfNextMonth))
       .where(field("status").equal("published"))
+      .sort(field("analytics.score").descending(), field("__name__").ascending())
       .select(
         field("__name__").as("eventId"),
         field("title").as("eventName"),
@@ -626,7 +595,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         field("analytics.likes").as("likes"),
         field("analytics.shares").as("shares"),
       )
-      .limit(4)
+      // 6 filas: suficiente para comparar sin que la tabla de barras se alargue.
+      .limit(6)
       .execute();
 
     return interactivityData.results.map((r) => {
@@ -901,6 +871,9 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           })
         : collection;
 
+      // Las canceladas no son asistentes (ni en la tabla ni en el CSV).
+      stage = stage.where(field("status").notEqual("canceled"));
+
       if (cursorValue !== undefined) {
         stage = stage.where(
           queryAsc
@@ -919,13 +892,12 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
             .pipeline()
             .collection("users")
             .where(field("uid").equal(variable("userId")))
-            // `accountType` decide el "@handle" y el chulito de verificado.
             .select(
               "firstName",
               "lastName",
               "displayName",
               "photoURL",
-              "accountType",
+              "participation",
             )
             .toScalarExpression()
             .as("userData"),
@@ -985,7 +957,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
 
       return { registrationType, registrations, requiresAttendance, nextCursor, prevCursor };
     } catch (error) {
-      console.log("getEventRegistrations error", { eventId, params, error });
+      console.error("getEventRegistrations error", { eventId, error });
       throw error;
     }
   }
@@ -1025,7 +997,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       lastName,
       displayName: user?.displayName,
       photoURL: user?.photoURL,
-      isProfessional: user?.accountType === "professional",
+      isCreator: user?.participation === "creator",
       registeredAt,
       attendanceConfirmed,
       formResponses,
@@ -1283,6 +1255,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       .pipeline()
       .collection(`${docPath}/registrations`)
       .where(field("registeredAt").lessThanOrEqual(endDate))
+      .where(field("status").notEqual("canceled"))
       .addFields(
         constant(startSeconds)
           .subtract(field("registeredAt").timestampToUnixSeconds())
@@ -1348,12 +1321,43 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   async confirmAttendance(
     eventId: string,
     userId: string,
-    sessionId?: string,
+    sessionId: string | undefined,
+    actingUid: string,
   ): Promise<void> {
     const regRef = this.db
       .collection(`${this.docPath(eventId, sessionId)}/registrations`)
       .doc(userId);
-    await regRef.update({ checkedInAt: FieldValue.serverTimestamp() });
+    // checkedInBy = quién confirmó (auditoría).
+    await regRef.update({ checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
+  }
+
+  /**
+   * Check-in por QR: una transacción busca la inscripción por `checkInCode` en la
+   * colección del evento/sesión (consulta de igualdad, sin índice compuesto) y sella
+   * `checkedInAt`. Idempotente. Exige `requiresAttendance` en el evento/sesión.
+   */
+  async checkInByCode(
+    eventId: string,
+    code: string,
+    sessionId: string | undefined,
+    actingUid: string,
+  ): Promise<CheckInByCodeResult> {
+    const targetRef = this.db.doc(this.docPath(eventId, sessionId));
+    return this.db.runTransaction(async (tx) => {
+      const [target, found] = await Promise.all([
+        tx.get(targetRef),
+        tx.get(targetRef.collection("registrations").where("checkInCode", "==", code).limit(1)),
+      ]);
+      if (target.get("requiresAttendance") !== true) return { result: "no_attendance" };
+      if (found.empty) return { result: "not_found" };
+      const doc = found.docs[0];
+      const entry = doc.data();
+      if (entry.status === "canceled") return { result: "canceled" };
+      const name = (entry.name as string) || "Asistente";
+      if (entry.status === "accepted" || entry.checkedInAt) return { result: "already", name };
+      tx.update(doc.ref, { checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
+      return { result: "ok", name };
+    });
   }
 
   /**
@@ -1381,6 +1385,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       const current = Number(targetSnap.get("analytics.registrations") ?? 0);
 
       tx.delete(regRef);
+      // Una inscripción ya cancelada decrementó el contador al cancelarse.
+      if (regSnap.get("status") === "canceled") return;
       tx.update(targetRef, {
         "analytics.registrations": Math.max(0, current - 1),
         updatedAt: FieldValue.serverTimestamp(),
@@ -1395,10 +1401,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    * controlamos). Por eso lo puede disparar cualquier visitante, logueado o no.
    */
   async incrementExternalRegistrationClick(eventId: string): Promise<void> {
-    await this.db.collection("events").doc(eventId).update({
-      "analytics.clicks": FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    // Action pública: solo cuenta en eventos con registro externo. Sin tocar
+    // updatedAt (un click no es una edición del evento).
+    // ponytail: sin dedupe/rate limit; añadir cuando haya rate limiting global.
+    const ref = this.db.collection("events").doc(eventId);
+    const snap = await ref.get();
+    if (snap.data()?.registrationType !== "external") return;
+    await ref.update({ "analytics.clicks": FieldValue.increment(1) });
   }
 
   async getFormResponses(
@@ -1553,9 +1562,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         likes: Number(row.likes ?? 0),
         shares: Number(row.shares ?? 0),
         eventsCount: Number(row.eventsCount ?? 0),
-        // MOCK — tendencia semanal placeholder, determinista para pruebas de UI.
-        // TODO: calcular real desde el log de interacciones (getSiteAnalytics).
-        trend: (clicks % 40) - 15,
       };
     });
   }
@@ -1581,6 +1587,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           .search({ query: documentMatches(search), sort: score().descending() })
           .where(field("location.siteId").equal(siteId))
       : collection.where(field("location.siteId").equal(siteId));
+    // Otros autores pueden apuntar a este sitio: nunca exponer sus borradores/rechazados.
+    stage = stage.where(field("status").equal("published"));
 
     if (cursorDate) {
       stage = stage.where(
@@ -1682,15 +1690,14 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .pipeline()
         .collection("users")
         .search({ query: documentMatches(trimmed), sort: score().descending() })
-        // Solo cuentas profesionales pueden ser colaboradoras.
-        .where(field("accountType").equal("professional"))
-        .limit(limit + 1)
+        .limit((limit + 1) * 3)
         .select(
           field("__name__").as("uid"),
           field("displayName").as("displayName"),
           field("photoURL").as("photoURL"),
           field("email").as("email"),
-          field("professionalType").as("professionalType"),
+          field("participation").as("participation"),
+          field("creatorVerified").as("creatorVerified"),
         )
         .execute();
 
@@ -1701,17 +1708,31 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
             displayName?: string;
             photoURL?: string;
             email?: string;
-            professionalType?: ProfessionalType;
+            participation?: string;
+            creatorVerified?: boolean;
           };
           return {
             uid: this.toDocId(row.uid),
-            displayName: row.displayName || row.email || "Usuario",
+            displayName: row.displayName || "Usuario",
             photoURL: row.photoURL ?? undefined,
             email: row.email ?? "",
-            professionalType: row.professionalType ?? undefined,
+            participation: row.participation,
+            creatorVerified: row.creatorVerified ?? false,
           };
         })
-        .filter((u) => u.uid !== uid)
+        .filter(
+          (user) =>
+            user.uid !== uid &&
+            user.participation === "creator",
+        )
+        .map((user) => ({
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          // Sin exponer correos ajenos: solo si quien busca ya lo escribió completo.
+          email: user.email.toLowerCase() === trimmed.toLowerCase() ? user.email : "",
+          creatorVerified: user.creatorVerified,
+        }))
         .slice(0, limit);
     } catch (error) {
       // Fallback sin índice de búsqueda (Firestore Enterprise): match EXACTO por
@@ -1729,24 +1750,24 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .limit(1)
         .get();
       return snap.docs
-        // Solo profesionales; se excluye a uno mismo.
+        // Solo creadores; se excluye a uno mismo.
         .filter((d) => {
-          const u = d.data() as { accountType?: string };
-          return d.id !== uid && u.accountType === "professional";
+          const user = d.data() as { participation?: string };
+          return d.id !== uid && user.participation === "creator";
         })
         .map((d) => {
           const u = d.data() as {
             displayName?: string;
             photoURL?: string;
             email?: string;
-            professionalType?: ProfessionalType;
+            creatorVerified?: boolean;
           };
           return {
             uid: d.id,
             displayName: u.displayName || u.email || "Usuario",
             photoURL: u.photoURL ?? undefined,
             email: u.email ?? "",
-            professionalType: u.professionalType ?? undefined,
+            creatorVerified: u.creatorVerified ?? false,
           };
         });
     }
@@ -1757,65 +1778,73 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
    * emisor e invitado en la invitación. Salta auto-invitación y duplicados
    * (pendientes o ya aceptados). Account-level: sin eventId.
    */
-  async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void> {
-    if (invitees.length === 0) return;
+  async inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<{ inviterName: string; invited: string[] }> {
+    if (invitees.length === 0) return { inviterName: "", invited: [] };
+    if (invitees.length > 20) throw new Error("Máximo 20 invitaciones a la vez.");
 
     const meSnap = await this.db.collection("users").doc(fromUid).get();
     const me = meSnap.exists
       ? (meSnap.data() as {
           displayName?: string;
           photoURL?: string;
-          professionalType?: ProfessionalType;
+          creatorVerified?: boolean;
         })
       : {};
 
-    // Dedup: invitaciones ya existentes (pendientes o aceptadas) que yo envié.
-    const existing = await this.db
-      .collection("collaborationInvites")
-      .where("fromUid", "==", fromUid)
-      .get();
-    const seen = new Set(
-      existing.docs
+    // Dedup en ambas direcciones: la red es bidireccional.
+    const [sent, received] = await Promise.all([
+      this.db.collection("collaborationInvites").where("fromUid", "==", fromUid).get(),
+      this.db.collection("collaborationInvites").where("toUid", "==", fromUid).get(),
+    ]);
+    const seen = new Set([
+      ...sent.docs
         .filter((d) => ["pending", "accepted"].includes(d.data().status))
         .map((d) => d.data().toUid as string),
-    );
+      ...received.docs
+        .filter((d) => ["pending", "accepted"].includes(d.data().status))
+        .map((d) => d.data().fromUid as string),
+    ]);
 
-    // Solo se puede invitar a cuentas profesionales (defensa: el buscador ya las
+    // Solo se puede invitar a creadores (defensa: el buscador ya los
     // filtra, pero validamos server-side por si llega un uid crafteado).
     const inviteeSnaps = await Promise.all(
       invitees.map((inv) => this.db.collection("users").doc(inv.uid).get()),
     );
-    const professionalUids = new Set(
+    // Datos del invitado desde el servidor, nunca del cliente (p.ej. "verificado").
+    const creators = new Map(
       inviteeSnaps
-        .filter(
-          (s) => s.exists && (s.data() as { accountType?: string }).accountType === "professional",
-        )
-        .map((s) => s.id),
+        .filter((s) => s.exists && (s.data() as { participation?: string }).participation === "creator")
+        .map((s) => [
+          s.id,
+          s.data() as { displayName?: string; email?: string; photoURL?: string; creatorVerified?: boolean },
+        ]),
     );
 
     const batch = this.db.batch();
-    let added = 0;
+    const invited: string[] = [];
     for (const inv of invitees) {
-      if (inv.uid === fromUid || seen.has(inv.uid) || !professionalUids.has(inv.uid)) continue;
+      const invitee = creators.get(inv.uid);
+      if (inv.uid === fromUid || seen.has(inv.uid) || !invitee) continue;
       const ref = this.db.collection("collaborationInvites").doc();
       batch.set(ref, {
         fromUid,
         fromDisplayName: me.displayName ?? "",
         fromPhotoURL: me.photoURL ?? null,
-        fromProfessionalType: me.professionalType ?? null,
+        fromCreatorVerified: me.creatorVerified ?? false,
         toUid: inv.uid,
-        toEmail: inv.email.trim().toLowerCase(),
-        toDisplayName: inv.displayName,
-        toPhotoURL: inv.photoURL ?? null,
-        toProfessionalType: inv.professionalType ?? null,
+        toEmail: (invitee.email ?? "").toLowerCase(),
+        toDisplayName: invitee.displayName ?? "",
+        toPhotoURL: invitee.photoURL ?? null,
+        toCreatorVerified: invitee.creatorVerified ?? false,
         status: "pending",
         createdAt: FieldValue.serverTimestamp(),
         respondedAt: null,
       });
       seen.add(inv.uid);
-      added++;
+      invited.push(inv.uid);
     }
-    if (added > 0) await batch.commit();
+    if (invited.length > 0) await batch.commit();
+    return { inviterName: me.displayName ?? "", invited };
   }
 
   /** Invitaciones pendientes que YO recibí. Emisor ya denormalizado en el doc. */
@@ -1859,13 +1888,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           toUid?: string;
           toDisplayName?: string;
           toPhotoURL?: string;
-          toProfessionalType?: ProfessionalType;
+          toCreatorVerified?: boolean;
         };
         return {
           toUid: inv.toUid,
           toDisplayName: inv.toDisplayName,
           toPhotoURL: inv.toPhotoURL,
-          toProfessionalType: inv.toProfessionalType,
+          toCreatorVerified: inv.toCreatorVerified,
         };
       });
 
@@ -1876,13 +1905,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           fromUid?: string;
           fromDisplayName?: string;
           fromPhotoURL?: string;
-          fromProfessionalType?: ProfessionalType;
+          fromCreatorVerified?: boolean;
         };
         return {
           fromUid: inv.fromUid,
           fromDisplayName: inv.fromDisplayName,
           fromPhotoURL: inv.fromPhotoURL,
-          fromProfessionalType: inv.fromProfessionalType,
+          fromCreatorVerified: inv.fromCreatorVerified,
         };
       });
 
@@ -1904,19 +1933,20 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     inviteId: string,
     uid: string,
     accept: boolean,
-  ): Promise<void> {
+  ): Promise<{ fromUid: string; responderName: string; accepted: boolean } | null> {
     const inviteRef = this.db.collection("collaborationInvites").doc(inviteId);
-    await this.db.runTransaction(async (tx) => {
+    return this.db.runTransaction(async (tx) => {
       const snap = await tx.get(inviteRef);
       if (!snap.exists) throw new Error("Invitación no encontrada.");
-      const inv = snap.data() as { toUid?: string; status?: string };
+      const inv = snap.data() as { toUid?: string; status?: string; fromUid?: string; toDisplayName?: string };
       if (inv.toUid !== uid) throw new Error("No autorizado.");
-      if (inv.status !== "pending") return; // ya respondida → no-op
+      if (inv.status !== "pending") return null; // ya respondida → no-op
 
       tx.update(inviteRef, {
         status: accept ? "accepted" : "declined",
         respondedAt: FieldValue.serverTimestamp(),
       });
+      return { fromUid: inv.fromUid ?? "", responderName: inv.toDisplayName ?? "", accepted: accept };
     });
   }
 
@@ -1934,7 +1964,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   /**
    * Quita de mi red a un colaborador. Externo: borra el `externalProfiles`
    * (solo su `managedBy`). User: borra las invitaciones aceptadas que yo le envié.
-   * No toca los eventos donde ya está acreditado (se quitan desde el editor).
+   * No toca los eventos: la action llama a `removeMemberFromOwnerEvents` para cortar el acceso.
    */
   async removeCollaborator(uid: string, refId: string, kind: CollaboratorKind): Promise<void> {
     if (kind === "external") {
@@ -1948,15 +1978,16 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       return;
     }
 
-    const snap = await this.db
-      .collection("collaborationInvites")
-      .where("fromUid", "==", uid)
-      .get();
+    // La red es bidireccional: el vínculo puede haberlo creado cualquiera de los dos.
+    const invites = this.db.collection("collaborationInvites");
+    const [sent, received] = await Promise.all([
+      invites.where("fromUid", "==", uid).where("toUid", "==", refId).get(),
+      invites.where("fromUid", "==", refId).where("toUid", "==", uid).get(),
+    ]);
     const batch = this.db.batch();
     let n = 0;
-    snap.docs.forEach((d) => {
-      const x = d.data();
-      if (x.toUid === refId && x.status === "accepted") {
+    [...sent.docs, ...received.docs].forEach((d) => {
+      if (d.data().status === "accepted") {
         batch.delete(d.ref);
         n++;
       }
@@ -2034,6 +2065,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     };
     if (event.author?.id !== actingUid) throw new Error("No autorizado.");
     if ((event.collaborators ?? []).some((c) => c.refId === member.refId)) return;
+    if (member.refId === actingUid) throw new Error("No puedes acreditarte a ti mismo.");
+    if (!isRoleValidForKind(member.kind, member.role)) {
+      throw new Error(member.kind === "external" ? "Los perfiles externos solo pueden ser crédito." : "Rol inválido.");
+    }
+    if (!(await this.isInMyNetwork(actingUid, member.refId, member.kind))) {
+      throw new Error("Solo puedes agregar a personas de tu red de colaboradores.");
+    }
 
     await eventRef.update({
       collaborators: FieldValue.arrayUnion({ refId: member.refId, kind: member.kind }),
@@ -2044,6 +2082,100 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       },
       updatedAt: FieldValue.serverTimestamp(),
     });
+  }
+
+  /** ¿`refId` es de mi red? user = vínculo aceptado en cualquier sentido; external = perfil que yo administro. */
+  private async isInMyNetwork(uid: string, refId: string, kind: CollaboratorKind): Promise<boolean> {
+    if (kind === "external") {
+      const snap = await this.db.collection("externalProfiles").doc(refId).get();
+      return snap.exists && (snap.data() as { managedBy?: string }).managedBy === uid;
+    }
+    const invites = this.db.collection("collaborationInvites");
+    const [sent, received] = await Promise.all([
+      invites.where("fromUid", "==", uid).where("toUid", "==", refId).get(),
+      invites.where("fromUid", "==", refId).where("toUid", "==", uid).get(),
+    ]);
+    return [...sent.docs, ...received.docs].some((d) => d.data().status === "accepted");
+  }
+
+  /**
+   * Cambia el rol de un miembro ya acreditado. Transaccional (lee el tipo del miembro) y
+   * solo toca `collaboratorsData.<refId>.role`, sin pisar el resto del evento. Solo el owner.
+   */
+  async changeCollaboratorRole(
+    eventId: string,
+    refId: string,
+    role: CollaboratorRole,
+    actingUid: string,
+  ): Promise<void> {
+    const eventRef = this.db.collection("events").doc(eventId);
+    await this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(eventRef);
+      if (!snap.exists) throw new Error("Evento no encontrado.");
+      const event = snap.data() as {
+        author?: { id?: string };
+        collaborators?: { refId: string; kind: "user" | "external" }[];
+      };
+      if (event.author?.id !== actingUid) throw new Error("No autorizado.");
+      const member = (event.collaborators ?? []).find((c) => c.refId === refId);
+      if (!member) throw new Error("Esa persona no está en el equipo del evento.");
+      if (!isRoleValidForKind(member.kind, role)) {
+        throw new Error(member.kind === "external" ? "Los perfiles externos solo pueden ser crédito." : "Rol inválido.");
+      }
+      tx.update(eventRef, new FieldPath("collaboratorsData", refId, "role"), role, "updatedAt", FieldValue.serverTimestamp());
+    });
+  }
+
+  /** Eventos donde `uid` es miembro con rol de Studio. `array-contains` sobre el elemento exacto `{refId, kind:"user"}`. */
+  async listTeamEventsForUser(uid: string): Promise<TeamEventItem[]> {
+    const snap = await this.db
+      .collection("events")
+      .where("collaborators", "array-contains", { refId: uid, kind: "user" })
+      .limit(50)
+      .get();
+    const items: TeamEventItem[] = [];
+    for (const d of snap.docs) {
+      const e = d.data() as {
+        title?: string;
+        status?: string;
+        author?: { id?: string };
+        startDate?: Timestamp;
+        mainImage?: { url?: string };
+        collaboratorsData?: Record<string, { role?: string }>;
+      };
+      const role = e.collaboratorsData?.[uid]?.role;
+      if (!isTeamRole(role) || role === "credit" || !e.author?.id) continue;
+      items.push({
+        id: d.id,
+        title: e.title ?? "",
+        startDate: e.startDate?.toDate ? e.startDate.toDate() : null,
+        mainImage: e.mainImage?.url,
+        status: e.status ?? "draft",
+        role,
+        ownerId: e.author.id,
+      });
+    }
+    return items;
+  }
+
+  async removeMemberFromOwnerEvents(ownerUid: string, refId: string): Promise<string[]> {
+    const snap = await this.db
+      .collection("events")
+      .where("collaborators", "array-contains", { refId, kind: "user" })
+      .get();
+    const mine = snap.docs.filter((d) => (d.data().author as { id?: string } | undefined)?.id === ownerUid);
+    if (mine.length === 0) return [];
+    const batch = this.db.batch();
+    for (const d of mine) {
+      const next = ((d.data().collaborators ?? []) as { refId: string }[]).filter((c) => c.refId !== refId);
+      batch.update(d.ref, {
+        collaborators: next,
+        [`collaboratorsData.${refId}`]: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    return mine.map((d) => d.id);
   }
 
   /**

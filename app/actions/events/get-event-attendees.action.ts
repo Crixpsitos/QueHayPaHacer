@@ -5,15 +5,14 @@ import { cookies } from "next/headers";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { createServerContainer } from "@/infraestructure/di/container";
 
-/** Asistente serializable para el modal de inscritos (cuentas no profesionales). */
+/** Asistente serializable para el modal de inscritos. */
 export interface EventAttendeeVM {
   userId: string;
   /** Nombre completo a mostrar. */
   name: string;
-  /** "@handle" sutil (solo cuentas profesionales). */
+  /** "@handle" sutil (solo creadores). */
   handle?: string;
-  /** Chulito de verificado (cuenta profesional). */
-  verified: boolean;
+  isCreator: boolean;
   photoURL?: string;
   /** ISO 8601. */
   registeredAt: string;
@@ -37,7 +36,7 @@ const PAGE_SIZE = 20;
 
 /**
  * Lista paginada de inscritos a un evento, pensada para que el ORGANIZADOR
- * (cualquier cuenta, también las no profesionales) vea quién asiste sin entrar
+ * (cualquier cuenta, también las no Premium) vea quién asiste sin entrar
  * al Estudio. Reutiliza el pipeline del Studio pero exige ser dueño del evento.
  */
 export async function getEventAttendeesAction(
@@ -89,8 +88,8 @@ export async function getEventAttendeesAction(
       return {
         userId: r.userId,
         name: fullName || r.displayName || "Sin nombre",
-        handle: r.isProfessional && fullName && r.displayName ? r.displayName : undefined,
-        verified: r.isProfessional,
+        handle: r.isCreator && fullName && r.displayName ? r.displayName : undefined,
+        isCreator: r.isCreator,
         photoURL: r.photoURL,
         registeredAt: r.registeredAt.toISOString(),
         attendanceConfirmed: r.attendanceConfirmed,

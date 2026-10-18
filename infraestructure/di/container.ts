@@ -40,10 +40,6 @@ import { BadgeFirebaseRepository } from "../firebase/repositories/user/BadgeFire
 import { BadgeAdapter } from "../adapters/user/BadgeAdapter";
 import { BadgeFirebaseMapper } from "../firebase/mappers/user/BadgeFirebaseMapper";
 import { BadgeService } from "@/application/services/user/BadgeService";
-import { ProfessionalRequestFirebaseRepository } from "../firebase/repositories/professional/ProfessionalRequestFirebaseRepository";
-import { ProfessionalRequestAdapter } from "../adapters/professional/ProfessionalRequestAdapter";
-import { ProfessionalRequestFirebaseMapper } from "../firebase/mappers/professional/ProfessionalRequestFirebaseMapper";
-import { ProfessionalRequestService } from "@/application/services/professional/ProfessionalRequestService";
 import { StudioFirebaseRepository } from "../firebase/repositories/studio/StudioFirebaseRepository";
 import { StudioAdapter } from "../adapters/studio/StudioAdapter";
 import { StudioFirebaseMapper } from "../firebase/mappers/studio/StudioFirebaseMapper";
@@ -63,6 +59,21 @@ import { ContactService } from "@/application/services/contact/ContactService";
 import { SiteInteractionFirebaseRepository } from "../firebase/repositories/SiteInteraction/SiteInteractionFirebaseRepository";
 import { SiteInteractionAdapter } from "../adapters/SiteInteraction/SiteInteractionAdapter";
 import { SiteInteractionFirebaseMapper } from "../firebase/mappers/SiteInteraction/SiteInteractionFirebaseMapper";
+import { ReportFirebaseRepository } from "../firebase/repositories/report/ReportFirebaseRepository";
+import { ReportService } from "@/application/services/report/ReportService";
+import { ContentDeclarationFirebaseRepository } from "../firebase/repositories/contentDeclaration/ContentDeclarationFirebaseRepository";
+import { SiteClaimFirebaseRepository } from "../firebase/repositories/siteClaim/SiteClaimFirebaseRepository";
+import { SiteClaimService } from "@/application/services/siteClaim/SiteClaimService";
+import { SiteSuggestionFirebaseRepository } from "../firebase/repositories/siteSuggestion/SiteSuggestionFirebaseRepository";
+import { SiteSuggestionService } from "@/application/services/siteSuggestion/SiteSuggestionService";
+import { NotificationFirebaseRepository } from "../firebase/repositories/notification/NotificationFirebaseRepository";
+import { NotificationService } from "@/application/services/notification/NotificationService";
+import { ConfigFirebaseRepository } from "../firebase/repositories/config/ConfigFirebaseRepository";
+import { TransitRouteService } from "@/application/services/config/TransitRouteService";
+import { SiteTransitService } from "@/application/services/sites/SiteTransitService";
+import { SiteTransitReportFirebaseRepository } from "../firebase/repositories/siteTransit/SiteTransitReportFirebaseRepository";
+import { HolidayService } from "@/application/services/config/HolidayService";
+import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
 
@@ -145,17 +156,6 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
-  // professional requests
-  const professionalRequestFirebaseRepository = new ProfessionalRequestFirebaseRepository(getFirebaseFirestore());
-  const professionalRequestRepository = new ProfessionalRequestAdapter(
-    professionalRequestFirebaseRepository,
-    new ProfessionalRequestFirebaseMapper(),
-  );
-  const professionalRequestService = new ProfessionalRequestService(
-    professionalRequestRepository,
-    userRepository,
-  );
-
   // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
   const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
@@ -174,6 +174,45 @@ export const createServerContainer = () => {
   const contactAdapter = new ContactAdapter(contactFirebaseRepository, new ContactFirebaseMapper());
   const contactService = new ContactService(contactAdapter);
 
+  // reports (moderación de contenido)
+  const reportService = new ReportService(
+    new ReportFirebaseRepository(getFirebaseFirestore()),
+    eventsService,
+    eventSessionService,
+    sitesService,
+  );
+
+  // declaración del autor al publicar (evidencia legal)
+  const contentDeclarationService = new ContentDeclarationService(
+    new ContentDeclarationFirebaseRepository(getFirebaseFirestore()),
+  );
+
+  // reclamos de sitios (dueños que piden verificación)
+  const siteClaimService = new SiteClaimService(
+    new SiteClaimFirebaseRepository(getFirebaseFirestore()),
+    sitesService,
+  );
+
+  // sugerencias de cambio de sitios (las revisa el administrador)
+  const siteSuggestionService = new SiteSuggestionService(
+    new SiteSuggestionFirebaseRepository(getFirebaseFirestore()),
+    sitesService,
+  );
+
+  // campanita de avisos (invitaciones, moderación, sugerencias)
+  const notificationService = new NotificationService(
+    new NotificationFirebaseRepository(getFirebaseFirestore()),
+  );
+
+  // configuración editable por el administrador (festivos; luego rutas de bus)
+  const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
+  const transitRouteService = new TransitRouteService(new ConfigFirebaseRepository(getFirebaseFirestore()));
+  const siteTransitService = new SiteTransitService(
+    new SiteTransitReportFirebaseRepository(getFirebaseFirestore()),
+    sitesService,
+    transitRouteService,
+  );
+
   return {
     userService,
     campaignService,
@@ -189,9 +228,16 @@ export const createServerContainer = () => {
     storageService,
     profileService,
     badgeService,
-    professionalRequestService,
     studioService,
     contactService,
+    reportService,
+    contentDeclarationService,
+    siteClaimService,
+    siteSuggestionService,
+    notificationService,
+    holidayService,
+    transitRouteService,
+    siteTransitService,
   };
 };
 

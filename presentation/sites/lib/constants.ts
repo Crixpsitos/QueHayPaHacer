@@ -107,6 +107,12 @@ export function createInitialForm() {
     schedule: structuredClone(DEFAULT_SCHEDULE),
     socialMedia: {},
     temporarilyClosed: { isClosed: false, reason: "" },
+    openingPolicy: {},
+    recommendations: { tips: [] },
     bookingUrl: "",
+    transit: { routes: [] },
+    kind: "business" as const,
+    // Lo más conservador: no se afirma ser dueño hasta que la persona lo elija.
+    publishedAs: "proposer" as const,
   }
 }

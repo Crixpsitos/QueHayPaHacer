@@ -20,10 +20,9 @@ import { es } from "date-fns/locale";
 import { SummarySection } from "../ui/SummarySection";
 import { SummaryItem } from "../ui/SummaryItem";
 import { SessionsReviewSection } from "./SessionsReviewSection";
+import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration";
 import { Badge } from "@/app/components/ui/badge";
-import { renderToHTMLString } from "@tiptap/static-renderer";
-import DOMPurify from "dompurify";
-import StarterKit from "@tiptap/starter-kit";
+import { renderDescriptionHTML } from "@/presentation/events/lib/renderDescription";
 import {
   Avatar,
   AvatarFallback,
@@ -37,6 +36,8 @@ interface Step8ReviewProps {
   onGoToStep: (step: number) => void;
   /** En multi-fecha, fecha/lugar/registro/precio viven en cada sesión, no en el evento. */
   isMultiDate?: boolean;
+  declared: boolean;
+  onDeclaredChange: (declared: boolean) => void;
 }
 
 const PROMOTION_PRICE_PER_DAY = 7500;
@@ -95,14 +96,13 @@ const ExpandableContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8ReviewProps) => {
+export const Step8Review = ({ form, onGoToStep, isMultiDate = false, declared, onDeclaredChange }: Step8ReviewProps) => {
   const formData = form.watch();
   const isPromoted = form.watch("promotion.isPromoted");
   const promotedUntil = form.watch("promotion.promotedUntil");
   const promotedAt = form.watch("promotion.promotedAt");
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
-  const extensions = [StarterKit];
 
   const [promotionPaid, setPromotionPaid] = useState(false);
 
@@ -149,16 +149,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
                 <div
                   className="tiptap prose prose-sm max-w-none text-[#09090B] focus:outline-none"
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(
-                      renderToHTMLString({ content: formData.description, extensions }),
-                      {
-                        ALLOWED_TAGS: [
-                          "p","br","strong","em","u","s","h1","h2","h3","h4","h5","h6",
-                          "ul","ol","li","a","span","blockquote","code","pre","img",
-                        ],
-                        ALLOWED_ATTR: ["href","target","rel","src","alt","class","style"],
-                      },
-                    ),
+                    __html: renderDescriptionHTML(formData.description),
                   }}
                 />
               </ExpandableContent>
@@ -232,7 +223,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
             {formData.location?.moreInfo && (
               <SummaryItem label="Más información" value={formData.location.moreInfo} />
             )}
-            {formData.location?.coordinates?.lat && (
+            {Boolean(formData.location?.coordinates?.lat) && (
               <SummaryItem label="Mapa" value="Coordenadas configuradas" />
             )}
           </SummarySection>
@@ -334,6 +325,8 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false }: Step8Revi
           <p className="text-sm text-[#A1A1AA]">Sin colaboradores</p>
         )}
       </SummarySection>
+
+      <AuthorDeclaration kind="evento" checked={declared} onChange={onDeclaredChange} />
 
       {/* Promoción — oculta hasta que PROMOTION_ENABLED = true */}
       {PROMOTION_ENABLED && (

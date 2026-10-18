@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ponytail: sin build — Firebase App Hosting compila en cada rollout. CI solo gatea el PR
+  # antes del merge (tests de seguridad, tipos, lockfile, secretos), cosa que App Hosting no hace.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Un solo lockfile (pnpm)
+        run: |
+          if [ -e package-lock.json ] || [ -e yarn.lock ]; then
+            echo "::error::Lockfile ajeno a pnpm encontrado. El gestor de referencia es pnpm."
+            exit 1
+          fi
+
+      - name: Sin secretos versionados
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env($|\.)|AccountService.*\.json$|serviceAccount.*\.json$' || true)
+          keys=$(git grep -lE -- '-----BEGIN [A-Z ]*PRIVATE KEY-----' || true)
+          if [ -n "$bad$keys" ]; then
+            echo "::error::Posibles secretos versionados:"; echo "$bad"; echo "$keys"
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # ponytail: lint no bloquea hasta cerrar P1 "cero errores ESLint" (baseline: 66 errores).
+      - run: pnpm lint
+        continue-on-error: true
+

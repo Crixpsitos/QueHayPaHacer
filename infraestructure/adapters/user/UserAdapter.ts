@@ -17,6 +17,11 @@ export class UserAdapter implements IUserRepository {
         return dtos.map((dto) => this.mapper.toDomain(dto));
     }
 
+    async findVerifiedCreators(limit: number): Promise<User[]> {
+        const dtos = await this.repository.findVerifiedCreators(limit);
+        return dtos.map((dto) => this.mapper.toDomain(dto));
+    }
+
     async findByEmail(email: string): Promise<User | null> {
         const dto = await this.repository.findByEmail(email);
         if (!dto) return null;

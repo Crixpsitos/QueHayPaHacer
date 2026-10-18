@@ -4,7 +4,7 @@ type selectedSectionSetting =
   | "main"
   | "edit-profile"
   | "change-password"
-  | "professional"
+  | "membership"
   | "delete";
 
 interface ProfileConfig {

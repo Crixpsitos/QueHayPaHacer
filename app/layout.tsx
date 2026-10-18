@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
-import { SITE_URL, SITE_NAME } from "./lib/site";
+import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "./lib/site";
 import "./globals.css";
 
 const DEFAULT_DESCRIPTION =
@@ -17,19 +17,31 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   icons: {
     icon: "/favicon.ico",
-    apple: [{ url: "/favicon.ico", sizes: "180x180" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  // PWA en iOS ("Agregar a inicio"). El manifest (app/manifest.ts) se enlaza solo.
+  appleWebApp: {
+    capable: true,
+    title: "QHPA",
+    statusBarStyle: "black-translucent",
   },
   // Defaults heredados por todas las páginas (se completan con su title/description).
   openGraph: {
     siteName: SITE_NAME,
     locale: "es_CO",
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
-    // "summary" hasta que haya imágenes OG; luego "summary_large_image".
-    card: "summary",
+    card: "summary_large_image",
+    images: [DEFAULT_OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
+};
+
+// En Next 16 themeColor va en `viewport`, no en `metadata`.
+export const viewport: Viewport = {
+  themeColor: "#09090B",
 };
 
 /** JSON-LD site-wide: marca + sitio (base para knowledge panel / marca en Google). */
@@ -52,10 +64,12 @@ const SITE_JSONLD = [
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
+import { ServiceWorkerRegister } from "@/app/components/pwa/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-heading", weight: ["400", "500", "600", "700"] });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-heading" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -97,6 +111,10 @@ export default function RootLayout({
             {children}
         </AuthProvider>
         <Toaster />
+        <ServiceWorkerRegister />
+        <Suspense fallback={null}>
+          <InstallBanner />
+        </Suspense>
       </body>
     </html>
   );

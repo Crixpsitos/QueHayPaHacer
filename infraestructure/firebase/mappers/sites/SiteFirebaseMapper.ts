@@ -7,6 +7,8 @@ import { SiteLocation } from "@/domain/entities/sites/value-objects/SiteLocation
 import { Site } from "@/domain/entities/sites/Site"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteDetail, SiteMediaItem } from "@/presentation/sites/view-models/SiteFormViewModel"
+import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 
 export class SiteFirebaseMapper {
   toDomain(dto: FirebaseSiteDto): Site {
@@ -134,7 +136,17 @@ export class SiteFirebaseMapper {
       mediaItems,
       socialMedia: dto.socialMedia ?? {},
       temporarilyClosed: dto.temporarilyClosed ?? { isClosed: false, reason: "" },
+      openingPolicy: normalizeOpeningPolicy(dto.openingPolicy),
+      recommendations: normalizeRecommendations(dto.recommendations),
       bookingUrl: dto.bookingUrl ?? "",
+      transit: dto.transit ?? undefined,
+      // Sin dato = no se afirma ningún vínculo con el lugar.
+      kind: dto.kind ?? "business",
+      publishedAs: dto.publishedAs ?? "proposer",
+      verification: dto.verification ?? "community",
+      city: dto.location.city ? { name: dto.location.city.name, slug: dto.location.city.slug } : undefined,
+      department: dto.location.department ? { name: dto.location.department.name, slug: dto.location.department.slug } : undefined,
+      country: dto.location.country ? { name: dto.location.country.name, slug: dto.location.country.slug } : undefined,
     }
   }
 

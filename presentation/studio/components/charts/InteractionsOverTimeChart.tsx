@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import {
   Area,
   AreaChart,
@@ -10,7 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { STUDIO_COLORS } from "../../lib/tokens";
+import { AXIS_TICK, CHART, TooltipCard, formatCompact, formatDay, formatNumber } from "./chartTheme";
+import { ChartEmpty } from "./ChartEmpty";
 
 interface InteractionsPoint {
   date: string;
@@ -23,62 +25,62 @@ interface InteractionsOverTimeChartProps {
   data: InteractionsPoint[];
 }
 
-// Mismo lenguaje de color que las métricas del sitio (siteMetrics.tsx).
 const SERIES = [
-  { key: "clicks", name: "Clicks", color: STUDIO_COLORS.primary },
-  { key: "likes", name: "Me gusta", color: STUDIO_COLORS.rose },
-  { key: "shares", name: "Compartidos", color: STUDIO_COLORS.sky },
+  { key: "clicks", name: "Clicks", color: CHART.primary },
+  { key: "likes", name: "Me gusta", color: CHART.ink },
+  { key: "shares", name: "Compartidos", color: CHART.neutral },
 ] as const;
 
 export default function InteractionsOverTimeChart({ data }: InteractionsOverTimeChartProps) {
+  const still = useReducedMotion();
+  if (data.length === 0) return <ChartEmpty />;
+  const totals = SERIES.map(
+    (s) => `${formatNumber(data.reduce((sum, d) => sum + d[s.key], 0))} ${s.name.toLowerCase()}`,
+  ).join(", ");
+
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-        <defs>
-          {SERIES.map((s) => (
-            <linearGradient key={s.key} id={`grad-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={s.color} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={s.color} stopOpacity={0.05} />
-            </linearGradient>
-          ))}
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke={STUDIO_COLORS.slate200} vertical={false} />
-        <XAxis
-          dataKey="date"
-          tick={{ fontSize: 11, fill: STUDIO_COLORS.slate500 }}
-          tickLine={false}
-          axisLine={{ stroke: STUDIO_COLORS.slate200 }}
-        />
-        <YAxis
-          tick={{ fontSize: 11, fill: STUDIO_COLORS.slate400 }}
-          tickLine={false}
-          axisLine={false}
-        />
-        <Tooltip
-          cursor={{ stroke: STUDIO_COLORS.slate400, strokeWidth: 1 }}
-          contentStyle={{
-            borderRadius: 8,
-            border: `1px solid ${STUDIO_COLORS.slate200}`,
-            fontSize: 12,
-          }}
-        />
-        <Legend
-          iconType="circle"
-          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-        />
-        {SERIES.map((s) => (
-          <Area
-            key={s.key}
-            type="monotone"
-            dataKey={s.key}
-            name={s.name}
-            stackId="interactions"
-            stroke={s.color}
-            strokeWidth={2}
-            fill={`url(#grad-${s.key})`}
+    <div role="img" aria-label={`Interacciones por semana: ${totals} en el periodo.`}>
+      <ResponsiveContainer width="100%" height={260}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+          <CartesianGrid stroke={CHART.grid} vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatDay}
+            tick={AXIS_TICK}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={24}
           />
-        ))}
-      </AreaChart>
-    </ResponsiveContainer>
+          <YAxis
+            tick={AXIS_TICK}
+            tickFormatter={formatCompact}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+            width={40}
+          />
+          <Tooltip
+            cursor={{ stroke: CHART.neutral, strokeWidth: 1 }}
+            content={<TooltipCard labelFormatter={(d) => `Semana del ${formatDay(d)}`} />}
+          />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+          {SERIES.map((s) => (
+            <Area
+            isAnimationActive={!still}
+            animationDuration={600}
+              key={s.key}
+              type="monotone"
+              dataKey={s.key}
+              name={s.name}
+              stackId="interactions"
+              stroke={s.color}
+              strokeWidth={2}
+              fill={s.color}
+              fillOpacity={0.08}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

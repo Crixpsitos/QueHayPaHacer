@@ -9,6 +9,10 @@ import { HomeEventsRecomendationContainer } from "@/presentation/events/componen
 import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
 import { PreferenceEventsContainer } from "@/presentation/events/components/PreferenceEventsContainer";
 import { Section } from "@/app/components/layout/shared/Section";
+import { CreatorVerificationBanner } from "@/app/components/feature/home/CreatorVerificationBanner";
+import { ContributionBanner } from "@/app/components/feature/home/ContributionBanner";
+import { VerifiedCreatorsSection } from "@/app/components/feature/home/VerifiedCreatorsSection";
+import { PremiumBanner } from "@/app/components/feature/home/PremiumBanner";
 
 export const metadata: Metadata = {
   title: { absolute: "Que Hay Pa Hacer? — Eventos y planes en Ibagué" },
@@ -29,10 +33,14 @@ export default function HomePage() {
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
       </Suspense>
+      <ContributionBanner />
       <Suspense fallback={<EventsSectionsSkeleton />}>
         <HomeEventsRecomendationContainer />
       </Suspense>
       <PreferenceEventsContainer />
+      <PremiumBanner />
+      <CreatorVerificationBanner />
+      <VerifiedCreatorsSection />
     </>
   );
 }

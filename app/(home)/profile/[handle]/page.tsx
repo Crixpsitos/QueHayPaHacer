@@ -2,9 +2,22 @@ import { Loader2 } from "lucide-react";
 import { Container } from "@/app/components/layout/shared/Container";
 import { PublicProfileContainer } from "@/presentation/profile/components/PublicProfileContainer";
 import { ServerBoundary } from "@/presentation/shared/components/ServerBoundary";
+import { getCachedPublicUser } from "@/presentation/profile/lib/cachedProfileData";
+import type { Metadata } from "next";
 
 interface PublicProfilePageProps {
   params: Promise<{ handle: string }>;
+}
+
+export async function generateMetadata({ params }: PublicProfilePageProps): Promise<Metadata> {
+  const user = await getCachedPublicUser((await params).handle);
+  if (!user) return { robots: { index: false, follow: false } };
+  // displayName es el @username (ver PublicProfileViewModelMapper).
+  const name = `${user.firstName} ${user.lastName}`.trim();
+  return {
+    title: name ? `${name} (@${user.displayName})` : `@${user.displayName}`,
+    ...(!user.isPublic && { robots: { index: false, follow: false } }),
+  };
 }
 
 export default function PublicProfilePage({ params }: PublicProfilePageProps) {

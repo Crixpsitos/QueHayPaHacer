@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button/button";
 import { SiteDiscoveryCard } from "./SiteDiscovery";
 import { SiteItemListJsonLd } from "./SiteJsonLd";
@@ -8,14 +9,19 @@ import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { loadMoreSitesAction } from "@/app/actions/sites/load-more-sites.action";
 
 interface InfiniteSiteListProps {
+  /** Tipo de sitio, o "all" para todos. */
   category: string;
   initialSites: SiteDetail[];
   initialCursor: string | null;
+  /** Sitios que ya se ven en otra sección de la página (p. ej. destacados): no se repiten. */
+  excludeIds?: string[];
 }
 
 /** Lista de sitios con "Cargar más" (cursor). Primera página del server (cacheada). */
-export function InfiniteSiteList({ category, initialSites, initialCursor }: InfiniteSiteListProps) {
-  const [sites, setSites] = useState(initialSites);
+export function InfiniteSiteList({ category, initialSites, initialCursor, excludeIds = [] }: InfiniteSiteListProps) {
+  const skip = new Set(excludeIds);
+  const [loaded, setSites] = useState(initialSites);
+  const sites = loaded.filter((s) => !skip.has(s.id));
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +37,7 @@ export function InfiniteSiteList({ category, initialSites, initialCursor }: Infi
     }
   };
 
-  if (sites.length === 0) {
+  if (sites.length === 0 && !cursor) {
     return (
       <div className="py-16 text-center">
         <h3 className="text-xl font-semibold text-foreground">Todavía no hay lugares aquí</h3>
@@ -47,13 +53,16 @@ export function InfiniteSiteList({ category, initialSites, initialCursor }: Infi
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <SiteItemListJsonLd sites={sites} />
         {sites.map((s) => (
-          <SiteDiscoveryCard key={s.id} site={s} />
+          <div key={s.id} className="card-reveal h-full">
+            <SiteDiscoveryCard site={s} />
+          </div>
         ))}
       </div>
       {cursor && (
         <div className="flex justify-center">
-          <Button onClick={loadMore} disabled={loading} variant="outline">
-            {loading ? "Cargando..." : "Cargar más"}
+          <Button onClick={loadMore} disabled={loading} aria-busy={loading} variant="outline" className="min-h-11 min-w-36 transition-transform duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+            {loading && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />}
+            {loading ? "Cargando…" : "Cargar más"}
           </Button>
         </div>
       )}

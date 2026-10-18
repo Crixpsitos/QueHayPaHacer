@@ -21,7 +21,7 @@ interface EventsTableProps {
 }
 
 const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" }).format(
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", year: "numeric" }).format(
     new Date(iso),
   );
 
@@ -49,7 +49,7 @@ export function EventsTable({ events, query }: EventsTableProps) {
   return (
     <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <tr className="border-b border-gray-200 bg-slate-50 text-left text-xs font-semibold text-slate-400">
             <th className="px-4 py-3">Evento</th>
             <th className="hidden px-4 py-3 sm:table-cell">Fecha</th>
             <th className="hidden px-4 py-3 md:table-cell">Registro</th>
@@ -63,7 +63,7 @@ export function EventsTable({ events, query }: EventsTableProps) {
             <tr
               key={event.id}
               className={cn(
-                "group border-b border-gray-100 transition-colors last:border-0 hover:bg-indigo-50/40",
+                "group border-b border-gray-100 transition-colors last:border-0 hover:bg-primary-light",
                 i % 2 === 1 && "bg-slate-50/40",
               )}
             >
@@ -79,7 +79,7 @@ export function EventsTable({ events, query }: EventsTableProps) {
                     )}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-medium text-slate-900 group-hover:text-indigo-700">
+                    <span className="block truncate font-medium text-slate-900 group-hover:text-primary">
                       {event.name}
                     </span>
                     <span className="mt-0.5 flex items-center gap-2">
@@ -95,9 +95,14 @@ export function EventsTable({ events, query }: EventsTableProps) {
                 </span>
               </td>
               <td className="hidden px-4 py-3 md:table-cell">
-                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                  {REGISTRATION_TYPE_LABEL[event.registrationType]}
-                </span>
+                {/* Multi-date: el registro vive en cada sesión, el padre no trae tipo. */}
+                {REGISTRATION_TYPE_LABEL[event.registrationType] ? (
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                    {REGISTRATION_TYPE_LABEL[event.registrationType]}
+                  </span>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
               </td>
               <td className="px-4 py-3 text-right">
                 <span className="inline-flex items-center justify-end gap-1.5 tabular-nums text-slate-700">
@@ -114,7 +119,7 @@ export function EventsTable({ events, query }: EventsTableProps) {
               <td className="px-4 py-3 text-right">
                 <Link
                   href={`/studio/events/${event.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-dark"
                   aria-label={`Abrir ${event.name}`}
                 >
                   Abrir
@@ -149,8 +154,8 @@ function EmptyState({ query }: { query?: string }) {
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50">
-        <CalendarPlus className="h-6 w-6 text-indigo-500" />
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-light">
+        <CalendarPlus className="h-6 w-6 text-primary" />
       </span>
       <div className="space-y-1">
         <p className="text-sm font-medium text-slate-700">Aún no tienes eventos</p>
@@ -160,7 +165,7 @@ function EmptyState({ query }: { query?: string }) {
       </div>
       <Link
         href="/eventos/create"
-        className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+        className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
       >
         <Plus className="h-4 w-4" />
         Crear evento

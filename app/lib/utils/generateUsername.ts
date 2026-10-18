@@ -1,14 +1,16 @@
+import { customAlphabet } from "nanoid";
 import { toSlug } from "./slug";
 
-/**
- * Generates a valid username from a professional/commercial/institutional name.
- * Normalizes accents, converts spaces to "_", lowercases.
- * Output respects [a-z0-9_] and is at most `maxLength` characters.
- */
+const generateSuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
+
 export function generateUsername(name: string, maxLength = 30): string {
   return toSlug(name)
-    .replace(/-/g, "_")        // spaces → _ (toSlug already converts spaces to -)
-    .replace(/_+/g, "_")       // collapse consecutive _
-    .replace(/^_|_$/g, "")     // strip leading/trailing _
+    .replace(/-/g, "")
     .slice(0, maxLength);
+}
+
+export function generateUniqueUsernameCandidate(baseUsername: string, maxLength = 30): string {
+  const suffix = generateSuffix();
+  const normalizedBase = generateUsername(baseUsername, maxLength - suffix.length);
+  return `${normalizedBase}${suffix}`;
 }

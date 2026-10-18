@@ -3,7 +3,7 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 
 interface DeleteBannerResult {
@@ -41,7 +41,7 @@ export async function deleteBannerAction(uid: string): Promise<DeleteBannerResul
       }
     }
 
-    revalidateTag(`user-profile-${uid}`, "max");
+    updateTag(`user-profile-${uid}`);
     return { success: true };
   } catch (error) {
     console.error("Error deleting banner:", error);

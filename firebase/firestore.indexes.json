@@ -1,0 +1,237 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "title",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "shortDescription",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "author.displayName",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "categoryInfo.title",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "name",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "email",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collectionGroup": "sites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "name",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "description",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "category",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "location.address",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "location.city.name",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "location.venue",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "location.moreInfo",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "email",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "firstName",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "fieldPath": "lastName",
+          "searchConfig": {
+            "textSpec": {
+              "indexSpecs": [
+                {
+                  "indexType": "TOKENIZED",
+                  "matchType": "MATCH_GLOBALLY"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

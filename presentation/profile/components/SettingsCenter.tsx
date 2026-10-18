@@ -9,7 +9,6 @@ import {
   DrawerTitle,
 } from "@/app/components/ui/drawer";
 import {
-  AtSign,
   ChevronDown,
   ChevronLeft,
   Settings,
@@ -22,22 +21,19 @@ import {
   AlertTriangle,
   Globe,
   EyeOff,
-  Award,
-  Landmark,
-  Loader2,
   Plus,
-  ShieldCheck,
   // Bell, // reactivar junto con la sección de Notificaciones
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { useProfileConfigStore } from "@/app/store/profile/profileConfig.store";
 import { useMediaQuery } from "@/app/lib/hooks/useMediaQuery";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { updateProfileAction } from "@/app/actions/profile/update-profile.action";
-import { checkUsernameAvailabilityAction } from "@/app/actions/professional/check-username-availability.action";
+import { checkUsernameAvailabilityAction } from "@/app/actions/profile/check-username-availability.action";
 import { generateUsername } from "@/app/lib/utils/generateUsername";
 import { cn } from "@/app/lib/utils/cn";
 import type { SocialLinkEntry } from "@/domain/entities/user/User";
@@ -47,15 +43,17 @@ import { changePasswordAction } from "@/app/actions/auth/change-password.action"
 import { deleteAccountAction } from "@/app/actions/auth/delete-account.action";
 import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage";
 import { notify } from "@/presentation/shared/lib/notify";
-import { ProfessionalRequestSection } from "./professional/ProfessionalRequestSection";
-import type { OrganizerDetails, BusinessDetails, GovernmentDetails } from "@/domain/entities/professional/ProfessionalRequest";
-import { BUSINESS_CATEGORY_LABEL, isProfessionalType, PROFESSIONAL_TYPE_LABEL } from "../lib/professionalType";
+import { EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPassword } from "firebase/auth";
+import { loginAction } from "@/app/actions/auth/login.action";
+import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
+import { MembershipSection } from "./MembershipSection";
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 type selectedSectionSetting =
   | "main"
   | "edit-profile"
   | "change-password"
-  | "professional"
+  | "membership"
   | "delete";
 
 const SOCIAL_PLATFORMS = [
@@ -82,20 +80,8 @@ interface UserData {
   isUsernameCustomized: boolean;
   avatarUrl: string;
   imagePath: string;
-  isProfessional: boolean;
   website: string;
-  mapsLink: string;
   socialLinks: SocialLinkEntry[];
-  professionalDescription: string;
-  brandName: string;
-  // Campos editables exclusivos de cuentas gobierno
-  governmentDepartment: string;
-  governmentEmail: string;
-  governmentPhone: string;
-  governmentNit: string;
-  // Campos editables exclusivos de cuentas negocio
-  businessNit: string;
-  businessPhone: string;
 }
 
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
@@ -107,9 +93,9 @@ const getSectionTitle = (section: selectedSectionSetting) => {
     case "edit-profile":
       return "Editar perfil";
     case "change-password":
-      return "Cambiar contraseña";
-    case "professional":
-      return "Perfil profesional";
+      return "Actualizar contraseña";
+    case "membership":
+      return "Membresía";
     case "delete":
       return "Eliminar cuenta";
     default:
@@ -120,19 +106,20 @@ const getSectionTitle = (section: selectedSectionSetting) => {
 export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean } = {}) => {
   const { user, refreshUser } = useAuth();
   const { openSettings, onOpenSettings, selectedSectionSetting, onSelectSectionSetting } = useProfileConfigStore();
+  const searchParams = useSearchParams();
   const closeResetTimeoutRef = useRef<number | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   // const [categoryNotifications, setCategoryNotifications] = useState(true); // reactivar con la sección de Notificaciones
-  const [isPublic, setIsPublic] = useState(true);
-  const [isProfessional, setIsProfessional] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
   const drawerDirection = isMobile ? "bottom" : "right";
   const drawerContentClassName = isMobile
-    ? "h-dvh max-h-dvh !p-0 before:inset-0 before:rounded-none"
-    : "h-dvh max-h-dvh w-full sm:w-[480px] sm:max-w-[480px] !p-0 before:inset-0 before:rounded-none before:border-y-0 before:border-r-0 before:border-l";
+    ? "!h-dvh !max-h-dvh overflow-hidden !p-0 before:inset-0 before:rounded-none"
+    : "h-dvh max-h-dvh w-full overflow-hidden sm:w-[480px] sm:max-w-[480px] !p-0 before:inset-0 before:rounded-none before:border-y-0 before:border-r-0 before:border-l";
 
   useEffect(() => {
     return () => {
@@ -141,6 +128,28 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       }
     };
   }, []);
+
+  // `?ajustes=1` abre el panel UNA vez; al cerrar se borra de la URL. Sin el flag,
+  // el panel se reabría solo mientras el parámetro seguía en la URL (no se podía cerrar).
+  const queryHandledRef = useRef(false);
+  useEffect(() => {
+    const hasQuery = searchParams.get("ajustes") === "1";
+    if (!hasQuery) {
+      queryHandledRef.current = false;
+    } else if (!queryHandledRef.current) {
+      queryHandledRef.current = true;
+      onOpenSettings(true);
+    }
+  }, [onOpenSettings, searchParams]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const hasQuery = url.searchParams.get("ajustes") === "1";
+    if (openSettings === hasQuery) return;
+    if (openSettings) url.searchParams.set("ajustes", "1");
+    else url.searchParams.delete("ajustes");
+    window.history.replaceState(null, "", url.pathname + (url.search || ""));
+  }, [openSettings]);
 
   // Form states
   const [editedUser, setEditedUser] = useState<UserData>({
@@ -153,18 +162,8 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     isUsernameCustomized: false,
     avatarUrl: "",
     imagePath: "",
-    isProfessional: false,
     website: "",
-    mapsLink: "",
     socialLinks: [],
-    professionalDescription: "",
-    brandName: "",
-    governmentDepartment: "",
-    governmentEmail: "",
-    governmentPhone: "",
-    governmentNit: "",
-    businessNit: "",
-    businessPhone: "",
   });
   const [initialProfileData, setInitialProfileData] = useState<UserData | null>(null);
 
@@ -181,33 +180,15 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         isUsernameCustomized: false,
         avatarUrl: "",
         imagePath: "",
-        isProfessional: false,
         website: "",
-        mapsLink: "",
         socialLinks: emptySocialLinks,
-        professionalDescription: "",
-        brandName: "",
-        governmentDepartment: "",
-        governmentEmail: "",
-        governmentPhone: "",
-        governmentNit: "",
-        businessNit: "",
-        businessPhone: "",
       };
     }
     const fullName = user.displayName ?? "";
     const [first = "", ...rest] = fullName.split(" ");
     const last = rest.join(" ");
 
-    // Backward compat: convert legacy single socialLink to socialLinks array
-    const rawSocialLinks = user.profile?.socialLinks as SocialLinkEntry[] | undefined;
-    const legacySocialLink = user.profile?.socialLink as string | undefined;
-    const resolvedSocialLinks: SocialLinkEntry[] =
-      rawSocialLinks?.length
-        ? rawSocialLinks
-        : legacySocialLink
-          ? [{ platform: "other" as const, url: legacySocialLink }]
-          : [];
+    const resolvedSocialLinks = user.profile?.socialLinks ?? [];
 
     return {
       firstName: user.profile?.firstName ?? first,
@@ -215,34 +196,12 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       email: user.email ?? "",
       phone: user.phoneNumber ?? user.profile?.phoneNumber ?? "",
       bio: user.profile?.bio ?? "",
-      username: user.profile?.username ?? fullName.toLowerCase().replace(/\s+/g, "") ?? "",
+      username: user.profile?.username ?? generateUsername(fullName),
       isUsernameCustomized: (user.profile?.isUsernameCustomized as boolean | undefined) ?? false,
       avatarUrl: user.profile?.photoURL ?? user.photoURL ?? "",
       imagePath: user.profile?.imagePath ?? "",
-      isProfessional: user.profile?.accountType === "professional",
       website: user.profile?.website ?? "",
-      mapsLink: (user.profile?.mapsLink as string | undefined) ?? "",
       socialLinks: resolvedSocialLinks,
-      professionalDescription: user.profile?.professionalDescription ?? "",
-      brandName: user.profile?.brandName ?? "",
-      governmentDepartment: user.profile?.professionalType === "government"
-        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.department ?? "")
-        : "",
-      governmentEmail: user.profile?.professionalType === "government"
-        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.institutionalEmail ?? "")
-        : "",
-      governmentPhone: user.profile?.professionalType === "government"
-        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.institutionalPhone ?? "")
-        : "",
-      governmentNit: user.profile?.professionalType === "government"
-        ? ((user.profile?.professionalDetails as GovernmentDetails | undefined)?.nit ?? "")
-        : "",
-      businessNit: user.profile?.professionalType === "business"
-        ? ((user.profile?.professionalDetails as BusinessDetails | undefined)?.nit ?? "")
-        : "",
-      businessPhone: user.profile?.professionalType === "business"
-        ? ((user.profile?.professionalDetails as BusinessDetails | undefined)?.businessPhone ?? "")
-        : "",
     };
   }, [user]);
 
@@ -254,9 +213,10 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     const userData = getUserDataFromAuth();
     setEditedUser(userData);
     setInitialProfileData(userData);
-    setIsProfessional(user.profile?.accountType === "professional");
-    // Obtener isPublic del usuario (por defecto true si no existe)
-    setIsPublic(user.profile?.isPublic !== false);
+    setIsPremium(user.profile?.plan === "premium");
+    setIsPublic(
+      user.profile?.participation === "creator" && user.profile.isPublic,
+    );
     // Resetear estado de acordeones al reabrir
     setOpenEditSections(new Set(["personal"]));
     setAddingSocialLink(null);
@@ -340,16 +300,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       phoneNumber: normalizePhoneToColombia(data.phone) ?? "",
       avatarUrl: data.avatarUrl,
       website: data.website.trim(),
-      mapsLink: data.mapsLink.trim(),
       socialLinks: data.socialLinks,
-      professionalDescription: data.professionalDescription.trim(),
-      brandName: data.brandName.trim(),
-      governmentDepartment: data.governmentDepartment.trim(),
-      governmentEmail: data.governmentEmail.trim(),
-      governmentPhone: data.governmentPhone.trim(),
-      governmentNit: data.governmentNit.trim(),
-      businessNit: data.businessNit.trim(),
-      businessPhone: data.businessPhone.trim(),
     }),
     [],
   );
@@ -411,6 +362,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           photoURL: uploadResult.publicUrl,
           imagePath: uploadResult.path,
         });
+        void invalidateMyData();
 
         if (!updateResult.success) {
           throw new Error(updateResult.error ?? "No se pudo actualizar la foto de perfil.");
@@ -477,33 +429,6 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     const isUsernameChanged =
       editedUser.username.trim() !== (initialProfileData?.username.trim() ?? "");
 
-    // Construir professionalDetails actualizado según el tipo
-    const isGovType = user.profile?.professionalType === "government";
-    const isBizType = user.profile?.professionalType === "business";
-    const existingGovDetails = isGovType
-      ? (user.profile?.professionalDetails as GovernmentDetails | undefined)
-      : undefined;
-    const existingBizDetails = isBizType
-      ? (user.profile?.professionalDetails as BusinessDetails | undefined)
-      : undefined;
-
-    const updatedProfessionalDetails =
-      isGovType && existingGovDetails
-        ? ({
-            ...existingGovDetails,
-            department: editedUser.governmentDepartment.trim(),
-            institutionalEmail: editedUser.governmentEmail.trim(),
-            institutionalPhone: editedUser.governmentPhone.trim(),
-            nit: editedUser.governmentNit.trim() || existingGovDetails.nit || null,
-          } as Record<string, unknown>)
-        : isBizType && existingBizDetails
-          ? ({
-              ...existingBizDetails,
-              nit: editedUser.businessNit.trim() || existingBizDetails.nit || null,
-              businessPhone: editedUser.businessPhone.trim() || null,
-            } as Record<string, unknown>)
-          : undefined;
-
     const result = await updateProfileAction({
       uid: user.uid,
       username: editedUser.username.trim(),
@@ -512,13 +437,10 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       bio: editedUser.bio.trim(),
       phoneNumber: editedUser.phone,
       website: editedUser.website.trim(),
-      mapsLink: isProfessional ? editedUser.mapsLink.trim() : undefined,
       socialLinks: editedUser.socialLinks,
       isUsernameCustomized: isUsernameChanged ? true : editedUser.isUsernameCustomized,
-      professionalDescription: isProfessional ? editedUser.professionalDescription.trim() : undefined,
-      brandName: isProfessional ? editedUser.brandName.trim() : undefined,
-      professionalDetails: updatedProfessionalDetails,
     });
+    void invalidateMyData();
 
     if (!result.success) {
       setSaveProfileMessage({
@@ -539,16 +461,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       bio: editedUser.bio.trim(),
       phone: normalizedPhone ?? "",
       website: editedUser.website.trim(),
-      mapsLink: editedUser.mapsLink.trim(),
       socialLinks: editedUser.socialLinks,
-      professionalDescription: editedUser.professionalDescription.trim(),
-      brandName: editedUser.brandName.trim(),
-      governmentDepartment: editedUser.governmentDepartment.trim(),
-      governmentEmail: editedUser.governmentEmail.trim(),
-      governmentPhone: editedUser.governmentPhone.trim(),
-      governmentNit: editedUser.governmentNit.trim(),
-      businessNit: editedUser.businessNit.trim(),
-      businessPhone: editedUser.businessPhone.trim(),
     };
     setEditedUser(updatedUserData);
     setInitialProfileData(updatedUserData);
@@ -556,6 +469,12 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     setIsSavingProfile(false);
     onSelectSectionSetting("main");
   };
+
+  // Solo cuentas con proveedor email/contraseña (no solo-Google) pueden cambiarla.
+  const hasPasswordProvider = useMemo(
+    () => Boolean(user && getFirebaseAuth().currentUser?.providerData.some((p) => p.providerId === "password")),
+    [user],
+  );
 
   const handleChangePassword = async (data: {
     current: string;
@@ -569,9 +488,28 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
 
     setChangePasswordMessage(null);
 
+    // Verifica la contraseña actual; el servidor exige un token con login reciente.
+    const authUser = getFirebaseAuth().currentUser;
+    if (!authUser?.email) {
+      setChangePasswordMessage({ type: "error", message: "No hay sesión activa." });
+      return;
+    }
+    let idToken: string;
+    try {
+      const cred = await reauthenticateWithCredential(
+        authUser,
+        EmailAuthProvider.credential(authUser.email, data.current),
+      );
+      idToken = await cred.user.getIdToken(true);
+    } catch {
+      setChangePasswordMessage({ type: "error", message: "La contraseña actual no es correcta." });
+      return;
+    }
+
     const result = await changePasswordAction({
       uid: user.uid,
       newPassword: data.new,
+      idToken,
     });
 
     if (!result.success) {
@@ -581,6 +519,11 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
       });
       return;
     }
+
+    // Firebase revoca las sesiones previas al cambiar la contraseña: se reabre con la
+    // nueva (SDK cliente + cookies) para no dejar una cookie que ya no se puede refrescar.
+    await signInWithEmailAndPassword(getFirebaseAuth(), authUser.email, data.new).catch(() => {});
+    await loginAction(authUser.email, data.new).catch(() => {});
 
     setChangePasswordMessage({
       type: "success",
@@ -607,9 +550,11 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         uid: user.uid,
         isPublic: newVisibility,
       });
+      void invalidateMyData();
 
       if (result.success) {
         setIsPublic(newVisibility);
+        await refreshUser(); // reescribe también la sesión guardada en el navegador
         notify.success(result.message || "Visibilidad del perfil actualizada.");
       } else {
         notify.error(result.error || "Error al actualizar la visibilidad.");
@@ -663,7 +608,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     // El username inicial ya le pertenece al usuario — no necesita verificarse
     if (trimmed === initialProfileData?.username.trim()) return;
     const timer = setTimeout(() => {
-      void checkUsernameAvailabilityAction(trimmed, user?.uid ?? "").then((res) => {
+      void checkUsernameAvailabilityAction(trimmed).then((res) => {
         setUsernameCheckedValue(trimmed);
         setUsernameCheckResult(res.available ? "available" : "taken");
       });
@@ -689,7 +634,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
               {editedUser.firstName || "Usuario"} {editedUser.lastName}
             </p>
             <p className="truncate text-sm text-muted-foreground">{editedUser.email || "Sin correo"}</p>
-            <p className="truncate text-xs text-muted-foreground">{editedUser.phone || "Sin telefono"}</p>
+            <p className="truncate text-xs text-muted-foreground">{editedUser.phone || "Sin teléfono"}</p>
           </div>
         </div>
       </div>
@@ -699,18 +644,20 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <MenuRow
           icon={User}
           title="Editar perfil"
-          description="Nombre, apellido, usuario, correo, telefono y foto"
+          description="Nombre, apellido, usuario, correo, teléfono y foto"
           onClick={() => {
             syncUserData();
             onSelectSectionSetting("edit-profile");
           }}
         />
-        <MenuRow
-          icon={Lock}
-          title="Cambiar contraseña"
-          description="Actualiza tu contraseña de acceso"
-          onClick={() => onSelectSectionSetting("change-password")}
-        />
+        {hasPasswordProvider && (
+          <MenuRow
+            icon={Lock}
+            title="Actualizar contraseña"
+            description="Actualiza tu contraseña de acceso"
+            onClick={() => onSelectSectionSetting("change-password")}
+          />
+        )}
       </Section>
 
       {/* PRIVACY */}
@@ -718,10 +665,16 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <ToggleRow
           icon={isPublic ? Globe : EyeOff}
           title="Visibilidad del perfil"
-          description={isPublic ? "Tu perfil es público" : "Tu perfil es privado"}
+          description={
+            user?.profile?.participation === "consumer"
+              ? "Los perfiles consumidores siempre son privados"
+              : isPublic
+                ? "Tu perfil es público"
+                : "Tu perfil es privado"
+          }
           checked={isPublic}
           onChange={handleToggleVisibility}
-          disabled={isUpdatingVisibility}
+          disabled={isUpdatingVisibility || user?.profile?.participation === "consumer"}
         />
       </Section>
 
@@ -737,10 +690,10 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         />
       </Section> */}
 
-      {/* PROFESSIONAL ACCOUNT */}
-      <Section title="Cuenta profesional">
+      {/* MEMBERSHIP */}
+      <Section title="Membresía">
         <button
-          onClick={() => onSelectSectionSetting("professional")}
+          onClick={() => onSelectSectionSetting("membership")}
           className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted"
         >
           <div className="flex items-center gap-3">
@@ -749,17 +702,14 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
             </div>
             <div>
               <p className="font-medium">
-                {isProfessional
-                  ? "Gestionar cuenta profesional"
-                  : "Cambiar a cuenta profesional"}
+                Gestionar membresía
               </p>
               <p className="text-sm text-muted-foreground">
-                Para influencers, negocios, organizaciones culturales y
-                entidades gubernamentales.
+                Consulta tu plan {isPremium ? "Premium" : "Básico"}.
               </p>
             </div>
           </div>
-          {isProfessional ? (
+          {isPremium ? (
             <span className="shrink-0 rounded-full bg-foreground px-2 py-0.5 text-xs font-medium text-background">
               Activa
             </span>
@@ -793,44 +743,10 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
   );
 
   const renderEditProfile = () => {
-    // Firestore es fuente de verdad; customClaims puede estar desactualizado (JWT stale)
-    const rawType = (user?.profile?.professionalType as string | undefined)
-      ?? (user?.customClaims?.professionalType as string | undefined);
-    const professionalType = isProfessionalType(rawType) ? rawType : null;
-    const isOrganizer = professionalType === "organizer";
-    const isBusiness = professionalType === "business";
-    const isGovernment = professionalType === "government";
-
-    const organizerDetails = isOrganizer
-      ? (user?.profile?.professionalDetails as OrganizerDetails | undefined)
-      : null;
-    const businessDetails = isBusiness
-      ? (user?.profile?.professionalDetails as BusinessDetails | undefined)
-      : null;
-    const governmentDetails = isGovernment
-      ? (user?.profile?.professionalDetails as GovernmentDetails | undefined)
-      : null;
-
-    const nit = organizerDetails?.nit ?? businessDetails?.nit ?? governmentDetails?.nit ?? null;
-    const professionalTypeLabel = professionalType
-      ? PROFESSIONAL_TYPE_LABEL[professionalType]
-      : "Profesional";
-    const professionalDescriptionLabel = isBusiness
-      ? "Descripción del negocio"
-      : isGovernment
-        ? "Descripción institucional"
-        : "Descripción profesional";
-
-    const ProfTypeIcon = isOrganizer ? Award : isBusiness ? Briefcase : Landmark;
-
     // Summaries shown when each accordion is closed
     const personalSummary =
       [editedUser.firstName.trim(), editedUser.lastName.trim()].filter(Boolean).join(" ") ||
       "Sin datos";
-    const professionalSummary =
-      isProfessional && professionalType
-        ? `${professionalTypeLabel}${editedUser.brandName.trim() ? ` · ${editedUser.brandName.trim()}` : ""}`
-        : "";
     const digitalParts: string[] = [];
     if (editedUser.website.trim()) {
       try {
@@ -869,7 +785,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <EditAccordionSection
           id="personal"
           icon={User}
-          title="Perfil personal"
+          title="Información personal"
           summary={personalSummary}
           isOpen={openEditSections.has("personal")}
           onToggle={() => toggleEditSection("personal")}
@@ -923,9 +839,28 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
             onChange={(v) => setEditedUser({ ...editedUser, lastName: v })}
             isIncomplete={incompleteFields.includes("lastName")}
           />
+          <Field
+            label="Username"
+            value={editedUser.username}
+            onChange={(value) => {
+              setEditedUser({
+                ...editedUser,
+                username: generateUsername(value),
+                isUsernameCustomized: true,
+              });
+            }}
+            placeholder="username"
+            helperText={
+              usernameCheckStatus === "available"
+                ? "Disponible"
+                : usernameCheckStatus === "taken"
+                  ? "No disponible"
+                  : "Es tu identificador público dentro de QHPA."
+            }
+          />
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label className="text-sm font-medium">Bio</label>
+              <label className="text-sm font-medium">Biografía</label>
               {incompleteFields.includes("bio") && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                   <AlertCircle className="h-3 w-3" />
@@ -963,256 +898,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           />
         </EditAccordionSection>
 
-        {/* ── 2. CUENTA PROFESIONAL ── */}
-        {isProfessional && (
-          <EditAccordionSection
-            id="professional"
-            icon={ProfTypeIcon}
-            title="Cuenta profesional"
-            summary={professionalSummary}
-            isOpen={openEditSections.has("professional")}
-            onToggle={() => toggleEditSection("professional")}
-          >
-            {/* Type badge */}
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                <ProfTypeIcon className="h-3 w-3" aria-hidden />
-                {professionalTypeLabel}
-              </span>
-            </div>
-
-            {/* Nombre / identidad profesional → genera @username */}
-            <Field
-              label={
-                isBusiness
-                  ? "Nombre comercial"
-                  : isGovernment
-                    ? "Nombre oficial de la entidad"
-                    : "Nombre / identidad profesional"
-              }
-              value={editedUser.brandName}
-              onChange={(v) => {
-                const newUsername = generateUsername(v.trim());
-                setEditedUser({
-                  ...editedUser,
-                  brandName: v,
-                  username: newUsername,
-                  isUsernameCustomized: false,
-                });
-              }}
-              placeholder={
-                isBusiness
-                  ? "Nombre público de tu negocio"
-                  : isGovernment
-                    ? "Ej. Alcaldía de Ibagué"
-                    : "Tu nombre como organizador"
-              }
-            />
-
-            {/* Preview de @identificador derivado */}
-            {editedUser.brandName.trim() && (
-              <div
-                className={cn(
-                  "flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors",
-                  usernameCheckStatus === "taken"
-                    ? "border-destructive/40 bg-destructive/[0.03]"
-                    : usernameCheckStatus === "available"
-                      ? "border-emerald-300/60 bg-emerald-50/30"
-                      : "border-border bg-muted/30",
-                )}
-              >
-                <AtSign
-                  className={cn(
-                    "mt-0.5 h-4 w-4 shrink-0",
-                    usernameCheckStatus === "taken"
-                      ? "text-destructive"
-                      : usernameCheckStatus === "available"
-                        ? "text-emerald-600"
-                        : "text-muted-foreground",
-                  )}
-                  aria-hidden
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-foreground" aria-label="Identificador público generado">
-                      @{editedUser.username || generateUsername(editedUser.brandName.trim())}
-                    </span>
-                    {usernameCheckStatus === "checking" && (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-hidden />
-                    )}
-                    {usernameCheckStatus === "available" && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600">
-                        <CheckCircle className="h-3 w-3" aria-hidden />
-                        Disponible
-                      </span>
-                    )}
-                    {usernameCheckStatus === "taken" && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-destructive">
-                        <AlertCircle className="h-3 w-3" aria-hidden />
-                        No disponible
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Identificador público generado automáticamente.
-                  </p>
-                  {usernameCheckStatus === "taken" && (
-                    <p className="mt-1 text-xs font-medium text-destructive">
-                      Este identificador ya está en uso. Modifica el nombre para generar uno diferente.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Descripción profesional */}
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                {professionalDescriptionLabel}
-              </label>
-              <p className="mb-1.5 text-xs text-muted-foreground">
-                Aparece en tu perfil público
-                {!editedUser.professionalDescription
-                  ? " — si está vacío, se mostrará tu bio."
-                  : "."}
-              </p>
-              <textarea
-                value={editedUser.professionalDescription}
-                onChange={(e) =>
-                  setEditedUser({ ...editedUser, professionalDescription: e.target.value })
-                }
-                rows={3}
-                maxLength={500}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary"
-                placeholder="Describe tu actividad profesional..."
-              />
-            </div>
-
-            {/* Categoría del negocio (read-only) */}
-            {isBusiness && businessDetails?.businessCategory && (
-              <VerifiedField
-                label="Categoría del negocio"
-                value={BUSINESS_CATEGORY_LABEL[businessDetails.businessCategory]}
-                note="Categoría definida durante la verificación de tu cuenta."
-              />
-            )}
-
-            {/* Tipo de organizador (read-only) */}
-            {isOrganizer && organizerDetails?.organizerType && (
-              <VerifiedField
-                label="Tipo de organizador"
-                value={
-                  organizerDetails.organizerType === "organization"
-                    ? "Empresa u organización"
-                    : "Persona natural"
-                }
-                note="Para modificar este dato, gestiona tu cuenta profesional."
-              />
-            )}
-
-            {/* Categorías del organizador (informativo) */}
-            {isOrganizer &&
-              organizerDetails?.eventCategories &&
-              organizerDetails.eventCategories.length > 0 && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                    Categorías de eventos
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {organizerDetails.eventCategories.map((cat) => (
-                      <span
-                        key={cat}
-                        className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            {/* Nombre oficial verificado (government) */}
-            {isGovernment && governmentDetails?.entityName && governmentDetails.entityName !== editedUser.brandName.trim() && (
-              <VerifiedField
-                label="Nombre registrado en verificación"
-                value={governmentDetails.entityName}
-                note="Nombre original registrado al momento de la verificación."
-              />
-            )}
-
-            {/* Dependencia editable (government) */}
-            {isGovernment && (
-              <Field
-                label="Dependencia / área"
-                value={editedUser.governmentDepartment}
-                onChange={(v) => setEditedUser({ ...editedUser, governmentDepartment: v })}
-                placeholder="Ej. Secretaría de Cultura"
-                helperText="Dependencia o área responsable de esta cuenta."
-              />
-            )}
-
-            {/* Contacto institucional editable (government) */}
-            {isGovernment && (
-              <>
-                <Field
-                  label="Correo institucional"
-                  type="email"
-                  value={editedUser.governmentEmail}
-                  onChange={(v) => setEditedUser({ ...editedUser, governmentEmail: v })}
-                  placeholder="contacto@entidad.gov.co"
-                  helperText="Correo oficial de la entidad, visible en el perfil público."
-                />
-                <Field
-                  label="Teléfono institucional"
-                  type="tel"
-                  value={editedUser.governmentPhone}
-                  onChange={(v) => setEditedUser({ ...editedUser, governmentPhone: v })}
-                  placeholder="+57 608 000 0000"
-                  helperText="Teléfono oficial de la entidad."
-                />
-              </>
-            )}
-
-            {/* NIT — government y business: editable; organizer: verificado enmascarado */}
-            {isGovernment ? (
-              <Field
-                label="NIT de la entidad"
-                value={editedUser.governmentNit}
-                onChange={(v) => setEditedUser({ ...editedUser, governmentNit: v })}
-                placeholder="900.123.456-7"
-                helperText="Número de identificación tributaria de la entidad (opcional)."
-              />
-            ) : isBusiness ? (
-              <>
-                <Field
-                  label="NIT del negocio"
-                  value={editedUser.businessNit}
-                  onChange={(v) => setEditedUser({ ...editedUser, businessNit: v })}
-                  placeholder="900.123.456-7"
-                  helperText="Identificación tributaria del negocio (opcional)."
-                />
-                <Field
-                  label="Teléfono comercial"
-                  type="tel"
-                  value={editedUser.businessPhone}
-                  onChange={(v) => setEditedUser({ ...editedUser, businessPhone: v })}
-                  placeholder="+57 310 000 0000"
-                  helperText="Teléfono público del negocio. Opcional — distinto del teléfono personal."
-                />
-              </>
-            ) : (
-              nit && (
-                <VerifiedField
-                  label="NIT / Identificación fiscal"
-                  value="••••••••••"
-                  note="Asociado a la verificación de tu cuenta. No modificable directamente."
-                />
-              )
-            )}
-          </EditAccordionSection>
-        )}
-
-        {/* ── 4. PRESENCIA DIGITAL ── */}
+        {/* ── 2. PRESENCIA DIGITAL ── */}
         <EditAccordionSection
           id="digital"
           icon={Globe}
@@ -1227,19 +913,8 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
             value={editedUser.website}
             onChange={(v) => setEditedUser({ ...editedUser, website: v })}
             placeholder="https://tuweb.com"
-            helperText="Aparece como enlace de contacto en tu perfil público."
+            helperText="Aparece como enlace de contacto en tu perfil."
           />
-
-          {isProfessional && (
-            <Field
-              label="Enlace de ubicación (Google Maps)"
-              type="url"
-              value={editedUser.mapsLink}
-              onChange={(v) => setEditedUser({ ...editedUser, mapsLink: v })}
-              placeholder="https://maps.app.goo.gl/..."
-              helperText="Aparece como tile de mapa en tu perfil público."
-            />
-          )}
 
           <div>
             <label className="mb-2 block text-sm font-medium">Redes sociales</label>
@@ -1282,7 +957,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
                 Agregar red social
               </button>
             ) : (
-              <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/[0.02] p-3">
+              <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/2 p-3">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">Plataforma</label>
                   <select
@@ -1401,7 +1076,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
               className={`h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors ${
                 passwordErrors.current
                   ? "border-destructive bg-destructive/5 focus:border-destructive"
-                  : "border-border bg-background focus:border-brand-violet"
+                  : "border-border bg-background focus:border-primary"
               }`}
             />
             {passwordErrors.current && (
@@ -1426,7 +1101,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
                 className={`h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors ${
                   passwordErrors.new
                     ? "border-destructive bg-destructive/5 focus:border-destructive"
-                    : "border-border bg-background focus:border-brand-violet"
+                    : "border-border bg-background focus:border-primary"
                 }`}
               />
               {/* Indicador de fortaleza */}
@@ -1467,7 +1142,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
                     ? "border-destructive bg-destructive/5 focus:border-destructive"
                     : confirmPassword && passwordsMatch
                       ? "border-emerald-300 bg-emerald-50/30 focus:border-emerald-400 dark:border-emerald-600/50 dark:bg-emerald-950/20"
-                      : "border-border bg-background focus:border-brand-violet"
+                      : "border-border bg-background focus:border-primary"
                 }`}
               />
               {confirmPassword && passwordsMatch && !passwordErrors.confirm && (
@@ -1505,17 +1180,16 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
     );
   };
 
-  const renderProfessional = () => {
-    if (!user?.uid) {
+  const renderMembership = () => {
+    if (!user) {
       return null;
     }
 
     return (
-      <ProfessionalRequestSection
-        uid={user.uid}
-        defaultUsername={editedUser.username}
-        defaultPhone={editedUser.phone}
-        defaultWebsite={user.profile?.website ?? ""}
+      <MembershipSection
+        currentPlan={user.profile?.plan}
+        planExpiresAt={user.profile?.planExpiresAt ?? undefined}
+        participation={user.profile?.participation}
       />
     );
   };
@@ -1612,7 +1286,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
         <Button
           aria-label="Abrir configuración"
           variant="outline"
-          className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+          className="inline-flex h-9 items-center gap-2 rounded-full border-zinc-300 px-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
           onClick={() => {
             const nextOpen = !openSettings;
             if (nextOpen) {
@@ -1667,11 +1341,11 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
             {selectedSectionSetting === "main" && renderMainMenu()}
             {selectedSectionSetting === "edit-profile" && renderEditProfile()}
-            {selectedSectionSetting === "change-password" && renderChangePassword()}
-            {selectedSectionSetting === "professional" && renderProfessional()}
+            {selectedSectionSetting === "change-password" && hasPasswordProvider && renderChangePassword()}
+            {selectedSectionSetting === "membership" && renderMembership()}
             {selectedSectionSetting === "delete" && renderDelete()}
           </div>
         </DrawerContent>
@@ -1689,7 +1363,7 @@ function Section({
 }) {
   return (
     <div className="space-y-2">
-      <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-brand-violet">
+      <h3 className="px-1 text-sm font-semibold text-foreground">
         {title}
       </h3>
       <div className="space-y-1">{children}</div>
@@ -1785,7 +1459,7 @@ function EditAccordionSection({
         aria-controls={`edit-section-${id}`}
         className={cn(
           "flex w-full items-center gap-3 rounded-xl p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          isOpen ? "rounded-b-none bg-primary/[0.02] hover:bg-primary/[0.04]" : "hover:bg-muted/40",
+          isOpen ? "rounded-b-none bg-primary/2 hover:bg-primary/4" : "hover:bg-muted/40",
         )}
       >
         <div
@@ -1874,47 +1548,6 @@ function Field({
       {helperText && (
         <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>
       )}
-    </div>
-  );
-}
-
-function ProfileSectionDivider({ title }: { title: string }) {
-  return (
-    <div className="flex items-center gap-3 pb-1 pt-4">
-      <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </span>
-      <div className="h-px flex-1 bg-border/60" />
-    </div>
-  );
-}
-
-function VerifiedField({
-  label,
-  value,
-  note,
-}: {
-  label: string;
-  value: string;
-  note?: string;
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center gap-2">
-        <label className="text-sm font-medium">{label}</label>
-        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-          <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
-          Verificado
-        </span>
-      </div>
-      <input
-        type="text"
-        value={value}
-        disabled
-        readOnly
-        className="h-11 w-full cursor-not-allowed rounded-lg border border-border bg-muted/40 px-4 text-sm text-muted-foreground"
-      />
-      {note && <p className="mt-1 text-xs text-muted-foreground/80">{note}</p>}
     </div>
   );
 }

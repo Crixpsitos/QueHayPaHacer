@@ -1,3 +1,7 @@
+import type { SiteKind, SitePublishedAs, SitePublishedAsForm, SiteVerification } from "@/domain/entities/sites/value-objects/SiteListing"
+import type { SiteTransit, SiteTransitDraft } from "@/domain/entities/sites/value-objects/SiteTransit"
+import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 export type SiteCategory =
   | "cafe"
   | "restaurant"
@@ -58,7 +62,17 @@ export interface SiteFormViewModel {
   schedule: SiteSchedule
   socialMedia: SiteSocialMedia
   temporarilyClosed: SiteTemporarilyClosed
+  /** Festivos y lluvia; vacío = sin confirmar. */
+  openingPolicy: SiteOpeningPolicy
+  /** Consejos para quien visita; opcional. */
+  recommendations: SiteRecommendations
   bookingUrl: string
+  /** Buses que llegan (rutas del catálogo); el servidor valida y fija `updatedAt`. */
+  transit: SiteTransitDraft
+  /** Atractivo público o negocio privado. */
+  kind: SiteKind
+  /** En qué calidad publica quien llena el formulario (qhpa lo fija el servidor). */
+  publishedAs: SitePublishedAsForm
 }
 
 // uploading → subiendo deopt (local) · processing → subido, CF optimizando · ready → CF listo
@@ -143,7 +157,17 @@ export interface SiteDetail extends SiteListItem {
   mediaItems?: SiteMediaItem[] // media tipada (image/video) para render y edición
   socialMedia?: SiteSocialMedia
   temporarilyClosed?: SiteTemporarilyClosed
+  openingPolicy?: SiteOpeningPolicy
+  recommendations?: SiteRecommendations
   bookingUrl?: string
+  transit?: SiteTransit
+  kind?: SiteKind
+  publishedAs?: SitePublishedAs
+  verification?: SiteVerification
+  /** Geo de la location — se recarga al editar para no borrarla al guardar. */
+  city?: { name: string; slug: string }
+  department?: { name: string; slug: string }
+  country?: { name: string; slug: string }
 }
 
 export interface MapSiteMarker {

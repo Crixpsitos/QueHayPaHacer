@@ -9,8 +9,19 @@ import {
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplayStatus } from "../lib/constants"
-import type { SiteDetail, SiteMediaItem, WeekDay } from "../view-models/SiteFormViewModel"
+import type { SiteDetail, SiteMediaItem } from "../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
+import { getSiteOpenStatus } from "../lib/openStatus"
+import { useColombiaHolidays } from "../hooks/useColombiaHolidays"
+import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
+import { SiteTransitFromSite } from "./detail/SiteTransitSection"
+import { TrustBadge } from "./TrustBadge"
+import { CompleteBadge } from "./CompleteBadge"
+import { RecommendationsSection } from "./detail/RecommendationsSection"
+import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
+import { SiteClaimCta } from "./claim/SiteClaimCta"
+import { SiteSuggestCta } from "./suggest/SiteSuggestCta"
 import { getEventsBySiteAction } from "@/app/actions/events/get-events-by-site.action"
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard"
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel"
@@ -268,24 +279,6 @@ function MediaLightbox({ items, index, onClose, onIndex }: {
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const DAY_ORDER: WeekDay[] = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]
-
-function getTodayKey(): WeekDay {
-  return DAY_ORDER[new Date().getDay()]
-}
-
-function getOpenStatus(schedule: SiteDetail["schedule"]): { isOpen: boolean; label: string } {
-  const key = getTodayKey()
-  const sched = schedule?.[key]
-  if (!sched || sched.closed) return { isOpen: false, label: "Cerrado hoy" }
-  const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0) }
-  const cur = new Date().getHours() * 60 + new Date().getMinutes()
-  const isOpen = cur >= toMins(sched.open) && cur < toMins(sched.close)
-  return { isOpen, label: isOpen ? `Abierto · Cierra ${sched.close}` : `Cerrado · Abre ${sched.open}` }
-}
-
 // ── Body ───────────────────────────────────────────────────────────────────────
 
 function Body({ site, onEdit, siteEvents, eventsLoading }: {
@@ -297,8 +290,12 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
   const status     = getDisplayStatus(site.publicationStatus, site.moderationStatus)
   const color      = STATUS_COLORS[status]
   const label      = STATUS_LABELS[status]
-  const openStatus = useMemo(() => getOpenStatus(site.schedule), [site.schedule])
-  const todayKey   = getTodayKey()
+  const holidays   = useColombiaHolidays()
+  const openStatus = useMemo(
+    () => getSiteOpenStatus(site.schedule, new Date(), { holidays, policy: site.openingPolicy }),
+    [site.schedule, site.openingPolicy, holidays],
+  )
+  const todayKey   = openStatus.todayKey
   const isApproved = status === "approved"
 
   const hasSocial = !!(
@@ -358,6 +355,10 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       >
         {site.name}
       </h2>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <TrustBadge site={site} withKind />
+        <CompleteBadge site={site} />
+      </div>
 
       {/* ── Dirección + estado de apertura ──────────────────────── */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -370,8 +371,14 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           openStatus.isOpen ? "text-emerald-700" : "text-[#71717A]",
         )}>
           <Clock className="size-3.5 shrink-0" aria-hidden />
-          {openStatus.label}
+          {openStatus.label ?? "Horario no disponible"}
         </span>
+      </div>
+
+      <ConfirmBeforeGoingNotice site={site} className="mt-4" />
+      <div className="mt-3 flex flex-col gap-2 empty:hidden sm:flex-row sm:flex-wrap">
+        <SiteClaimCta site={site} />
+        <SiteSuggestCta site={site} />
       </div>
 
       {/* ── Separador ───────────────────────────────────────────── */}
@@ -410,8 +417,11 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
         </h3>
         <div className="overflow-hidden rounded-xl border border-[#E4E4E7]">
           {WEEK_DAYS.map(({ key, label: dayLabel }, i) => {
-            const day     = site.schedule?.[key]
             const isToday = key === todayKey
+            // Hoy festivo: la fila muestra el horario real de hoy (puede ser el de festivos), no el del día de la semana.
+            const day     = isToday && openStatus.holiday
+              ? (() => { const [open = "", close = ""] = (openStatus.todayHours ?? "").split(" – "); return { open, close, closed: !openStatus.todayHours } })()
+              : site.schedule?.[key]
             return (
               <div
                 key={key}
@@ -423,7 +433,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
               >
                 <span className={cn("font-medium", isToday ? "text-[#E63946]" : "text-[#52525B]")}>
                   {dayLabel}
-                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">hoy</span>}
+                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">{openStatus.holiday ? "hoy · festivo" : "hoy"}</span>}
                 </span>
                 {!day || day.closed
                   ? <span className="text-xs font-semibold text-[#E63946]">Cerrado</span>
@@ -435,7 +445,13 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
             )
           })}
         </div>
+        <OpeningPolicyNotes policy={site.openingPolicy} status={openStatus} className="mt-3" />
       </section>
+
+      {hasRecommendations(site.recommendations) && (
+        <RecommendationsSection recommendations={site.recommendations} compact className="mt-5" />
+      )}
+      <SiteTransitFromSite site={site} className="mt-5" />
 
       {/* ── Motivo de rechazo ────────────────────────────────────── */}
       {status === "rejected" && site.rejectionReason && (
@@ -499,7 +515,9 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
 
-      {/* ── Itinerario del sitio ─────────────────────────────────── */}
+      {/* ── Itinerario del sitio (solo si hay eventos o se están cargando) ── */}
+      {(eventsLoading || siteEvents.length > 0) && (
+      <>
       <section>
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-[#FDF2F4]">
@@ -523,15 +541,14 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
             <Loader2 className="size-5 animate-spin" aria-hidden />
           </div>
         ) : (
-          <SiteItineraryGrid
-            events={siteEvents}
-            emptyMessage="No hay eventos programados en este sitio."
-          />
+          <SiteItineraryGrid events={siteEvents} />
         )}
       </section>
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+      </>
+      )}
 
       {/* ── Autor + acciones ─────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">

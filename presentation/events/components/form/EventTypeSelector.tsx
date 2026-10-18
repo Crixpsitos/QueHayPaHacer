@@ -1,24 +1,26 @@
 "use client";
 
+import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import { CalendarIcon, CalendarRangeIcon, ArrowRight, Lock, X } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 
 interface EventTypeSelectorProps {
-  isProfessional: boolean | undefined;
+  isPremium: boolean | undefined;
 }
 
-export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
+export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
   const router = useRouter();
 
   const handleSelect = (type: "standard" | "multi-date") => {
-    if (type === "multi-date" && !isProfessional) return;
+    if (type === "multi-date" && !isPremium) return;
     const params = new URLSearchParams(window.location.search);
     params.set("type", type);
     router.push(`/eventos/create?${params.toString()}`);
   };
 
-  const isMultiDateLocked = !isProfessional;
+  const isMultiDateLocked = !isPremium;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAFAFC] px-4 py-16">
@@ -115,11 +117,11 @@ export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
                 : "cursor-pointer border-[#E4E4E7] bg-white hover:border-[#09090B] hover:shadow-hover",
             )}
           >
-            {/* Badge profesional */}
+            {/* Badge Premium */}
             {isMultiDateLocked && (
               <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <Lock className="size-3" />
-                Solo cuentas profesionales
+                Solo Premium
               </div>
             )}
 
@@ -178,7 +180,7 @@ export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
                   isMultiDateLocked ? "text-[#A1A1AA]" : "text-[#09090B]",
                 )}
               >
-                {isMultiDateLocked ? "Requiere cuenta profesional" : "Empezar con este tipo"}
+                {isMultiDateLocked ? "Requiere plan Premium" : "Empezar con este tipo"}
               </span>
               <div
                 className={cn(
@@ -199,7 +201,15 @@ export function EventTypeSelector({ isProfessional }: EventTypeSelectorProps) {
         </div>
 
         {/* ── Nota footer ─────────────────────────────────────────── */}
-        <p className="mt-8 text-center text-xs text-[#A1A1AA]">
+        {isMultiDateLocked && (
+          <p className="mt-8 text-center text-sm text-[#52525B]">
+            ¿Tu evento tiene varias funciones?{" "}
+            <Link href="/premium" className="font-semibold text-[#E63946] hover:underline">
+              Conoce Premium
+            </Link>
+          </p>
+        )}
+        <p className="mt-4 text-center text-xs text-[#A1A1AA]">
           Puedes cambiar el tipo de evento más adelante si lo necesitas.
         </p>
       </div>

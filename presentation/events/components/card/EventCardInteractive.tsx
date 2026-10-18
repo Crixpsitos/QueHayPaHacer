@@ -1,30 +1,26 @@
 "use client";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
+import type { CSSProperties } from "react";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
-import { recordEventViewAction } from "@/app/actions/events/record-event-view.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
-import { updateTagAction } from "../../../../app/actions/cache/update-tag.action";
-import { Button } from "@/app/components/ui/button/button";
+import Link from "next/link";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
-import { RotateCcw, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useRef } from "react";
+import { readLikedIds, saveFreshLikes, setLikedId } from "@/app/lib/clientCache/likedIds";
 import { EventCard } from "./EventCard";
-import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { cn } from "@/app/lib/utils/cn";
-
-const FEATURED_EVENTS_TAG = "featured-events";
 
 interface EventCardInteractiveProps {
   events: EventViewModel[];
   likedByEventId?: Record<string, boolean>;
-  info: {title: string, description: string}
+  /** Estado vacío (no es un error: los errores van al error boundary). */
+  info: { title: string; description?: string; action?: { href: string; label: string } };
   variant?: "horizontal" | "vertical";
   /** Máximo de columnas en modo vertical (default 4). */
   columns?: 2 | 3 | 4;
-  /** Oculta la fila del autor en cada tarjeta. */
-  hideAuthor?: boolean;
 }
 
 interface PendingLikeState {
@@ -43,12 +39,10 @@ export function EventCardInteractive({
   info,
   variant = "horizontal",
   columns = 4,
-  hideAuthor = false,
 }: EventCardInteractiveProps) {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const { user, isHydrating, refreshUser } = useAuth();
+  const [, startTransition] = useTransition();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingLike, setPendingLike] = useState<PendingLikeState | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -58,15 +52,27 @@ export function EventCardInteractive({
   // Ref de deduplicación: evita doble fetch cuando el efecto corre dos veces (StrictMode / Suspense)
   const fetchingRef = useRef<string | null>(null);
 
+  // Corazones ya pintados desde lo guardado en este navegador, antes de que responda el servidor.
   useEffect(() => {
-    if (!user?.uid || events.length === 0) {
-      setDynamicLikes({});
-      return;
-    }
-    const key = `${user.uid}:${eventIdsKey}`;
+    const uid = user?.uid;
+    if (!uid) return;
+    let cancelled = false;
+    void readLikedIds("events", uid).then((stored) => {
+      if (!cancelled) setDynamicLikes((prev) => ({ ...stored, ...prev }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid || events.length === 0) return;
+    const uid = user.uid;
+    const key = `${uid}:${eventIdsKey}`;
     if (fetchingRef.current === key) return; // ya en vuelo
     fetchingRef.current = key;
 
+    // ponytail: un POST por grilla (no por tarjeta); el home hace 2-3. Un solo fetch por página si molesta.
     fetch("/api/events/likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -75,6 +81,7 @@ export function EventCardInteractive({
       .then((r) => r.json())
       .then((likes: Record<string, boolean>) => {
         setDynamicLikes(likes);
+        saveFreshLikes("events", uid, events.map((e) => e.id), likes);
         fetchingRef.current = null;
       })
       .catch(() => { fetchingRef.current = null; });
@@ -82,8 +89,9 @@ export function EventCardInteractive({
   }, [user?.uid, eventIdsKey]);
 
   const effectiveLikes = useMemo(
-    () => ({ ...likedByEventId, ...dynamicLikes }),
-    [likedByEventId, dynamicLikes],
+    // Sin sesión se ignoran los likes del fetch anterior (p. ej. tras cerrar sesión).
+    () => ({ ...likedByEventId, ...(user?.uid ? dynamicLikes : {}) }),
+    [likedByEventId, dynamicLikes, user?.uid],
   );
 
   useEffect(() => {
@@ -103,6 +111,12 @@ export function EventCardInteractive({
   };
 
   const handleLike = async (eventId: string, liked: boolean): Promise<boolean> => {
+    // Sin sesión no hace falta ir al servidor para saberlo: el modal abre al instante.
+    if (!user && !isHydrating) {
+      setPendingLike({ eventId, liked });
+      setIsLoginModalOpen(true);
+      return false;
+    }
     const result = await likeEventAction(eventId, liked);
 
     if (result.authRequired) {
@@ -116,6 +130,7 @@ export function EventCardInteractive({
       return false;
     }
 
+    setLikedId("events", user?.uid, eventId, liked);
     return true;
   };
 
@@ -144,51 +159,21 @@ export function EventCardInteractive({
     showToast(message, "error");
   };
 
-  const handleViewDetails = (event: EventViewModel) => {
-    // Registro de vista no bloqueante (solo cuenta una vez por usuario autenticado).
-    void recordEventViewAction(event.id, user?.uid);
-  };
-
-  const handleReload = async () => {
-    setIsLoading(true);
-    try {
-      const result = await updateTagAction(FEATURED_EVENTS_TAG);
-      if (result?.error) {
-        console.error(result.error);
-        setIsLoading(false);
-        return;
-      }
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch (error) {
-      console.error("Error reloading events:", error);
-      
-    }finally {
-      setIsLoading(false);
-    }
-  };
-
-
-
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-        <h3 className="text-xl font-semibold text-foreground mb-2">
-          {info.title}
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
-          {info.description}
-        </p>
-        <Button
-          onClick={handleReload}
-          disabled={isLoading || isPending}
-          variant="outline"
-          className="gap-2"
-        >
-          <RotateCcw className="size-4" />
-          {isLoading || isPending ? "Actualizando..." : "Reintentar"}
-        </Button>
+      <div className="flex flex-col items-center px-6 py-14 text-center">
+        <p className="font-heading text-lg font-semibold text-[#09090B]">{info.title}</p>
+        {info.description && (
+          <p className="mt-1 max-w-md text-sm leading-relaxed text-[#71717A]">{info.description}</p>
+        )}
+        {info.action && (
+          <Link
+            href={info.action.href}
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-[#09090B] px-6 text-sm font-semibold text-white transition-[transform,background-color] duration-150 hover:bg-[#27272A] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+          >
+            {info.action.label}
+          </Link>
+        )}
       </div>
     );
   }
@@ -200,23 +185,30 @@ export function EventCardInteractive({
           ? `grid grid-cols-1 sm:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""} gap-6`
           : "flex flex-wrap gap-6"
       )}>
-        {events.map((event, index) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            variant={variant}
-            attendeeCount={event.analytics?.registrations ?? 0}
-            initialLikes={event.analytics?.likes ?? 0}
-            initialLiked={effectiveLikes[event.id] ?? false}
-            viewCount={event.analytics?.views ?? 0}
-            isFirstEvent={event.metadata?.isFirstEvent ?? false}
-            hideAuthor={hideAuthor}
-            onLike={handleLike}
-            onShare={(ev) => shareEventAction(ev.id)}
-            onViewDetails={handleViewDetails}
-            prioritizeImage={index === 0}
-          />
-        ))}
+        {events.map((event, index) => {
+          const card = (
+            <EventCard
+              event={event}
+              attendeeCount={event.analytics?.registrations ?? 0}
+              initialLiked={effectiveLikes[event.id] ?? false}
+              onLike={handleLike}
+              prioritizeImage={index === 0}
+            />
+          );
+          // Entrada solo con CSS: las primeras suben al cargar; el resto aparece al hacer scroll.
+          if (variant !== "vertical") return <div key={event.id} className="contents">{card}</div>;
+          return index < 4 ? (
+            <div
+              key={event.id}
+              className={cn("card-rise h-full", index === 0 && "card-rise-first")}
+              style={{ "--i": index } as CSSProperties}
+            >
+              {card}
+            </div>
+          ) : (
+            <div key={event.id} className="card-reveal h-full">{card}</div>
+          );
+        })}
       </div>
 
       {isLoginModalOpen && (

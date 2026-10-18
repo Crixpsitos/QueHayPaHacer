@@ -46,30 +46,33 @@ export class ProfileFirebaseRepository
     };
   }
 
-  async getUserEvents(uid: string): Promise<FirestoreDoc[]> {
-    const byAuthorId = await this.getDocsByAuthorPath("events", "author.id", uid);
+  async getUserEvents(uid: string, limit?: number): Promise<FirestoreDoc[]> {
+    const byAuthorId = await this.getDocsByAuthorPath("events", "author.id", uid, limit);
     const byAuthorUid = byAuthorId.length
       ? []
-      : await this.getDocsByAuthorPath("events", "author.uid", uid);
+      : await this.getDocsByAuthorPath("events", "author.uid", uid, limit);
     return [...byAuthorId, ...byAuthorUid];
   }
 
-  async getUserSites(uid: string): Promise<FirestoreDoc[]> {
-    const byAuthorId = await this.getDocsByAuthorPath("sites", "author.id", uid);
+  async getUserSites(uid: string, limit?: number): Promise<FirestoreDoc[]> {
+    const byAuthorId = await this.getDocsByAuthorPath("sites", "author.id", uid, limit);
     const byAuthorUid = byAuthorId.length
       ? []
-      : await this.getDocsByAuthorPath("sites", "author.uid", uid);
+      : await this.getDocsByAuthorPath("sites", "author.uid", uid, limit);
     return [...byAuthorId, ...byAuthorUid];
   }
 
-  async getUserEventInteractions(uid: string): Promise<ProfileInteractionsRaw> {
+  async getUserEventInteractions(uid: string, limit?: number): Promise<ProfileInteractionsRaw> {
     const interactionsCollection = this.subCollection(uid, "eventInteractions");
 
     let interactionsSnapshot;
     try {
-      interactionsSnapshot = await interactionsCollection.orderBy("createdAt", "desc").get();
+      let query = interactionsCollection.orderBy("createdAt", "desc");
+      if (limit) query = query.limit(limit);
+      interactionsSnapshot = await query.get();
     } catch {
-      interactionsSnapshot = await interactionsCollection.get();
+      const query = limit ? interactionsCollection.limit(limit) : interactionsCollection;
+      interactionsSnapshot = await query.get();
     }
 
     const interactions: FirestoreDoc[] = interactionsSnapshot.docs.map((doc) => ({
@@ -97,13 +100,35 @@ export class ProfileFirebaseRepository
       if (data) eventsById[eventId] = data;
     }
 
-    return { interactions, eventsById };
+    const uniqueAuthorIds = Array.from(
+      new Set(
+        Object.values(eventsById)
+          .map((event) => {
+            const author = event.author as { id?: unknown; uid?: unknown } | undefined;
+            return typeof author?.id === "string"
+              ? author.id
+              : typeof author?.uid === "string"
+                ? author.uid
+                : "";
+          })
+          .filter(Boolean),
+      ),
+    );
+    const authorDocs = uniqueAuthorIds.length
+      ? await this.db.getAll(...uniqueAuthorIds.map((authorId) => this.db.collection("users").doc(authorId)))
+      : [];
+    const authorsById: Record<string, DocumentData> = {};
+    for (const authorDoc of authorDocs) {
+      if (authorDoc.exists) authorsById[authorDoc.id] = authorDoc.data() ?? {};
+    }
+
+    return { interactions, eventsById, authorsById };
   }
 
-  async getUserBadges(uid: string): Promise<FirestoreDoc[]> {
-    const snapshot = await this.subCollection(uid, "badges")
-      .orderBy("earnedAt", "desc")
-      .get();
+  async getUserBadges(uid: string, limit?: number): Promise<FirestoreDoc[]> {
+    let query = this.subCollection(uid, "badges").orderBy("earnedAt", "desc");
+    if (limit) query = query.limit(limit);
+    const snapshot = await query.get();
 
     return snapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
   }
@@ -112,12 +137,17 @@ export class ProfileFirebaseRepository
     collection: "events" | "sites",
     path: "author.id" | "author.uid",
     uid: string,
+    limit?: number,
   ): Promise<FirestoreDoc[]> {
-    const withOrderQuery = this.db
+    let withOrderQuery = this.db
       .collection(collection)
       .where(path, "==", uid)
       .orderBy("createdAt", "desc");
-    const noOrderQuery = this.db.collection(collection).where(path, "==", uid);
+    let noOrderQuery = this.db.collection(collection).where(path, "==", uid);
+    if (limit) {
+      withOrderQuery = withOrderQuery.limit(limit);
+      noOrderQuery = noOrderQuery.limit(limit);
+    }
 
     let snapshot;
     try {

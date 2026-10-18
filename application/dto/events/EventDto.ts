@@ -163,7 +163,7 @@ export const step4Schema = v.object({
 const step5Object = v.object({
   startDate: v.string(),
   endDate: v.string(),
-  status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
+  status: v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
 });
 
 export const step5Schema = v.pipe(
@@ -301,7 +301,7 @@ const CollaboratorsDataSchema = v.record(
   v.object({
     displayName: v.string(),
     photoURL: v.nullish(v.string()),
-    role: v.picklist(["editor", "viewer", "credit"] as const),
+    role: v.picklist(["editor", "viewer", "checkin", "credit"] as const),
   }),
 );
 const collaboratorEntries = {
@@ -360,13 +360,15 @@ export const publishEventSchema = v.pipe(
     (data) => data.price.isFree || data.registrationType === "external",
     "Los eventos pagados requieren registro externo. Configura el tipo de registro en el paso anterior.",
   ),
-  // Si el registro es externo, la URL es obligatoria.
-  v.check(
-    (data) =>
-      data.registrationType !== "external" ||
-      (!!data.externalUrl && data.externalUrl.trim().length > 0),
-    "La URL del sitio externo es obligatoria para el registro externo.",
-  ),
+  // Las `entries` de un step no arrastran su pipe: re-validar con los schemas
+  // completos para que el servidor aplique fechas, URL externa y monto > 0.
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (!dataset.typed) return;
+    for (const schema of [step5Schema, step6Schema, step7Schema]) {
+      const result = v.safeParse(schema, dataset.value);
+      if (!result.success) addIssue({ message: result.issues[0].message });
+    }
+  }),
 );
 
 /**
@@ -383,7 +385,7 @@ export const publishEventMultiDateSchema = v.object({
   ...step3Schema.entries,
   ...step8Schema.entries,
   ...collaboratorEntries,
-  status: v.picklist(["draft", "published", "cancelled", "ended"] as const),
+  status: v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),
   createdAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
@@ -437,7 +439,7 @@ export const FormEventSchema = v.object({
   startDate: v.optional(v.string()),
   endDate: v.optional(v.string()),
   status: v.optional(
-    v.picklist(["draft", "published", "cancelled", "ended"] as const),
+    v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
   ),
   registrationType: v.optional(
     v.picklist(["none", "internal", "external", "form"] as const),

@@ -1,6 +1,6 @@
 /**
  * Crea invitaciones de colaboración PENDIENTES dirigidas a un usuario (por correo),
- * enviadas por cuentas profesionales de prueba. Sirve para ver la bandeja de
+ * enviadas por creadores de prueba. Sirve para ver la bandeja de
  * "Invitaciones recibidas" en /studio/collaborators con esa cuenta.
  *
  * Uso:
@@ -42,9 +42,9 @@ async function main() {
   }
   const target = targetSnap.docs[0];
   const targetUid = target.id;
-  const t = target.data() as { displayName?: string; photoURL?: string; professionalType?: string };
+  const t = target.data() as { displayName?: string; photoURL?: string; creatorVerified?: boolean };
 
-  // 2) Remitentes: cuentas profesionales (excluye destino y quien ya tenga una
+  // 2) Remitentes: creadores (excluye destino y quien ya tenga una
   // invitación PENDIENTE hacia el destino, para no duplicar al re-correr).
   const existingSnap = await db
     .collection("collaborationInvites")
@@ -56,17 +56,17 @@ async function main() {
       .map((d) => d.data().fromUid as string),
   );
 
-  const prosSnap = await db
+  const creatorsSnap = await db
     .collection("users")
-    .where("accountType", "==", "professional")
+    .where("participation", "==", "creator")
     .limit(count + 20)
     .get();
-  const senders = prosSnap.docs
+  const senders = creatorsSnap.docs
     .filter((d) => d.id !== targetUid && !alreadyPending.has(d.id))
     .slice(0, count);
   if (senders.length === 0) {
     console.log(
-      "No hay profesionales nuevos por invitar (¿ya todos tienen una invitación pendiente?). " +
+      "No hay creadores nuevos por invitar (¿ya todos tienen una invitación pendiente?). " +
         "Corre seed-fake-users para crear más, o acepta/deniega las existentes.",
     );
     process.exit(0);
@@ -75,18 +75,18 @@ async function main() {
   // 3) Crea invitaciones pendientes from → target.
   const batch = db.batch();
   for (const s of senders) {
-    const from = s.data() as { displayName?: string; photoURL?: string; professionalType?: string };
+    const from = s.data() as { displayName?: string; photoURL?: string; creatorVerified?: boolean };
     const ref = db.collection("collaborationInvites").doc();
     batch.set(ref, {
       fromUid: s.id,
       fromDisplayName: from.displayName ?? "Organizador",
       fromPhotoURL: from.photoURL ?? null,
-      fromProfessionalType: from.professionalType ?? null,
+      fromCreatorVerified: from.creatorVerified ?? false,
       toUid: targetUid,
       toEmail: targetEmail,
       toDisplayName: t.displayName ?? targetEmail,
       toPhotoURL: t.photoURL ?? null,
-      toProfessionalType: t.professionalType ?? null,
+      toCreatorVerified: t.creatorVerified ?? false,
       status: "pending",
       createdAt: FieldValue.serverTimestamp(),
       respondedAt: null,

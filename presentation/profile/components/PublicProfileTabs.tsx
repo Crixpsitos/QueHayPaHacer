@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, memo } from "react";
+import { memo } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,10 +12,10 @@ import { PublicEventCard } from "./PublicEventCard";
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 
 interface PublicProfileTabsProps {
-  uid: string;
-  fetchUserEvents: (uid: string) => Promise<UserEvent[]>;
-  fetchUserSites: (uid: string) => Promise<UserSite[]>;
-  fetchUserBadges: (uid: string) => Promise<UserBadge[]>;
+  // Llegan ya resueltos desde el servidor (listas cacheadas): sin "Cargando…" ni peticiones tras hidratar.
+  events: UserEvent[];
+  sites: UserSite[];
+  badges: UserBadge[];
 }
 
 const containerVariants = {
@@ -39,20 +39,7 @@ const EmptyState = ({ text }: { text: string }) => (
   </div>
 );
 
-const LoadingState = ({ text }: { text: string }) => (
-  <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
-    <Loader2 className="size-5 animate-spin" />
-    <span className="text-sm">{text}</span>
-  </div>
-);
-
-function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUserBadges }: PublicProfileTabsProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [events, setEvents] = useState<UserEvent[]>([]);
-  const [sites, setSites] = useState<UserSite[]>([]);
-  const [badges, setBadges] = useState<UserBadge[]>([]);
-
+function PublicProfileTabsInner({ events, sites, badges }: PublicProfileTabsProps) {
   // Tab state driven by URL query param; likes is not available on public profiles
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -67,46 +54,8 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setLoadError(null);
-      try {
-        const [eventsData, sitesData, badgesData] = await Promise.all([
-          fetchUserEvents(uid),
-          fetchUserSites(uid),
-          fetchUserBadges(uid),
-        ]);
-
-        if (!mounted) return;
-        setEvents(eventsData);
-        setSites(sitesData);
-        setBadges(badgesData);
-      } catch (error) {
-        if (!mounted) return;
-        console.error("Error loading public profile data:", error);
-        setLoadError("No pudimos cargar la información de este perfil. Intenta nuevamente.");
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-
-    void loadData();
-
-    return () => {
-      mounted = false;
-    };
-  }, [uid, fetchUserEvents, fetchUserSites, fetchUserBadges]);
-
   return (
-    <motion.div
-      className="w-full"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-    >
+    <div className="w-full">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="border-b border-border">
           <TabsList className="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -136,18 +85,14 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
 
         <TabsContent value="events" className="mt-6">
           <AnimatePresence mode="wait">
-            {isLoading ? (
-              <LoadingState key="events-loading" text="Cargando eventos..." />
-            ) : loadError ? (
-              <EmptyState key="events-error" text={loadError} />
-            ) : events.length === 0 ? (
+            {events.length === 0 ? (
               <EmptyState key="events-empty" text="Este usuario aún no ha publicado eventos." />
             ) : (
               <motion.div
                 key="events-content"
                 className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
                 variants={containerVariants}
-                initial="hidden"
+                initial={false}
                 animate="visible"
                 exit="exit"
               >
@@ -163,16 +108,14 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
 
         <TabsContent value="sites" className="mt-6">
           <AnimatePresence mode="wait">
-            {isLoading ? (
-              <LoadingState key="sites-loading" text="Cargando sitios..." />
-            ) : sites.length === 0 ? (
+            {sites.length === 0 ? (
               <EmptyState key="sites-empty" text="Este usuario aún no ha agregado sitios." />
             ) : (
               <motion.div
                 key="sites-content"
                 className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
                 variants={containerVariants}
-                initial="hidden"
+                initial={false}
                 animate="visible"
                 exit="exit"
               >
@@ -180,7 +123,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
                   <motion.article
                     key={site.id}
                     variants={itemVariants}
-                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                    className="group overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                   >
                     <Link href={`/donde-ir/${site.slug || site.id}`} className="block">
                       <div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -234,23 +177,21 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
 
         <TabsContent value="badges" className="mt-6">
           <AnimatePresence mode="wait">
-            {isLoading ? (
-              <LoadingState key="badges-loading" text="Cargando insignias..." />
-            ) : badges.length === 0 ? (
+            {badges.length === 0 ? (
               <EmptyState key="badges-empty" text="Este usuario aún no tiene insignias." />
             ) : (
               <motion.div
                 key="badges-content"
                 className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
                 variants={containerVariants}
-                initial="hidden"
+                initial={false}
                 animate="visible"
               >
                 {badges.map((badge) => (
                   <motion.div
                     key={badge.id}
                     variants={itemVariants}
-                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-all duration-200 hover:shadow-lg hover:border-brand-violet/30"
+                    className="relative overflow-hidden rounded-2xl border border-border bg-background p-6 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:shadow-lg hover:border-primary/30"
                   >
                     <div className="flex h-full flex-col">
                       <div className="mb-4 text-5xl">{badge.icon || "⭐"}</div>
@@ -268,7 +209,7 @@ function PublicProfileTabsInner({ uid, fetchUserEvents, fetchUserSites, fetchUse
           </AnimatePresence>
         </TabsContent>
       </Tabs>
-    </motion.div>
+    </div>
   );
 }
 

@@ -21,6 +21,7 @@ import type {
   ExternalProfileInput,
   CollaboratorKind,
   CollaboratorRole,
+  TeamEventItem,
   AudienceSummary,
   SupportTicket,
   SupportTicketDetail,
@@ -31,6 +32,10 @@ import type {
  * Contrato del repositorio del Estudio del Organizador.
  * La implementación Firebase queda como stubs (la implementa el desarrollador).
  */
+export type CheckInByCodeResult =
+  | { result: "ok" | "already"; name: string }
+  | { result: "not_found" | "canceled" | "no_attendance" };
+
 export interface IStudioRepository {
   // Resumen
   getOrganizerOverview(uid: string): Promise<OrganizerOverview | null>;
@@ -51,7 +56,9 @@ export interface IStudioRepository {
    * registro y lugar propios, que en multi-date viven en cada sesión.
    */
   getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null>;
-  confirmAttendance(eventId: string, userId: string, sessionId?: string): Promise<void>;
+  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string): Promise<void>;
+  /** Check-in por código QR: busca la inscripción por `checkInCode` y sella `checkedInAt`. */
+  checkInByCode(eventId: string, code: string, sessionId: string | undefined, actingUid: string): Promise<CheckInByCodeResult>;
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void>;
   incrementExternalRegistrationClick(eventId: string): Promise<void>;
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]>;
@@ -67,7 +74,8 @@ export interface IStudioRepository {
   /** Busca usuarios para invitar (pipeline de búsqueda sobre `users`). Excluye a uno mismo. */
   searchPotentialCollaborators(uid: string, query: string, limit?: number): Promise<UserSearchItem[]>;
   /** Envía invitaciones a varios usuarios a la vez (a mi red). Dedup + no auto-invitar. */
-  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<void>;
+  /** Devuelve las invitaciones realmente creadas (se omiten duplicados, auto-invitación y no creadores) y el nombre de quien invita. */
+  inviteCollaborators(fromUid: string, invitees: InviteeInput[]): Promise<{ inviterName: string; invited: string[] }>;
   /** Invitaciones pendientes que YO recibí. */
   getReceivedInvitations(uid: string): Promise<CollaboratorInvitation[]>;
   /** Invitaciones pendientes que YO envié (para poder cancelarlas). */
@@ -75,7 +83,8 @@ export interface IStudioRepository {
   /** Mi red: usuarios que invité y aceptaron + mis perfiles externos. */
   getCollaborators(uid: string): Promise<Collaborator[]>;
   /** Aceptar/rechazar una invitación recibida. `uid` debe ser el invitado (`toUid`). */
-  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<void>;
+  /** Devuelve quién invitó cuando la respuesta cambió el estado; null si ya estaba respondida. */
+  respondCollaboratorInvitation(inviteId: string, uid: string, accept: boolean): Promise<{ fromUid: string; responderName: string; accepted: boolean } | null>;
   /** Cancelar una invitación que YO envié (pendiente). `uid` = quien invitó (`fromUid`). */
   cancelInvitation(inviteId: string, uid: string): Promise<void>;
   /** Quitar de mi red a un colaborador (user aceptado o externo mío). */
@@ -106,6 +115,12 @@ export interface IStudioRepository {
     },
     actingUid: string,
   ): Promise<void>;
+  /** Cambia el rol de un miembro ya acreditado (solo el owner; externos solo `credit`). */
+  changeCollaboratorRole(eventId: string, refId: string, role: CollaboratorRole, actingUid: string): Promise<void>;
+  /** Eventos donde `uid` es miembro con rol de Studio (editor/viewer/checkin). Máx. 50. */
+  listTeamEventsForUser(uid: string): Promise<TeamEventItem[]>;
+  /** Saca a `refId` de los eventos de `ownerUid` (al romper el vínculo de red). Devuelve los ids afectados. */
+  removeMemberFromOwnerEvents(ownerUid: string, refId: string): Promise<string[]>;
   /** Quitar un colaborador acreditado de un evento (solo el owner del evento). */
   removeCollaboratorFromEvent(eventId: string, refId: string, actingUid: string): Promise<void>;
 

@@ -45,7 +45,7 @@ const STATUS_STYLES: Record<SupportTicketStatus, string> = {
 };
 
 const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(iso));
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "medium" }).format(new Date(iso));
 
 function StatusBadge({ status }: { status: SupportTicketStatus }) {
   return (
@@ -61,7 +61,7 @@ function ExpandableDescription({ text }: { text: string }) {
   const isLong = text.length > 320 || text.split("\n").length > 6;
   return (
     <div className="min-w-0 rounded-lg border border-gray-100 bg-slate-50 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+      <p className="text-[11px] font-semibold text-slate-400">
         Descripción
       </p>
       <p
@@ -76,7 +76,7 @@ function ExpandableDescription({ text }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+          className="mt-1.5 text-xs font-semibold text-primary hover:text-primary-dark"
         >
           {expanded ? "Ver menos" : "Ver más"}
         </button>
@@ -213,17 +213,17 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Soporte prioritario</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Cuéntanos qué necesitas. Tu cuenta profesional recibe atención preferente.
+          Cuéntanos qué necesitas. Con Premium tienes atención preferente.
         </p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white p-4">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white">
+      <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary">
           <Sparkles className="h-4 w-4" />
         </span>
         <div>
-          <p className="text-sm font-semibold text-indigo-900">Atención prioritaria activa</p>
-          <p className="text-xs text-indigo-700/80">
+          <p className="text-sm font-semibold text-zinc-800">Atención prioritaria activa</p>
+          <p className="text-xs text-zinc-600">
             Creas el ticket y nuestro equipo te contacta por correo en menos de 24 horas. No es un chat en vivo.
           </p>
         </div>
@@ -236,7 +236,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
           className="space-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5"
         >
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <LifeBuoy className="h-4 w-4 text-indigo-600" />
+            <LifeBuoy className="h-4 w-4 text-primary" />
             Nuevo ticket
           </h2>
 
@@ -248,7 +248,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
               onChange={(e) => setSubject(e.target.value)}
               maxLength={120}
               placeholder="Resume tu problema en una línea"
-              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-400"
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none transition-colors focus:border-zinc-400"
             />
           </div>
 
@@ -257,7 +257,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-indigo-400"
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-zinc-400"
             >
               {SUPPORT_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -285,7 +285,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
               rows={5}
               maxLength={DESCRIPTION_MAX}
               placeholder="Describe con detalle qué ocurre, qué esperabas y qué pasos seguiste."
-              className="max-h-64 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-indigo-400"
+              className="max-h-64 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-zinc-400"
             />
           </div>
 
@@ -321,7 +321,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 text-slate-400 transition-colors hover:border-indigo-300 hover:text-indigo-500"
+                className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 text-slate-400 transition-colors hover:border-primary/25 hover:text-primary"
               >
                 <ImagePlus className="h-4 w-4" />
                 <span className="text-[10px]">Subir</span>
@@ -332,7 +332,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
           <button
             type="submit"
             disabled={isSubmitting || !subject.trim() || !description.trim()}
-            className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             {isSubmitting ? "Enviando…" : "Enviar ticket"}
@@ -355,7 +355,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                   <button
                     type="button"
                     onClick={() => void openDetail(t)}
-                    className="w-full rounded-lg border border-gray-100 p-3 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
+                    className="w-full rounded-lg border border-gray-100 p-3 text-left transition-colors hover:border-primary/25 hover:bg-primary-light"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="line-clamp-1 text-sm font-medium text-slate-800">{t.subject}</p>
@@ -402,7 +402,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                 {/* Evidencias */}
                 {detail.attachments.length > 0 && (
                   <div>
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="mb-1.5 text-[11px] font-semibold text-slate-400">
                       Evidencias
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -430,9 +430,9 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
 
                 {/* Estado del seguimiento — no es chat: el equipo contacta por fuera */}
                 {detail.status !== "resolved" ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-                    <p className="text-sm text-indigo-900">
+                  <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary-light p-3">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <p className="text-sm text-zinc-800">
                       Recibimos tu solicitud. Nuestro equipo te contactará por correo. No hace
                       falta que respondas aquí.
                     </p>
@@ -440,7 +440,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                 ) : (
                   detail.closeReason && (
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
-                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
                         <Lock className="h-3 w-3" />
                         Motivo del cierre
                       </p>
@@ -474,7 +474,7 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                           rows={3}
                           maxLength={500}
                           placeholder="Ej. El problema se resolvió tras verificar el correo."
-                          className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                          className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
                         />
                         <div className="flex items-center gap-2">
                           <button

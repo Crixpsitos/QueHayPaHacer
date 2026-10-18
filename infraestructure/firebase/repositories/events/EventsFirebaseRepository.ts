@@ -1,6 +1,7 @@
-import { FieldPath, FieldValue, Filter, Timestamp, type Firestore } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
 import type { IEventsFirebaseRepository } from "./IEventsFirebaseRepository";
+import { FEATURED_MAX, decodeScoreCursor, encodeScoreCursor, isPromotionActive, mergeFeaturedIds } from "@/application/services/events/eventsListing";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
 
 export class EventsFirebaseRepository
@@ -85,23 +86,41 @@ export class EventsFirebaseRepository
   }
   async findFeaturedEvents(): Promise<string[]> {
     const now = new Date();
-    const snapshot = await this.collection
-      .where("status", "==", "published")
-      .where("endDate", ">=", now)
-      .where(
-        Filter.or(
-          Filter.and(
-            Filter.where("promotion.isPromoted", "==", true),
-            Filter.where("promotion.promotedUntil", ">=", now),
-          ),
-          Filter.where("analytics.score", ">=", 15),
-        ),
-      )
-      .select()
-      .limit(10)
-      .get();
+    // Dos consultas simples (sin índices nuevos) unidas en memoria: promovidos
+    // vigentes primero, luego los próximos mejor puntuados sin umbral de score.
+    // `isPromoted == true` es solo igualdad; la vigencia se filtra aquí.
+    const [promotedSnap, topSnap] = await Promise.all([
+      this.collection
+        .where("promotion.isPromoted", "==", true)
+        .select("status", "endDate", "promotion")
+        .limit(50)
+        .get(),
+      this.collection
+        .where("status", "==", "published")
+        .where("endDate", ">=", now)
+        .orderBy("analytics.score", "desc")
+        .limit(FEATURED_MAX)
+        .select()
+        .get(),
+    ]);
 
-    return snapshot.docs.map((doc) => doc.id);
+    const promoted = promotedSnap.docs
+      .filter((d) => {
+        const data = d.data() as {
+          status?: string;
+          endDate?: Timestamp;
+          promotion?: { isPromoted?: boolean; promotedUntil?: Timestamp };
+        };
+        return (
+          data.status === "published" &&
+          !!data.endDate &&
+          data.endDate.toDate() >= now &&
+          isPromotionActive(data.promotion, now)
+        );
+      })
+      .map((d) => d.id);
+
+    return mergeFeaturedIds(promoted, topSnap.docs.map((d) => d.id));
   }
 
   async findWeekendEvents(): Promise<string[]> {
@@ -120,7 +139,7 @@ export class EventsFirebaseRepository
       .where("endDate", ">=", now)
       .where("startDate", "<=", endOfWeek)
       .orderBy("analytics.score", "desc")
-      .limit(20)
+      .limit(50)
       .select()
       .get();
 
@@ -236,6 +255,20 @@ export class EventsFirebaseRepository
     return { ids: page.map((d) => d.id), nextCursor };
   }
 
+  async findSitemapEntries(limit: number) {
+    const snapshot = await this.collection
+      .where("status", "==", "published")
+      .where("endDate", ">=", new Date())
+      .select("slug", "updatedAt")
+      .limit(limit)
+      .get();
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      slug: (d.get("slug") as string | undefined) ?? "",
+      updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
+    }));
+  }
+
   async findAllEvents(): Promise<string[]> {
     const now = new Date();
     const snapshot = await this.collection
@@ -247,5 +280,32 @@ export class EventsFirebaseRepository
       .get();
 
     return snapshot.docs.map((doc) => doc.id);
+  }
+
+  async findAllPaginated(
+    limit: number,
+    cursor: string | null,
+  ): Promise<{ ids: string[]; nextCursor: string | null }> {
+    const now = new Date();
+    // Mismo orden que las categorías (score desc) + id desc como desempate estable
+    // (__name__ va implícito y en la misma dirección en el índice de score desc).
+    let query = this.collection
+      .where("status", "==", "published")
+      .where("endDate", ">=", now)
+      .orderBy("analytics.score", "desc")
+      .orderBy(FieldPath.documentId(), "desc");
+
+    const after = decodeScoreCursor(cursor);
+    if (after) query = query.startAfter(after.score, after.id);
+
+    const snapshot = await query.limit(limit + 1).select("analytics.score").get();
+    const page = snapshot.docs.slice(0, limit);
+    const last = page[page.length - 1];
+    const nextCursor =
+      snapshot.docs.length > limit && last
+        ? encodeScoreCursor((last.data() as { analytics?: { score?: number } }).analytics?.score ?? 0, last.id)
+        : null;
+
+    return { ids: page.map((d) => d.id), nextCursor };
   }
 }

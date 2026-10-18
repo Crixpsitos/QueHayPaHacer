@@ -9,6 +9,7 @@ import { updateSiteAction } from "@/app/actions/sites/update-site.action"
 import { notify } from "@/presentation/shared/lib/notify"
 import { createClientContainer } from "@/infraestructure/di/container.client"
 import { useSitesStore } from "../store/useSitesStore"
+import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import type {
   Coordinates,
   DaySchedule,
@@ -18,6 +19,7 @@ import type {
   SiteFormViewModel,
   WeekDay,
 } from "../view-models/SiteFormViewModel"
+import { invalidateMyData } from "@/app/lib/clientCache/clientCache"
 
 export type SubmitState = "idle" | "saving" | "publishing" | "done"
 
@@ -161,6 +163,7 @@ export function useSiteForm() {
     const run = persistQueue.current.then(async () => {
       const id0 = await ensureDraftId()
       const r = await saveDraftSiteAction(formRef.current, id0)
+      void invalidateMyData()
       if (r.success) commitSiteId(r.siteId)
     }).catch((e) => console.error("[handleMediaUploaded persist]", e))
     persistQueue.current = run
@@ -187,6 +190,10 @@ export function useSiteForm() {
     setForm((prev) => ({ ...prev, schedule: { ...prev.schedule, [day]: { ...prev.schedule[day], ...partial } } }))
   }, [])
 
+  const updateOpeningPolicy = useCallback((partial: Partial<SiteOpeningPolicy>) => {
+    setForm((prev) => ({ ...prev, openingPolicy: { ...prev.openingPolicy, ...partial } }))
+  }, [])
+
   const validate = useCallback((requireMedia = false): FormErrors => {
     const e: FormErrors = {}
     if (!form.coordinates) e.coordinates = "Selecciona una ubicación en el mapa"
@@ -205,6 +212,7 @@ export function useSiteForm() {
     if (existing) return Promise.resolve(existing)
     if (ensureRef.current) return ensureRef.current
     const p = saveDraftSiteAction(formRef.current).then((result) => {
+      void invalidateMyData()
       if (!result.success) throw new Error(result.error)
       commitSiteId(result.siteId)
       return result.siteId
@@ -217,6 +225,7 @@ export function useSiteForm() {
     setSubmitState("saving")
     // reuse the draft created during upload — never create a second doc
     const result = await saveDraftSiteAction(form, targetId() ?? undefined)
+    void invalidateMyData()
     if (result.success) {
       commitSiteId(result.siteId)
       notify.success("Borrador guardado")
@@ -227,12 +236,13 @@ export function useSiteForm() {
     setSubmitState("idle")
   }, [form, fetchSites, targetId, commitSiteId])
 
-  const handlePublish = useCallback(async () => {
+  const handlePublish = useCallback(async (declaration: boolean) => {
     const validation = validate(true)
     if (Object.keys(validation).length) { setErrors(validation); return }
     setSubmitState("publishing")
     // a draft already exists (upload created it) → convert it in place, don't duplicate
-    const result = await publishSiteAction(form, targetId() ?? undefined)
+    const result = await publishSiteAction(form, targetId() ?? undefined, declaration)
+    void invalidateMyData()
     if (!result.success) {
       notify.error("No se pudo publicar", { description: result.error })
       setSubmitState("idle")
@@ -265,10 +275,14 @@ export function useSiteForm() {
       id: m.id, type: m.type, url: m.url, alt: "",
       isCover: m.isCover, status: "ready" as const, path: m.path,
     }))
+    // geo guardada; si el doc legacy no la tiene, cae al default (Ibagué) en vez de vaciarla
+    const init = createInitialForm()
     setForm({
       coordinates: site.coordinates,
       address: site.address,
-      city: "", citySlug: "", region: "", regionSlug: "", country: "", countrySlug: "",
+      city: site.city?.name || init.city, citySlug: site.city?.slug || init.citySlug,
+      region: site.department?.name || init.region, regionSlug: site.department?.slug || init.regionSlug,
+      country: site.country?.name || init.country, countrySlug: site.country?.slug || init.countrySlug,
       name: site.name,
       description: site.description,
       category: site.category,
@@ -276,19 +290,25 @@ export function useSiteForm() {
       schedule: structuredClone(site.schedule),
       socialMedia: site.socialMedia ?? {},
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
+      openingPolicy: site.openingPolicy ?? {},
+      recommendations: site.recommendations ?? { tips: [] },
       bookingUrl: site.bookingUrl ?? "",
+      transit: { routes: site.transit?.routes ?? [] },
+      kind: site.kind ?? "business",
+      publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",
     })
     setErrors({})
     setSubmitState("idle")
     setAddressAutoDetected(false)
   }, [])
 
-  const handleSaveEdit = useCallback(async () => {
+  const handleSaveEdit = useCallback(async (declaration: boolean) => {
     const validation = validate(true)
     if (Object.keys(validation).length) { setErrors(validation); return }
     if (!editId) { console.error("[saveEdit] no editId"); return }
     setSubmitState("publishing")
-    const result = await updateSiteAction(editId, form)
+    const result = await updateSiteAction(editId, form, declaration)
+    void invalidateMyData()
     if (!result.success) {
       notify.error("No se pudo guardar los cambios", { description: result.error })
       setSubmitState("idle")
@@ -303,7 +323,7 @@ export function useSiteForm() {
     form, errors, submitState, addressAutoDetected, coverUrl, isMediaProcessing,
     editId,
     clearError, updateField, handlePick, handleAddressChange,
-    addMedia, replaceCover, updateMedia, handleMediaUploaded, removeMedia, setCover, updateSchedule,
+    addMedia, replaceCover, updateMedia, handleMediaUploaded, removeMedia, setCover, updateSchedule, updateOpeningPolicy,
     ensureDraftId, handleSaveDraft, handlePublish, handleSaveEdit, load, reset,
   }
 }

@@ -11,19 +11,24 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { getTokens } from "next-firebase-auth-edge";
-import { filterStandardClaims } from "next-firebase-auth-edge/auth/claims";
 import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration";
+import { requireEventPermission } from "@/app/actions/_session";
+import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
+import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
   | {
       success: true;
       eventId: string;
       slug: string;
+      status: "pending" | "published";
+      moderationStatus: "pending" | "pending_audit";
       error?: never;
     }
   | {
@@ -31,9 +36,19 @@ type PublishEventActionResult =
       error: string;
     };
 
+/**
+ * `declaration` (declaración del autor) es obligatoria en TODA publicación, incluida
+ * la republicación/edición de un evento ya publicado (reafirma la responsabilidad
+ * sobre el contenido editado). Los borradores no pasan por aquí. Las sesiones
+ * multi-fecha se publican a través del evento.
+ */
 export async function publishEventAction(
   event: FormEventDto,
+  declaration: boolean,
 ): Promise<PublishEventActionResult> {
+  if (!hasDeclared(declaration)) {
+    return { success: false, error: DECLARATION_ERROR };
+  }
   const tokens = await getTokens(await cookies(), authConfig);
   if (!tokens?.decodedToken?.uid) {
     return {
@@ -49,14 +64,38 @@ export async function publishEventAction(
     };
   }
 
-  // Multi-fecha es exclusivo de cuentas profesionales.
+  const { eventsService, profileService, userService, contentDeclarationService } = createServerContainer();
+  const actorUid = tokens.decodedToken.uid;
+  const existingEvent = event.id ? await eventsService.getEventById(event.id) : null;
+  if (event.id && !existingEvent) {
+    return { success: false, error: "No tienes permiso para publicar este evento." };
+  }
+  // Evento existente: dueño (sin exigir Premium, como siempre) o editor mientras el dueño siga Premium.
+  const access = event.id
+    ? await requireEventPermission(event.id, "publish_event", { ownerNeedsPremium: false })
+    : null;
+  if (event.id && !access) {
+    return { success: false, error: "No tienes permiso para publicar este evento." };
+  }
+  // `author` = el DUEÑO del evento (plan y moderación salen de su perfil); quien publica (actor) firma la declaración.
+  const ownerId = access?.ownerId ?? actorUid;
+  const author = await userService.getUserById(ownerId);
+
+  if (!author) {
+    return { success: false, error: "No encontramos el perfil del organizador." };
+  }
+
+  // El tipo guardado manda: el cliente no puede cambiarlo al publicar.
+  const eventType = existingEvent ? existingEvent.eventType : event.eventType;
+
+  // Multi-fecha es exclusivo del plan Premium.
   if (
-    event.eventType === "multi-date" &&
-    filterStandardClaims(tokens.decodedToken).role !== "professional"
+    eventType === "multi-date" &&
+    author?.plan !== "premium"
   ) {
     return {
       success: false,
-      error: "Los eventos multi-fecha son exclusivos de cuentas profesionales.",
+      error: "Los eventos multi-fecha son exclusivos del plan Premium.",
     };
   }
 
@@ -69,7 +108,7 @@ export async function publishEventAction(
   }
 
   // Multi-date: no se puede publicar el evento si alguna sesión sigue en borrador.
-  if (event.eventType === "multi-date" && event.id) {
+  if (eventType === "multi-date" && event.id) {
     const { eventSessionService } = createServerContainer();
     const sessions = await eventSessionService.getByEventId(event.id);
     if (sessions.length === 0) {
@@ -89,24 +128,28 @@ export async function publishEventAction(
 
   // Multi-fecha valida solo el encabezado (v.object recorta location/fechas/precio).
   const schema =
-    event.eventType === "multi-date"
+    eventType === "multi-date"
       ? publishEventMultiDateSchema
       : publishEventSchema;
 
   const resultParse = safeParse(schema, {
     ...event,
     id: event.id,
-    slug: event.slug ||
+    // slug/promoción/fechas de sistema no se aceptan del cliente.
+    slug: existingEvent?.slug ||
       (event.title
         ? `${toSlug(event.title)}-${Date.now().toString(36)}`
         : undefined),
+    promotion: undefined,
+    createdAt: undefined,
+    updatedAt: undefined,
     status: "published",
     publishedAt: new Date().toISOString(),
-    eventType: event.eventType,
+    eventType,
     author: {
-      id: tokens.decodedToken.uid,
-      displayName: tokens.decodedToken.name || "pruebas evento",
-      photoURL: tokens.decodedToken.picture,
+      id: ownerId,
+      displayName: author.displayName || (ownerId === actorUid ? tokens.decodedToken.name : "") || "",
+      photoURL: author.photoURL || (ownerId === actorUid ? tokens.decodedToken.picture : undefined) || undefined,
     },
   });
 
@@ -115,26 +158,30 @@ export async function publishEventAction(
       "Error updating event:",
       JSON.stringify(resultParse.issues, null, 3),
     );
-    console.log(
-      "esto fue lo que recibi",
-      JSON.stringify(resultParse.output, null, 3),
-    );
     return {
       success: false,
-      error: "No se pudo publicar el evento. Por favor verifica los datos.",
+      error:
+        resultParse.issues[0]?.message ??
+        "No se pudo publicar el evento. Por favor verifica los datos.",
     };
   }
 
-  const parsedData = EventViewModelMapper.toDomain(
+  const domainData = EventViewModelMapper.toDomain(
     resultParse.output as unknown as EventViewModel,
   );
-  const userId = tokens.decodedToken.uid;
+  // Republicar conserva analytics (score), promoción, createdAt, metadata, autor.
+  const { event: withTeam, changedUids } = await applyTeamPolicy(
+    existingEvent ? withServerOwnedFields(existingEvent, domainData) : domainData,
+    existingEvent,
+    access?.role ?? "owner",
+    ownerId,
+  );
+  const parsedData = enforcePlanFeatures(withTeam, author);
+  // userId = dueño (tags de perfil, "primer evento"); el actor solo firma la declaración.
+  const userId = ownerId;
+  Object.assign(parsedData, moderationFieldsForSubmission(author));
 
   try {
-    const { eventsService, badgeService, profileService, userService } = createServerContainer();
-
-    const author = await userService.getUserById(userId);
-
     // Detectar primer evento ANTES de publicar para setear metadata.isFirstEvent
     const existingEvents = await profileService.getUserEvents(userId);
     const hasOtherPublished = existingEvents.some((e) => e.status === "published");
@@ -142,34 +189,36 @@ export async function publishEventAction(
       parsedData.metadata = { ...parsedData.metadata, isFirstEvent: true };
     }
 
+    // Evidencia ANTES de publicar: si falla, se aborta y no se publica. Solo cuando
+    // el evento aún no tiene id (se crea al publicar) se escribe después y, si falla,
+    // se borra el evento recién creado para no dejar contenido publicado sin evidencia.
+    if (parsedData.id) {
+      await contentDeclarationService.record(actorUid, "event", parsedData.id);
+    }
     const publishedEvent = await eventsService.publishEvent(parsedData, {
-      isProfessionalAuthor: author?.accountType === "professional",
+      isPremiumAuthor: author?.plan === "premium",
     });
+    if (!parsedData.id) {
+      try {
+        await contentDeclarationService.record(actorUid, "event", publishedEvent.id);
+      } catch (e) {
+        await eventsService.deleteEvent(publishedEvent.id).catch(() => {});
+        throw e;
+      }
+    }
 
     // Multi-date: el evento no guarda fechas propias → derivarlas de las sesiones
     // (min inicio / max fin) para que aparezca en los listados por fecha.
-    if (event.eventType === "multi-date") {
+    if (eventType === "multi-date") {
       await syncEventDateRange(publishedEvent.id || parsedData.id);
       await syncEventSiteIds(publishedEvent.id || parsedData.id);
     }
 
-    // Asignar insignia de "Primer Evento" si es el primer evento publicado
-    try {
-      if (!hasOtherPublished) {
-        await badgeService.awardBadgeToUser(
-          userId,
-          "first-event",
-          "Publicaste tu primer evento"
-        );
-        revalidateTag(`profile-badges-${userId}`, "max");
-        revalidateTag(`profile-stats-${userId}`, "max");
-      }
-    } catch (badgeError) {
-      console.error(`[BADGE ERROR] No se pudo asignar insignia de primer evento:`, badgeError);
-    }
-
+    invalidateTeamAccess(changedUids);
     updateTag("event-list");
-    updateTag(`user-events-${userId}`);
+    updateTag(`event-${publishedEvent.id || parsedData.id}`);
+    updateTag(`profile-events-${userId}`);
+    updateTag(`profile-stats-${userId}`);
     revalidateTag("explore", "max");
 
     // revalidateTag (stale-while-revalidate) para las pestanas de Eventos y stats del perfil
@@ -179,7 +228,13 @@ export async function publishEventAction(
     revalidatePath("/", "page");
     revalidatePath("/eventos", "layout");
     revalidatePath("/profile/events", "layout");
-    return { success: true, eventId: publishedEvent.id || parsedData.id, slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id };
+    return {
+      success: true,
+      eventId: publishedEvent.id || parsedData.id,
+      slug: publishedEvent.slug || parsedData.slug || publishedEvent.id || parsedData.id,
+      status: parsedData.status as "pending" | "published",
+      moderationStatus: parsedData.moderationStatus as "pending" | "pending_audit",
+    };
   } catch (error) {
     console.error("Error updating event:", error);
     return {

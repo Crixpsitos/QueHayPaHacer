@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button/button";
 import { EventCardInteractive } from "./card/EventCardInteractive";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import { loadMoreCategoryEventsAction } from "@/app/actions/events/load-more-category.action";
+import { loadMoreAllEventsAction } from "@/app/actions/events/load-more-all.action";
 
 interface InfiniteEventListProps {
-  categoryId: string;
+  /** Sin categoryId → lista "Todos los eventos". */
+  categoryId?: string;
   categorySlug?: string;
   initialEvents: EventViewModel[];
   initialCursor: string | null;
@@ -34,8 +37,10 @@ export function InfiniteEventList({
     if (!cursor || loading) return;
     setLoading(true);
     try {
-      const res = await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug);
-      setEvents((prev) => [...prev, ...res.events]);
+      const res = categoryId
+        ? await loadMoreCategoryEventsAction(categoryId, cursor, categorySlug)
+        : await loadMoreAllEventsAction(cursor);
+      setEvents((prev) => [...prev, ...res.events.filter((e) => !prev.some((p) => p.id === e.id))]);
       setLikedByEventId((prev) => ({ ...prev, ...res.likedByEventId }));
       setCursor(res.nextCursor);
     } finally {
@@ -49,16 +54,22 @@ export function InfiniteEventList({
         events={events}
         likedByEventId={likedByEventId}
         info={{
-          title: "Todavía no hay eventos en esta categoría",
-          description: "Estamos sumando planes nuevos. Vuelve pronto.",
+          title: categoryId ? "Todavía no hay eventos en esta categoría" : "Todavía no hay eventos publicados",
+          description: categoryId
+            ? "Estamos sumando planes nuevos. Vuelve pronto."
+            : "Mientras tanto, mira los sitios para salir en Ibagué.",
+          action: categoryId
+            ? { href: "/eventos", label: "Ver todos los eventos" }
+            : { href: "/donde-ir", label: "Ver sitios" },
         }}
         variant="vertical"
       />
 
       {cursor && (
         <div className="flex justify-center">
-          <Button onClick={loadMore} disabled={loading} variant="outline">
-            {loading ? "Cargando..." : "Cargar más"}
+          <Button onClick={loadMore} disabled={loading} aria-busy={loading} variant="outline" className="min-h-11 min-w-36 transition-transform duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+            {loading && <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />}
+            {loading ? "Cargando…" : "Cargar más"}
           </Button>
         </div>
       )}

@@ -1,42 +1,23 @@
-import { EventCardInteractive } from "./card/EventCardInteractive";
+import { InfiniteEventList } from "./InfiniteEventList";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
-import { createServerContainer } from "@/infraestructure/di/container";
+import { getAllEventsPage } from "../data/allEventsPage";
 import { cacheLife, cacheTag } from "next/cache";
-import type { Events } from "@/domain/entities/events/Events";
 
-const fetchAllEventIds = async () => {
-  "use cache"
-  cacheLife("days")
-  cacheTag("event-list", "all-events")
-  const { eventFeed } = createServerContainer();
-  return await eventFeed.getAll();
-}
-
-const fetchEventDetail = async (id: string): Promise<Events | null> => {
-  "use cache";
-  cacheLife("weeks");
-  cacheTag(`event-${id}`);
-  const { eventsService } = createServerContainer();
-  return await eventsService.getEventById(id);
-};
-
+/**
+ * "Todos los eventos": primera página cacheada del servidor + "Cargar más" por
+ * cursor (server action pública) en el mismo listado.
+ */
 export const AllEventsContainer = async () => {
   "use cache";
   cacheLife("days");
   cacheTag("event-list", "all-events");
-  const ids = await fetchAllEventIds();
-  const eventsData = await Promise.all(ids.map(fetchEventDetail));
-  const allEvents = eventsData.filter(Boolean) as Events[];
-
-  const allEventsViewModels = allEvents.map((event) =>
-    EventViewModelMapper.toViewModel(event),
-  );
+  const { events, nextCursor } = await getAllEventsPage(null);
 
   return (
-    <EventCardInteractive
-      events={allEventsViewModels}
-      info={{ title: "Lamentablemente no hay eventos disponibles :C", description: "Estamos trabajando constantemente para traerte las mejores experiencias. ¡Vuelve pronto para descubrir lo que tenemos preparado para ti!" }}
-      variant="vertical"
+    <InfiniteEventList
+      initialEvents={events.map((e) => EventViewModelMapper.toViewModel(e))}
+      initialCursor={nextCursor}
+      initialLikedByEventId={{}}
     />
   );
 };

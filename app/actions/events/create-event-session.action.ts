@@ -1,13 +1,8 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
-import { getTokens } from "next-firebase-auth-edge";
-import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
 import { safeParse } from "valibot";
-import { syncEventDateRange } from "./lib/syncEventDateRange";
-import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
 import { SessionSchema } from "@/application/dto/events/EventSessionDto";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
 import type { EventSession } from "@/domain/entities/events/EventSession";
@@ -20,10 +15,12 @@ export async function createEventSessionAction(
   eventId: string,
   data: Omit<EventSession, "id" | "eventId" | "createdAt" | "updatedAt">,
 ): Promise<CreateSessionResult> {
-  const tokens = await getTokens(await cookies(), authConfig);
-  const userId = tokens?.decodedToken?.uid;
-  if (!userId) {
-    return { success: false, error: "Debes iniciar sesión." };
+  const ownerError = await sessionOwnerError(eventId, data?.status === "published" ? "publish_event" : "edit_event");
+  if (ownerError) return { success: false, error: ownerError };
+
+  // El cliente solo puede guardar borrador o publicar; cancelled/ended no.
+  if (data.status !== "draft" && data.status !== "published") {
+    return { success: false, error: "Estado de sesión inválido." };
   }
 
   // Validate with full schema before saving
@@ -47,13 +44,15 @@ export async function createEventSessionAction(
 
   try {
     const { eventSessionService } = createServerContainer();
+    // Persistir lo validado (result.output), no el payload crudo del cliente.
     const { session, hasOverlap } = await eventSessionService.createSession({
-      ...data,
+      ...result.output,
+      media: result.output.media ?? [],
+      startDate: new Date(result.output.startDate),
+      endDate: new Date(result.output.endDate),
       eventId,
     });
-    await syncEventDateRange(eventId);
-    await syncEventSiteIds(eventId);
-    updateTag(`event-sessions-${eventId}`);
+    await afterSessionChange(eventId);
     return { success: true, session, hasOverlap };
   } catch (error) {
     if (error instanceof SessionOverlapError) {

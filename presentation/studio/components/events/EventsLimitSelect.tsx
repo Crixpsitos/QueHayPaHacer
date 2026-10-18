@@ -27,7 +27,7 @@ export function EventsLimitSelect({ limit, options }: EventsLimitSelectProps) {
       <select
         value={limit}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm outline-none focus:border-indigo-400"
+        className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm outline-none focus:border-zinc-400"
       >
         {options.map((size) => (
           <option key={size} value={size}>

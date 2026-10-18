@@ -1,9 +1,9 @@
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { User } from "@/domain/entities/user/User";
+import { normalizeHandle } from "./normalizeHandle";
 
 export const resolvePublicUser = async (rawHandle: string): Promise<User | null> => {
-  // Next.js ya decodifica el segmento dinámico de la ruta; solo normalizamos el prefijo "@".
-  const handle = rawHandle.trim().replace(/^@/, "");
+  const handle = normalizeHandle(rawHandle);
 
   if (!handle) {
     return null;

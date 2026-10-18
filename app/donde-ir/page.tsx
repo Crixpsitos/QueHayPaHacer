@@ -5,30 +5,9 @@ import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
 import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
 import { SiteCategoryChips } from "@/presentation/sites/components/discovery/SiteCategoryChips";
-import { getSiteCollections, siteCollectionHref, type SiteCollectionDef } from "@/presentation/sites/lib/siteCollections";
-import { createServerContainer } from "@/infraestructure/di/container";
-import { cacheLife, cacheTag } from "next/cache";
-import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
-
-const fetchSiteDetailById = async (id: string): Promise<SiteDetail | null> => {
-  "use cache";
-  cacheLife("weeks");
-  cacheTag(`site-${id}`);
-  const { sitesService } = createServerContainer();
-  return sitesService.getSiteDetailById(id);
-};
-
-const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[]> => {
-  "use cache";
-  cacheLife("days");
-  cacheTag("site-list", `site-collection-${def.slug}`);
-  const { sitesService } = createServerContainer();
-  const ids = def.kind === "featured"
-    ? await sitesService.getFeaturedSites()
-    : await sitesService.getAllSites();
-  const sites = await Promise.all(ids.map(fetchSiteDetailById));
-  return sites.filter((s): s is SiteDetail => Boolean(s));
-};
+import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
+import { InfiniteSiteList } from "@/presentation/sites/components/discovery/InfiniteSiteList";
+import { fetchAllSitesPage, fetchFeaturedSites } from "@/presentation/sites/data/siteListFetchers";
 
 export const metadata: Metadata = {
   title: "¿Dónde ir en Ibagué?",
@@ -37,16 +16,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/donde-ir" },
 };
 
-export default async function DondeIrIndexPage() {
-  const collections = getSiteCollections();
-  const featuredDef = collections.find((c) => c.kind === "featured");
-  const allDef = collections.find((c) => c.kind === "all");
-  const typeCollections = collections.filter((c) => c.kind === "type");
+// Los destacados (8) salen de los primeros: se pide de más para que "Todos" empiece con una tanda completa.
+const FIRST_PAGE = 20;
 
-  const [featured, all] = await Promise.all([
-    featuredDef ? fetchCollectionSites(featuredDef) : Promise.resolve([]),
-    allDef ? fetchCollectionSites(allDef) : Promise.resolve([]),
-  ]);
+export default async function DondeIrIndexPage() {
+  const typeCollections = getSiteCollections().filter((c) => c.kind === "type");
+
+  const [featured, allPage] = await Promise.all([fetchFeaturedSites(), fetchAllSitesPage(FIRST_PAGE)]);
+  const featuredIds = featured.map((s) => s.id);
 
   return (
     <>
@@ -68,7 +45,7 @@ export default async function DondeIrIndexPage() {
 
         {typeCollections.length > 0 && (
           <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+            <p className="mb-3 text-sm font-medium text-[#52525B]">
               Explorar por tipo de lugar
             </p>
             <SiteCategoryChips collections={typeCollections} />
@@ -76,19 +53,23 @@ export default async function DondeIrIndexPage() {
         )}
       </Section>
 
-      {featuredDef && featured.length > 0 && (
-        <ContentSection title="Destacados" action={{ href: siteCollectionHref(featuredDef.slug) }}>
-          <SiteDiscoveryGrid sites={featured} showTrending layout="featured" />
+      {featured.length > 0 && (
+        <ContentSection title="Destacados">
+          <SiteDiscoveryGrid sites={featured} />
         </ContentSection>
       )}
 
-      <Separator className="my-6" />
+      {featured.length > 0 && <Separator className="my-6" />}
 
-      {allDef && all.length > 0 && (
-        <ContentSection title="Todos los sitios" action={{ href: siteCollectionHref(allDef.slug) }}>
-          <SiteDiscoveryGrid sites={all} />
-        </ContentSection>
-      )}
+      {/* Todos los sitios, con "Cargar más" aquí mismo (sin mandar a otra página). */}
+      <ContentSection title="Todos los sitios">
+        <InfiniteSiteList
+          category="all"
+          initialSites={allPage.sites}
+          initialCursor={allPage.nextCursor}
+          excludeIds={featuredIds}
+        />
+      </ContentSection>
     </>
   );
 }

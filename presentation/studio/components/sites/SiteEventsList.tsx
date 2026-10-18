@@ -25,7 +25,7 @@ interface SiteEventsListProps {
 }
 
 const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" }).format(
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", year: "numeric" }).format(
     new Date(iso),
   );
 
@@ -69,7 +69,7 @@ export function SiteEventsList({
               <li key={event.eventId}>
                 <Link
                   href={`/studio/events/${event.eventId}`}
-                  className="group flex items-center gap-3 rounded-lg border border-gray-100 p-2.5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
+                  className="group flex items-center gap-3 rounded-lg border border-gray-100 p-2.5 transition-colors hover:border-primary/25 hover:bg-primary-light"
                 >
                   <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-slate-100">
                     {event.image ? (
@@ -83,7 +83,7 @@ export function SiteEventsList({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium text-slate-800 group-hover:text-indigo-700">
+                      <p className="truncate text-sm font-medium text-slate-800 group-hover:text-primary">
                         {event.name}
                       </p>
                       <span
@@ -112,7 +112,7 @@ export function SiteEventsList({
                     </div>
                   </div>
 
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-500" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-primary" />
                 </Link>
               </li>
             );

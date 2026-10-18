@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useTransition, lazy, Suspense } from "react";
-import { AlertTriangle, CalendarCheck, ExternalLink, Users, X, PartyPopper } from "lucide-react";
+import { useEffect, useState, useTransition, lazy, Suspense } from "react";
+import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
+import { AlertTriangle, CalendarCheck, Loader2, Users, X, PartyPopper } from "lucide-react";
+import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";
 import { Button } from "@/app/components/ui/button/button";
 import { Separator } from "@/app/components/ui/separator";
 import type { EventViewModel } from "../view-models/EventViewModel";
@@ -35,6 +38,13 @@ export function EventRegistrationModal({
   const [isPending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const still = useReducedMotion();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleConfirm = (formData?: Record<string, unknown>) => {
     setActionError(null);
@@ -80,27 +90,77 @@ export function EventRegistrationModal({
     </div>
   ) : null;
 
+  // Error de acción: un solo temblor suave, anunciado a lectores de pantalla.
+  const errorMsg = actionError && (
+    <motion.p
+      key={actionError}
+      role="alert"
+      className="text-center text-sm text-red-600"
+      animate={still ? undefined : { x: [0, -6, 6, -4, 4, 0] }}
+      transition={{ duration: 0.3, ease: EASE_OUT }}
+    >
+      {actionError}
+    </motion.p>
+  );
+
+  // Confirmación: reemplaza el contenido del modal (aria-live para anunciarla).
+  const successPanel = (heading: string, body: string) => (
+    <div className="flex flex-col items-center gap-4 px-6 py-8 text-center" role="status" aria-live="polite">
+      <SuccessCheck size={64} />
+      <div className="space-y-1.5">
+        <p className="font-heading text-xl font-bold text-gray-900">{heading}</p>
+        <p className="mx-auto max-w-xs text-sm leading-relaxed text-gray-600">{body}</p>
+      </div>
+      <div className="flex w-full max-w-xs flex-col gap-2 pt-1">
+        <Button asChild>
+          <Link href="/mis-inscripciones">Ver mis inscripciones</Link>
+        </Button>
+        <Button variant="ghost" className="text-gray-500" onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </div>
+  );
+
+  const confirmLabel = isPending ? (
+    <>
+      <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+      Procesando…
+    </>
+  ) : (
+    "Registrarse"
+  );
+
   // ── Modal shell ───────────────────────────────────────────────────────────
   const shell = (children: React.ReactNode, wide = false) => (
-    <div
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Inscripción al evento"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-0 sm:px-4"
       onClick={onClose}
+      initial={still ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
     >
-      <div
+      <motion.div
+        initial={still ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: EASE_OUT }}
         className={`relative w-full ${wide ? "sm:max-w-2xl" : "sm:max-w-md"} rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
+          className="absolute right-3 top-3 z-10 flex size-11 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]"
           aria-label="Cerrar"
         >
           <X className="size-4" />
         </button>
         {children}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -132,6 +192,11 @@ export function EventRegistrationModal({
   // CASE 2: internal — simple confirmation dialog
   // ──────────────────────────────────────────────────────────────────────────
   if (registrationType === "internal") {
+    if (done) {
+      return shell(
+        successPanel("Quedaste inscrito", "Estate pendiente a tus medios de contacto por si el organizador se comunica contigo."),
+      );
+    }
     return shell(
       <>
         {capacityBanner}
@@ -141,47 +206,31 @@ export function EventRegistrationModal({
               <CalendarCheck className="size-5 text-gray-700" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Confirmar inscripción</p>
+              <p className="text-xs text-gray-500 font-medium">Confirmar inscripción</p>
               <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{title}</p>
             </div>
           </div>
           <Separator />
-          {!done && (
-            <p className="text-sm text-gray-600">
-              ¿Estás seguro que deseas inscribirte en este evento?
-            </p>
-          )}
+          <p className="text-sm text-gray-600">
+            ¿Estás seguro que deseas inscribirte en este evento?
+          </p>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-gray-500">Precio</span>
-              <span className="font-semibold text-gray-900">{price}</span>
+              <span className="font-semibold text-gray-900 tabular-nums">{price}</span>
             </div>
             {capacityRow}
           </div>
-          {done && (
-            <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-800 font-medium text-center leading-relaxed">
-              🎉 ¡Registro exitoso! Estate pendiente a tus medios de contacto
-              en caso de que el organizador se comunique contigo.
-            </div>
-          )}
         </div>
-        {!done ? (
-          <div className="px-6 pb-6 pt-4 flex flex-col gap-2">
-            {actionError && (
-              <p className="text-sm text-red-600 text-center">{actionError}</p>
-            )}
-            <Button className="w-full" disabled={isPending} onClick={() => handleConfirm()}>
-              {isPending ? "Procesando..." : "Registrarse"}
-            </Button>
-            <Button variant="ghost" className="w-full text-gray-500" disabled={isPending} onClick={onClose}>
-              Cancelar
-            </Button>
-          </div>
-        ) : (
-          <div className="px-6 pb-6 pt-2">
-            <Button variant="outline" className="w-full" onClick={onClose}>Cerrar</Button>
-          </div>
-        )}
+        <div className="px-6 pb-6 pt-4 flex flex-col gap-2">
+          {errorMsg}
+          <Button className="w-full" disabled={isPending} onClick={() => handleConfirm()}>
+            {confirmLabel}
+          </Button>
+          <Button variant="ghost" className="w-full text-gray-500" disabled={isPending} onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
       </>
     );
   }
@@ -190,6 +239,12 @@ export function EventRegistrationModal({
   // CASE 3: form — dynamic registration form
   // ──────────────────────────────────────────────────────────────────────────
   const formSchema = event.registrationEventForm ?? { fields: [] };
+
+  if (done) {
+    return shell(
+      successPanel("Quedaste inscrito", "Recibimos tu formulario. Estate pendiente a tus medios de contacto por si el organizador se comunica contigo."),
+    );
+  }
 
   return shell(
     <>
@@ -200,7 +255,7 @@ export function EventRegistrationModal({
             <CalendarCheck className="size-5 text-gray-700" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Formulario de inscripción</p>
+            <p className="text-xs text-gray-500 font-medium">Formulario de inscripción</p>
             <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{title}</p>
           </div>
         </div>
@@ -220,23 +275,14 @@ export function EventRegistrationModal({
         )}
       </div>
       <div className="overflow-y-auto px-6 pb-6 pt-2 flex-1">
-        {done ? (
-          <>
-            <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-800 font-medium text-center mb-4 leading-relaxed">
-              🎉 ¡Formulario enviado con éxito! Estate pendiente a tus medios
-              de contacto en caso de que el organizador se comunique contigo.
-            </div>
-            <Button variant="outline" className="w-full" onClick={onClose}>Cerrar</Button>
-          </>
-        ) : (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-gray-400">Cargando formulario...</div>}>
-            <RenderRegistrationForm
-              schema={formSchema as { fields: import("@/presentation/events/lib/schemas/dynamicSchema").FormField[] }}
-              isPreview={false}
-              onSubmit={(data) => handleConfirm(data as Record<string, unknown>)}
-            />
-          </Suspense>
-        )}
+        {errorMsg}
+        <Suspense fallback={<div className="py-8 text-center text-sm text-gray-400">Cargando formulario...</div>}>
+          <RenderRegistrationForm
+            schema={formSchema as { fields: import("@/presentation/events/lib/schemas/dynamicSchema").FormField[] }}
+            isPreview={false}
+            onSubmit={(data) => handleConfirm(data as Record<string, unknown>)}
+          />
+        </Suspense>
       </div>
     </>,
     true,

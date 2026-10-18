@@ -1,4 +1,5 @@
 import { fetchEventSessions } from "@/presentation/events/data/eventDetailFetchers";
+import { requireEventPermission } from "@/app/actions/_session";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
@@ -24,9 +25,18 @@ export async function GET(
 
   try {
     const { id } = await ctx.params;
+    const [access, sessions] = await Promise.all([
+      // Rol sin caché (el evento cacheado puede traer un equipo viejo).
+      requireEventPermission(id, "edit_event", { ownerNeedsPremium: false }),
+      fetchEventSessions(id),
+    ]);
+    // Borradores solo para quien edita (dueño/editor); el resto ve únicamente las publicadas.
+    const isAuthor = Boolean(access);
     // ponytail: las fechas viajan como string ISO (JSON no tiene Date). Los
     // consumidores ya hacen `new Date(session.startDate)`, así que no revivimos.
-    return NextResponse.json(await fetchEventSessions(id));
+    return NextResponse.json(
+      isAuthor ? sessions : sessions.filter((s) => s.status === "published"),
+    );
   } catch (error) {
     console.error("GET /api/events/[id]/sessions error:", error);
     return NextResponse.json(

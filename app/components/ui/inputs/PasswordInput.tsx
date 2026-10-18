@@ -52,13 +52,15 @@ export const PasswordInput = <TFieldValues extends FieldValues>({
         <button
           type="button"
           onClick={() => setShowPassword((currentValue) => !currentValue)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none"
-          aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md p-1.5 -mr-1.5"
+          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
           aria-pressed={showPassword}
         >
-          {showPassword
-            ? <EyeOff size={16} strokeWidth={1.75} />
-            : <Eye size={16} strokeWidth={1.75} />}
+          <span key={String(showPassword)} className="block animate-in zoom-in-75 duration-150 motion-reduce:animate-none">
+            {showPassword
+              ? <EyeOff size={16} strokeWidth={1.75} aria-hidden />
+              : <Eye size={16} strokeWidth={1.75} aria-hidden />}
+          </span>
         </button>
       </div>
 
