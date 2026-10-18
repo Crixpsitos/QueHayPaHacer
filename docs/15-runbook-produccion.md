@@ -208,3 +208,16 @@ Y: `gcloud functions logs read notifyNewReport --project quehaypahacer-prod --li
 - OK: APIs restantes, base `quehaypahacer-db`, bucket, backend `que-hay-pa-hacer`.
 
 No verificable: reglas activas en develop, app web y OAuth de prod, rol de la cuenta sobre la facturación 01451D, dominio propio, valor de `STORAGE_BUCKET` en el `.env` de prod.
+
+## Notas del despliegue real (2026-10-18)
+
+Lo que pasó al ejecutar los pasos 2, 3 y 7 en `quehaypahacer-prod`, para no repetir los tropiezos:
+
+- **Índices de búsqueda:** `firebase-tools` 14.9.0 no entiende `searchConfig` (falla con "Must contain exactly one of order,arrayConfig,vectorConfig"). Se desplegaron con `npx -y firebase-tools@latest deploy --only firestore:quehaypahacer-db:indexes ...` (15.34.0). **Nunca usar `--force`** ahí: dice que hay 4 índices "que no están en el archivo" (la comparación no reconoce los de búsqueda) y se ofrece a borrarlos.
+- **Reglas de Firestore por separado:** repetir el despliegue de `firestore:...:rules` con el archivo de índices presente da 409 (índices ya existen). Para soltar solo las reglas, usar un `firebase.json` temporal sin la clave `indexes`.
+- **Storage:** con la versión nueva hay que poner `"bucket": "quehaypahacer-prod.firebasestorage.app"` en el bloque `storage` solo para desplegar (en el repo queda sin bucket para no atarlo a prod).
+- **Reglas de Firestore anteriores de prod:** cualquier usuario con sesión podía leer toda la base. Las del repo lo cierran.
+- **Cloud Functions (20):** exigen `--force` (siete funciones nuevas con reintentos). La primera vez hay que dar estos roles al proyecto: `roles/pubsub.publisher` a `service-<n>@gs-project-accounts`, `roles/iam.serviceAccountTokenCreator` a `service-<n>@gcp-sa-pubsub`, `roles/run.invoker` y `roles/eventarc.eventReceiver` a `<n>-compute@developer`; y crear las identidades (`gcloud beta services identity create --service=pubsub.googleapis.com` y `eventarc.googleapis.com`). Tras crear el agente de Eventarc, **esperar ~3 min** antes de desplegar (si no, "Permission denied while using the Eventarc Service Agent").
+- **`optimizeProfileMedia`** falló una vez por escritura concurrente de metadatos del bucket y quedó como función HTTP rota: se borró (`firebase functions:delete optimizeProfileMedia --region us-east1 --force`) y se volvió a desplegar solo esa.
+- **URL temporal:** `REVALIDATE_APP_URL` y el CORS apuntan a `https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app`. Al tener dominio propio: cambiar `functions/.env.quehaypahacer-prod`, redesplegar `notifySiteModeration` y `notifyEventChanges`, añadir el origen a `scripts/prod/cors.prod.json` y reaplicarlo, y poner `NEXT_PUBLIC_SITE_URL`.
+- **Secretos de prod:** además de los 5 de hosting, existen `firebaseApiKey`, `firebaseAppId`, `firebaseMeasurementId` y `firebaseMessagingSenderId` (declarados en `apphosting.production.yaml`) y `SITE_REVALIDATE_WEBHOOK_SECRET` (functions).

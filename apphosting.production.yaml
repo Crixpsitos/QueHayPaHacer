@@ -40,6 +40,41 @@ env:
     availability:
       - RUNTIME
 
-  # PENDIENTE hasta crear el secreto EN PROD: SITE_REVALIDATE_WEBHOOK_SECRET <- secreto siteRevalidateWebhookSecret
-  # (mismo valor que el secreto SITE_REVALIDATE_WEBHOOK_SECRET de las functions de prod; ver docs/17 y docs/15).
-  # NO declararlo antes: un secreto inexistente rompe el rollout. Sin él, los endpoints de refresco responden 503.
+  # Refresco inmediato de cachés: lo llaman las Cloud Functions de prod (mismo valor que el secreto de functions
+  # SITE_REVALIDATE_WEBHOOK_SECRET; ver docs/17 y docs/15).
+  - variable: SITE_REVALIDATE_WEBHOOK_SECRET
+    secret: siteRevalidateWebhookSecret
+    availability:
+      - RUNTIME
+
+  # Configuración del cliente web de Firebase de prod (se guardan como secretos igual que en develop).
+  # Sin estas variables el login falla.
+  - variable: FIREBASE_API_KEY
+    secret: firebaseApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: firebaseApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: firebaseAppId
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: firebaseMessagingSenderId
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    secret: firebaseMeasurementId
+    availability:
+      - BUILD
+      - RUNTIME

@@ -9,5 +9,17 @@
       "firebase-debug.*.log",
       "functions"
     ]
-  }
+  },
+  "firestore": [
+    {
+      "database": "quehaypahacer-db",
+      "rules": "firebase/firestore.rules",
+      "indexes": "firebase/firestore.indexes.json"
+    }
+  ],
+  "storage": [
+    {
+      "rules": "firebase/storage.rules"
+    }
+  ]
 }
