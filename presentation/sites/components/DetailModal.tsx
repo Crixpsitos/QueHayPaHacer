@@ -17,6 +17,8 @@ import { OpeningPolicyNotes } from "./detail/OpeningPolicyNotes"
 import { SiteTransitFromSite } from "./detail/SiteTransitSection"
 import { TrustBadge } from "./TrustBadge"
 import { CompleteBadge } from "./CompleteBadge"
+import { SiteEventsBadge } from "./SiteEventsBadge"
+import { CreateEventHere } from "./CreateEventHere"
 import { RecommendationsSection } from "./detail/RecommendationsSection"
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
@@ -358,6 +360,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <TrustBadge site={site} withKind />
         <CompleteBadge site={site} />
+        <SiteEventsBadge count={siteEvents.length} />
       </div>
 
       {/* ── Dirección + estado de apertura ──────────────────────── */}
@@ -514,6 +517,14 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+
+      {/* ── Empujón: los sitios con eventos suben en el listado ───── */}
+      {isApproved && !eventsLoading && (
+        <>
+          <CreateEventHere siteId={site.id} variant="banner" hasEvents={siteEvents.length > 0} />
+          <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
+        </>
+      )}
 
       {/* ── Itinerario del sitio (solo si hay eventos o se están cargando) ── */}
       {(eventsLoading || siteEvents.length > 0) && (

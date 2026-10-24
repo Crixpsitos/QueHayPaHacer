@@ -7,9 +7,11 @@ import { updateTag, revalidateTag } from "next/cache"
  * `profile-sites-<uid>` (perfil/trayectoria).
  * Debe llamarse desde dentro de una Server Action.
  */
-export function revalidateSite(uid: string, siteId?: string) {
-  updateTag(`sites-${uid}`)
-  updateTag(`profile-sites-${uid}`)
+export function revalidateSite(uid: string | null, siteId?: string) {
+  if (uid) {
+    updateTag(`sites-${uid}`)
+    updateTag(`profile-sites-${uid}`)
+  }
   if (siteId) updateTag(`site-${siteId}`)
   revalidateTag("explore", "max")
   // Invalida los listados públicos (donde-ir, home sitios populares)

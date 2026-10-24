@@ -1,3 +1,4 @@
+import { bogotaDay } from "@/domain/entities/sites/siteStats";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
 import type { ISiteInteractionFirebaseRepository } from "./ISiteInteractionFirebaseRepository";
@@ -69,6 +70,7 @@ export class SiteInteractionFirebaseRepository
       await this.siteDoc(siteId).update({
         "analytics.likes": FieldValue.increment(delta),
       });
+      await this.addDaily(siteId, { likes: FieldValue.increment(delta) });
     }
   }
 
@@ -94,5 +96,12 @@ export class SiteInteractionFirebaseRepository
     await this.siteDoc(siteId).update({
       "analytics.shares": FieldValue.increment(1),
     });
+    await this.addDaily(siteId, { shares: FieldValue.increment(1) });
+  }
+
+  /** Serie diaria `sites/{id}/stats/{día}` (los mismos docs donde la ficha cuenta vistas y clics); `likes` es neto. */
+  private async addDaily(siteId: string, counters: Record<string, FieldValue>): Promise<void> {
+    const day = bogotaDay();
+    await this.siteDoc(siteId).collection("stats").doc(day).set({ day, ...counters }, { merge: true });
   }
 }

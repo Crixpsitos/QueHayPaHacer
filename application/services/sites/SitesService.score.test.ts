@@ -31,3 +31,30 @@ test("recomputeScore ignora sitios que no existen", async () => {
   await svc.recomputeScore("nope")
   assert.deepEqual(writes, [])
 })
+
+// --- setEventCount: fija eventCount y recalcula el score en una sola escritura ---
+
+test("setEventCount escribe eventCount y score juntos y devuelve el autor", async () => {
+  const { svc, writes } = fake({ author: { id: "u1" } as never, analytics: { likes: 1, shares: 0, eventCount: 0, score: 3 } as never, listingComplete: false })
+  const r = await svc.setEventCount("s1", 2)
+  assert.deepEqual(writes, [{ id: "s1", analytics: { eventCount: 2, score: 3 + 2 * 4 } }])
+  assert.deepEqual(r, { authorId: "u1" })
+})
+
+test("setEventCount no escribe si eventCount y score ya son correctos", async () => {
+  const { svc, writes } = fake({ analytics: { likes: 0, shares: 0, eventCount: 2, score: 8 } as never, listingComplete: false })
+  assert.equal(await svc.setEventCount("s1", 2), null)
+  assert.deepEqual(writes, [])
+})
+
+test("setEventCount corrige el score aunque el conteo ya coincida (score desfasado)", async () => {
+  const { svc, writes } = fake({ analytics: { likes: 0, shares: 0, eventCount: 2, score: 0 } as never, listingComplete: true })
+  await svc.setEventCount("s1", 2)
+  assert.deepEqual(writes, [{ id: "s1", analytics: { eventCount: 2, score: 2 * 4 + 10 } }])
+})
+
+test("setEventCount ignora sitios que no existen", async () => {
+  const { svc, writes } = fake(null)
+  assert.equal(await svc.setEventCount("nope", 3), null)
+  assert.deepEqual(writes, [])
+})

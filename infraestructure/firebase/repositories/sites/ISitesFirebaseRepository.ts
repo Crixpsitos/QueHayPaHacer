@@ -1,4 +1,5 @@
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
+import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 
 /** Página de IDs de sitios + cursor opaco (null = no hay más). */
 export interface PaginatedSiteIds {
@@ -24,4 +25,6 @@ export interface ISitesFirebaseRepository {
   findSiteIdsByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteIds>
   /** Busca un sitio por su slug único. */
   findBySlug(slug: string): Promise<FirebaseSiteDto | null>
+  /** Suma una vista o un clic al total del sitio y al doc diario `day` (YYYY-MM-DD). Sitio inexistente: no hace nada. */
+  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void>
 }

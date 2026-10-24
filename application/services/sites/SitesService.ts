@@ -2,6 +2,7 @@ import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
 import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTransit"
+import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 
@@ -45,6 +46,11 @@ function authorIdOf(dto: FirebaseSiteDto): string | undefined {
 export class SitesService {
   constructor(private readonly adapter: SitesAdapter) {}
 
+  /** Vista o clic de la ficha pública (ver app/api/sites/[id]/track). */
+  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
+    return this.adapter.recordTrack(id, type, day)
+  }
+
   async getMySites(uid: string): Promise<SiteDetail[]> {
     return this.adapter.findDetailsByAuthorId(uid)
   }
@@ -70,6 +76,19 @@ export class SitesService {
     const score = siteScore(dto.analytics, dto.listingComplete)
     if (dto.analytics?.score === score) return
     await this.adapter.updateRaw({ id, analytics: { score } } as unknown as FirebaseSiteDto)
+  }
+
+  /**
+   * Fija `analytics.eventCount` (ver siteEventCount) y recalcula el score en la misma escritura.
+   * Devuelve el autor del sitio si algo cambió (para invalidar sus cachés) y `null` si ya estaba al día o no existe.
+   */
+  async setEventCount(id: string, count: number): Promise<{ authorId: string | null } | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    const score = siteScore({ ...dto.analytics, eventCount: count }, dto.listingComplete)
+    if (dto.analytics?.eventCount === count && dto.analytics?.score === score) return null
+    await this.adapter.updateRaw({ id, analytics: { eventCount: count, score } } as unknown as FirebaseSiteDto)
+    return { authorId: authorIdOf(dto) ?? null }
   }
 
   async publish(data: SiteInput): Promise<string> {

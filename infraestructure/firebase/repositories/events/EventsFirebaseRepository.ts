@@ -188,8 +188,11 @@ export class EventsFirebaseRepository
     return results.slice(0, limit);
   }
 
-  async updateSiteIds(eventId: string, siteIds: string[]): Promise<void> {
-    await this.collection.doc(eventId).update({ siteIds, updatedAt: FieldValue.serverTimestamp() });
+  async updateSiteIds(eventId: string, siteIds: string[]): Promise<string[]> {
+    const ref = this.collection.doc(eventId);
+    const previous = ((await ref.get()).get("siteIds") as string[] | undefined) ?? [];
+    await ref.update({ siteIds, updatedAt: FieldValue.serverTimestamp() });
+    return previous;
   }
 
   async findById(id: string): Promise<FirebaseEventsDto | null> {

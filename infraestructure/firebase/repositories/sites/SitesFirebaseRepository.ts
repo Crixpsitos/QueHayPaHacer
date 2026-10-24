@@ -2,6 +2,7 @@ import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
+import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 
 const FEATURED_LIMIT = 8
 
@@ -129,5 +130,21 @@ export class SitesFirebaseRepository
     if (snap.empty) return null
     const doc = snap.docs[0]
     return { id: doc.id, ...doc.data() } as FirebaseSiteDto
+  }
+
+  async recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
+    const ref = this.collection.doc(id)
+    const isView = type === "view"
+    try {
+      // update() (no set): no crea docs de sitios inventados ni toca `updatedAt` (el sitemap lo usa como lastmod).
+      await ref.update(isView ? { "analytics.views": FieldValue.increment(1) } : { "analytics.clicks": FieldValue.increment(1) })
+    } catch (e) {
+      if ((e as { code?: number }).code === 5) return // NOT_FOUND
+      throw e
+    }
+    await ref
+      .collection("stats")
+      .doc(day)
+      .set({ day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? {} : { clicks: FieldValue.increment(1) }) }, { merge: true })
   }
 }

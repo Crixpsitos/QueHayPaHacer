@@ -17,6 +17,8 @@ import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { refreshSitesOfEvent } from "./lib/refreshSites";
+import { linkedSiteIds, notifySiteAuthorsOfEvent } from "@/app/lib/sites/siteEvents";
 import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration";
 import { requireEventPermission } from "@/app/actions/_session";
 import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
@@ -195,6 +197,7 @@ export async function publishEventAction(
     if (parsedData.id) {
       await contentDeclarationService.record(actorUid, "event", parsedData.id);
     }
+    const sitesBefore = await linkedSiteIds(existingEvent);
     const publishedEvent = await eventsService.publishEvent(parsedData, {
       isPremiumAuthor: author?.plan === "premium",
     });
@@ -212,6 +215,14 @@ export async function publishEventAction(
     if (eventType === "multi-date") {
       await syncEventDateRange(publishedEvent.id || parsedData.id);
       await syncEventSiteIds(publishedEvent.id || parsedData.id);
+    }
+
+    // Agenda del sitio: recuenta los sitios vinculados antes y ahora; y avisa a su autor si el evento ya quedó público
+    // (autores verificados publican de inmediato; el resto entra por moderación y avisa el webhook al aprobar).
+    const finalId = publishedEvent.id || parsedData.id;
+    await refreshSitesOfEvent([...sitesBefore, ...(await linkedSiteIds({ ...parsedData, id: finalId }))]);
+    if (parsedData.status === "published") {
+      await notifySiteAuthorsOfEvent({ ...parsedData, id: finalId, title: parsedData.title, author: parsedData.author });
     }
 
     invalidateTeamAccess(changedUids);

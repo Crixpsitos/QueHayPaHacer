@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { MapPin, ChevronDown, ChevronUp, Store } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { getUserSitesForPickerAction } from "@/app/actions/sites/get-user-sites-for-picker.action";
@@ -18,9 +18,11 @@ interface SitePickerWidgetProps {
   onSelect: (site: SiteSelection) => void;
   /** siteId actualmente seleccionado (para marcar activo) */
   selectedSiteId?: string | null;
+  /** Sitio a elegir solo al abrir el asistente (viene de `?siteId=` en "Crear evento aquí"). Debe ser uno de los del usuario. */
+  preselectSiteId?: string | null;
 }
 
-export function SitePickerWidget({ onSelect, selectedSiteId }: SitePickerWidgetProps) {
+export function SitePickerWidget({ onSelect, selectedSiteId, preselectSiteId }: SitePickerWidgetProps) {
   const [sites, setSites] = useState<SiteDetail[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,6 +43,23 @@ export function SitePickerWidget({ onSelect, selectedSiteId }: SitePickerWidgetP
   useEffect(() => {
     fetchSites();
   }, [fetchSites]);
+
+  // Preselección única: solo si aún no hay sitio elegido y el id es uno de los sitios publicados del propio usuario
+  // (la lista ya viene filtrada por autor, así que no se puede forzar el sitio de otra persona).
+  const preselected = useRef(false);
+  useEffect(() => {
+    if (preselected.current || !fetched || !preselectSiteId || selectedSiteId) return;
+    preselected.current = true;
+    const site = sites.find((s) => s.id === preselectSiteId);
+    if (site?.coordinates) {
+      onSelect({
+        siteId: site.id,
+        venue: site.name,
+        address: site.address,
+        coordinates: { lat: site.coordinates.latitude, lng: site.coordinates.longitude },
+      });
+    }
+  }, [fetched, sites, preselectSiteId, selectedSiteId, onSelect]);
 
   if (!loading && fetched && sites.length === 0) return null;
 

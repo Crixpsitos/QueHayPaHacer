@@ -8,7 +8,7 @@ import {
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { MapPin } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
@@ -42,6 +42,11 @@ export const Step4Location = ({ form }: Step4Props) => {
     name: "location.siteId",
   });
 
+  // "Crear evento aquí" (Mis sitios) llega con ?siteId=: el sitio queda elegido al abrir este paso.
+  const [preselectSiteId] = useState(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("siteId"),
+  );
+
   useEffect(() => {
     if (!form.getValues("location.country")?.isoCode) {
       form.setValue("location.country", IBAGUE_COUNTRY);
@@ -70,6 +75,7 @@ export const Step4Location = ({ form }: Step4Props) => {
         <SitePickerWidget
           onSelect={handleSiteSelect}
           selectedSiteId={watchedSiteId}
+          preselectSiteId={preselectSiteId}
         />
 
         {/* Ciudad fija — MVP Ibagué */}

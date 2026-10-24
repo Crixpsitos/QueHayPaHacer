@@ -1,4 +1,5 @@
 import { createServerContainer } from "@/infraestructure/di/container";
+import { refreshSitesOfEvent } from "./refreshSites";
 
 /**
  * Recalcula siteIds del evento multi-date desde sus sesiones publicadas
@@ -17,5 +18,7 @@ export async function syncEventSiteIds(eventId: string): Promise<void> {
     ),
   ];
 
-  await eventsService.syncSiteIds(eventId, siteIds);
+  const previous = await eventsService.syncSiteIds(eventId, siteIds);
+  // Los sitios que ganan o pierden el evento (sesiones nuevas, movidas o canceladas) recuentan su agenda.
+  await refreshSitesOfEvent([...previous, ...siteIds]);
 }

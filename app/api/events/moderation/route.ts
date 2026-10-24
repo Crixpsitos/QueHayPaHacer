@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import * as v from "valibot";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth";
+import { linkedSiteIds, notifySiteAuthorsOfEvent, refreshSiteEventCounts, revalidateSitesFromRoute } from "@/app/lib/sites/siteEvents";
 
 const ModerationDecisionSchema = v.object({
   eventId: v.pipe(v.string(), v.nonEmpty()),
@@ -57,6 +58,13 @@ export async function POST(request: Request) {
             href: `/eventos/${moderated.id}/edit`,
           },
     );
+
+    // Agenda del sitio: aprobar publica el evento y rechazar lo baja → recuenta los sitios vinculados. Si recién se
+    // publicó (moderación previa), el autor del sitio se entera. Efectos secundarios: no rompen la decisión.
+    revalidateSitesFromRoute(await refreshSiteEventCounts(await linkedSiteIds(result.event)));
+    if (parsed.output.decision === "approved" && result.wasPrePublication) {
+      await notifySiteAuthorsOfEvent(result.event);
+    }
 
     if (parsed.output.decision === "approved" && result.wasPrePublication) {
       const author = await userService.getUserById(result.event.author.id);
