@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   CalendarDays,
-  MapPin,
   Users,
   LifeBuoy,
   type LucideIcon,
@@ -18,7 +17,6 @@ export interface StudioNavItem {
 export const STUDIO_NAV: StudioNavItem[] = [
   { label: "Resumen", href: "/studio", icon: LayoutDashboard, exact: true },
   { label: "Mis eventos", href: "/studio/events", icon: CalendarDays },
-  { label: "Sitios", href: "/studio/sites", icon: MapPin },
   { label: "Colaboradores", href: "/studio/collaborators", icon: Users },
   { label: "Soporte prioritario", href: "/studio/support", icon: LifeBuoy },
 ];

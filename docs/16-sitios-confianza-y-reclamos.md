@@ -94,7 +94,7 @@ Se transfiere `site.author` para que el dueño edite desde Studio / Mis sitios. 
 - `author.id` se usa en `findByAuthorId`, `findDetailsByAuthorId`, `isOwner/assertOwner`, el Studio, el perfil público (`profile-sites-<uid>`) y las reglas de lectura de Firestore; todo sigue el campo, así que el cambio es consistente.
 - El perfil del autor anterior (tu cuenta admin) deja de listar el sitio.
 - La declaración de contenido (`contentDeclarations/site_<id>`) sigue a nombre del autor anterior; el nuevo dueño declara de nuevo en su primera edición (la edición exige declaración).
-- Estudio de sitios exige Premium (`isStudioSiteOwner`); un dueño sin Premium puede no poder editar desde el Studio. Verifícalo antes de aprobar o acuerda con él.
+- Los sitios se editan siempre desde Mis sitios (`/sites`), sin Premium: el Studio ya no tiene sección de sitios (se quitó el 2026-10-24).
 - Eventos ya vinculados al sitio (`siteId`) no cambian de autor.
 
 ### Cachés (limitación)

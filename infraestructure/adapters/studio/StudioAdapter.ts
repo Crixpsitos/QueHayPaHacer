@@ -10,10 +10,6 @@ import type {
   EventStats,
   MultiDateEventStats,
   FormResponseAnswer,
-  SiteAnalytics,
-  SiteEventsPage,
-  GetSiteEventsParams,
-  OrganizerSiteListItem,
   GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
@@ -85,18 +81,6 @@ export class StudioAdapter implements IStudioRepository {
 
   getFormResponses(eventId: string, userId: string): Promise<FormResponseAnswer[]> {
     return this.repository.getFormResponses(eventId, userId);
-  }
-
-  getOrganizerSites(uid: string, params?: GetStudioListParams): Promise<OrganizerSiteListItem[]> {
-    return this.repository.getOrganizerSites(uid, params);
-  }
-
-  getSiteAnalytics(siteId: string): Promise<SiteAnalytics | null> {
-    return this.repository.getSiteAnalytics(siteId);
-  }
-
-  getEventsBySite(siteId: string, params?: GetSiteEventsParams): Promise<SiteEventsPage> {
-    return this.repository.getEventsBySite(siteId, params);
   }
 
   searchPotentialCollaborators(uid: string, query: string, limit?: number): Promise<UserSearchItem[]> {
