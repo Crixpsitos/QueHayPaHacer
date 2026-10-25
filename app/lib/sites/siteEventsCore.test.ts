@@ -9,11 +9,12 @@ const world = (counts: Record<string, number>, stored: Record<string, number>, b
   return {
     writes,
     deps: {
-      count: async (id: string) => {
+      state: async (id: string) => {
         if (boom.includes(id)) throw new Error("falla")
-        return counts[id] ?? 0
+        return { count: counts[id] ?? 0, validUntil: null }
       },
-      set: async (id: string, n: number) => {
+      set: async (id: string, st: { count: number }) => {
+        const n = st.count
         if (stored[id] === n) return null
         stored[id] = n
         writes.push([id, n])

@@ -10,6 +10,7 @@ import {
 import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, getDisplayStatus } from "../../lib/constants"
 import { useSitesStore } from "../../store/useSitesStore"
 import { CreateEventHere } from "../CreateEventHere"
+import { isLinkableSite } from "@/domain/entities/sites/siteLink"
 import type { SiteListItem } from "../../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
 
@@ -113,7 +114,7 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
             <span className="flex items-center gap-1"><Share2 className="size-3.5" aria-hidden />{fmt(site.analytics.shares)}</span>
             <span className="flex items-center gap-1"><CalendarDays className="size-3.5" aria-hidden />{fmt(site.analytics.eventCount)}</span>
           </div>
-          {isApproved && <CreateEventHere siteId={site.id} />}
+          {isApproved && isLinkableSite(site) && <CreateEventHere siteId={site.id} />}
         </div>
       </div>
 

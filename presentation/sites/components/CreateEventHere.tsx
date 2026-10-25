@@ -26,7 +26,7 @@ export function CreateEventHere({ siteId, variant = "compact", hasEvents = false
     <section className={cn("flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E63946]/20 bg-[#FDF2F4] p-3.5")}>
       <p className="max-w-md text-sm text-[#52525B]">
         <span className="font-semibold text-[#09090B]">{hasEvents ? "Suma otro evento." : "Todavía no hay eventos aquí."}</span>{" "}
-        Los sitios con eventos suben en el listado y se ven más.
+        Los sitios con eventos suben en el listado y se ven más: cuentan hasta 5 eventos próximos o recientes.
       </p>
       <Link
         href={href(siteId)}

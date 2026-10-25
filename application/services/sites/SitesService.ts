@@ -5,6 +5,8 @@ import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTran
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
+import type { SiteEventState } from "@/domain/entities/sites/siteEventCount"
+import type { SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
 
@@ -79,16 +81,48 @@ export class SitesService {
   }
 
   /**
-   * Fija `analytics.eventCount` (ver siteEventCount) y recalcula el score en la misma escritura.
-   * Devuelve el autor del sitio si algo cambió (para invalidar sus cachés) y `null` si ya estaba al día o no existe.
+   * Fija `analytics.eventCount` y su vencimiento (`eventCountValidUntil`, ver siteEventCount) y recalcula el score en la
+   * misma escritura. Devuelve el autor del sitio si algo cambió (para invalidar sus cachés) y `null` si ya estaba al día
+   * o no existe. `visible` = cambió el conteo o el puntaje (lo que se ve en listados); si solo se movió el vencimiento
+   * no hace falta invalidar cachés. Un sitio sin el campo lo recibe (null) en el primer recuento, aunque no cambie nada más.
    */
-  async setEventCount(id: string, count: number): Promise<{ authorId: string | null } | null> {
+  async setEventCount(id: string, state: SiteEventState): Promise<{ authorId: string | null; visible: boolean } | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null
-    const score = siteScore({ ...dto.analytics, eventCount: count }, dto.listingComplete)
-    if (dto.analytics?.eventCount === count && dto.analytics?.score === score) return null
-    await this.adapter.updateRaw({ id, analytics: { eventCount: count, score } } as unknown as FirebaseSiteDto)
-    return { authorId: authorIdOf(dto) ?? null }
+    const score = siteScore({ ...dto.analytics, eventCount: state.count }, dto.listingComplete)
+    const storedUntil = dto.analytics?.eventCountValidUntil?.toDate?.()?.getTime() ?? null
+    const nextUntil = state.validUntil?.getTime() ?? null
+    const visible = dto.analytics?.eventCount !== state.count || dto.analytics?.score !== score
+    const fieldMissing = dto.analytics?.eventCountValidUntil === undefined
+    if (!visible && storedUntil === nextUntil && !fieldMissing) return null
+    await this.adapter.updateRaw({
+      id,
+      analytics: { eventCount: state.count, score, eventCountValidUntil: state.validUntil },
+    } as unknown as FirebaseSiteDto)
+    return { authorId: authorIdOf(dto) ?? null, visible }
+  }
+
+  /** Para el barrido: sitios con el conteo vencido (más atrasado primero) y cuántos quedan. */
+  findExpiredEventCounts(now: Date, limit: number) {
+    return this.adapter.findExpiredEventCounts(now, limit)
+  }
+
+  countExpiredEventCounts(now: Date) {
+    return this.adapter.countExpiredEventCounts(now)
+  }
+
+  /** Lo mínimo para decidir si un evento puede vincularse al sitio (ver domain/entities/sites/siteLink). */
+  async getLinkSnapshot(id: string): Promise<SiteLinkSnapshot | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    return {
+      authorId: authorIdOf(dto) ?? null,
+      // un doc antiguo sin estos campos se lee como el mapper: propuesto por la comunidad
+      publishedAs: dto.publishedAs ?? "proposer",
+      verification: dto.verification ?? "community",
+      publicationStatus: dto.publicationStatus,
+      moderationStatus: dto.moderationStatus,
+    }
   }
 
   async publish(data: SiteInput): Promise<string> {

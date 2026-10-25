@@ -82,6 +82,12 @@ export function SitePickerWidget({ onSelect, selectedSiteId, preselectSiteId }: 
         {!loading && (open ? <ChevronUp className="size-4 shrink-0" /> : <ChevronDown className="size-4 shrink-0" />)}
       </button>
 
+      {!loading && sites.length > 0 && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Si vinculas este evento a tu sitio, tu página sube en el listado y se ve con agenda.
+        </p>
+      )}
+
       {open && !loading && sites.length > 0 && (
         <div className="mt-2 flex flex-col gap-1">
           {sites.map((site) => {

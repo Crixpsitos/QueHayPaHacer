@@ -19,6 +19,7 @@ import { TrustBadge } from "./TrustBadge"
 import { CompleteBadge } from "./CompleteBadge"
 import { SiteEventsBadge } from "./SiteEventsBadge"
 import { CreateEventHere } from "./CreateEventHere"
+import { isLinkableSite } from "@/domain/entities/sites/siteLink"
 import { RecommendationsSection } from "./detail/RecommendationsSection"
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { ConfirmBeforeGoingNotice } from "./ConfirmBeforeGoingNotice"
@@ -519,7 +520,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />
 
       {/* ── Empujón: los sitios con eventos suben en el listado ───── */}
-      {isApproved && !eventsLoading && (
+      {isApproved && isLinkableSite(site) && !eventsLoading && (
         <>
           <CreateEventHere siteId={site.id} variant="banner" hasEvents={siteEvents.length > 0} />
           <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />

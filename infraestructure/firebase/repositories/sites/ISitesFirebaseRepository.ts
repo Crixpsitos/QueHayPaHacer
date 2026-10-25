@@ -23,6 +23,9 @@ export interface ISitesFirebaseRepository {
   findAllSiteIdsPage(limit: number, cursor: string | null): Promise<PaginatedSiteIds>
   /** Paginación por cursor de un tipo de sitio (category). Tiebreaker documentId. */
   findSiteIdsByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteIds>
+  /** Sitios con el conteo de eventos vencido (`analytics.eventCountValidUntil <= now`), el más atrasado primero. */
+  findExpiredEventCounts(now: Date, limit: number): Promise<{ id: string; validUntil: number }[]>
+  countExpiredEventCounts(now: Date): Promise<number>
   /** Busca un sitio por su slug único. */
   findBySlug(slug: string): Promise<FirebaseSiteDto | null>
   /** Suma una vista o un clic al total del sitio y al doc diario `day` (YYYY-MM-DD). Sitio inexistente: no hace nada. */

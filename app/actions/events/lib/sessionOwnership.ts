@@ -4,6 +4,7 @@ import type { TeamAction } from "@/domain/entities/events/teamAccess";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { syncEventDateRange } from "./syncEventDateRange";
 import { syncEventSiteIds } from "./syncEventSiteIds";
+import { siteLinkError } from "./siteLink";
 
 /**
  * Guard de las actions de sesión: permiso sobre el evento padre (`edit_event` por defecto;
@@ -24,6 +25,25 @@ export async function sessionOwnerError(
     return "Solo los eventos multi-fecha tienen sesiones.";
   }
   return null;
+}
+
+/**
+ * Vínculo de la sesión con un sitio (`location.siteId`): mismo criterio que el evento único (sitio propio del DUEÑO
+ * del evento), validado solo si el vínculo es nuevo o cambia respecto de la sesión guardada. Sin sitio no lee nada.
+ */
+export async function sessionSiteLinkError(
+  eventId: string,
+  nextSiteId: string | null | undefined,
+  sessionId?: string | null,
+): Promise<string | null> {
+  if (!nextSiteId) return null;
+  const { eventsService, eventSessionService } = createServerContainer();
+  const [event, previous] = await Promise.all([
+    eventsService.getEventById(eventId),
+    sessionId ? eventSessionService.getById(eventId, sessionId) : null,
+  ]);
+  if (!event) return null; // el permiso sobre el evento ya lo comprobó sessionOwnerError
+  return siteLinkError(event.author.id, nextSiteId, previous?.location?.siteId);
 }
 
 /** Tras mutar sesiones: re-sincroniza el evento padre e invalida sus cachés. */

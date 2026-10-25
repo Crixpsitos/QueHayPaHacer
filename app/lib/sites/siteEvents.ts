@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { eventAtSiteNotice, recountSites } from "./siteEventsCore"
+import { tagsForChangedSites } from "@/app/api/sites/_lib/siteTags"
 
 type EventRef = { id?: string; title?: string; author?: { id: string }; location?: { siteId?: string | null } | null }
 
@@ -33,17 +34,14 @@ export async function refreshSiteEventCounts(
   const { eventsService, sitesService } = createServerContainer()
   return recountSites(
     siteIds,
-    { count: (id) => eventsService.countRecentBySiteId(id), set: (id, n) => sitesService.setEventCount(id, n) },
+    { state: (id) => eventsService.siteEventStateBySiteId(id), set: (id, s) => sitesService.setEventCount(id, s) },
     (siteId, error) => console.error("[refreshSiteEventCounts]", siteId, error),
   )
 }
 
-/** Invalidación desde Route Handlers (webhooks): `expire: 0`; mismos tags que app/api/sites/revalidate. */
+/** Invalidación desde Route Handlers (webhooks): `expire: 0`; misma lista de tags que app/api/sites/revalidate. */
 export function revalidateSitesFromRoute(changed: { siteId: string; authorId: string | null }[]) {
-  for (const { siteId, authorId } of changed) {
-    const tags = [`site-${siteId}`, "site-list", "featured-sites", "explore", ...(authorId ? [`sites-${authorId}`, `profile-sites-${authorId}`] : [])]
-    for (const tag of tags) revalidateTag(tag, { expire: 0 })
-  }
+  for (const tag of tagsForChangedSites(changed)) revalidateTag(tag, { expire: 0 })
 }
 
 /**

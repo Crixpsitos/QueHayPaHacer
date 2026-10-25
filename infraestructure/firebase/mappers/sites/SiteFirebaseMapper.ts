@@ -178,7 +178,7 @@ export class SiteFirebaseMapper {
       publicationStatus: domain.publicationStatus,
       moderationStatus: domain.moderationStatus,
       isActive: domain.isActive,
-      analytics: { clicks: 0, views: 0, likes: 0, shares: 0, eventCount: 0, score: 0 },
+      analytics: { clicks: 0, views: 0, likes: 0, shares: 0, eventCount: 0, eventCountValidUntil: null, score: 0 },
       publishedAt: null,
       reviewedAt: null,
       reviewedBy: null,

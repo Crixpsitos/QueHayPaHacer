@@ -67,6 +67,14 @@ export class SitesAdapter implements ISiteRepository {
     return this.repo.findFeaturedSiteIds()
   }
 
+  findExpiredEventCounts(now: Date, limit: number) {
+    return this.repo.findExpiredEventCounts(now, limit)
+  }
+
+  countExpiredEventCounts(now: Date) {
+    return this.repo.countExpiredEventCounts(now)
+  }
+
   findSitemapEntries(limit: number) {
     return this.repo.findSitemapEntries(limit)
   }

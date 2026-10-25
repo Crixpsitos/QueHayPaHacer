@@ -2,7 +2,7 @@
 
 import { createServerContainer } from "@/infraestructure/di/container";
 import { SessionOverlapError } from "@/application/services/events/EventSessionService";
-import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
+import { afterSessionChange, sessionOwnerError, sessionSiteLinkError } from "./lib/sessionOwnership";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 import { SessionSchema } from "@/application/dto/events/EventSessionDto";
 import { safeParse } from "valibot";
@@ -18,6 +18,8 @@ export async function updateEventSessionAction(
 ): Promise<UpdateSessionResult> {
   const ownerError = await sessionOwnerError(eventId, data?.status === "published" ? "publish_event" : "edit_event");
   if (ownerError) return { success: false, error: ownerError };
+  const linkError = await sessionSiteLinkError(eventId, data?.location?.siteId, sessionId);
+  if (linkError) return { success: false, error: linkError };
 
   // El cliente solo puede guardar borrador o publicar; cancelled/ended no.
   if (data.status !== "draft" && data.status !== "published") {

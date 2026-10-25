@@ -1,9 +1,10 @@
 import type { NewNotification } from "@/domain/entities/notification/Notification"
+import type { SiteEventState } from "@/domain/entities/sites/siteEventCount"
 
 export interface RecountDeps {
-  count(siteId: string): Promise<number>
-  /** Escribe eventCount+score; devuelve el autor si cambió algo, `null` si ya estaba al día o el sitio no existe. */
-  set(siteId: string, count: number): Promise<{ authorId: string | null } | null>
+  state(siteId: string): Promise<SiteEventState>
+  /** Escribe eventCount+vencimiento+score; devuelve el autor si cambió algo, `null` si ya estaba al día o el sitio no existe. */
+  set(siteId: string, state: SiteEventState): Promise<{ authorId: string | null } | null>
 }
 
 /**
@@ -18,7 +19,7 @@ export async function recountSites(
   const changed: { siteId: string; authorId: string | null }[] = []
   for (const siteId of new Set([...siteIds].filter((id): id is string => !!id))) {
     try {
-      const result = await deps.set(siteId, await deps.count(siteId))
+      const result = await deps.set(siteId, await deps.state(siteId))
       if (result) changed.push({ siteId, authorId: result.authorId })
     } catch (error) {
       onError(siteId, error)

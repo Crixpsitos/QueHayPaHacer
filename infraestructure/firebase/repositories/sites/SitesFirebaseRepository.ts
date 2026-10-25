@@ -1,4 +1,4 @@
-import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore"
+import { FieldPath, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
@@ -67,6 +67,30 @@ export class SitesFirebaseRepository
       .select()
       .get()
     return snap.docs.map((d) => d.id)
+  }
+
+  /**
+   * Sitios cuyo conteo de eventos ya venció (`analytics.eventCountValidUntil <= now`), el más atrasado primero.
+   * Consulta de rango sobre ese único campo (los `null`/ausentes no entran: no vencen solos). Sin índice compuesto.
+   * ponytail: a esta escala basta el índice automático; si crece mucho, un índice de campo único en
+   * `sites.analytics.eventCountValidUntil`.
+   */
+  async findExpiredEventCounts(now: Date, limit: number): Promise<{ id: string; validUntil: number }[]> {
+    const snap = await this.collection
+      .where("analytics.eventCountValidUntil", "<=", Timestamp.fromDate(now))
+      .orderBy("analytics.eventCountValidUntil", "asc")
+      .limit(limit)
+      .select("analytics.eventCountValidUntil")
+      .get()
+    return snap.docs.flatMap((d) => {
+      const t = (d.get("analytics.eventCountValidUntil") as Timestamp | undefined)?.toMillis()
+      return typeof t === "number" ? [{ id: d.id, validUntil: t }] : []
+    })
+  }
+
+  async countExpiredEventCounts(now: Date): Promise<number> {
+    const snap = await this.collection.where("analytics.eventCountValidUntil", "<=", Timestamp.fromDate(now)).count().get()
+    return snap.data().count
   }
 
   async findSitemapEntries(limit: number) {

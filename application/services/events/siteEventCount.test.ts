@@ -15,13 +15,16 @@ const service = (events: { status: string; endDate: Date }[], previousSiteIds: s
   return { svc: new EventsService(repo, {} as never), calls }
 }
 
-test("countRecentBySiteId cuenta publicados recientes y consulta con un tope amplio", async () => {
+test("siteEventStateBySiteId cuenta publicados vigentes, da el vencimiento y consulta con un tope amplio", async () => {
   const { svc, calls } = service([
     { status: "published", endDate: day(5) },
     { status: "published", endDate: day(-100) },
+    { status: "published", endDate: day(-2) },
     { status: "pending", endDate: day(5) },
   ])
-  assert.equal(await svc.countRecentBySiteId("s1", NOW), 1)
+  const state = await svc.siteEventStateBySiteId("s1", NOW)
+  assert.equal(state.count, 2, "el de hace 100 días y el pendiente no cuentan")
+  assert.equal(state.validUntil?.getTime(), day(-2 + 7).getTime())
   assert.deepEqual(calls, [{ siteId: "s1", limit: 300 }])
 })
 
