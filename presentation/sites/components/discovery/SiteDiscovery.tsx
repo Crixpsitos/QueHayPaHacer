@@ -34,6 +34,7 @@ import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
 import { useColombiaHolidays } from "../../hooks/useColombiaHolidays";
 import { TrustBadge } from "../TrustBadge";
+import { SiteEventsBadge } from "../SiteEventsBadge";
 
 /** Icono de respaldo cuando el sitio no tiene portada. */
 const CATEGORY_ICON: Record<string, React.ElementType> = {
@@ -126,6 +127,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
                 Reservas
               </span>
             )}
+            <SiteEventsBadge count={eventCount} variant="pill" />
             {site.isNew && (
               <span className="rounded-full bg-[#FFB703] px-2.5 py-1 text-xs font-semibold text-[#09090B]">Nuevo</span>
             )}

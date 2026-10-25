@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs"
 // Las Server Actions son POST públicos. Toda action que reciba un uid/userId
 // del cliente debe verificarlo contra la sesión (getTokens/_session).
 // ponytail: chequeo estático por regex; reemplazar por tests de integración con sesión real cuando haya E2E.
-const GUARD = /getTokens|getSessionUid|getAdminUid|getPremiumSessionUid|requireEventPermission|getEventAccess|isStudioEventOwner|isStudioSiteOwner|verifyIdToken/
+const GUARD = /getTokens|getSessionUid|getAdminUid|getPremiumSessionUid|requireEventPermission|getEventAccess|isStudioEventOwner|verifyIdToken/
 const TAKES_UID = /\b(uid|userId|currentUid)\b/
 const PUBLIC_UID_OK = new Set([
   // Solo consulta disponibilidad; no escribe ni expone datos del uid.

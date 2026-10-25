@@ -54,6 +54,7 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
   return (
     <a
       href={url}
+      data-site-track="booking"
       target="_blank"
       rel="noopener noreferrer"
       className={cn(

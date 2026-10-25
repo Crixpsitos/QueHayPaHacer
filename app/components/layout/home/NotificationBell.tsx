@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Bell, BadgeCheck, Bus, CalendarDays, MailPlus, MapPin, MessageSquareDiff, UserCheck, UserMinus, UserPlus, UserX, Users, XIcon } from "lucide-react";
+import { Bell, BadgeCheck, Bus, CalendarDays, CalendarPlus, MailPlus, MapPin, MessageSquareDiff, UserCheck, UserMinus, UserPlus, UserX, Users, XIcon } from "lucide-react";
 
 import { getUnreadNotificationsCountAction } from "@/app/actions/notifications/get-unread-notifications-count.action";
 import { listNotificationsAction } from "@/app/actions/notifications/list-notifications.action";
@@ -28,6 +28,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   event_moderation: CalendarDays,
   site_moderation: MapPin,
   transit_outdated: Bus,
+  event_at_site: CalendarPlus,
 };
 
 const TITLE = "Notificaciones";

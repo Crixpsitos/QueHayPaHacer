@@ -1,7 +1,7 @@
 "use server";
 
 import { createServerContainer } from "@/infraestructure/di/container";
-import { afterSessionChange, sessionOwnerError } from "./lib/sessionOwnership";
+import { afterSessionChange, sessionOwnerError, sessionSiteLinkError } from "./lib/sessionOwnership";
 import type { FormSessionDto } from "@/application/dto/events/EventSessionDto";
 import type { EventSession } from "@/domain/entities/events/EventSession";
 
@@ -19,6 +19,8 @@ export async function saveDraftSessionAction(
 ): Promise<SaveDraftSessionResult> {
   const ownerError = await sessionOwnerError(eventId);
   if (ownerError) return { success: false, error: ownerError };
+  const linkError = await sessionSiteLinkError(eventId, data.location?.siteId, data.id);
+  if (linkError) return { success: false, error: linkError };
 
   const payload = {
     eventId,

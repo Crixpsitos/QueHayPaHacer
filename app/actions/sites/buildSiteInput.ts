@@ -35,7 +35,7 @@ export function buildSiteInput(
   })
 
   const listingComplete = getSiteCompleteness(completenessFromForm(form)).complete
-  const noInteractions = { clicks: 0, likes: 0, shares: 0, eventCount: 0 }
+  const noInteractions = { clicks: 0, likes: 0, shares: 0, eventCount: 0, eventCountValidUntil: null }
 
   return {
     name: form.name.trim(),

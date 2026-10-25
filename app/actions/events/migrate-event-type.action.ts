@@ -8,6 +8,8 @@ import { revalidateTag, updateTag } from "next/cache";
 import { toSlug } from "@/app/lib/utils/slug";
 import { syncEventDateRange } from "./lib/syncEventDateRange";
 import { syncEventSiteIds } from "./lib/syncEventSiteIds";
+import { refreshSitesOfEvent } from "./lib/refreshSites";
+import { linkedSiteIds } from "@/app/lib/sites/siteEvents";
 import type { FormEventDto } from "@/application/dto/events/EventDto";
 import type { Events } from "@/domain/entities/events/Events";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
@@ -243,11 +245,13 @@ export async function migrateEventTypeAction(params: {
     }
 
     // Solo ahora eliminar las sesiones y el documento anterior.
+    const sitesBefore = await linkedSiteIds(oldEvent);
     const oldSessions = await eventSessionService.getByEventId(oldEventId);
     for (const session of oldSessions) {
       await eventSessionService.deleteSession(oldEventId, session.id);
     }
     await eventsService.deleteEvent(oldEventId);
+    await refreshSitesOfEvent(sitesBefore);
 
     // Invalidar cachés relevantes.
     updateTag(`event-${oldEventId}`);

@@ -1,6 +1,7 @@
 import { Events } from "@/domain/entities/events/Events";
 import { IEventsRepository } from "@/domain/repository/events/IEventsRepository";
 import { IStorageService } from "@/domain/services/storage/IStorageService";
+import { siteEventState, type SiteEventState } from "@/domain/entities/sites/siteEventCount";
 
 export class EventsService {
   private static readonly PREMIUM_AUTHOR_SCORE_BOOST = 10;
@@ -174,8 +175,19 @@ export class EventsService {
     return this.eventsRepository.findAllPaginated(limit, cursor);
   }
 
-  async syncSiteIds(eventId: string, siteIds: string[]): Promise<void> {
-    await this.eventsRepository.updateSiteIds(eventId, siteIds);
+  /** Escribe `siteIds` y devuelve los que tenía antes (para recontar también los sitios que dejó de tener). */
+  async syncSiteIds(eventId: string, siteIds: string[]): Promise<string[]> {
+    return this.eventsRepository.updateSiteIds(eventId, siteIds);
+  }
+
+  /**
+   * Conteo de eventos publicados vigentes de un sitio y su vencimiento (ver siteEventCount). Reutiliza `findPublishedBySiteId`
+   * (consulta ya indexada) y filtra en memoria.
+   * ponytail: tope de 300 eventos por sitio; si un sitio llegara a tenerlos, el conteo queda en el tope.
+   */
+  async siteEventStateBySiteId(siteId: string, now: Date = new Date()): Promise<SiteEventState> {
+    const all = await this.eventsRepository.findPublishedBySiteId(siteId, 300);
+    return siteEventState(all, now);
   }
 
   /** Eventos publicados vinculados a un sitio — solo vigentes (endDate >= hoy), próximos primero. */

@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/app/components/ui/popover";
 import { Switch } from "@/app/components/ui/switch";
+import { SiteLinkNudge } from "../ui/SiteLinkNudge";
 import { cn } from "@/app/lib/utils/cn";
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { differenceInDays, format } from "date-fns";
@@ -227,6 +228,9 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false, declared, o
               <SummaryItem label="Mapa" value="Coordenadas configuradas" />
             )}
           </SummarySection>
+
+          {/* Empujón: vincular el evento a un sitio propio (solo si tiene y no lo hizo) */}
+          <SiteLinkNudge linked={Boolean(formData.location?.siteId)} onGoToLocation={() => onGoToStep(4)} />
 
           {/* Fecha */}
           <SummarySection title="Fecha" onEdit={() => onGoToStep(5)}>

@@ -7,10 +7,6 @@ import type {
   EventStats,
   MultiDateEventStats,
   FormResponseAnswer,
-  SiteAnalytics,
-  SiteEventsPage,
-  GetSiteEventsParams,
-  OrganizerSiteListItem,
   GetStudioListParams,
   Collaborator,
   CollaboratorInvitation,
@@ -65,10 +61,6 @@ export interface IStudioRepository {
 
   // Sitios
   /** Grid de "Sitios" del organizador. Pipeline con búsqueda + límite, sin paginación. */
-  getOrganizerSites(uid: string, params?: GetStudioListParams): Promise<OrganizerSiteListItem[]>;
-  getSiteAnalytics(siteId: string): Promise<SiteAnalytics | null>;
-  /** Itinerario de eventos de un sitio (FK `location.siteId`). Pipeline con búsqueda + paginación por cursor. */
-  getEventsBySite(siteId: string, params?: GetSiteEventsParams): Promise<SiteEventsPage>;
 
   // Colaboradores (red a nivel de cuenta)
   /** Busca usuarios para invitar (pipeline de búsqueda sobre `users`). Excluye a uno mismo. */

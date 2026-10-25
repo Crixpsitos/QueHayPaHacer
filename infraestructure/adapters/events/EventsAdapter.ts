@@ -60,8 +60,8 @@ export class EventsAdapter implements IEventsRepository {
     return dtos.map((d) => this.mapper.toDomain(d));
   }
 
-  async updateSiteIds(eventId: string, siteIds: string[]): Promise<void> {
-    await this.repository.updateSiteIds(eventId, siteIds);
+  async updateSiteIds(eventId: string, siteIds: string[]): Promise<string[]> {
+    return this.repository.updateSiteIds(eventId, siteIds);
   }
   async deleteEvent(id: string): Promise<void> {
     await this.repository.deleteEvent(id);

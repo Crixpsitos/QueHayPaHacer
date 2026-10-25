@@ -1,7 +1,8 @@
-import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore"
+import { FieldPath, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
+import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 
 const FEATURED_LIMIT = 8
 
@@ -68,6 +69,30 @@ export class SitesFirebaseRepository
     return snap.docs.map((d) => d.id)
   }
 
+  /**
+   * Sitios cuyo conteo de eventos ya venció (`analytics.eventCountValidUntil <= now`), el más atrasado primero.
+   * Consulta de rango sobre ese único campo (los `null`/ausentes no entran: no vencen solos). Sin índice compuesto.
+   * ponytail: a esta escala basta el índice automático; si crece mucho, un índice de campo único en
+   * `sites.analytics.eventCountValidUntil`.
+   */
+  async findExpiredEventCounts(now: Date, limit: number): Promise<{ id: string; validUntil: number }[]> {
+    const snap = await this.collection
+      .where("analytics.eventCountValidUntil", "<=", Timestamp.fromDate(now))
+      .orderBy("analytics.eventCountValidUntil", "asc")
+      .limit(limit)
+      .select("analytics.eventCountValidUntil")
+      .get()
+    return snap.docs.flatMap((d) => {
+      const t = (d.get("analytics.eventCountValidUntil") as Timestamp | undefined)?.toMillis()
+      return typeof t === "number" ? [{ id: d.id, validUntil: t }] : []
+    })
+  }
+
+  async countExpiredEventCounts(now: Date): Promise<number> {
+    const snap = await this.collection.where("analytics.eventCountValidUntil", "<=", Timestamp.fromDate(now)).count().get()
+    return snap.data().count
+  }
+
   async findSitemapEntries(limit: number) {
     const snap = await this.publishedSites.select("slug", "updatedAt").limit(limit).get()
     return snap.docs.map((d) => ({
@@ -129,5 +154,21 @@ export class SitesFirebaseRepository
     if (snap.empty) return null
     const doc = snap.docs[0]
     return { id: doc.id, ...doc.data() } as FirebaseSiteDto
+  }
+
+  async recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
+    const ref = this.collection.doc(id)
+    const isView = type === "view"
+    try {
+      // update() (no set): no crea docs de sitios inventados ni toca `updatedAt` (el sitemap lo usa como lastmod).
+      await ref.update(isView ? { "analytics.views": FieldValue.increment(1) } : { "analytics.clicks": FieldValue.increment(1) })
+    } catch (e) {
+      if ((e as { code?: number }).code === 5) return // NOT_FOUND
+      throw e
+    }
+    await ref
+      .collection("stats")
+      .doc(day)
+      .set({ day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? {} : { clicks: FieldValue.increment(1) }) }, { merge: true })
   }
 }

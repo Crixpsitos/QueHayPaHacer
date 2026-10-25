@@ -3,6 +3,7 @@ import type { ISiteRepository } from "@/domain/repository/sites/ISiteRepository"
 import type { ISitesFirebaseRepository } from "@/infraestructure/firebase/repositories/sites/ISitesFirebaseRepository"
 import { SiteFirebaseMapper } from "@/infraestructure/firebase/mappers/sites/SiteFirebaseMapper"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
+import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 
 export class SitesAdapter implements ISiteRepository {
@@ -14,6 +15,10 @@ export class SitesAdapter implements ISiteRepository {
   async findById(id: string): Promise<Site | null> {
     const dto = await this.repo.findById(id)
     return dto ? this.mapper.toDomain(dto) : null
+  }
+
+  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
+    return this.repo.recordTrack(id, type, day)
   }
 
   /** Raw DTO — avoids domain mapping (robust against legacy media shapes). */
@@ -60,6 +65,14 @@ export class SitesAdapter implements ISiteRepository {
 
   findFeaturedSiteIds(): Promise<string[]> {
     return this.repo.findFeaturedSiteIds()
+  }
+
+  findExpiredEventCounts(now: Date, limit: number) {
+    return this.repo.findExpiredEventCounts(now, limit)
+  }
+
+  countExpiredEventCounts(now: Date) {
+    return this.repo.countExpiredEventCounts(now)
   }
 
   findSitemapEntries(limit: number) {

@@ -6,6 +6,8 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { revalidateTag, updateTag } from "next/cache";
 import { resolveEventRole, can } from "@/domain/entities/events/teamAccess";
+import { refreshSitesOfEvent } from "./lib/refreshSites";
+import { linkedSiteIds } from "@/app/lib/sites/siteEvents";
 
 type DeleteEventResult = { success: true } | { success: false; error: string };
 
@@ -26,9 +28,11 @@ export async function deleteEventAction(eventId: string): Promise<DeleteEventRes
 
     // Firestore no borra subcolecciones con el doc: sesiones primero (si no,
     // quedan huérfanas y siguen saliendo en collectionGroup/sitios).
+    const sitesBefore = await linkedSiteIds(event);
     const sessions = await eventSessionService.getByEventId(eventId.trim());
     await Promise.all(sessions.map((s) => eventSessionService.deleteSession(eventId.trim(), s.id)));
     await eventsService.deleteEvent(eventId.trim());
+    await refreshSitesOfEvent(sitesBefore);
 
     updateTag("event-list");
     revalidateTag("explore", "max");

@@ -48,8 +48,6 @@ Snapshot: 2026-10-10. Este inventario describe superficies encontradas; no reemp
 | slot `@stats` | Estadísticas. |
 | slot `@multidate` | Estadísticas/sesiones multifecha. |
 | `/studio/events/[id]/.../session/[sessionId]` | Detalle de sesión en Studio. |
-| `/studio/sites` | Lista de sitios. |
-| `/studio/sites/[id]` | Analíticas/eventos de sitio. |
 | `/studio/collaborators` | Invitaciones y perfiles externos. |
 | `/studio/support` | Tickets de soporte. |
 

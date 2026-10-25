@@ -3,3 +3,7 @@ allowBuilds:
   protobufjs: true
   unrs-resolver: true
   esbuild: true
+
+# Parches de seguridad de dependencias transitivas (build). Quitar cuando Next suba su postcss.
+overrides:
+  source-map-js: ^1.2.2

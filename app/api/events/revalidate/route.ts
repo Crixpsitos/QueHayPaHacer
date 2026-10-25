@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import * as v from "valibot";
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth";
+import { createServerContainer } from "@/infraestructure/di/container";
+import { linkedSiteIds, refreshSiteEventCounts, revalidateSitesFromRoute } from "@/app/lib/sites/siteEvents";
 
 const Id = v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]{1,128}$/));
 const Body = v.object({
@@ -32,6 +34,9 @@ export async function POST(request: Request) {
     ...authorIds.flatMap((uid) => [`profile-events-${uid}`, `profile-stats-${uid}`]),
   ];
   for (const tag of tags) revalidateTag(tag, { expire: 0 });
+  // Una baja a mano en Firestore también cambia la agenda de los sitios vinculados.
+  const event = await createServerContainer().eventsService.getEventById(eventId).catch(() => null);
+  revalidateSitesFromRoute(await refreshSiteEventCounts(await linkedSiteIds(event)));
   revalidatePath("/", "page");
   revalidatePath("/eventos", "layout");
   return NextResponse.json({ success: true, tags: tags.length });

@@ -14,6 +14,7 @@ import { SiteTransitSection } from "./SiteTransitSection";
 import { getSiteTransitViewAction } from "@/app/actions/site-transit/get-site-transit.action";
 import { SiteItineraryGrid } from "@/presentation/events/components/card/SiteItineraryCard";
 import { SiteDetailActions } from "./SiteDetailActions";
+import { SiteTracker } from "./SiteTracker";
 import { SiteGalleryTrigger } from "./SiteGalleryModal";
 import { SiteSocialShare } from "./SiteSocialShare";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
@@ -25,6 +26,7 @@ import { SITE_URL } from "@/app/lib/site";
 import { getInitials } from "@/app/lib/utils/getInitials";
 import { TrustBadge } from "../TrustBadge";
 import { CompleteBadge } from "../CompleteBadge";
+import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
@@ -125,6 +127,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
       : openStatus.label ?? "Horario no disponible.";
 
   return (
+    <SiteTracker siteId={siteId}>
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:max-w-4xl lg:max-w-6xl">
       <SiteLocalBusinessJsonLd site={site} />
 
@@ -146,6 +149,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           <div className="flex flex-wrap items-center gap-1.5">
             <TrustBadge site={site} withKind />
             <CompleteBadge site={site!} />
+            <SiteEventsBadge count={linkedEvents.length} />
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", catColor.bg)}>
@@ -196,6 +200,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
             <a
               key={label}
               href={href}
+              data-site-track={label === "Sitio web" ? "website" : "social"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:text-[#09090B]"
@@ -279,6 +284,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
             </p>
             <a
               href={mapsUrl}
+              data-site-track="directions"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#09090B] underline decoration-[#E4E4E7] underline-offset-4 hover:decoration-[#09090B]"
@@ -384,5 +390,6 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
         </>
       )}
     </div>
+    </SiteTracker>
   );
 }

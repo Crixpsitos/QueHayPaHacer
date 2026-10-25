@@ -17,6 +17,9 @@ import { cookies } from "next/headers";
 import { safeParse } from "valibot";
 import { requireEventPermission } from "@/app/actions/_session";
 import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
+import { refreshSitesOfEvent } from "./lib/refreshSites";
+import { siteLinkError } from "./lib/siteLink";
+import { linkedSiteIds } from "@/app/lib/sites/siteEvents";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
@@ -64,6 +67,11 @@ export async function updateEventAction(
   if (!author) {
     return { success: false, error: "No encontramos el perfil del organizador." };
   }
+
+  // Vínculo con un sitio: solo a uno propio del DUEÑO (publicado como dueño y aprobado). Se valida únicamente si el
+  // vínculo es nuevo o cambia; un evento ya vinculado a un sitio no elegible se respeta hasta que alguien lo edite.
+  const linkError = await siteLinkError(access.ownerId, event.location?.siteId, existingEvent.location?.siteId);
+  if (linkError) return { success: false, error: linkError };
 
   // author/slug/promotion/status son del servidor (withServerOwnedFields abajo).
   const input = {
@@ -128,7 +136,10 @@ export async function updateEventAction(
   }
 
   try {
+    const sitesBefore = await linkedSiteIds(existingEvent);
     await eventsService.updateEvent(updatedEvent);
+    // Cambió el sitio o el estado (un autor sin verificar vuelve a moderación al editar): recuenta la agenda de ambos.
+    await refreshSitesOfEvent([...sitesBefore, ...(await linkedSiteIds({ ...updatedEvent, id: eventId }))]);
 
     if (existingEvent.status === "published" || updatedEvent.status === "published") {
       updateTag("event-list");

@@ -90,13 +90,6 @@ export async function isStudioEventOwner(eventId: string): Promise<boolean> {
   return (await getEventAccess(eventId))?.role === "owner"
 }
 
-/** Studio: sesión Premium y autora del sitio. */
-export async function isStudioSiteOwner(siteId: string): Promise<boolean> {
-  const uid = await getPremiumSessionUid()
-  if (!uid || !siteId) return false
-  return createServerContainer().sitesService.isOwner(uid, siteId)
-}
-
 /** Tag que invalidan las ops de equipo (agregar/quitar/cambiar rol) de `uid`. */
 export const teamAccessTag = (uid: string) => `team-access-${uid}`
 

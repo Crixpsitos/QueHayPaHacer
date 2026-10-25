@@ -2,6 +2,7 @@
 
 import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { enforcePlanFeatures } from "./lib/eventModerationPolicy";
+import { siteLinkError } from "./lib/siteLink";
 import {
   FormEventDto,
   FormEventSchema,
@@ -47,6 +48,10 @@ export async function createDraftEventAction(
       error: "Los eventos multi-fecha son exclusivos del plan Premium.",
     };
   }
+
+  // Solo a un sitio propio (publicado como dueño y aprobado): el selector ya filtra, aquí no se confía en el cliente.
+  const linkError = await siteLinkError(tokens.decodedToken.uid, event.location?.siteId);
+  if (linkError) return { success: false, error: linkError };
 
   const resultParse = safeParse(FormEventSchema, {
     ...event,

@@ -129,6 +129,9 @@ export interface SiteListItem {
   updatedAt: string
   /** Campo computado en el mapper: true si el sitio fue creado hace menos de 7 días. */
   isNew: boolean
+  /** Declaración de quien lo publicó (ver SiteListing); decide si se pueden vincular eventos. */
+  publishedAs?: SitePublishedAs
+  verification?: SiteVerification
 }
 
 export interface SiteAuthor {
@@ -162,8 +165,6 @@ export interface SiteDetail extends SiteListItem {
   bookingUrl?: string
   transit?: SiteTransit
   kind?: SiteKind
-  publishedAs?: SitePublishedAs
-  verification?: SiteVerification
   /** Geo de la location — se recarga al editar para no borrarla al guardar. */
   city?: { name: string; slug: string }
   department?: { name: string; slug: string }

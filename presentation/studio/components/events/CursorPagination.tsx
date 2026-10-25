@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 
 interface CursorPaginationProps {
-  /** Ruta base sin query, ej. "/studio/events" o `/studio/sites/${id}`. */
+  /** Ruta base sin query, ej. "/studio/events" o `/studio/events/${id}`. */
   basePath: string;
   /** Query de búsqueda actual a preservar (`q`). */
   query: string;

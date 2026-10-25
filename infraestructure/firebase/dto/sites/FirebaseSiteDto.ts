@@ -88,6 +88,8 @@ interface RawAnalyticsDto {
   likes: number
   shares: number
   eventCount: number
+  /** Primer instante en que `eventCount` deja de ser verdad (ver domain/entities/sites/siteEventCount). Ausente/null = no vence solo. */
+  eventCountValidUntil?: { toDate: () => Date } | null
   score: number
 }
 

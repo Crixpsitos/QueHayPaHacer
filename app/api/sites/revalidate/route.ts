@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import * as v from "valibot";
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth";
+import { siteTagsToRevalidate } from "@/app/api/sites/_lib/siteTags";
 
 const Body = v.object({
   siteId: v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]{1,128}$/)),
@@ -24,14 +25,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
 
   const { siteId, authorIds = [] } = parsed.output;
-  // Mismos nombres que `revalidateSite` (app/actions/sites/_revalidate.ts) y los `cacheTag` de las páginas.
-  const tags = [
-    `site-${siteId}`,
-    "site-list",
-    "featured-sites",
-    "explore",
-    ...authorIds.flatMap((uid) => [`sites-${uid}`, `profile-sites-${uid}`]),
-  ];
+  const tags = siteTagsToRevalidate(siteId, authorIds);
   for (const tag of tags) revalidateTag(tag, { expire: 0 });
   return NextResponse.json({ success: true, tags: tags.length });
 }
