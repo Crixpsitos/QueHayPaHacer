@@ -1,6 +1,6 @@
 {
   "packageId": "com.quehaypahacer.app",
-  "host": "REEMPLAZAR_DOMINIO_PRODUCCION.com",
+  "host": "yquehaypahacer.com",
   "name": "Que Hay Pa Hacer?",
   "launcherName": "QHPA",
   "display": "standalone",
@@ -14,16 +14,16 @@
   "backgroundColor": "#FAFAFC",
   "enableNotifications": false,
   "startUrl": "/?source=pwa",
-  "iconUrl": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/icons/icon-512.png",
-  "maskableIconUrl": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/icons/maskable-512.png",
-  "webManifestUrl": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/manifest.webmanifest",
-  "fullScopeUrl": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/",
+  "iconUrl": "https://yquehaypahacer.com/icons/icon-512.png",
+  "maskableIconUrl": "https://yquehaypahacer.com/icons/maskable-512.png",
+  "webManifestUrl": "https://yquehaypahacer.com/manifest.webmanifest",
+  "fullScopeUrl": "https://yquehaypahacer.com/",
   "appVersion": "1.0.0",
   "appVersionCode": 1,
   "shortcuts": [
-    { "name": "Eventos", "shortName": "Eventos", "url": "/eventos?source=pwa", "icon": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/icons/icon-192.png" },
-    { "name": "Mis inscripciones", "shortName": "Inscripciones", "url": "/mis-inscripciones?source=pwa", "icon": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/icons/icon-192.png" },
-    { "name": "¿Dónde ir?", "shortName": "Dónde ir", "url": "/donde-ir?source=pwa", "icon": "https://REEMPLAZAR_DOMINIO_PRODUCCION.com/icons/icon-192.png" }
+    { "name": "Eventos", "shortName": "Eventos", "url": "/eventos?source=pwa", "icon": "https://yquehaypahacer.com/icons/icon-192.png" },
+    { "name": "Mis inscripciones", "shortName": "Inscripciones", "url": "/mis-inscripciones?source=pwa", "icon": "https://yquehaypahacer.com/icons/icon-192.png" },
+    { "name": "¿Dónde ir?", "shortName": "Dónde ir", "url": "/donde-ir?source=pwa", "icon": "https://yquehaypahacer.com/icons/icon-192.png" }
   ],
   "signingKey": { "path": "./android.keystore", "alias": "android" },
   "isChromeOSOnly": false,

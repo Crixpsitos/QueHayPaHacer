@@ -219,7 +219,7 @@ Lo que pasó al ejecutar los pasos 2, 3 y 7 en `quehaypahacer-prod`, para no rep
 - **Reglas de Firestore anteriores de prod:** cualquier usuario con sesión podía leer toda la base. Las del repo lo cierran.
 - **Cloud Functions (20):** exigen `--force` (siete funciones nuevas con reintentos). La primera vez hay que dar estos roles al proyecto: `roles/pubsub.publisher` a `service-<n>@gs-project-accounts`, `roles/iam.serviceAccountTokenCreator` a `service-<n>@gcp-sa-pubsub`, `roles/run.invoker` y `roles/eventarc.eventReceiver` a `<n>-compute@developer`; y crear las identidades (`gcloud beta services identity create --service=pubsub.googleapis.com` y `eventarc.googleapis.com`). Tras crear el agente de Eventarc, **esperar ~3 min** antes de desplegar (si no, "Permission denied while using the Eventarc Service Agent").
 - **`optimizeProfileMedia`** falló una vez por escritura concurrente de metadatos del bucket y quedó como función HTTP rota: se borró (`firebase functions:delete optimizeProfileMedia --region us-east1 --force`) y se volvió a desplegar solo esa.
-- **URL temporal:** `REVALIDATE_APP_URL` y el CORS apuntan a `https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app`. Al tener dominio propio: cambiar `functions/.env.quehaypahacer-prod`, redesplegar `notifySiteModeration` y `notifyEventChanges`, añadir el origen a `scripts/prod/cors.prod.json` y reaplicarlo, y poner `NEXT_PUBLIC_SITE_URL`.
+- **(Histórico, antes del dominio propio) URL temporal:** `REVALIDATE_APP_URL` y el CORS apuntan a `https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app`. Al tener dominio propio: cambiar `functions/.env.quehaypahacer-prod`, redesplegar `notifySiteModeration` y `notifyEventChanges`, añadir el origen a `scripts/prod/cors.prod.json` y reaplicarlo, y poner `NEXT_PUBLIC_SITE_URL`.
 - **Secretos de prod:** además de los 5 de hosting, existen `firebaseApiKey`, `firebaseAppId`, `firebaseMeasurementId` y `firebaseMessagingSenderId` (declarados en `apphosting.production.yaml`) y `SITE_REVALIDATE_WEBHOOK_SECRET` (functions).
 
 ## Despliegue manual de producción (cuando GitHub no dispara el rollout)
@@ -235,3 +235,14 @@ cd $W && firebase deploy --only apphosting --force --project quehaypahacer-prod
 Verificar: revisión nueva en Cloud Run, entorno (`NEXT_PUBLIC_FIREBASE_PROJECT_ID` de producción, los 5 secretos como secretos, `QHPA_ADMIN_UIDS` sin definir) y las páginas. El backend de producción es de entorno `production`, así que usa `apphosting.production.yaml`. Para develop es igual con `backendId: quehaypahacerdev` y `--project quehaypahacer-develop`.
 
 La función `recomputeSiteEvents` (cada hora) está desplegada **solo en producción** (`firebase deploy --only functions:recomputeSiteEvents --project quehaypahacer-prod --force`, desde `QueHayPaHacerPruebas/`). Se dispara a mano con `gcloud scheduler jobs run firebase-schedule-recomputeSiteEvents-us-central1 --location=us-central1 --project=quehaypahacer-prod`. Alerta de producción: "QHPA: falla el recálculo de eventos de sitios" (correo a quehaypahacer6@gmail.com, máx. uno por hora).
+
+
+## Dominio propio: yquehaypahacer.com (2026-10-24)
+
+Sirve la app con HTTPS (`https://yquehaypahacer.com`; el `www` no está conectado al backend). Qué depende de esa URL y dónde está:
+- `apphosting.production.yaml` → `NEXT_PUBLIC_SITE_URL=https://yquehaypahacer.com` (sitemap, `robots.txt`, canónicas, vistas previas). Se fija al compilar: hay que redesplegar al cambiarla.
+- `functions/.env.quehaypahacer-prod` → `REVALIDATE_APP_URL=https://yquehaypahacer.com`. La leen `notifySiteModeration`, `notifyEventChanges` y `recomputeSiteEvents`: hay que redesplegar esas tres.
+- `scripts/prod/cors.prod.json` → orígenes `https://yquehaypahacer.com`, `https://www.yquehaypahacer.com` y la URL de `hosted.app` (se mantiene para pruebas). Aplicar con `gcloud storage buckets update gs://quehaypahacer-prod.firebasestorage.app --cors-file=scripts/prod/cors.prod.json`.
+- Firebase Auth → dominios autorizados: `yquehaypahacer.com` y `www.yquehaypahacer.com` (`NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` se queda en `quehaypahacer-prod.firebaseapp.com`).
+- `android/twa-manifest.json` → host y URLs del dominio propio. `/.well-known/assetlinks.json` se sirve desde el dominio nuevo.
+Pendiente: conectar `www` al backend (redirigir al dominio sin `www`).
