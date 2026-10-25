@@ -1,8 +1,25 @@
 [
   {
-    "origin": ["https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app"],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
-    "responseHeader": ["Content-Type", "x-goog-acl", "x-goog-meta-process", "x-goog-meta-variant", "x-goog-meta-original"],
+    "origin": [
+      "https://yquehaypahacer.com",
+      "https://www.yquehaypahacer.com",
+      "https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app"
+    ],
+    "method": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "HEAD",
+      "OPTIONS"
+    ],
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-acl",
+      "x-goog-meta-process",
+      "x-goog-meta-variant",
+      "x-goog-meta-original"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
