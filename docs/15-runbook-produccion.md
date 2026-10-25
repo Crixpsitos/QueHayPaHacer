@@ -221,3 +221,17 @@ Lo que pasó al ejecutar los pasos 2, 3 y 7 en `quehaypahacer-prod`, para no rep
 - **`optimizeProfileMedia`** falló una vez por escritura concurrente de metadatos del bucket y quedó como función HTTP rota: se borró (`firebase functions:delete optimizeProfileMedia --region us-east1 --force`) y se volvió a desplegar solo esa.
 - **URL temporal:** `REVALIDATE_APP_URL` y el CORS apuntan a `https://que-hay-pa-hacer--quehaypahacer-prod.us-east4.hosted.app`. Al tener dominio propio: cambiar `functions/.env.quehaypahacer-prod`, redesplegar `notifySiteModeration` y `notifyEventChanges`, añadir el origen a `scripts/prod/cors.prod.json` y reaplicarlo, y poner `NEXT_PUBLIC_SITE_URL`.
 - **Secretos de prod:** además de los 5 de hosting, existen `firebaseApiKey`, `firebaseAppId`, `firebaseMeasurementId` y `firebaseMessagingSenderId` (declarados en `apphosting.production.yaml`) y `SITE_REVALIDATE_WEBHOOK_SECRET` (functions).
+
+## Despliegue manual de producción (cuando GitHub no dispara el rollout)
+
+Pasó el 2026-10-24: se desinstaló por error la GitHub App "Firebase" (instalación 132135963, usada por las conexiones de develop y producción) y los pushes dejaron de desplegar ("the GitHub App is not installed or is suspended"; la consola quedaba cargando la configuración). Arreglo definitivo: reinstalar la app en `github.com/settings/installations`, copiar el número nuevo de la URL y actualizar las dos conexiones: `gcloud developer-connect connections update <conexión> --location=<región> --project=<proyecto> --github-config-app-installation-id=<NUEVO>` (develop: `apphosting-github-conn-i3jxh4`, us-central1; prod: `apphosting-github-conn-o5mpde`, us-east4).
+
+Mientras tanto se despliega desde el código local **sin subir secretos**. `firebase deploy --only apphosting` sube TODA la carpeta (incluidos `.env`, `.env.local` y claves de cuenta de servicio, que `firebase.json` no excluye), así que se despliega desde una copia limpia del commit:
+```
+W=$(mktemp -d); git archive HEAD | tar -x -C $W
+# en $W/firebase.json deja solo {"apphosting": {"backendId": "que-hay-pa-hacer", "rootDir": "/", "ignore": [...]}}
+cd $W && firebase deploy --only apphosting --force --project quehaypahacer-prod
+```
+Verificar: revisión nueva en Cloud Run, entorno (`NEXT_PUBLIC_FIREBASE_PROJECT_ID` de producción, los 5 secretos como secretos, `QHPA_ADMIN_UIDS` sin definir) y las páginas. El backend de producción es de entorno `production`, así que usa `apphosting.production.yaml`. Para develop es igual con `backendId: quehaypahacerdev` y `--project quehaypahacer-develop`.
+
+La función `recomputeSiteEvents` (cada hora) está desplegada **solo en producción** (`firebase deploy --only functions:recomputeSiteEvents --project quehaypahacer-prod --force`, desde `QueHayPaHacerPruebas/`). Se dispara a mano con `gcloud scheduler jobs run firebase-schedule-recomputeSiteEvents-us-central1 --location=us-central1 --project=quehaypahacer-prod`. Alerta de producción: "QHPA: falla el recálculo de eventos de sitios" (correo a quehaypahacer6@gmail.com, máx. uno por hora).
