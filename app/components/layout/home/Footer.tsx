@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "../shared/Container";
 import { FooterYear } from "./FooterYear";
 import { TE_PROTEJO_URL } from "../shared/LegalDocument";
@@ -17,7 +18,8 @@ export const Footer = () => {
     <footer className="bg-[#09090B] py-10 text-sm text-white/60">
       <Container className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-sm space-y-2">
-          <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
+          <p className="flex items-center gap-2 text-base font-semibold text-white" style={{ fontFamily: "var(--font-heading)" }}>
+            <Image src="/logo.png" alt="" width={28} height={28} className="size-7" />
             Que Hay Pa Hacer?
           </p>
           <p className="leading-relaxed">
