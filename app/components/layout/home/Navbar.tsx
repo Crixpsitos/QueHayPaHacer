@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, Plus, X } from "lucide-react";
 import { NavLink } from "../../ui/navigation/NavLink";
 import { Button } from "../../ui/button/button";
@@ -105,9 +106,10 @@ export const Navbar = () => {
             <Link
               href="/"
               aria-label="Ir al inicio"
-              className="whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
+              className="flex items-center gap-2 whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
+              <Image src="/logo.png" alt="" width={28} height={28} className="size-7" priority />
               Que Hay Pa Hacer?
             </Link>
           </div>
