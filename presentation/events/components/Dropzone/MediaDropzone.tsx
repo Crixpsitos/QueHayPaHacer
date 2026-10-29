@@ -86,7 +86,7 @@ export const MediaDropzone = ({
                   </div>
                 )}
                 {hasError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#E63946]/60 backdrop-blur-[1px]">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#D42F3C]/60 backdrop-blur-[1px]">
                     <AlertCircle className="size-5 text-white" />
                     <span className="text-[10px] font-bold text-white uppercase">Error</span>
                   </div>
@@ -106,7 +106,7 @@ export const MediaDropzone = ({
                   onClick={(e) => { e.stopPropagation(); removeMediaFile(file.id); }}
                   aria-label="Eliminar archivo"
                   className={cn(
-                    "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-white/90 shadow-sm text-[#09090B] transition-all hover:text-[#E63946] disabled:opacity-30",
+                    "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-white/90 shadow-sm text-[#09090B] transition-all hover:text-[#D42F3C] disabled:opacity-30",
                     hasError ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                   )}
                 >
@@ -123,20 +123,20 @@ export const MediaDropzone = ({
               className={cn(
                 "flex w-[calc(50%-6px)] sm:w-35 aspect-3/4 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-colors",
                 isDragActive
-                  ? "border-[#E63946] bg-[#FDF2F4]"
+                  ? "border-[#D42F3C] bg-[#FDF2F4]"
                   : "border-[#E4E4E7] bg-[#F8F8FA] hover:border-[#A1A1AA] hover:bg-[#F4F4F5]",
               )}
             >
               <input {...getInputProps()} />
-              <ImagePlus className={cn("size-6 transition-colors", isDragActive ? "text-[#E63946]" : "text-[#A1A1AA]")} />
-              <span className={cn("text-xs font-medium", isDragActive ? "text-[#E63946]" : "text-[#71717A]")}>
+              <ImagePlus className={cn("size-6 transition-colors", isDragActive ? "text-[#D42F3C]" : "text-[#A1A1AA]")} />
+              <span className={cn("text-xs font-medium", isDragActive ? "text-[#D42F3C]" : "text-[#71717A]")}>
                 Añadir
               </span>
             </div>
           )}
         </div>
 
-        {error && <p role="alert" className="mt-2 text-xs text-[#E63946]">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-xs text-[#D42F3C]">{error}</p>}
 
         <p className="mt-3 text-xs text-[#71717A] leading-relaxed">
           Opcional. Fotos o videos de ediciones anteriores, el cartel o el espacio ayudan a decidir.

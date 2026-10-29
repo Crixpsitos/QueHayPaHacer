@@ -216,7 +216,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
         {/* basis 16rem: con flex-1 (basis 0) el texto nunca pasaba a otra línea y quedaba en una columna angosta */}
         <div className="flex min-w-0 flex-[1_1_16rem] items-center gap-3">
           <StatusIcon
-            className={cn("size-5 shrink-0", trending ? "text-[#E63946]" : openStatus.isOpen ? "text-emerald-600" : "text-[#71717A]")}
+            className={cn("size-5 shrink-0", trending ? "text-[#D42F3C]" : openStatus.isOpen ? "text-emerald-600" : "text-[#71717A]")}
             strokeWidth={1.75}
             aria-hidden
           />
@@ -266,7 +266,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
             <Link href={buildProfileHref({ id: site!.author.id })} className="flex items-center gap-4 group w-fit">
               <Avatar size="lg" className="size-12 border border-border">
                 {site!.author.photoURL && <AvatarImage src={site!.author.photoURL} alt={site!.author.displayName} />}
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                <AvatarFallback className="bg-primary/10 font-semibold text-primary-dark">
                   {getInitials(site!.author.displayName)}
                 </AvatarFallback>
               </Avatar>

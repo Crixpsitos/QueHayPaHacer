@@ -63,7 +63,7 @@ export function ListPanel({
           <MessageSquareDiff className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           Sugerencias recibidas
           {suggestionsPending > 0 && (
-            <span className="ml-auto rounded-full bg-[#E63946] px-2 text-xs font-semibold text-white">
+            <span className="ml-auto rounded-full bg-[#D42F3C] px-2 text-xs font-semibold text-white">
               <span className="sr-only">{suggestionsPending} pendientes: </span>
               {suggestionsPending}
             </span>
@@ -93,7 +93,7 @@ export function ListPanel({
               {label}
               <span className={cn(
                 "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-                active ? "bg-[#FDF2F4] text-[#E63946]" : "bg-muted text-muted-foreground",
+                active ? "bg-[#FDF2F4] text-[#D42F3C]" : "bg-muted text-muted-foreground",
               )}>
                 {counts[key] ?? 0}
               </span>
@@ -156,7 +156,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
       <span className="flex size-16 items-center justify-center rounded-2xl bg-[#FDF2F4]">
-        <MapPinned className="size-8 text-[#E63946]" aria-hidden />
+        <MapPinned className="size-8 text-[#D42F3C]" aria-hidden />
       </span>
       <div className="max-w-xs">
         <h2 className="text-base font-semibold text-foreground">Aún no has agregado sitios</h2>

@@ -17,7 +17,7 @@ const ContactanosPage = () => {
           {/* Header */}
           <div className="mb-10 text-center">
             <div className="mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-[#FDF2F4]">
-              <MessageSquareHeart className="size-7 text-[#E63946]" aria-hidden />
+              <MessageSquareHeart className="size-7 text-[#D42F3C]" aria-hidden />
             </div>
             <h1
               className="text-3xl font-bold text-[#09090B] sm:text-4xl"

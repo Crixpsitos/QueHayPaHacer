@@ -61,7 +61,7 @@ export function HowToGetThere({ destination, transit }: { destination: LatLng; t
   return (
     <div className="mt-4 rounded-2xl border border-[#E4E4E7] p-4">
       <h3 className="flex items-center gap-2 text-sm font-semibold text-[#09090B]">
-        <Navigation className="size-4 text-[#E63946]" aria-hidden /> ¿Cómo llego?
+        <Navigation className="size-4 text-[#D42F3C]" aria-hidden /> ¿Cómo llego?
       </h3>
       <p className="mt-1 text-xs text-[#71717A]">
         Calcula la distancia desde donde estás. Tu ubicación se usa solo en tu dispositivo y no se guarda.
@@ -110,7 +110,7 @@ export function HowToGetThere({ destination, transit }: { destination: LatLng; t
                     const { label, Icon } = MODE[mode]
                     return (
                       <li key={mode} className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm", i === 0 ? "bg-[#FDF2F4] font-medium" : "text-[#52525B]")}>
-                        <Icon className="size-4 shrink-0 text-[#E63946]" aria-hidden />
+                        <Icon className="size-4 shrink-0 text-[#D42F3C]" aria-hidden />
                         <span className="flex-1">{label}</span>
                         <span className="tabular-nums">≈ {minutes} min</span>
                       </li>
@@ -118,7 +118,7 @@ export function HowToGetThere({ destination, transit }: { destination: LatLng; t
                   })}
                   {buses.length > 0 && (
                     <li className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[#52525B]">
-                      <Bus className="mt-0.5 size-4 shrink-0 text-[#E63946]" aria-hidden />
+                      <Bus className="mt-0.5 size-4 shrink-0 text-[#D42F3C]" aria-hidden />
                       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                         Bus · {listFormat.format(buses)}
                         <span className="block text-xs text-[#71717A]">Informado por el dueño</span>

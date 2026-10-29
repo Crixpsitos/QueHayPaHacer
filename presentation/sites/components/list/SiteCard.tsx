@@ -77,8 +77,8 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
       className={cn(
         "group cursor-pointer rounded-2xl border bg-card p-3.5 text-left shadow-card transition-all duration-200",
         active
-          ? "border-[#E63946]/40 shadow-hover ring-2 ring-[#E63946]/12"
-          : "border-[#E4E4E7] hover:border-[#E63946]/25 hover:shadow-hover",
+          ? "border-[#D42F3C]/40 shadow-hover ring-2 ring-[#D42F3C]/12"
+          : "border-[#E4E4E7] hover:border-[#D42F3C]/25 hover:shadow-hover",
       )}
     >
       <div className="flex gap-3">
@@ -130,7 +130,7 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenSuggestions() }}
-          className="mt-2.5 flex min-h-11 w-full items-center gap-2 rounded-xl border border-[#E63946]/30 bg-[#FDF2F4] px-3 text-left text-xs font-medium text-[#9B0A26]"
+          className="mt-2.5 flex min-h-11 w-full items-center gap-2 rounded-xl border border-[#D42F3C]/30 bg-[#FDF2F4] px-3 text-left text-xs font-medium text-[#9B0A26]"
         >
           <MessageSquareDiff className="size-4 shrink-0" aria-hidden />
           {pendingSuggestions === 1 ? "1 sugerencia pendiente" : `${pendingSuggestions} sugerencias pendientes`}
@@ -172,8 +172,8 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
             variant={status === "rejected" ? "default" : "outline"}
             className={cn(
               "h-8 gap-1.5 text-xs",
-              status !== "rejected" && "border-[#E4E4E7] hover:border-[#E63946]/30 hover:text-[#E63946]",
-              status === "rejected" && "bg-[#E63946] text-white hover:bg-[#9B0A26]",
+              status !== "rejected" && "border-[#E4E4E7] hover:border-[#D42F3C]/30 hover:text-[#D42F3C]",
+              status === "rejected" && "bg-[#D42F3C] text-white hover:bg-[#9B0A26]",
             )}
             onClick={(e) => { e.stopPropagation(); onEdit(site.id) }}
           >

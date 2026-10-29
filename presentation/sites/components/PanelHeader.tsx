@@ -54,7 +54,7 @@ export function PanelHeader({ panelMode, formMode, onCreate, onBack }: PanelHead
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#FDF2F4]">
-                  <MapPin className="size-4 text-[#E63946]" aria-hidden />
+                  <MapPin className="size-4 text-[#D42F3C]" aria-hidden />
                 </div>
                 <h1
                   className="text-lg font-semibold text-foreground"
@@ -65,7 +65,7 @@ export function PanelHeader({ panelMode, formMode, onCreate, onBack }: PanelHead
               </div>
               <p className="mt-0.5 pl-9 text-xs text-muted-foreground">Gestiona tus puntos de interés en Ibagué.</p>
             </div>
-            <Button size="sm" className="shrink-0 gap-1.5 bg-[#E63946] text-white shadow-primary-glow hover:bg-[#9B0A26]" onClick={onCreate}>
+            <Button size="sm" className="shrink-0 gap-1.5 bg-[#D42F3C] text-white shadow-primary-glow hover:bg-[#9B0A26]" onClick={onCreate}>
               <Plus className="size-4" aria-hidden />
               Nuevo sitio
             </Button>

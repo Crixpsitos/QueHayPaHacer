@@ -106,7 +106,7 @@ const inputCls = (hasError: boolean) =>
     "w-full rounded-xl border px-3.5 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-[color,background-color,border-color,box-shadow,transform,opacity] bg-white focus:ring-2",
     hasError
       ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-      : "border-[#E4E4E7] focus:border-[#E63946] focus:ring-[#E63946]/10",
+      : "border-[#E4E4E7] focus:border-[#D42F3C] focus:ring-[#D42F3C]/10",
   );
 
 const premiumMessage = (username?: string) =>
@@ -219,7 +219,7 @@ export function ContactForm() {
                   "focus-visible:ring-2 focus-visible:outline-none",
                   errors.contactReason
                     ? "border-red-400 focus-visible:border-red-400 focus-visible:ring-red-100"
-                    : "border-[#E4E4E7] focus-visible:border-[#E63946] focus-visible:ring-[#E63946]/10",
+                    : "border-[#E4E4E7] focus-visible:border-[#D42F3C] focus-visible:ring-[#D42F3C]/10",
                 )}
               >
                 <SelectValue placeholder="Selecciona una opción" />
@@ -272,7 +272,7 @@ export function ContactForm() {
           "overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,transform,opacity] focus-within:ring-2",
           errors.message
             ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-100"
-            : "border-[#E4E4E7] focus-within:border-[#E63946] focus-within:ring-[#E63946]/10",
+            : "border-[#E4E4E7] focus-within:border-[#D42F3C] focus-within:ring-[#D42F3C]/10",
         )}>
           <textarea
             {...register("message")}
@@ -319,7 +319,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={!isValid || isPending}
-        className="flex items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#D42F3C] px-6 py-3 text-sm font-semibold text-white shadow-primary-glow transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-[#9B0A26] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? (
           <>

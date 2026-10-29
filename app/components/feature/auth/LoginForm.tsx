@@ -105,7 +105,7 @@ export const LoginForm = ({ loginAction, onSuccess, onError, redirectTo }: Login
         type="submit"
         disabled={!isValid || isPending}
         className={cn(
-          "flex w-full items-center justify-center gap-2 rounded-full bg-[#E63946] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
+          "flex w-full items-center justify-center gap-2 rounded-full bg-[#D42F3C] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary-glow)] transition-[color,background-color,border-color,box-shadow,transform,opacity]",
           (!isValid || isPending)
             ? "cursor-not-allowed opacity-50"
             : "hover:bg-[#9B0A26]",

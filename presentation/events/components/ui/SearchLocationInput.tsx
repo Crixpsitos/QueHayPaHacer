@@ -197,7 +197,7 @@ export const SearchLocationInput = ({
               onFocus={() => search.trim().length >= 3 && setOpen(true)}
               className={cn(
                 "pl-9 pr-10 h-12 w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] shadow-none",
-                "focus-visible:ring-1 focus-visible:ring-[#E63946]/20 focus-visible:border-[#E63946]",
+                "focus-visible:ring-1 focus-visible:ring-[#D42F3C]/20 focus-visible:border-[#D42F3C]",
                 "transition-colors",
               )}
               aria-label="Buscar un lugar"
@@ -232,7 +232,7 @@ export const SearchLocationInput = ({
                 onClick={() => handleSelectOption(option)}
                 className="w-full flex items-start gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-[#FDF2F4] focus:bg-[#FDF2F4] outline-none group"
               >
-                <MapPin className="size-4 text-[#A1A1AA] group-hover:text-[#E63946] shrink-0 mt-0.5 transition-colors" />
+                <MapPin className="size-4 text-[#A1A1AA] group-hover:text-[#D42F3C] shrink-0 mt-0.5 transition-colors" />
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className="font-semibold text-sm text-[#09090B] leading-snug">
                     {option.name}

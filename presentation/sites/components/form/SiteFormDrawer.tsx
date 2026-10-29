@@ -490,7 +490,7 @@ function MediaContent({
 const timeInputCls = "rounded border border-border bg-background px-1.5 py-0.5 text-xs outline-none focus-visible:border-ring"
 const optionCls = (on: boolean) => cn(
   "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
-  on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+  on ? "border-[#D42F3C] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
 )
 
 /** Qué hace el sitio en festivos y con lluvia. Opcional: sin elegir queda "sin confirmar" en la ficha. */
@@ -515,7 +515,7 @@ function OpeningPolicyFields({
         <legend className="mb-1 text-xs font-semibold">¿Abres los festivos?</legend>
         {HOLIDAY_POLICIES.map((p) => (
           <label key={p} className={optionCls(h?.policy === p)}>
-            <input type="radio" name={`${uid}-holidays`} checked={h?.policy === p} onChange={() => pickHoliday(p)} className="size-4 accent-[#E63946]" />
+            <input type="radio" name={`${uid}-holidays`} checked={h?.policy === p} onChange={() => pickHoliday(p)} className="size-4 accent-[#D42F3C]" />
             {HOLIDAY_POLICY_LABELS[p]}
           </label>
         ))}
@@ -533,7 +533,7 @@ function OpeningPolicyFields({
         <legend className="mb-1 text-xs font-semibold">¿Qué pasa si llueve?</legend>
         {RAIN_POLICIES.map((p) => (
           <label key={p} className={optionCls(r?.policy === p)}>
-            <input type="radio" name={`${uid}-rain`} checked={r?.policy === p} onChange={() => pickRain(p)} className="size-4 accent-[#E63946]" />
+            <input type="radio" name={`${uid}-rain`} checked={r?.policy === p} onChange={() => pickRain(p)} className="size-4 accent-[#D42F3C]" />
             {RAIN_POLICY_LABELS[p]}
           </label>
         ))}
@@ -705,10 +705,10 @@ function TipsContent({
               onClick={() => toggleTip(id)}
               className={cn(
                 "inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-left text-sm transition-colors",
-                on ? "border-[#E63946] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
+                on ? "border-[#D42F3C] bg-[#FDF2F4] font-medium" : "border-border hover:bg-accent",
               )}
             >
-              {on ? <CheckCircle2 className="size-4 shrink-0 text-[#E63946]" aria-hidden /> : <Lightbulb className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+              {on ? <CheckCircle2 className="size-4 shrink-0 text-[#D42F3C]" aria-hidden /> : <Lightbulb className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
               <span className="[overflow-wrap:anywhere]">{label}</span>
             </button>
           )
@@ -744,7 +744,7 @@ function CompletenessMeter({ form }: { form: SiteFormViewModel }) {
         role="progressbar" aria-labelledby={labelId} aria-valuemin={0} aria-valuemax={100} aria-valuenow={c.percent}
         className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
       >
-        <div className={cn("h-full rounded-full transition-all", c.complete ? "bg-emerald-500" : "bg-[#E63946]")} style={{ width: `${c.percent}%` }} />
+        <div className={cn("h-full rounded-full transition-all", c.complete ? "bg-emerald-500" : "bg-[#D42F3C]")} style={{ width: `${c.percent}%` }} />
       </div>
       {c.pending.length > 0 ? (
         <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">

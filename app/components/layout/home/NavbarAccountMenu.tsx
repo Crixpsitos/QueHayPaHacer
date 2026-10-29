@@ -10,7 +10,6 @@ import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pendi
 import { getPendingSiteSuggestionsCountAction } from "@/app/actions/site-suggestions/get-pending-site-suggestions-count.action";
 import { logoutAction } from "@/app/actions/auth/logout.action";
 import { clearClientCache } from "@/app/lib/clientCache/clientCache";
-import { createClientContainer } from "@/infraestructure/di/container.client";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { cn } from "@/app/lib/utils/cn";
 import { Button } from "../../ui/button/button";
@@ -42,7 +41,7 @@ function AccountTriggerSkeleton({ compact = false }: { compact?: boolean }) {
 }
 
 function InviteDot() {
-  return <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-[#E63946]" />;
+  return <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-[#D42F3C]" />;
 }
 
 export function NavbarAccountMenu({
@@ -95,6 +94,8 @@ export function NavbarAccountMenu({
     await clearClientCache(); // no dejar datos de la persona en este equipo
     setUser(null);
     // Cerrar también la sesión del SDK cliente; si no, onIdTokenChanged puede restaurar la cookie.
+    // Import dinámico: el contenedor arrastra Firestore y no debe cargarse en cada página.
+    const { createClientContainer } = await import("@/infraestructure/di/container.client");
     await createClientContainer().authService.logout().catch(() => {});
     await logoutAction();
     await clearClientCache(); // otra vez: barre lo que una petición en vuelo escribió mientras tanto
@@ -225,7 +226,7 @@ export function NavbarAccountMenu({
                 <MailPlus className="size-4" aria-hidden="true" />
                 Mis invitaciones
                 {pendingInvites > 0 && (
-                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                  <span className="ml-auto rounded-full bg-[#D42F3C] px-1.5 text-xs font-semibold text-white">
                     <span className="sr-only">{pendingInvites} pendientes: </span>
                     {pendingInvites}
                   </span>
@@ -243,7 +244,7 @@ export function NavbarAccountMenu({
                 <Link href="/sites?sugerencias=1" className={cn("flex items-center gap-2")}>
                   <MessageSquareDiff className="size-4" aria-hidden="true" />
                   Sugerencias recibidas
-                  <span className="ml-auto rounded-full bg-[#E63946] px-1.5 text-xs font-semibold text-white">
+                  <span className="ml-auto rounded-full bg-[#D42F3C] px-1.5 text-xs font-semibold text-white">
                     <span className="sr-only">{pendingSuggestions} pendientes: </span>
                     {pendingSuggestions}
                   </span>

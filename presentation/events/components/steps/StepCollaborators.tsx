@@ -179,7 +179,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                         [c.refId]: e.target.value as TeamRole,
                       }))
                     }
-                    className="h-8 rounded-lg border border-[#E4E4E7] bg-white px-2.5 text-xs text-[#09090B] outline-none transition-colors focus:border-[#E63946]"
+                    className="h-8 rounded-lg border border-[#E4E4E7] bg-white px-2.5 text-xs text-[#09090B] outline-none transition-colors focus:border-[#D42F3C]"
                   >
                     {ROLE_ORDER.map((r) => (
                       <option key={r} value={r}>
@@ -195,7 +195,7 @@ export function StepCollaborators({ form }: { form: UseFormReturn<FormEventDto> 
                   onClick={() => addMember(c)}
                   className={cn(
                     "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
-                    "bg-[#E63946] text-white hover:bg-[#9B0A26]",
+                    "bg-[#D42F3C] text-white hover:bg-[#9B0A26]",
                   )}
                 >
                   <Plus className="size-3.5" /> Acreditar

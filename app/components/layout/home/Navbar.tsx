@@ -105,7 +105,6 @@ export const Navbar = () => {
           <div className="justify-self-start">
             <Link
               href="/"
-              aria-label="Ir al inicio"
               className="flex items-center gap-2 whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
               style={{ fontFamily: 'var(--font-heading)' }}
             >

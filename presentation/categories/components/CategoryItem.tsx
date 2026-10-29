@@ -19,7 +19,7 @@ export const CategoryItem = ({ category }: CategoryItemProps) => {
     >
       {/* Icono design system: primary-light bg + primary-vibrant icon */}
       <div className="flex size-14 sm:size-16 items-center justify-center rounded-full bg-[#FDF2F4] transition-transform group-hover:scale-110">
-        <Icon className="size-7 sm:size-8 text-[#E63946]" />
+        <Icon className="size-7 sm:size-8 text-[#D42F3C]" />
       </div>
       <span className="text-sm font-semibold text-[#09090B] leading-tight">
         {category.title}

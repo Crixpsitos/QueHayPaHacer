@@ -367,7 +367,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       {/* ── Dirección + estado de apertura ──────────────────────── */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="flex items-center gap-1.5 text-sm text-[#71717A]">
-          <MapPin className="size-3.5 shrink-0 text-[#E63946]" aria-hidden />
+          <MapPin className="size-3.5 shrink-0 text-[#D42F3C]" aria-hidden />
           {site.address}
         </span>
         <span className={cn(
@@ -435,13 +435,13 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
                   isToday && "bg-[#FDF2F4]",
                 )}
               >
-                <span className={cn("font-medium", isToday ? "text-[#E63946]" : "text-[#52525B]")}>
+                <span className={cn("font-medium", isToday ? "text-[#D42F3C]" : "text-[#52525B]")}>
                   {dayLabel}
-                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#E63946]">{openStatus.holiday ? "hoy · festivo" : "hoy"}</span>}
+                  {isToday && <span className="ml-1.5 text-[10px] font-semibold text-[#D42F3C]">{openStatus.holiday ? "hoy · festivo" : "hoy"}</span>}
                 </span>
                 {!day || day.closed
-                  ? <span className="text-xs font-semibold text-[#E63946]">Cerrado</span>
-                  : <span className={cn("tabular-nums text-xs font-semibold", isToday ? "text-[#E63946]" : "text-[#09090B]")}>
+                  ? <span className="text-xs font-semibold text-[#D42F3C]">Cerrado</span>
+                  : <span className={cn("tabular-nums text-xs font-semibold", isToday ? "text-[#D42F3C]" : "text-[#09090B]")}>
                       {day.open} – {day.close}
                     </span>
                 }
@@ -482,7 +482,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
                   href={site.bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E63946] bg-[#FDF2F4] px-3 py-1.5 text-xs font-semibold text-[#E63946] transition-colors hover:bg-[#E63946] hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#D42F3C] bg-[#FDF2F4] px-3 py-1.5 text-xs font-semibold text-[#D42F3C] transition-colors hover:bg-[#D42F3C] hover:text-white"
                 >
                   <ExternalLink className="size-3.5" aria-hidden />
                   Reservar
@@ -533,7 +533,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
       <section>
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-[#FDF2F4]">
-            <CalendarDays className="size-4 text-[#E63946]" aria-hidden />
+            <CalendarDays className="size-4 text-[#D42F3C]" aria-hidden />
           </div>
           <div>
             <h3 className="text-sm font-bold text-[#09090B]" style={{ fontFamily: "var(--font-heading)" }}>
@@ -568,7 +568,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           {site.author.photoURL
             ? <img src={site.author.photoURL} alt={site.author.displayName} className="size-9 rounded-full object-cover ring-2 ring-[#F4F4F5]" />
             : (
-              <span className="flex size-9 items-center justify-center rounded-full bg-[#FDF2F4] text-sm font-bold text-[#E63946]">
+              <span className="flex size-9 items-center justify-center rounded-full bg-[#FDF2F4] text-sm font-bold text-[#D42F3C]">
                 {site.author.displayName.charAt(0).toUpperCase()}
               </span>
             )
@@ -580,7 +580,7 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
         </div>
         <Button
           onClick={() => onEdit(site.id)}
-          className="gap-1.5 bg-[#E63946] text-white shadow-primary-glow hover:bg-[#9B0A26]"
+          className="gap-1.5 bg-[#D42F3C] text-white shadow-primary-glow hover:bg-[#9B0A26]"
         >
           <Pencil className="size-4" aria-hidden />
           {status === "rejected" ? "Editar y reenviar" : "Editar sitio"}
@@ -608,7 +608,7 @@ function SocialLink({ href, label, icon }: { href: string; label: string; icon: 
 function Metric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-[#E4E4E7] bg-[#FAFAFC] py-3 shadow-card">
-      <Icon className="size-4 text-[#E63946]" aria-hidden />
+      <Icon className="size-4 text-[#D42F3C]" aria-hidden />
       <span className="text-base font-bold tabular-nums text-[#09090B]">{value}</span>
       <span className="text-[11px] text-[#71717A]">{label}</span>
     </div>

@@ -94,7 +94,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
               <button
                 type="button"
                 onClick={handleUseExternal}
-                className="w-full rounded-xl bg-[#E63946] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow"
+                className="w-full rounded-xl bg-[#D42F3C] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow"
               >
                 Usar registro externo
               </button>
@@ -122,18 +122,18 @@ export function Step7Pricing({ form }: Step7PricingProps) {
             className={cn(
               "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all",
               isFree
-                ? "border-[#E63946] bg-[#FDF2F4]"
+                ? "border-[#D42F3C] bg-[#FDF2F4]"
                 : "border-[#E4E4E7] bg-white hover:bg-[#FAFAFC] hover:border-[#A1A1AA]",
             )}
           >
             <span className={cn(
               "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
-              isFree ? "bg-[#E63946] text-white" : "bg-[#F4F4F5] text-[#71717A]",
+              isFree ? "bg-[#D42F3C] text-white" : "bg-[#F4F4F5] text-[#71717A]",
             )}>
               <Gift className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className={cn("text-sm font-semibold", isFree ? "text-[#E63946]" : "text-[#09090B]")}>Gratis</p>
+              <p className={cn("text-sm font-semibold", isFree ? "text-[#D42F3C]" : "text-[#09090B]")}>Gratis</p>
               <p className="text-xs text-[#71717A] mt-0.5">Sin costo de entrada</p>
             </div>
           </button>
@@ -145,18 +145,18 @@ export function Step7Pricing({ form }: Step7PricingProps) {
             className={cn(
               "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all",
               !isFree
-                ? "border-[#E63946] bg-[#FDF2F4]"
+                ? "border-[#D42F3C] bg-[#FDF2F4]"
                 : "border-[#E4E4E7] bg-white hover:bg-[#FAFAFC] hover:border-[#A1A1AA]",
             )}
           >
             <span className={cn(
               "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
-              !isFree ? "bg-[#E63946] text-white" : "bg-[#F4F4F5] text-[#71717A]",
+              !isFree ? "bg-[#D42F3C] text-white" : "bg-[#F4F4F5] text-[#71717A]",
             )}>
               <Ticket className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className={cn("text-sm font-semibold", !isFree ? "text-[#E63946]" : "text-[#09090B]")}>Pagado</p>
+              <p className={cn("text-sm font-semibold", !isFree ? "text-[#D42F3C]" : "text-[#09090B]")}>Pagado</p>
               <p className="text-xs text-[#71717A] mt-0.5">Indica el valor por persona</p>
             </div>
           </button>
@@ -176,7 +176,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                   Valor por persona
                 </FieldLabel>
 
-                <div className="flex items-center gap-2 rounded-lg border border-[#E4E4E7] bg-white px-3 h-12 focus-within:border-[#E63946] focus-within:ring-1 focus-within:ring-[#E63946]/20 transition-colors">
+                <div className="flex items-center gap-2 rounded-lg border border-[#E4E4E7] bg-white px-3 h-12 focus-within:border-[#D42F3C] focus-within:ring-1 focus-within:ring-[#D42F3C]/20 transition-colors">
                   <span className="text-sm font-semibold text-[#71717A] shrink-0">COP $</span>
                   <input
                     inputMode="numeric"
@@ -210,7 +210,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                         className={cn(
                           "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
                           isActive
-                            ? "border-[#E63946] bg-[#FDF2F4] text-[#E63946]"
+                            ? "border-[#D42F3C] bg-[#FDF2F4] text-[#D42F3C]"
                             : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#A1A1AA]",
                         )}
                       >

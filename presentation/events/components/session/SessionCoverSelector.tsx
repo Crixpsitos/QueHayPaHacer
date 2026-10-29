@@ -126,7 +126,7 @@ export function SessionCoverSelector({
             className={cn(
               "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all",
               opt.selected
-                ? "border-[#E63946] bg-[#FDF2F4]"
+                ? "border-[#D42F3C] bg-[#FDF2F4]"
                 : "border-[#E4E4E7] bg-white hover:bg-[#FAFAFC] hover:border-[#A1A1AA]",
             )}
           >
@@ -140,7 +140,7 @@ export function SessionCoverSelector({
               )}
             </div>
             <div className="min-w-0">
-              <p className={cn("text-sm font-semibold", opt.selected ? "text-[#E63946]" : "text-[#09090B]")}>
+              <p className={cn("text-sm font-semibold", opt.selected ? "text-[#D42F3C]" : "text-[#09090B]")}>
                 {opt.label}
               </p>
               <p className="text-xs text-[#71717A] leading-snug">{opt.description}</p>
@@ -162,7 +162,7 @@ export function SessionCoverSelector({
           className={cn(
             "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all",
             isOther
-              ? "border-[#E63946] bg-[#FDF2F4]"
+              ? "border-[#D42F3C] bg-[#FDF2F4]"
               : hasOtherSessions
                 ? "border-[#E4E4E7] bg-white hover:bg-[#FAFAFC] hover:border-[#A1A1AA]"
                 : "border-[#F4F4F5] bg-[#FAFAFC] opacity-50 cursor-not-allowed",
@@ -188,7 +188,7 @@ export function SessionCoverSelector({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className={cn("text-sm font-semibold", isOther ? "text-[#E63946]" : "text-[#09090B]")}>
+            <p className={cn("text-sm font-semibold", isOther ? "text-[#D42F3C]" : "text-[#09090B]")}>
               {selectedSession?.title?.trim() ? selectedSession.title : "De otra sesión"}
             </p>
             <p className="text-xs text-[#71717A] leading-snug">
@@ -214,7 +214,7 @@ export function SessionCoverSelector({
             className={cn(
               "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all",
               dropdownOpen
-                ? "border-[#E63946] bg-white shadow-sm"
+                ? "border-[#D42F3C] bg-white shadow-sm"
                 : "border-[#E4E4E7] bg-white hover:border-[#A1A1AA]",
             )}
           >
@@ -290,7 +290,7 @@ export function SessionCoverSelector({
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "bg-[#FDF2F4] text-[#E63946]"
+                            ? "bg-[#FDF2F4] text-[#D42F3C]"
                             : "hover:bg-[#FAFAFC] text-[#09090B]",
                         )}
                       >
@@ -310,7 +310,7 @@ export function SessionCoverSelector({
                           {date && <p className="text-xs text-[#71717A]">{date}</p>}
                         </div>
                         {isSelected && (
-                          <span className="shrink-0 text-xs font-semibold text-[#E63946]">✓</span>
+                          <span className="shrink-0 text-xs font-semibold text-[#D42F3C]">✓</span>
                         )}
                       </button>
                     </li>

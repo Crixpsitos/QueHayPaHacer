@@ -169,7 +169,7 @@ export function EventCardInteractive({
         {info.action && (
           <Link
             href={info.action.href}
-            className="mt-5 inline-flex h-11 items-center rounded-full bg-[#09090B] px-6 text-sm font-semibold text-white transition-[transform,background-color] duration-150 hover:bg-[#27272A] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-[#09090B] px-6 text-sm font-semibold text-white transition-[transform,background-color] duration-150 hover:bg-[#27272A] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
           >
             {info.action.label}
           </Link>

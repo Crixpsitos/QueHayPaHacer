@@ -162,7 +162,7 @@ export function MediaStrip({ slides, offset, onOpen }: { slides: MediaSlide[]; o
               type="button"
               onClick={() => onOpen(offset + i)}
               aria-label={more ? `Ver ${hidden + 1} elementos más` : s.type === "video" ? "Ver video" : `Ver imagen${s.alt ? `: ${s.alt}` : ""}`}
-              className="group relative aspect-square overflow-hidden rounded-2xl bg-[#18181B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+              className="group relative aspect-square overflow-hidden rounded-2xl bg-[#18181B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
             >
               {thumb ? (
                 <Image src={thumb} alt="" fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />

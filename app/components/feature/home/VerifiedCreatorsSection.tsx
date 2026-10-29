@@ -52,12 +52,11 @@ export async function VerifiedCreatorsSection() {
                 key={creator.uid}
                 href={buildProfileHref({ id: creator.uid, displayName: creator.displayName })}
                 className="group flex min-w-0 flex-col items-center gap-2 text-center"
-                aria-label={`Ver perfil de ${displayName}`}
               >
                 <span className="relative">
                   <Avatar className="size-18 border-2 border-background shadow-md ring-2 ring-border transition-transform group-hover:scale-105 sm:size-20">
                     {creator.photoURL ? <AvatarImage src={creator.photoURL} alt={displayName} /> : null}
-                    <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/10 font-semibold text-primary-dark">
                       {initials(displayName)}
                     </AvatarFallback>
                   </Avatar>

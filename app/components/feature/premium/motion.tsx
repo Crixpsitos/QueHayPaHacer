@@ -253,7 +253,7 @@ export function FeatureItem({ icon, title, body, index }: { icon: ReactNode; tit
       <motion.span
         variants={{ hover: { scale: 1.12, rotate: -6 } }}
         transition={{ type: "spring", stiffness: 350, damping: 16 }}
-        className="flex size-11 items-center justify-center rounded-full bg-[#FDF2F4] text-[#E63946] transition-colors duration-200 group-hover:bg-[#E63946] group-hover:text-white"
+        className="flex size-11 items-center justify-center rounded-full bg-[#FDF2F4] text-[#D42F3C] transition-colors duration-200 group-hover:bg-[#D42F3C] group-hover:text-white"
       >
         {icon}
       </motion.span>
@@ -297,7 +297,7 @@ export function ComparisonTable({ rows, priceCop }: { rows: [string, boolean, bo
                     viewport={{ once: true }}
                     transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.15 + i * 0.04 + c * 0.06 }}
                   >
-                    <Check className={c === 1 ? "size-4 text-[#E63946]" : "size-4 text-[#09090B]"} aria-label="Incluido" />
+                    <Check className={c === 1 ? "size-4 text-[#D42F3C]" : "size-4 text-[#09090B]"} aria-label="Incluido" />
                   </motion.span>
                 ) : (
                   <Minus className="mx-auto size-4 text-[#D4D4D8]" aria-label="No incluido" />
@@ -378,14 +378,14 @@ export function FaqList({ items }: { items: { q: string; a: string }[] }) {
                 aria-expanded={isOpen}
                 aria-controls={`faq-panel-${i}`}
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="flex w-full items-center justify-between gap-4 rounded-md text-left font-medium text-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+                className="flex w-full items-center justify-between gap-4 rounded-md text-left font-medium text-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
               >
                 {q}
                 <motion.span
                   aria-hidden="true"
                   animate={{ rotate: isOpen ? 45 : 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-colors ${isOpen ? "bg-[#E63946] text-white" : "bg-[#F4F4F5] text-[#71717A]"}`}
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-colors ${isOpen ? "bg-[#D42F3C] text-white" : "bg-[#F4F4F5] text-[#71717A]"}`}
                 >
                   <Plus className="size-4" />
                 </motion.span>
@@ -432,7 +432,7 @@ export function Cta({
       {pulse && !still && (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-xl border-2 border-[#E63946]"
+          className="pointer-events-none absolute inset-0 rounded-xl border-2 border-[#D42F3C]"
           animate={{ scale: [1, 1.08, 1.08], opacity: [0.55, 0, 0] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", repeatDelay: 1.2 }}
         />

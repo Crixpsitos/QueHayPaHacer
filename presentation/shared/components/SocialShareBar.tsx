@@ -102,7 +102,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
             onClick={handleNetworkClick}
             aria-label={`Compartir en ${label}`}
             className={cn(
-              "flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2",
+              "flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2",
               colorClass,
             )}
           >
@@ -114,7 +114,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
         <button
           type="button"
           onClick={handleCopy}
-          className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:bg-[#FAFAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+          className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:bg-[#FAFAFC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
         >
           {copied ? (
             <motion.span

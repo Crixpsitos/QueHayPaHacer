@@ -23,8 +23,8 @@ export function MultiDatePremiumRequiredDialog() {
         onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#E63946]/10">
-            <CalendarClock className="h-6 w-6 text-[#E63946]" />
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#D42F3C]/10">
+            <CalendarClock className="h-6 w-6 text-[#D42F3C]" />
           </div>
           <DialogTitle>Función exclusiva del plan Premium</DialogTitle>
           <DialogDescription>

@@ -21,7 +21,7 @@ export function ConvertToMultiDateDialog({
         {/* Header */}
         <div className="flex items-start gap-3 px-6 pt-6 pb-4">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FDF2F4]">
-            <CalendarDays className="size-5 text-[#E63946]" />
+            <CalendarDays className="size-5 text-[#D42F3C]" />
           </span>
           <div>
             <p className="text-base font-bold text-[#09090B]">
@@ -40,7 +40,7 @@ export function ConvertToMultiDateDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="w-full rounded-xl bg-[#E63946] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow"
+            className="w-full rounded-xl bg-[#D42F3C] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow"
           >
             Convertir a varias fechas
           </button>

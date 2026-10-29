@@ -94,7 +94,7 @@ export const TagInput = ({ tags, setValue }: TagInputProps) => {
       {/* Label + contador */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-[#09090B]">Etiquetas</span>
-        <span className={cn("text-xs font-semibold tabular-nums", atLimit ? "text-[#E63946]" : "text-[#71717A]")}>
+        <span className={cn("text-xs font-semibold tabular-nums", atLimit ? "text-[#D42F3C]" : "text-[#71717A]")}>
           {tags.length}/{MAX_TAGS}
         </span>
       </div>
@@ -104,7 +104,7 @@ export const TagInput = ({ tags, setValue }: TagInputProps) => {
         "flex h-14 items-center gap-2.5 rounded-lg border px-3 transition-colors",
         atLimit
           ? "border-[#F4F4F5] bg-[#F4F4F5] cursor-not-allowed"
-          : "border-[#E4E4E7] bg-white focus-within:border-[#E63946] focus-within:ring-1 focus-within:ring-[#E63946]/20",
+          : "border-[#E4E4E7] bg-white focus-within:border-[#D42F3C] focus-within:ring-1 focus-within:ring-[#D42F3C]/20",
       )}>
         <Tag className="size-4 shrink-0 text-[#A1A1AA]" />
         <input
@@ -131,7 +131,7 @@ export const TagInput = ({ tags, setValue }: TagInputProps) => {
                 type="button"
                 onClick={() => removeTag(tag)}
                 aria-label={`Eliminar etiqueta ${tag}`}
-                className="rounded-full p-0.5 transition-colors hover:bg-[#E4E4E7] hover:text-[#E63946]"
+                className="rounded-full p-0.5 transition-colors hover:bg-[#E4E4E7] hover:text-[#D42F3C]"
               >
                 <X className="size-3" />
               </button>
@@ -150,7 +150,7 @@ export const TagInput = ({ tags, setValue }: TagInputProps) => {
                 key={suggestion}
                 type="button"
                 onClick={() => addTag(suggestion)}
-                className="flex items-center gap-1 rounded-full border border-dashed border-[#E4E4E7] bg-white px-3 py-1 text-xs text-[#71717A] transition-colors hover:border-[#E63946] hover:text-[#E63946] active:scale-95"
+                className="flex items-center gap-1 rounded-full border border-dashed border-[#E4E4E7] bg-white px-3 py-1 text-xs text-[#71717A] transition-colors hover:border-[#D42F3C] hover:text-[#D42F3C] active:scale-95"
               >
                 <Plus className="size-3 shrink-0" />
                 {suggestion}

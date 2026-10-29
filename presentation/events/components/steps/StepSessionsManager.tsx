@@ -187,7 +187,7 @@ export function StepSessionsManager({
             onClick={handleAdd}
             disabled={isPending || isLoading}
             size="sm"
-            className="shrink-0 gap-1.5 bg-[#E63946] text-white hover:bg-[#9B0A26] shadow-primary-glow"
+            className="shrink-0 gap-1.5 bg-[#D42F3C] text-white hover:bg-[#9B0A26] shadow-primary-glow"
           >
             <PlusIcon className="size-4" />
             Nueva sesión
@@ -203,10 +203,10 @@ export function StepSessionsManager({
           <button
             type="button"
             onClick={handleAdd}
-            className="group flex w-full flex-col items-center gap-4 rounded-2xl border border-dashed border-[#E4E4E7] bg-[#FAFAFC] px-6 py-14 text-center transition-all hover:border-[#E63946]/40 hover:bg-[#FDF2F4]/40"
+            className="group flex w-full flex-col items-center gap-4 rounded-2xl border border-dashed border-[#E4E4E7] bg-[#FAFAFC] px-6 py-14 text-center transition-all hover:border-[#D42F3C]/40 hover:bg-[#FDF2F4]/40"
           >
-            <span className="flex size-12 items-center justify-center rounded-xl border border-[#F4F4F5] bg-white shadow-sm group-hover:border-[#E63946]/20 transition-colors">
-              <CalendarDaysIcon className="size-5 text-[#A1A1AA] group-hover:text-[#E63946] transition-colors" />
+            <span className="flex size-12 items-center justify-center rounded-xl border border-[#F4F4F5] bg-white shadow-sm group-hover:border-[#D42F3C]/20 transition-colors">
+              <CalendarDaysIcon className="size-5 text-[#A1A1AA] group-hover:text-[#D42F3C] transition-colors" />
             </span>
             <div className="space-y-1">
               <p className="text-sm font-semibold text-[#09090B]">
@@ -216,7 +216,7 @@ export function StepSessionsManager({
                 Necesitas al menos 2 sesiones activas para publicar el evento.
               </p>
             </div>
-            <span className="flex items-center gap-1.5 rounded-lg border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-semibold text-[#09090B] shadow-sm group-hover:border-[#E63946]/30 transition-colors">
+            <span className="flex items-center gap-1.5 rounded-lg border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-semibold text-[#09090B] shadow-sm group-hover:border-[#D42F3C]/30 transition-colors">
               <PlusIcon className="size-3.5" />
               Crear primera sesión
             </span>

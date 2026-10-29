@@ -28,7 +28,7 @@ import type { SiteDetail } from "../../view-models/SiteFormViewModel"
 const DECLARATION =
   "Lo que informo es verídico y no incluye datos personales de otras personas. Entiendo que lo revisa el equipo antes de aplicarse."
 
-const btnClass = "min-h-11 rounded-xl bg-[#E63946] px-5 text-white hover:bg-[#E63946]/90"
+const btnClass = "min-h-11 rounded-xl bg-[#D42F3C] px-5 text-white hover:bg-[#D42F3C]/90"
 
 /** "Sugerir un cambio": cualquiera con sesión menos el autor (que edita directo). Nunca se aplica solo. */
 export function SiteSuggestCta({ site }: { site: SiteDetail }) {
@@ -144,7 +144,7 @@ function SuggestForm({ site, onDone }: { site: SiteDetail; onDone: () => void })
         {SUGGESTION_FIELDS.map((f) => (
           <label key={f} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
             <input
-              type="radio" name={`${ids}-field`} className="size-5 accent-[#E63946]"
+              type="radio" name={`${ids}-field`} className="size-5 accent-[#D42F3C]"
               checked={field === f} onChange={() => setField(f)}
             />
             {SUGGESTION_FIELD_LABELS[f]}
@@ -178,13 +178,13 @@ function SuggestForm({ site, onDone }: { site: SiteDetail; onDone: () => void })
 
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
         <input
-          type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#E63946]"
+          type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#D42F3C]"
           checked={declared} onChange={(e) => setDeclared(e.target.checked)} disabled={busy}
         />
         <span>{DECLARATION}</span>
       </label>
 
-      {error && <p role="alert" className="text-sm text-[#E63946]">{error}</p>}
+      {error && <p role="alert" className="text-sm text-[#D42F3C]">{error}</p>}
 
       <Button type="submit" disabled={!canSubmit} className={btnClass}>
         {busy ? "Enviando…" : "Enviar sugerencia"}

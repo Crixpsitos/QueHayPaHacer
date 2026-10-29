@@ -28,7 +28,7 @@ export default async function EventosIndexPage() {
     <>
       <Section spacing="sm" className="mt-4">
         <div className="flex items-center gap-1.5 text-sm font-medium text-[#71717A]">
-          <MapPin className="size-4 text-[#E63946]" />
+          <MapPin className="size-4 text-[#D42F3C]" />
           <span>Ibagué, Tolima</span>
         </div>
 
@@ -36,7 +36,7 @@ export default async function EventosIndexPage() {
           className="mt-2 text-4xl font-bold tracking-tight text-[#09090B]"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Eventos en <span className="text-[#E63946]">Ibagué</span>
+          Eventos en <span className="text-[#D42F3C]">Ibagué</span>
         </h1>
         <p className="mt-2 max-w-xl text-base leading-relaxed text-[#71717A]">
           Lo más destacado, planes de fin de semana y eventos por categoría.

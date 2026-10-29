@@ -680,7 +680,7 @@ export function SessionForm({
                     disabled={!canGo}
                     className={`relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all ${
                       isCurrent
-                        ? "bg-[#E63946] text-white shadow-primary-glow scale-110"
+                        ? "bg-[#D42F3C] text-white shadow-primary-glow scale-110"
                         : isDone
                           ? "cursor-pointer bg-[#09090B] text-white hover:scale-105"
                           : canGo
@@ -704,7 +704,7 @@ export function SessionForm({
                   disabled={!canGo}
                   className={`mt-1.5 mb-2.5 hidden text-center text-[11px] leading-tight transition-colors sm:block ${
                     isCurrent
-                      ? "font-semibold text-[#E63946]"
+                      ? "font-semibold text-[#D42F3C]"
                       : isDone
                         ? "font-medium text-[#71717A] hover:text-[#09090B]"
                         : "font-medium text-[#D4D4D8]"
@@ -713,7 +713,7 @@ export function SessionForm({
                   {step.label}
                 </button>
                 {/* Versión mobile: solo número de paso activo */}
-                <span className={`mb-2 text-[10px] font-medium sm:hidden ${isCurrent ? "text-[#E63946]" : "text-transparent"}`}>
+                <span className={`mb-2 text-[10px] font-medium sm:hidden ${isCurrent ? "text-[#D42F3C]" : "text-transparent"}`}>
                   {isCurrent ? `${step.number}/${SESSION_STEPS.length}` : "."}
                 </span>
               </div>
@@ -773,7 +773,7 @@ export function SessionForm({
               type="button"
               onClick={() => submitSession("published")}
               disabled={isPending}
-              className="gap-1 bg-[#E63946] text-white hover:bg-[#9B0A26] shadow-primary-glow"
+              className="gap-1 bg-[#D42F3C] text-white hover:bg-[#9B0A26] shadow-primary-glow"
             >
               <CheckIcon className="h-4 w-4" />
               Publicar sesión

@@ -81,15 +81,15 @@ export function ConvertToStandardDialog({
               Cargando fechas…
             </div>
           ) : error ? (
-            <p className="text-sm text-[#E63946] py-2">{error}</p>
+            <p className="text-sm text-[#D42F3C] py-2">{error}</p>
           ) : sessions.length === 0 ? (
             <p className="text-xs text-[#71717A] py-1">
               Los campos de fecha, lugar y configuración de registro quedarán pendientes de completar después de la conversión.
             </p>
           ) : sessions.length === 1 ? (
             // Una sola sesión: se mostrará auto-seleccionada, sin necesidad de elegir.
-            <div className="flex items-center gap-3 rounded-xl border border-[#E63946] bg-[#FDF2F4] px-4 py-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#E63946] text-white">
+            <div className="flex items-center gap-3 rounded-xl border border-[#D42F3C] bg-[#FDF2F4] px-4 py-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#D42F3C] text-white">
                 <CalendarDays className="size-4" />
               </span>
               <div className="min-w-0">
@@ -112,13 +112,13 @@ export function ConvertToStandardDialog({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all",
                       selected === session.id
-                        ? "border-[#E63946] bg-[#FDF2F4]"
+                        ? "border-[#D42F3C] bg-[#FDF2F4]"
                         : "border-[#E4E4E7] bg-white hover:bg-[#FAFAFC]",
                     )}
                   >
                     <span className={cn(
                       "flex size-8 shrink-0 items-center justify-center rounded-full",
-                      selected === session.id ? "bg-[#E63946] text-white" : "bg-[#F4F4F5] text-[#71717A]",
+                      selected === session.id ? "bg-[#D42F3C] text-white" : "bg-[#F4F4F5] text-[#71717A]",
                     )}>
                       <CalendarDays className="size-4" />
                     </span>
@@ -162,7 +162,7 @@ export function ConvertToStandardDialog({
                 onConfirm(selected);
               }
             }}
-            className="w-full rounded-xl bg-[#E63946] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-xl bg-[#D42F3C] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Convertir a evento estándar
           </button>

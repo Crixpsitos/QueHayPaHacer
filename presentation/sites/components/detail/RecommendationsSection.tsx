@@ -31,7 +31,7 @@ export function RecommendationsSection({
               key={id}
               className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-[#FDF2F4] px-3 py-1.5 text-xs font-medium text-[#09090B] ring-1 ring-inset ring-[#F5C2C7]"
             >
-              <Lightbulb className="size-3.5 shrink-0 text-[#E63946]" aria-hidden />
+              <Lightbulb className="size-3.5 shrink-0 text-[#D42F3C]" aria-hidden />
               <span className="[overflow-wrap:anywhere]">{SITE_TIP_LABELS[id]}</span>
             </li>
           ))}

@@ -62,7 +62,7 @@ export function EventHero({
   return (
     <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl bg-[#F4F4F5] sm:aspect-21/9">
       {onOpen ? (
-        <button type="button" onClick={onOpen} className="absolute inset-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E63946]" aria-label="Ver imagen en grande">
+        <button type="button" onClick={onOpen} className="absolute inset-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D42F3C]" aria-label="Ver imagen en grande">
           {img}
         </button>
       ) : (

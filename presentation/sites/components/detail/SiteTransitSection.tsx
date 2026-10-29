@@ -53,7 +53,7 @@ export function SiteTransitSection({
   return (
     <section className={cn("min-w-0", className)} aria-labelledby={`transit-${siteId}`}>
       <h3 id={`transit-${siteId}`} className="flex items-center gap-2 text-sm font-semibold text-[#09090B]">
-        <Bus className="size-4 text-[#E63946]" aria-hidden /> Buses
+        <Bus className="size-4 text-[#D42F3C]" aria-hidden /> Buses
       </h3>
 
       {view.unconfirmed && (
@@ -98,7 +98,7 @@ export function SiteTransitSection({
               Está desactualizado
             </Link>
           )}
-          {error && <p role="alert" className="mt-1 text-xs text-[#E63946]">{error}</p>}
+          {error && <p role="alert" className="mt-1 text-xs text-[#D42F3C]">{error}</p>}
         </div>
       )}
     </section>

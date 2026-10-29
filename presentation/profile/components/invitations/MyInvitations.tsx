@@ -48,7 +48,7 @@ export function MyInvitations({ initial }: { initial: InvitationVM[] }) {
       {acceptedNames.length > 0 && (
         <p role="status" className="rounded-2xl border border-[#E4E4E7] bg-white px-4 py-3 text-sm text-zinc-700">
           Ahora puedes aparecer como colaborador en sus eventos. Gestiona tus eventos en{" "}
-          <Link href="/mis-eventos" className="font-medium text-[#E63946] underline-offset-4 hover:underline">
+          <Link href="/mis-eventos" className="font-medium text-[#D42F3C] underline-offset-4 hover:underline">
             Mis eventos
           </Link>
           .
@@ -85,7 +85,7 @@ export function MyInvitations({ initial }: { initial: InvitationVM[] }) {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      className="flex-1 bg-zinc-950 text-white hover:bg-[#E63946] sm:flex-none"
+                      className="flex-1 bg-zinc-950 text-white hover:bg-[#D42F3C] sm:flex-none"
                       disabled={isBusy}
                       onClick={() => void respond(inv, true)}
                     >

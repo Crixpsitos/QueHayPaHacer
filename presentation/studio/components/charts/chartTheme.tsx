@@ -5,7 +5,7 @@
  * banda/croma a propósito porque la marca los define acromáticos.)
  */
 export const CHART = {
-  primary: "#E63946",
+  primary: "#D42F3C",
   ink: "#09090B",
   gold: "#FFB703",
   neutral: "#71717A",

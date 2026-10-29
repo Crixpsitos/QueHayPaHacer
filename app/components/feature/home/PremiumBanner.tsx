@@ -28,7 +28,7 @@ export function PremiumBanner() {
           </div>
           <Link
             href="/premium"
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#E63946] px-5 text-[15px] font-semibold text-white transition-colors hover:bg-[#C92F3B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#D42F3C] px-5 text-[15px] font-semibold text-white transition-colors hover:bg-[#C92F3B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
           >
             Conocer Premium
           </Link>

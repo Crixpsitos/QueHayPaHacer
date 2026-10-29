@@ -3,7 +3,7 @@ import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/fireba
 import { AuthFirebaseRepository } from "@/infraestructure/firebase/repositories/web/auth/AuthFirebaseRepository";
 import { EventsFirebaseRepository as WebEventsFirebaseRepository } from "../firebase/repositories/web/events/EventsFirebaseREpository";
 import { SitesWebFirebaseRepository } from "../firebase/repositories/web/sites/SitesWebFirebaseRepository";
-import { getFirebaseFirestore as getWebFirebaseFirestore } from "../firebase/config/client/firebase";
+import { getFirebaseFirestore as getWebFirebaseFirestore } from "../firebase/config/client/firestore";
 
 export const createClientContainer = () => {
   const authRepository = new AuthFirebaseRepository(getFirebaseAuth());

@@ -70,7 +70,7 @@ export function SessionCard({
   const statusConfig: Record<EventSession["status"], { label: string; cls: string }> = {
     draft:     { label: "Borrador",   cls: "bg-[#F4F4F5] text-[#71717A]" },
     published: { label: "Publicada",  cls: "bg-emerald-50 text-emerald-700" },
-    cancelled: { label: "Cancelada",  cls: "bg-red-50 text-[#E63946]" },
+    cancelled: { label: "Cancelada",  cls: "bg-red-50 text-[#D42F3C]" },
     ended:     { label: "Finalizada", cls: "bg-[#FFF8E7] text-[#E09F00]" },
   };
   const { label: statusLabel, cls: statusCls } = statusConfig[session.status];
@@ -130,7 +130,7 @@ export function SessionCard({
 
         {startFormatted ? (
           <div className="flex items-center gap-1 text-xs text-[#71717A]">
-            <CalendarIcon className="size-3.5 shrink-0 text-[#E63946]" />
+            <CalendarIcon className="size-3.5 shrink-0 text-[#D42F3C]" />
             <span>{startFormatted}{endFormatted && ` — ${endFormatted}`}</span>
           </div>
         ) : (
@@ -142,7 +142,7 @@ export function SessionCard({
 
         {(venueName || cityName) ? (
           <div className="flex items-center gap-1 text-xs text-[#71717A]">
-            <MapPinIcon className="size-3.5 shrink-0 text-[#E63946]" />
+            <MapPinIcon className="size-3.5 shrink-0 text-[#D42F3C]" />
             <span className="truncate">{[venueName, cityName].filter(Boolean).join(", ")}</span>
           </div>
         ) : (
@@ -193,7 +193,7 @@ export function SessionCard({
         <button
           type="button"
           onClick={() => onDelete(session.id)}
-          className="flex items-center gap-1 rounded-lg border border-transparent px-3 py-1.5 text-[11px] font-medium text-[#A1A1AA] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-[#E63946]"
+          className="flex items-center gap-1 rounded-lg border border-transparent px-3 py-1.5 text-[11px] font-medium text-[#A1A1AA] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-[#D42F3C]"
         >
           <Trash2Icon className="size-3" />
           Eliminar

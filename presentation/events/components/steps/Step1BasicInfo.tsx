@@ -50,7 +50,7 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
                 id="title"
                 maxLength={60}
                 placeholder="Ej: Gran Concierto de Rock Local"
-                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 shadow-none transition-all"
+                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 shadow-none transition-all"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -74,7 +74,7 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
                 id="shortDescription"
                 maxLength={150}
                 placeholder="¿Por qué no te lo puedes perder?"
-                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 min-h-16 resize-none transition-all"
+                className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 min-h-16 resize-none transition-all"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               <p className="mt-1.5 text-xs text-[#71717A]">
@@ -95,7 +95,7 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
               <FieldLabel htmlFor="description" className="text-sm font-semibold text-[#09090B] mb-2 block">
                 Descripción detallada
               </FieldLabel>
-              <div className="rounded-lg overflow-hidden border border-[#E4E4E7] bg-white focus-within:border-[#E63946] transition-colors">
+              <div className="rounded-lg overflow-hidden border border-[#E4E4E7] bg-white focus-within:border-[#D42F3C] transition-colors">
                 <RichTextEditor
                   value={value as JSONContent}
                   onChange={onChange}

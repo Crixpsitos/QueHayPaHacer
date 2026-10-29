@@ -75,7 +75,7 @@ export const ImageMainDropzone = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1">
           <h3 className="text-base font-semibold text-[#09090B]">Imagen principal</h3>
-          <span className="text-[#E63946] font-bold text-sm leading-none">*</span>
+          <span className="text-[#D42F3C] font-bold text-sm leading-none">*</span>
         </div>
         {displayUrl && !isProcessing && (
           <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export const ImageMainDropzone = ({
             <button
               type="button"
               onClick={handleRemoveImage}
-              className="flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1 text-xs font-medium text-[#71717A] hover:border-[#E63946] hover:text-[#E63946] transition-colors"
+              className="flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1 text-xs font-medium text-[#71717A] hover:border-[#D42F3C] hover:text-[#D42F3C] transition-colors"
             >
               <X className="size-3" />
               Eliminar
@@ -142,7 +142,7 @@ export const ImageMainDropzone = ({
 
           {/* Overlay error */}
           {hasOptimizationError && (
-            <div className="absolute inset-0 bg-[#E63946]/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="absolute inset-0 bg-[#D42F3C]/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 p-4 text-center">
               <AlertCircle className="size-8 text-white" />
               <span className="text-sm font-bold text-white">Error de procesamiento</span>
               <p className="text-xs text-white/80 max-w-xs leading-relaxed">
@@ -165,16 +165,16 @@ export const ImageMainDropzone = ({
           className={cn(
             "flex h-55 w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed bg-[#F8F8FA] transition-colors",
             isDragActive
-              ? "border-[#E63946] bg-[#FDF2F4]"
+              ? "border-[#D42F3C] bg-[#FDF2F4]"
               : error
-              ? "border-[#E63946]/50 bg-[#FDF2F4]/50"
+              ? "border-[#D42F3C]/50 bg-[#FDF2F4]/50"
               : "border-[#E4E4E7] hover:border-[#A1A1AA]",
           )}
         >
           <UploadCloud
             className={cn(
               "size-10 transition-colors",
-              isDragActive ? "text-[#E63946]" : "text-[#A1A1AA]",
+              isDragActive ? "text-[#D42F3C]" : "text-[#A1A1AA]",
             )}
           />
           <div className="text-center">
