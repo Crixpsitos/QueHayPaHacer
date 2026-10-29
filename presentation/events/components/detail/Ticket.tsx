@@ -9,7 +9,7 @@ import { dateParts } from "./format";
 
 /** Botón principal (crimson): solo para la acción de la página. */
 export const ctaClass =
-  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E63946] px-6 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-[#C92F3B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2 active:scale-[0.98] active:bg-[#9B0A26] motion-reduce:transition-none motion-reduce:active:scale-100";
+  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#D42F3C] px-6 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-[#C92F3B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2 active:scale-[0.98] active:bg-[#9B0A26] motion-reduce:transition-none motion-reduce:active:scale-100";
 
 /**
  * La boleta: talón oscuro con la fecha, perforación y cuerpo con precio y

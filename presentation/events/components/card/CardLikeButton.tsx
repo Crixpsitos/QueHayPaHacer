@@ -23,7 +23,7 @@ export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: 
       }}
       aria-label={liked ? "Quitar me gusta" : "Me gusta"}
       aria-pressed={liked}
-      className="absolute right-1.5 top-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]"
+      className="absolute right-1.5 top-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C]"
     >
       <span className="relative flex size-9 items-center justify-center rounded-full bg-white/90 text-[#09090B] ring-1 ring-black/5 transition-colors hover:bg-white">
         <motion.span
@@ -33,7 +33,7 @@ export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: 
           whileTap={still ? undefined : { scale: 0.85 }}
         >
           <Heart
-            className={cn("size-5 transition-colors duration-150", liked && "fill-[#E63946] text-[#E63946]")}
+            className={cn("size-5 transition-colors duration-150", liked && "fill-[#D42F3C] text-[#D42F3C]")}
             aria-hidden="true"
           />
         </motion.span>
@@ -44,7 +44,7 @@ export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: 
               <motion.span
                 key={`${burstKey}-${deg}`}
                 aria-hidden="true"
-                className="pointer-events-none absolute size-1 rounded-full bg-[#E63946]"
+                className="pointer-events-none absolute size-1 rounded-full bg-[#D42F3C]"
                 initial={{ x: 0, y: 0, opacity: 0.9, scale: 1 }}
                 animate={{
                   x: Math.cos((deg * Math.PI) / 180) * 18,

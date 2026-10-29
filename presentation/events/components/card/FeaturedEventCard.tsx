@@ -126,11 +126,11 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                 type="button"
                 onClick={() => user && toggle()}
                 aria-pressed={liked}
-                aria-label={liked ? "Quitar like" : "Dar like"}
+                aria-label={`${liked ? "Quitar like" : "Dar like"} — ${likes.toLocaleString("es-CO")} likes`}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
                   liked
-                    ? "bg-[#FDF2F4] text-[#E63946]"
+                    ? "bg-[#FDF2F4] text-[#D42F3C]"
                     : "border border-border text-muted-foreground hover:bg-muted",
                 )}
               >
@@ -147,7 +147,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
               </button>
               <Link
                 href={href}
-                className="ml-auto flex items-center rounded-full bg-[#E63946] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C92F3B]"
+                className="ml-auto flex items-center rounded-full bg-[#D42F3C] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#C92F3B]"
               >
                 Ver evento
               </Link>

@@ -126,7 +126,7 @@ export function ExploreSearchBar({
 
   const chipClass = (active: boolean) =>
     cn(
-      "flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 cursor-pointer select-none active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2",
+      "flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 cursor-pointer select-none active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2",
       active
         ? "border-transparent bg-[#09090B] text-white shadow-dark-float"
         : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#09090B]/30 hover:text-[#09090B] hover:shadow-subtle",

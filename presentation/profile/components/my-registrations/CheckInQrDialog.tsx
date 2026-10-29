@@ -70,7 +70,7 @@ export function CheckInQrDialog({ target, onClose }: { target: UserRegistrationI
 
           {res?.error && (
             <div className="space-y-3 text-center">
-              <p role="alert" className="text-sm text-[#E63946]">{res.error}</p>
+              <p role="alert" className="text-sm text-[#D42F3C]">{res.error}</p>
               {!res.authRequired && (
                 <Button variant="outline" onClick={() => setAttempt((n) => n + 1)}>
                   Reintentar
@@ -102,7 +102,7 @@ export function CheckInQrDialog({ target, onClose }: { target: UserRegistrationI
                   type="button"
                   onClick={() => copyCode(res.code!)}
                   aria-label={`Copiar código ${res.code}`}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 font-heading text-2xl font-bold tracking-widest text-[#09090B] tabular-nums transition-colors hover:bg-[#F4F4F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 font-heading text-2xl font-bold tracking-widest text-[#09090B] tabular-nums transition-colors hover:bg-[#F4F4F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C]"
                 >
                   {res.code}
                   {copied ? <Check className="size-4 text-emerald-600" aria-hidden="true" /> : <Copy className="size-4 text-[#71717A]" aria-hidden="true" />}

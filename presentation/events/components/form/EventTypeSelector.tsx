@@ -41,8 +41,8 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
         {/* ── Encabezado ──────────────────────────────────────────── */}
         <div className="mb-12 text-center">
           <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-[#FDF2F4] px-3 py-1.5">
-            <CalendarIcon className="size-3.5 text-[#E63946]" />
-            <span className="text-xs font-semibold text-[#E63946]">Nuevo evento</span>
+            <CalendarIcon className="size-3.5 text-[#D42F3C]" />
+            <span className="text-xs font-semibold text-[#D42F3C]">Nuevo evento</span>
           </div>
           <h1
             className="text-3xl font-bold text-[#09090B] sm:text-4xl"
@@ -62,11 +62,11 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
           <button
             type="button"
             onClick={() => handleSelect("standard")}
-            className="group flex flex-col rounded-2xl border border-[#E4E4E7] bg-white p-7 text-left shadow-card transition-all duration-200 hover:border-[#E63946] hover:shadow-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+            className="group flex flex-col rounded-2xl border border-[#E4E4E7] bg-white p-7 text-left shadow-card transition-all duration-200 hover:border-[#D42F3C] hover:shadow-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
           >
             {/* Icono */}
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FDF2F4] transition-colors duration-200 group-hover:bg-[#E63946]">
-              <CalendarIcon className="size-7 text-[#E63946] transition-colors duration-200 group-hover:text-white" />
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FDF2F4] transition-colors duration-200 group-hover:bg-[#D42F3C]">
+              <CalendarIcon className="size-7 text-[#D42F3C] transition-colors duration-200 group-hover:text-white" />
             </div>
 
             {/* Contenido */}
@@ -87,7 +87,7 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
               {["Conciertos", "Talleres", "Exposiciones", "Conferencias"].map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-[#E4E4E7] bg-[#FAFAFC] px-2.5 py-0.5 text-xs font-medium text-[#71717A] transition-colors group-hover:border-[#FDF2F4] group-hover:bg-[#FDF2F4] group-hover:text-[#E63946]"
+                  className="rounded-full border border-[#E4E4E7] bg-[#FAFAFC] px-2.5 py-0.5 text-xs font-medium text-[#71717A] transition-colors group-hover:border-[#FDF2F4] group-hover:bg-[#FDF2F4] group-hover:text-[#D42F3C]"
                 >
                   {tag}
                 </span>
@@ -99,7 +99,7 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
               <span className="text-sm font-semibold text-[#09090B]">
                 Empezar con este tipo
               </span>
-              <div className="flex size-8 items-center justify-center rounded-full bg-[#F4F4F5] transition-all duration-200 group-hover:bg-[#E63946]">
+              <div className="flex size-8 items-center justify-center rounded-full bg-[#F4F4F5] transition-all duration-200 group-hover:bg-[#D42F3C]">
                 <ArrowRight className="size-4 text-[#71717A] transition-colors duration-200 group-hover:text-white" />
               </div>
             </div>
@@ -204,7 +204,7 @@ export function EventTypeSelector({ isPremium }: EventTypeSelectorProps) {
         {isMultiDateLocked && (
           <p className="mt-8 text-center text-sm text-[#52525B]">
             ¿Tu evento tiene varias funciones?{" "}
-            <Link href="/premium" className="font-semibold text-[#E63946] hover:underline">
+            <Link href="/premium" className="font-semibold text-[#D42F3C] hover:underline">
               Conoce Premium
             </Link>
           </p>

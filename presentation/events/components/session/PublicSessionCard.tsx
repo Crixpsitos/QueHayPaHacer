@@ -28,7 +28,7 @@ export function PublicSessionCard({ session, parentRef, isPast = false }: Public
     <Link
       href={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
       className={cn(
-        "group relative flex overflow-hidden rounded-2xl border bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2",
+        "group relative flex overflow-hidden rounded-2xl border bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2",
         isPast ? "border-[#F4F4F5] text-[#A1A1AA]" : "border-[#E4E4E7] hover:border-[#09090B]",
       )}
       aria-label={`${title}, ${d.weekday} ${d.day} de ${d.month}, ${timeRange}${isPast ? " (finalizada)" : inProgress ? " (en curso)" : ""}`}

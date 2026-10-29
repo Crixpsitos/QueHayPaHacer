@@ -70,7 +70,7 @@ export function MySuggestionsPanel({ open, onOpenChange, items, refresh, onEdit 
             key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
             className={cn(
               "min-h-11 border-b-2 px-3 text-sm font-medium",
-              tab === k ? "border-[#E63946] text-foreground" : "border-transparent text-muted-foreground",
+              tab === k ? "border-[#D42F3C] text-foreground" : "border-transparent text-muted-foreground",
             )}
           >
             {label}
@@ -159,12 +159,12 @@ function SuggestionRow({ s, refresh, onEdit, onApproved }: { s: SiteSuggestionIt
             value={note} onChange={(e) => setNote(e.target.value)} maxLength={SUGGESTION_NOTE_MAX} disabled={busy}
             aria-label="Nota opcional" placeholder="Nota (opcional)" className="h-11 text-base"
           />
-          {error && <p role="alert" className="text-sm text-[#E63946]">{error}</p>}
+          {error && <p role="alert" className="text-sm text-[#D42F3C]">{error}</p>}
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" disabled={busy} onClick={() => resolve("reject")} className="min-h-11 rounded-xl">
               Rechazar
             </Button>
-            <Button disabled={busy} onClick={() => resolve("approve")} className="min-h-11 rounded-xl bg-[#E63946] text-white hover:bg-[#E63946]/90">
+            <Button disabled={busy} onClick={() => resolve("approve")} className="min-h-11 rounded-xl bg-[#D42F3C] text-white hover:bg-[#D42F3C]/90">
               Aprobar
             </Button>
           </div>

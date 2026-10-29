@@ -210,7 +210,7 @@ function RegistrationRow({
             <Link
               href={hrefOf(r)}
               className={cn(
-                "line-clamp-2 hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2 focus-visible:outline-none",
+                "line-clamp-2 hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2 focus-visible:outline-none",
                 muted ? "text-[#71717A]" : "text-[#09090B]",
               )}
             >
@@ -245,7 +245,7 @@ function RegistrationRow({
               </Button>
             )}
             {canCancel(r, now) && (
-              <Button variant="ghost" size="sm" className="-my-1 h-8 px-2 text-[#E63946] transition-[color,background-color,transform] hover:text-[#C92F3B] active:scale-[0.97] pointer-coarse:h-11" onClick={() => onCancel(r)}>
+              <Button variant="ghost" size="sm" className="-my-1 h-8 px-2 text-[#D42F3C] transition-[color,background-color,transform] hover:text-[#C92F3B] active:scale-[0.97] pointer-coarse:h-11" onClick={() => onCancel(r)}>
                 Cancelar inscripción
               </Button>
             )}

@@ -1,5 +1,4 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import {
   connectAuthEmulator,
   getAuth,
@@ -7,7 +6,6 @@ import {
   onIdTokenChanged,
   setPersistence,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
 
 
 
@@ -52,13 +50,6 @@ export const getFirebaseAuth = () => {
 
   return auth;
 };
-export const getFirebaseAnalytics = () => {
-  return getAnalytics(getFirebaseApp());
-};
-
-export const getFirebaseFirestore = () =>
-  getFirestore(getFirebaseApp(), "quehaypahacer-db");
-
 /**
  * Ejecuta `subscribe()` solo cuando el SDK cliente ya tiene sesión (token listo).
  * next-firebase-auth-edge usa inMemoryPersistence y re-autentica async

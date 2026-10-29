@@ -202,7 +202,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="h-12 min-w-0 flex-1 rounded-xl border border-[#E4E4E7] bg-white px-3 font-mono text-base tracking-wider uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]"
+            className="h-12 min-w-0 flex-1 rounded-xl border border-[#E4E4E7] bg-white px-3 font-mono text-base tracking-wider uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C]"
           />
           <button
             type="submit"

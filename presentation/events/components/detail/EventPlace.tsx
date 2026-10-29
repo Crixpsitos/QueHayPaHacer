@@ -21,7 +21,7 @@ export function LinkedSiteCard({ site }: { site: LinkedSiteInfo }) {
   return (
     <Link
       href={`/donde-ir/${site.slug || site.id}`}
-      className="group flex items-center gap-4 rounded-2xl border border-[#E4E4E7] bg-white p-3 transition-colors hover:border-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+      className="group flex items-center gap-4 rounded-2xl border border-[#E4E4E7] bg-white p-3 transition-colors hover:border-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
     >
       <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[#F4F4F5]">
         {site.coverUrl && <Image src={site.coverUrl} alt="" fill className="object-cover" sizes="64px" />}

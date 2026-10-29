@@ -34,11 +34,11 @@ export function OpeningPolicyNotes({
         </p>
       )}
       <div className="flex items-start gap-2 text-[#52525B]">
-        <CalendarDays className="mt-0.5 size-4 shrink-0 text-[#E63946]" aria-hidden />
+        <CalendarDays className="mt-0.5 size-4 shrink-0 text-[#D42F3C]" aria-hidden />
         <p><span className="font-medium text-[#09090B]">Festivos:</span> {holidayText}</p>
       </div>
       <div className="flex items-start gap-2 text-[#52525B]">
-        <CloudRain className="mt-0.5 size-4 shrink-0 text-[#E63946]" aria-hidden />
+        <CloudRain className="mt-0.5 size-4 shrink-0 text-[#D42F3C]" aria-hidden />
         <p>
           <span className="font-medium text-[#09090B]">Si llueve:</span>{" "}
           {r ? RAIN_POLICY_LABELS[r.policy] : "Sin confirmar"}

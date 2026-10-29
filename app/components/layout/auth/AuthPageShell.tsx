@@ -36,7 +36,7 @@ export function AuthPageShell({
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           {bottomText}{" "}
-          <Link href={bottomHref} className="font-semibold text-[#E63946] underline-offset-4 hover:underline">
+          <Link href={bottomHref} className="font-semibold text-[#D42F3C] underline-offset-4 hover:underline">
             {bottomHrefText}
           </Link>
         </p>

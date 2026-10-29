@@ -73,7 +73,7 @@ export default function PremiumPage() {
         <Section spacing="md">
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
             <div>
-              <p className="text-sm font-medium text-[#E63946]">Para creadores de Ibagué</p>
+              <p className="text-sm font-medium text-[#D42F3C]">Para creadores de Ibagué</p>
               <h1 className="mt-3 font-heading text-4xl font-bold leading-[1.05] tracking-tight text-[#09090B] sm:text-5xl lg:text-6xl">
                 Llena tus eventos y sabe quién llegó.
               </h1>
@@ -161,7 +161,7 @@ export default function PremiumPage() {
               </Cta>
               <p className="text-sm text-[#71717A]">
                 Al activarlo aceptas los{" "}
-                <Link href="/terminos" className="font-medium text-[#E63946] hover:underline">
+                <Link href="/terminos" className="font-medium text-[#D42F3C] hover:underline">
                   términos
                 </Link>
                 .

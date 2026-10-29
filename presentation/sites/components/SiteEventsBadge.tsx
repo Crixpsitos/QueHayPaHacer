@@ -27,7 +27,7 @@ export function SiteEventsBadge({
         className,
       )}
     >
-      <CalendarDays className={cn("shrink-0", variant === "pill" ? "size-3.5 text-[#E63946]" : "size-3")} aria-hidden />
+      <CalendarDays className={cn("shrink-0", variant === "pill" ? "size-3.5 text-[#D42F3C]" : "size-3")} aria-hidden />
       Con eventos
     </span>
   );

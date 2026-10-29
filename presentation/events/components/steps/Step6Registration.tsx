@@ -92,14 +92,14 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                         isDisabled
                           ? "cursor-not-allowed border-amber-200 bg-amber-50/60 opacity-60"
                           : isSelected
-                          ? "cursor-pointer border-[#E63946] bg-[#FDF2F4]"
+                          ? "cursor-pointer border-[#D42F3C] bg-[#FDF2F4]"
                           : "cursor-pointer border-[#E4E4E7] bg-white hover:bg-[#FAFAFC] hover:border-[#A1A1AA]",
                       )}
                     >
                       {/* Ícono */}
                       <span className={cn(
                         "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
-                        isSelected ? "bg-[#E63946] text-white" : "bg-[#F4F4F5] text-[#71717A]",
+                        isSelected ? "bg-[#D42F3C] text-white" : "bg-[#F4F4F5] text-[#71717A]",
                       )}>
                         <Icon className="size-5" />
                       </span>
@@ -107,7 +107,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                       {/* Texto */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className={cn("text-sm font-semibold", isSelected ? "text-[#E63946]" : "text-[#09090B]")}>
+                          <p className={cn("text-sm font-semibold", isSelected ? "text-[#D42F3C]" : "text-[#09090B]")}>
                             {label}
                           </p>
                           {isFormOption && (
@@ -129,7 +129,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                         disabled={isDisabled}
                         className={cn(
                           "shrink-0",
-                          isSelected ? "border-[#E63946] text-[#E63946]" : "border-[#A1A1AA]",
+                          isSelected ? "border-[#D42F3C] text-[#D42F3C]" : "border-[#A1A1AA]",
                           isDisabled && "pointer-events-none",
                         )}
                       />
@@ -167,7 +167,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                     type="url"
                     placeholder="https://ejemplo.com/registro"
                     aria-label="URL de registro externo"
-                    className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20"
+                    className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
                     {...field}
                   />
                   {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
@@ -187,7 +187,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
             />
             {/* Error cuando el formulario está vacío o tiene campos sin etiqueta */}
             {(form.formState.errors.registrationEventForm as { message?: string } | undefined)?.message && (
-              <p className="text-xs text-[#E63946]">
+              <p className="text-xs text-[#D42F3C]">
                 {(form.formState.errors.registrationEventForm as { message?: string }).message}
               </p>
             )}
@@ -225,7 +225,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                     placeholder="Ej: 100"
                     aria-label="Capacidad"
                     min={1}
-                    className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20"
+                    className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
                     value={field.value || ""}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -259,7 +259,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                   <p className="text-xs text-[#71717A] mt-0.5 max-w-sm">
                     {isPremium
                       ? "Si lo activas, en la tabla de registros podrás confirmar la asistencia (check-in) de cada inscrito."
-                      : <>Confirma quién asistió y quién no desde el Estudio. <Link href="/premium" target="_blank" className="font-medium text-[#E63946] hover:underline">Conoce Premium</Link></>}
+                      : <>Confirma quién asistió y quién no desde el Estudio. <Link href="/premium" target="_blank" className="font-medium text-[#D42F3C] hover:underline">Conoce Premium</Link></>}
                   </p>
                 </div>
                 <Switch

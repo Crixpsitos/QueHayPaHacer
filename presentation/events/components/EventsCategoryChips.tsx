@@ -20,11 +20,11 @@ export function EventsCategoryChips({ collections, className }: EventsCategoryCh
           <Link
             key={c.slug}
             href={`/${c.slug}`}
-            className="group flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[#E4E4E7] bg-white py-2 pl-2 pr-4 [&:not(:has(svg))]:pl-4 text-sm font-semibold text-[#09090B] shadow-subtle transition-[border-color,box-shadow,transform] duration-200 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2 hover:border-[#E63946] hover:shadow-[0_4px_16px_rgba(230,57,70,0.15)] active:scale-[0.97]"
+            className="group flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[#E4E4E7] bg-white py-2 pl-2 pr-4 [&:not(:has(svg))]:pl-4 text-sm font-semibold text-[#09090B] shadow-subtle transition-[border-color,box-shadow,transform] duration-200 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2 hover:border-[#D42F3C] hover:shadow-[0_4px_16px_rgba(230,57,70,0.15)] active:scale-[0.97]"
           >
             {Icon && (
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] transition-colors duration-200 group-hover:bg-[#E63946]">
-                <Icon className="size-3.5 text-[#E63946] transition-colors duration-200 group-hover:text-white" />
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] transition-colors duration-200 group-hover:bg-[#D42F3C]">
+                <Icon className="size-3.5 text-[#D42F3C] transition-colors duration-200 group-hover:text-white" />
               </span>
             )}
             {c.shortLabel}

@@ -701,7 +701,7 @@ export const EventForm = ({
               <span
                 className={cn(
                   "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-                  isMultiDate ? "bg-[#E63946]" : "bg-[#E4E4E7]",
+                  isMultiDate ? "bg-[#D42F3C]" : "bg-[#E4E4E7]",
                 )}
               >
                 <span className={cn(
@@ -734,7 +734,7 @@ export const EventForm = ({
 
         {/* Barra de progreso móvil */}
         <div className="lg:hidden h-1 bg-[#F4F4F5]">
-          <div className="h-full bg-[#E63946] transition-all duration-500" style={{ width: `${progressPercentage}%` }} />
+          <div className="h-full bg-[#D42F3C] transition-all duration-500" style={{ width: `${progressPercentage}%` }} />
         </div>
       </header>
 
@@ -749,11 +749,11 @@ export const EventForm = ({
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Progreso</p>
-                  <span className="text-[11px] font-semibold text-[#E63946]">{progressPercentage}%</span>
+                  <span className="text-[11px] font-semibold text-[#D42F3C]">{progressPercentage}%</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-[#F4F4F5] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#E63946] transition-all duration-500"
+                    className="h-full rounded-full bg-[#D42F3C] transition-all duration-500"
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>
@@ -776,15 +776,15 @@ export const EventForm = ({
                         suppressHydrationWarning
                         className={cn(
                           "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all",
-                          isCurrent   ? "bg-[#FDF2F4] text-[#E63946]" :
+                          isCurrent   ? "bg-[#FDF2F4] text-[#D42F3C]" :
                           isAccessible ? "text-[#71717A] hover:bg-[#F4F4F5] hover:text-[#09090B]" :
                                          "cursor-not-allowed text-[#71717A] opacity-40",
                         )}
                       >
                         <span className={cn(
                           "flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-all",
-                          isCompleted ? "border-[#E63946] bg-[#E63946] text-white" :
-                          isCurrent   ? "border-[#E63946] bg-white text-[#E63946]" :
+                          isCompleted ? "border-[#D42F3C] bg-[#D42F3C] text-white" :
+                          isCurrent   ? "border-[#D42F3C] bg-white text-[#D42F3C]" :
                                         "border-[#E4E4E7] bg-white text-[#A1A1AA]",
                         )}>
                           {isCompleted ? <Check className="size-3" /> : step.number}
@@ -796,7 +796,7 @@ export const EventForm = ({
                       {idx < ACTIVE_STEPS.length - 1 && (
                         <div className={cn(
                           "ml-6 my-0.5 w-0.5 h-3",
-                          completedSteps.includes(step.number) ? "bg-[#E63946]/40" : "bg-[#F4F4F5]",
+                          completedSteps.includes(step.number) ? "bg-[#D42F3C]/40" : "bg-[#F4F4F5]",
                         )} />
                       )}
                     </li>
@@ -807,7 +807,7 @@ export const EventForm = ({
               {/* Cuadro tipo de evento con descripción */}
               <div className="mt-4 rounded-xl border border-[#F4F4F5] bg-white p-3">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <CalendarDays className="size-3.5 text-[#E63946] shrink-0" />
+                  <CalendarDays className="size-3.5 text-[#D42F3C] shrink-0" />
                   <p className="text-xs font-semibold text-[#09090B]">
                     {isMultiDate ? "Evento multi-fecha" : "Evento estándar"}
                   </p>
@@ -877,7 +877,7 @@ export const EventForm = ({
                     </div>
                   )}
                   {previewCategory && (
-                    <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-semibold text-[#E63946]">
+                    <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[11px] font-semibold text-[#D42F3C]">
                       {previewCategory}
                     </span>
                   )}
@@ -947,19 +947,19 @@ export const EventForm = ({
                       </div>
                     )}
                     <div className="flex items-center gap-1.5 text-xs text-[#71717A]">
-                      <CalendarDays className="size-3.5 text-[#E63946] shrink-0" />
+                      <CalendarDays className="size-3.5 text-[#D42F3C] shrink-0" />
                       <span className="font-medium text-[#09090B]">Fecha</span>
                       <span className="text-[#D4D4D8]">·</span>
                       <span>{previewStartDate ? new Date(previewStartDate).toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short" }) : "Fecha por definir"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-[#71717A]">
-                      <MapPin className="size-3.5 text-[#E63946] shrink-0" />
+                      <MapPin className="size-3.5 text-[#D42F3C] shrink-0" />
                       <span className="font-medium text-[#09090B]">Lugar</span>
                       <span className="text-[#D4D4D8]">·</span>
                       <span className="truncate">{previewVenue || previewCity || "Lugar por definir"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-[#71717A]">
-                      <Users className="size-3.5 text-[#E63946] shrink-0" />
+                      <Users className="size-3.5 text-[#D42F3C] shrink-0" />
                       <span className="font-medium text-[#09090B]">Registro</span>
                       <span className="text-[#D4D4D8]">·</span>
                       <span className="truncate">{registrationLabel}</span>
@@ -972,7 +972,7 @@ export const EventForm = ({
                     previewIsFree
                       ? "bg-emerald-50 text-emerald-700"
                       : (previewAmount && previewAmount > 0
-                          ? "bg-[#FDF2F4] text-[#E63946]"
+                          ? "bg-[#FDF2F4] text-[#D42F3C]"
                           : "bg-[#F4F4F5] text-[#71717A]"),
                   )}>
                     {previewIsFree
@@ -1042,7 +1042,7 @@ export const EventForm = ({
                 type="button"
                 disabled={isSubmitting || !declared}
                 onClick={handlePublishSubmit}
-                className="rounded-xl px-5 text-sm font-semibold bg-[#E63946] hover:bg-[#9B0A26] text-white shadow-primary-glow"
+                className="rounded-xl px-5 text-sm font-semibold bg-[#D42F3C] hover:bg-[#9B0A26] text-white shadow-primary-glow"
               >
                 {isEditingExisting && status === "published" ? "Actualizar evento" : "Publicar evento"}
               </Button>
@@ -1051,7 +1051,7 @@ export const EventForm = ({
                 type="button"
                 disabled={isNextDisabled}
                 onClick={handleNext}
-                className="flex items-center gap-1.5 rounded-xl px-5 text-sm font-semibold bg-[#E63946] hover:bg-[#9B0A26] text-white disabled:opacity-50 shadow-primary-glow"
+                className="flex items-center gap-1.5 rounded-xl px-5 text-sm font-semibold bg-[#D42F3C] hover:bg-[#9B0A26] text-white disabled:opacity-50 shadow-primary-glow"
               >
                 Continuar
                 <ChevronRight className="size-4" />
@@ -1087,7 +1087,7 @@ export const EventForm = ({
               {status === "published" ? "Guardar y salir" : "Guardar borrador y salir"}
             </Button>
             <Button type="button" onClick={() => setShowCancelDialog(false)}
-              className="rounded-xl bg-[#E63946] hover:bg-[#9B0A26] text-white">
+              className="rounded-xl bg-[#D42F3C] hover:bg-[#9B0A26] text-white">
               Seguir editando
             </Button>
           </div>

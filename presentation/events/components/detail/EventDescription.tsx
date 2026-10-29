@@ -36,7 +36,7 @@ export function EventDescription({ doc }: { doc: unknown }) {
         style={expanded ? undefined : { maxHeight: COLLAPSED_PX }}
       >
         <div
-          className="tiptap prose prose-zinc max-w-[68ch] text-[#3F3F46] prose-headings:font-heading prose-a:text-[#E63946]"
+          className="tiptap prose prose-zinc max-w-[68ch] text-[#3F3F46] prose-headings:font-heading prose-a:text-[#D42F3C]"
           dangerouslySetInnerHTML={{ __html: html }}
         />
         {faded && (

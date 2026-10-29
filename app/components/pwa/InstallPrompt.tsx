@@ -161,7 +161,7 @@ export function InstallBanner() {
           transition={{ duration: 0.3, ease: EASE_OUT }}
           className="fixed inset-x-3 bottom-3 z-40 flex items-center gap-3 rounded-2xl bg-[#09090B] p-3 text-white shadow-xl md:hidden"
         >
-          <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E63946] font-heading text-lg font-bold">
+          <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D42F3C] font-heading text-lg font-bold">
             Q
           </span>
           <div className="min-w-0 flex-1">

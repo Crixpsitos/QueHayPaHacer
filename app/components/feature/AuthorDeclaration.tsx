@@ -35,7 +35,7 @@ export function AuthorDeclaration({
   const id = useId();
   return (
     <div
-      className={`rounded-2xl border bg-white p-4 ${invalid ? "border-[#E63946]" : "border-[#E4E4E7]"}`}
+      className={`rounded-2xl border bg-white p-4 ${invalid ? "border-[#D42F3C]" : "border-[#E4E4E7]"}`}
     >
       <div className="flex items-start gap-3">
         <input
@@ -45,7 +45,7 @@ export function AuthorDeclaration({
           onChange={(e) => onChange(e.target.checked)}
           aria-invalid={invalid}
           aria-required
-          className="mt-0.5 size-4 shrink-0 cursor-pointer accent-[#E63946]"
+          className="mt-0.5 size-4 shrink-0 cursor-pointer accent-[#D42F3C]"
         />
         <div className="min-w-0 flex-1 text-xs leading-relaxed text-[#09090B]">
           <label htmlFor={id} className="cursor-pointer">
@@ -56,7 +56,7 @@ export function AuthorDeclaration({
           {/* Texto completo plegado: en celular ocupaba media pantalla. Sigue siendo la
               declaración que se acepta; solo se muestra bajo demanda. */}
           <details className="group mt-1.5">
-            <summary className="cursor-pointer select-none py-1 font-medium text-[#E63946] marker:content-none hover:underline">
+            <summary className="cursor-pointer select-none py-1 font-medium text-[#D42F3C] marker:content-none hover:underline">
               <span className="group-open:hidden">Leer declaración completa</span>
               <span className="hidden group-open:inline">Ocultar declaración</span>
             </summary>
@@ -77,7 +77,7 @@ export function AuthorDeclaration({
                 href="/terminos"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-[#E63946] hover:underline"
+                className="font-medium text-[#D42F3C] hover:underline"
               >
                 Ver términos y condiciones
               </a>
@@ -86,7 +86,7 @@ export function AuthorDeclaration({
         </div>
       </div>
       {invalid && (
-        <p role="alert" className="mt-2 text-xs text-[#E63946]">
+        <p role="alert" className="mt-2 text-xs text-[#D42F3C]">
           Debes aceptar la declaración de responsabilidad para publicar.
         </p>
       )}

@@ -56,7 +56,7 @@ export function MultiDateEventDetailClient({ event, sessions }: MultiDateEventDe
               <LayoutDashboard className="size-4 shrink-0 text-[#71717A]" aria-hidden="true" />
               Este es tu evento
             </span>
-            <span className="shrink-0 font-semibold text-[#E63946]">Administrar sesiones</span>
+            <span className="shrink-0 font-semibold text-[#D42F3C]">Administrar sesiones</span>
           </Link>
         )}
 
@@ -67,7 +67,7 @@ export function MultiDateEventDetailClient({ event, sessions }: MultiDateEventDe
               Estás en el equipo como {TEAM_ROLE_LABEL[teamRole].toLowerCase()}
             </span>
             <span className="flex items-center gap-4 font-semibold">
-              <Link href={`/studio/events/${event.id}`} className="text-[#E63946]">Abrir en Studio</Link>
+              <Link href={`/studio/events/${event.id}`} className="text-[#D42F3C]">Abrir en Studio</Link>
               {can(teamRole, "edit_event") && (
                 <Link href={`/eventos/${event.id}/edit?step=sessions`} className="text-[#09090B]">Editar evento</Link>
               )}

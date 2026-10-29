@@ -19,7 +19,7 @@ export function EventsSearchRedirect() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-xl">
-      <div className="flex items-center gap-3 rounded-full border border-[#E4E4E7] bg-white px-4 py-2.5 shadow-subtle transition-all focus-within:border-[#E63946] focus-within:shadow-[0_0_0_3px_rgba(230,57,70,0.08)]">
+      <div className="flex items-center gap-3 rounded-full border border-[#E4E4E7] bg-white px-4 py-2.5 shadow-subtle transition-all focus-within:border-[#D42F3C] focus-within:shadow-[0_0_0_3px_rgba(230,57,70,0.08)]">
         <Search className="size-4 shrink-0 text-[#71717A]" />
         <input
           type="text"
@@ -32,7 +32,7 @@ export function EventsSearchRedirect() {
         {query.trim() && (
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-[#E63946] px-3.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#9B0A26]"
+            className="shrink-0 rounded-full bg-[#D42F3C] px-3.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#9B0A26]"
           >
             Buscar
           </button>

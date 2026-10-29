@@ -80,7 +80,7 @@ export const Step4Location = ({ form }: Step4Props) => {
 
         {/* Ciudad fija — MVP Ibagué */}
         <div className="flex items-center gap-2 rounded-lg border border-[#E4E4E7] bg-[#FAFAFC] px-3 h-12 text-sm text-[#09090B]">
-          <MapPin className="size-4 shrink-0 text-[#E63946]" />
+          <MapPin className="size-4 shrink-0 text-[#D42F3C]" />
           <span>
             <span className="font-semibold">Ibagué</span>
             <span className="text-[#71717A]">, Tolima — Colombia</span>
@@ -135,7 +135,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 {...field}
                 value={field.value ?? ""}
                 placeholder="Cra 3 #10-52"
-                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 h-11"
+                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 h-11"
               />
               {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>
@@ -156,7 +156,7 @@ export const Step4Location = ({ form }: Step4Props) => {
                 {...field}
                 value={field.value ?? ""}
                 placeholder="Ej: Entrada por la puerta lateral, piso 2"
-                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 h-11"
+                className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 h-11"
               />
               {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
             </Field>

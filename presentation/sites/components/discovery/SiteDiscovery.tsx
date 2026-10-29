@@ -69,7 +69,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
   return (
     <Link
       href={`/donde-ir/${site.slug || site.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,border-color,box-shadow] duration-300 motion-reduce:transition-none hover:border-[#09090B] hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946] focus-visible:ring-offset-2"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,border-color,box-shadow] duration-300 motion-reduce:transition-none hover:border-[#09090B] hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F4F5]">
         {site.coverUrl ? (
@@ -89,7 +89,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
         <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/45 to-transparent" />
 
         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow-sm">
-          <CatIcon className="size-3.5 text-[#E63946]" aria-hidden="true" />
+          <CatIcon className="size-3.5 text-[#D42F3C]" aria-hidden="true" />
           {siteCategoryLabel(site.category)}
         </span>
         <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
@@ -106,7 +106,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
         <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-end gap-1.5">
           {closedForNow ? (
             <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-[#09090B] shadow-sm">
-              <span className="size-1.5 shrink-0 rounded-full bg-[#E63946]" aria-hidden="true" />
+              <span className="size-1.5 shrink-0 rounded-full bg-[#D42F3C]" aria-hidden="true" />
               Cerrado temporalmente
             </span>
           ) : openStatus?.label ? (
@@ -123,7 +123,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
           <div className="flex flex-wrap gap-1.5">
             {site.bookingUrl && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#09090B] shadow-sm">
-                <CalendarCheck className="size-3.5 text-[#E63946]" aria-hidden="true" />
+                <CalendarCheck className="size-3.5 text-[#D42F3C]" aria-hidden="true" />
                 Reservas
               </span>
             )}
@@ -136,7 +136,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#E63946] decoration-2 underline-offset-4 group-hover:underline group-focus-visible:underline">
+        <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#D42F3C] decoration-2 underline-offset-4 group-hover:underline group-focus-visible:underline">
           {site.name}
         </h3>
 

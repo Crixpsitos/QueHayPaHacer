@@ -128,7 +128,7 @@ export function ExternalProfileForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Nombre a acreditar *"
-        className="h-11 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946]"
+        className="h-11 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#D42F3C]"
       />
 
       {/* Tipo + Imagen */}
@@ -136,7 +136,7 @@ export function ExternalProfileForm({
         <select
           value={type}
           onChange={(e) => setType(e.target.value as ExternalProfileType)}
-          className="h-11 flex-1 rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] outline-none transition-colors focus:border-[#E63946]"
+          className="h-11 flex-1 rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] outline-none transition-colors focus:border-[#D42F3C]"
         >
           {(Object.keys(EXTERNAL_TYPE_LABEL) as ExternalProfileType[]).map((t) => (
             <option key={t} value={t}>
@@ -162,7 +162,7 @@ export function ExternalProfileForm({
         onChange={(e) => setBio(e.target.value)}
         placeholder="Bio (opcional)"
         rows={2}
-        className="w-full rounded-lg border border-[#E4E4E7] bg-white px-3 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946] resize-none"
+        className="w-full rounded-lg border border-[#E4E4E7] bg-white px-3 py-2.5 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#D42F3C] resize-none"
       />
 
       {/* Redes sociales */}
@@ -174,7 +174,7 @@ export function ExternalProfileForm({
             value={socials[key]}
             onChange={(e) => setSocials((prev) => ({ ...prev, [key]: e.target.value }))}
             placeholder={placeholder}
-            className="h-10 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#E63946]"
+            className="h-10 w-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] placeholder:text-[#A1A1AA] outline-none transition-colors focus:border-[#D42F3C]"
           />
         ))}
       </div>
@@ -184,7 +184,7 @@ export function ExternalProfileForm({
         type="button"
         onClick={() => void handleCreate()}
         disabled={creating || !name.trim()}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#E63946] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#9B0A26] disabled:opacity-50 shadow-primary-glow"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#D42F3C] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#9B0A26] disabled:opacity-50 shadow-primary-glow"
       >
         {creating ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
         Crear{eventId ? " y acreditar" : ""}

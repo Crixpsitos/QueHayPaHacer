@@ -40,9 +40,9 @@ interface ReportButtonProps {
 }
 
 const triggerClass =
-  "inline-flex items-center gap-1.5 text-sm text-[#71717A] transition-colors hover:text-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E63946]/40 rounded";
+  "inline-flex items-center gap-1.5 text-sm text-[#71717A] transition-colors hover:text-[#09090B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C]/40 rounded";
 
-const ctaClass = "rounded-xl bg-[#E63946] px-5 text-white hover:bg-[#E63946]/90";
+const ctaClass = "rounded-xl bg-[#D42F3C] px-5 text-white hover:bg-[#D42F3C]/90";
 
 export function ReportButton({ targetType, targetId, sessionId, isOwner = false, authorId, className }: ReportButtonProps) {
   const { user, isHydrating } = useAuth();
@@ -134,7 +134,7 @@ export function ReportButton({ targetType, targetId, sessionId, isOwner = false,
                   <RadioGroupItem
                     value={r.value}
                     id={`${ids}-${r.value}`}
-                    className="border-[#E4E4E7] bg-white data-checked:border-[#E63946] data-checked:bg-[#E63946]"
+                    className="border-[#E4E4E7] bg-white data-checked:border-[#D42F3C] data-checked:bg-[#D42F3C]"
                   />
                   <Label htmlFor={`${ids}-${r.value}`} className="cursor-pointer text-sm font-normal text-[#09090B]">
                     {r.label}
@@ -167,7 +167,7 @@ export function ReportButton({ targetType, targetId, sessionId, isOwner = false,
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-[#E63946]">
+              <p role="alert" className="text-sm text-[#D42F3C]">
                 {error}
               </p>
             )}

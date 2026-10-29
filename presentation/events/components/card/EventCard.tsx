@@ -52,7 +52,7 @@ export function dateLine(event: EventViewModel): string {
 export function PosterFallback({ title }: { title: string }) {
   return (
     <div className="absolute inset-0 flex items-end bg-[#09090B] p-4" aria-hidden="true">
-      <span className="absolute inset-x-0 top-0 h-1 bg-[#E63946]" />
+      <span className="absolute inset-x-0 top-0 h-1 bg-[#D42F3C]" />
       <span className="font-heading text-6xl font-bold leading-none text-white/90">
         {title.trim().charAt(0).toUpperCase() || "?"}
       </span>
@@ -154,7 +154,7 @@ export const EventCard = ({
     <article
       className={cn(
         "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,box-shadow] duration-300 motion-reduce:transition-none hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5",
-        "focus-within:ring-2 focus-within:ring-[#E63946]/40 focus-within:ring-offset-2",
+        "focus-within:ring-2 focus-within:ring-[#D42F3C]/40 focus-within:ring-offset-2",
         className,
       )}
     >
@@ -185,7 +185,7 @@ export const EventCard = ({
           <div className="absolute left-3 top-3 w-12 overflow-hidden rounded-xl bg-[#09090B] text-center text-white shadow-sm ring-1 ring-white/15">
             <span className="block pt-1.5 text-[11px] font-medium leading-none text-white/70">{stub.weekdayShort}</span>
             <span className="block font-heading text-xl font-bold leading-tight tabular-nums">{stub.day}</span>
-            <span className="block bg-[#E63946] py-0.5 text-[11px] font-semibold leading-none">{stub.monthShort}</span>
+            <span className="block bg-[#D42F3C] py-0.5 text-[11px] font-semibold leading-none">{stub.monthShort}</span>
           </div>
         )}
 
@@ -195,7 +195,7 @@ export const EventCard = ({
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-black/5",
-                  timing.tone === "live" ? "bg-[#E63946] text-white" : "bg-white text-[#09090B]",
+                  timing.tone === "live" ? "bg-[#D42F3C] text-white" : "bg-white text-[#09090B]",
                 )}
               >
                 {timing.tone === "live" && <span className="size-1.5 rounded-full bg-white" aria-hidden="true" />}
@@ -224,14 +224,14 @@ export const EventCard = ({
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-center justify-between gap-2 text-xs">
           {event.categoryInfo?.title ? (
-            <span className="truncate font-semibold text-[#E63946]">{event.categoryInfo.title}</span>
+            <span className="truncate font-semibold text-[#D42F3C]">{event.categoryInfo.title}</span>
           ) : (
             <span />
           )}
           <span className="shrink-0 text-[#71717A]">{registrationLabel(event.registrationType)}</span>
         </div>
 
-        <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#E63946] decoration-2 underline-offset-4 group-hover:underline group-has-[a:focus-visible]:underline">
+        <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#D42F3C] decoration-2 underline-offset-4 group-hover:underline group-has-[a:focus-visible]:underline">
           {/* Enlace estirado: toda la tarjeta es clickeable; el like queda encima (z-10). */}
           <Link href={detailUrl} className="after:absolute after:inset-0 focus-visible:outline-none">
             {event.title}
@@ -275,7 +275,7 @@ export const EventCard = ({
                   className={cn(
                     "font-medium",
                     spots.tone === "low" && "text-[#B45309]",
-                    spots.tone === "full" && "text-[#E63946]",
+                    spots.tone === "full" && "text-[#D42F3C]",
                   )}
                 >
                   {spots.label}

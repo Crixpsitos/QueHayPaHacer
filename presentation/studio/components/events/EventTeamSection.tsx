@@ -11,7 +11,7 @@ export function TeamRoleBanner({ role }: { role: EventAccessRole }) {
   if (role === "owner" || role === "editor" || role === "credit") return null;
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-4 py-3" role="note">
-      <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#E63946]" aria-hidden />
+      <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#D42F3C]" aria-hidden />
       <p className="text-sm text-[#3F3F46]">
         <span className="font-semibold text-[#09090B]">Estás en el equipo como {TEAM_ROLE_LABEL[role].toLowerCase()}.</span>{" "}
         {TEAM_ROLE_DESCRIPTION[role]}

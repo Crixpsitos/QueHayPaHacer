@@ -48,7 +48,7 @@ function Row({ n, onNavigate }: { n: NotificationItem; onNavigate: () => void })
   const Icon = ICONS[n.type] ?? Bell;
   const content = (
     <>
-      <span aria-hidden className={cn("mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full", n.read ? "bg-muted text-muted-foreground" : "bg-[#FDF2F4] text-[#E63946]")}>
+      <span aria-hidden className={cn("mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full", n.read ? "bg-muted text-muted-foreground" : "bg-[#FDF2F4] text-[#D42F3C]")}>
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
     >
       <Bell className="size-4" aria-hidden="true" />
       {unread > 0 && (
-        <span aria-hidden className="absolute -right-1 -top-1 flex min-w-4.5 items-center justify-center rounded-full border-2 border-background bg-[#E63946] px-1 text-[10px] font-bold leading-4 text-white">
+        <span aria-hidden className="absolute -right-1 -top-1 flex min-w-4.5 items-center justify-center rounded-full border-2 border-background bg-[#D42F3C] px-1 text-[10px] font-bold leading-4 text-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}

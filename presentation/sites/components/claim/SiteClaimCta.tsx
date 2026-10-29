@@ -29,7 +29,7 @@ const RELATIONS: { value: ClaimRelation; label: string }[] = [
 const DECLARATION =
   "Declaro que soy dueño o represento este lugar y que lo que informo es verídico; entiendo que un reclamo falso puede llevar a retirar mi contenido y mi cuenta."
 
-const btnClass = "min-h-11 rounded-xl bg-[#E63946] px-5 text-white hover:bg-[#E63946]/90"
+const btnClass = "min-h-11 rounded-xl bg-[#D42F3C] px-5 text-white hover:bg-[#D42F3C]/90"
 
 /** "¿Es tu negocio? Reclámalo" / "Soy el administrador". Solo si la ficha no está verificada y no eres su autor. */
 export function SiteClaimCta({ site }: { site: SiteDetail }) {
@@ -157,7 +157,7 @@ function ClaimForm({ site, isBusiness, onDone }: { site: SiteDetail; isBusiness:
           {relations.map((r) => (
             <label key={r.value} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
               <input
-                type="radio" name={`${ids}-rel`} className="size-5 accent-[#E63946]"
+                type="radio" name={`${ids}-rel`} className="size-5 accent-[#D42F3C]"
                 checked={relation === r.value} onChange={() => setRelation(r.value)}
               />
               {r.label}
@@ -193,13 +193,13 @@ function ClaimForm({ site, isBusiness, onDone }: { site: SiteDetail; isBusiness:
 
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
         <input
-          type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#E63946]"
+          type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#D42F3C]"
           checked={declared} onChange={(e) => setDeclared(e.target.checked)} disabled={busy}
         />
         <span>{DECLARATION}</span>
       </label>
 
-      {error && <p role="alert" className="text-sm text-[#E63946]">{error}</p>}
+      {error && <p role="alert" className="text-sm text-[#D42F3C]">{error}</p>}
 
       <Button type="submit" disabled={!canSubmit} className={btnClass}>
         {busy ? "Enviando…" : "Enviar reclamo"}

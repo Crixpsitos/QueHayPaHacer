@@ -267,7 +267,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false, declared, o
                       href={formData.externalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate text-sm text-[#E63946] hover:underline"
+                      className="truncate text-sm text-[#D42F3C] hover:underline"
                     >
                       {formData.externalUrl}
                     </a>

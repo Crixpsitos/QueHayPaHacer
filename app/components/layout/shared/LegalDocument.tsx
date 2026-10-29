@@ -48,11 +48,11 @@ export function LegalDocument({ title, intro, children }: { title: string; intro
           <p className="mt-3 text-sm text-[#71717A]">Última actualización: {LEGAL_ENTITY.updatedAt}</p>
           <p className="mt-5 text-base leading-relaxed text-[#3F3F46]">{intro}</p>
         </header>
-        <div className="space-y-8 text-[15px] leading-relaxed text-[#3F3F46] [&_a]:font-medium [&_a]:text-[#E63946] [&_a:hover]:underline [&_h2]:mb-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#09090B] [&_li]:mt-1.5 [&_p+p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+        <div className="space-y-8 text-[15px] leading-relaxed text-[#3F3F46] [&_a]:font-medium [&_a]:text-[#D42F3C] [&_a:hover]:underline [&_h2]:mb-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#09090B] [&_li]:mt-1.5 [&_p+p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
           {children}
         </div>
         <p className="mt-12 border-t border-[#E4E4E7] pt-6 text-sm text-[#71717A]">
-          ¿Preguntas sobre este documento? <Link href={LEGAL_ENTITY.contactHref} className="font-medium text-[#E63946] hover:underline">Escríbenos</Link>.
+          ¿Preguntas sobre este documento? <Link href={LEGAL_ENTITY.contactHref} className="font-medium text-[#D42F3C] hover:underline">Escríbenos</Link>.
         </p>
       </article>
     </Section>

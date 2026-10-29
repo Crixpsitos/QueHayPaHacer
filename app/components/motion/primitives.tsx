@@ -143,7 +143,7 @@ export function AttentionRing({
   active = true,
   times = 3,
   className,
-  ringClassName = "rounded-xl border-[#E63946]",
+  ringClassName = "rounded-xl border-[#D42F3C]",
 }: {
   children: ReactNode;
   active?: boolean;

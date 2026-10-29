@@ -77,7 +77,7 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
             initialLiked={appliedLike ?? initialLiked}
             initialLikes={(analytics?.likes ?? 0) + (appliedLike && !initialLiked ? 1 : 0)}
             onLike={handleLike}
-            className="h-11 gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-5 text-sm font-semibold text-[#09090B] shadow-card transition-all hover:border-[#E63946] hover:bg-[#FDF2F4] hover:text-[#E63946]"
+            className="h-11 gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-5 text-sm font-semibold text-[#09090B] shadow-card transition-all hover:border-[#D42F3C] hover:bg-[#FDF2F4] hover:text-[#D42F3C]"
           />
         )}
 

@@ -148,7 +148,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
                   value={getTimeValue(field.value)}
                   disabled={!field.value}
                   aria-label="Hora de inicio"
-                  className="h-11 rounded-lg border-[#E4E4E7] bg-white text-[#09090B] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 disabled:opacity-40"
+                  className="h-11 rounded-lg border-[#E4E4E7] bg-white text-[#09090B] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 disabled:opacity-40"
                   onChange={(e) => {
                     if (!field.value || !e.target.value) return;
                     const [hour, minute] = e.target.value.split(":");
@@ -181,7 +181,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
                 className={cn(
                   "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                   isActive
-                    ? "border-[#E63946] bg-[#FDF2F4] text-[#E63946]"
+                    ? "border-[#D42F3C] bg-[#FDF2F4] text-[#D42F3C]"
                     : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#A1A1AA] hover:text-[#09090B]",
                 )}
               >
@@ -264,7 +264,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
                   value={getTimeValue(field.value)}
                   disabled={!field.value}
                   aria-label="Hora de cierre"
-                  className="h-11 rounded-lg border-[#E4E4E7] bg-white text-[#09090B] focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]/20 disabled:opacity-40"
+                  className="h-11 rounded-lg border-[#E4E4E7] bg-white text-[#09090B] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 disabled:opacity-40"
                   onChange={(e) => {
                     if (!field.value || !e.target.value) return;
                     const [hour, minute] = e.target.value.split(":");

@@ -263,7 +263,7 @@ export const EventClientWrapper = ({
       {/* Overlay sobre el formulario — no lo desmonta, preserva su estado si falla la migración. */}
       {isMigrating && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#FAFAFC]/90 backdrop-blur-sm">
-          <Loader2 className="size-8 animate-spin text-[#E63946]" />
+          <Loader2 className="size-8 animate-spin text-[#D42F3C]" />
           <p className="text-sm font-medium text-[#71717A]">
             Preparando tu evento…
           </p>

@@ -91,7 +91,7 @@
   --popover-foreground: #09090B;
 
   /* Vibrant Crimson — color de acción principal */
-  --primary: #E63946;
+  --primary: #D42F3C;
   --primary-foreground: #FFFFFF;
   --primary-dark: #9B0A26;
   --primary-light: #FDF2F4;
@@ -110,10 +110,10 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: #E4E4E7;
   --input: #E4E4E7;
-  --ring: #E63946;
+  --ring: #D42F3C;
 
   /* Gradientes de marca */
-  --grad-primary: linear-gradient(135deg, #E63946 0%, #9B0A26 100%);
+  --grad-primary: linear-gradient(135deg, #D42F3C 0%, #9B0A26 100%);
   --grad-primary-hover: linear-gradient(135deg, #FF4D5A 0%, #B30E30 100%);
   --grad-dark-element: linear-gradient(180deg, #09090B 0%, #18181B 100%);
   --grad-accent: linear-gradient(135deg, #FFB703 0%, #FF8C00 100%);
@@ -122,14 +122,14 @@
   --radius: 0.625rem;
   --sidebar: #FFFFFF;
   --sidebar-foreground: #09090B;
-  --sidebar-primary: #E63946;
+  --sidebar-primary: #D42F3C;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #F4F4F5;
   --sidebar-accent-foreground: #09090B;
   --sidebar-border: #E4E4E7;
-  --sidebar-ring: #E63946;
+  --sidebar-ring: #D42F3C;
 
-  --chart-1: #E63946;
+  --chart-1: #D42F3C;
   --chart-2: #FFB703;
   --chart-3: #09090B;
   --chart-4: oklch(0.371 0 0);
