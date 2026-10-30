@@ -106,7 +106,7 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
     () => (panelMode !== "form" ? filtered : []).map((s) => ({
       id: s.id, name: s.name, coordinates: s.coordinates,
       status: getDisplayStatus(s.publicationStatus, s.moderationStatus),
-      coverUrl: s.coverUrl || undefined,
+      coverUrl: s.markerUrl || s.coverUrl || undefined,
     })),
     [filtered, panelMode],
   )

@@ -119,7 +119,10 @@ export interface SiteListItem {
   name: string
   category: SiteCategory
   address: string
+  /** Portada real (cards, listados, OG). */
   coverUrl: string
+  /** Miniatura de 40 px solo para los pines del mapa. NUNCA para cards ni OG. */
+  markerUrl?: string
   coordinates: Coordinates
   publicationStatus: PublicationStatus
   moderationStatus: ModerationStatus
