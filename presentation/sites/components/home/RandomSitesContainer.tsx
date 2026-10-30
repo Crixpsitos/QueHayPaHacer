@@ -4,6 +4,7 @@ import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { Separator } from "@/app/components/ui/separator";
 import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
+import { fetchHomeSites } from "./HomeSitesContainer";
 
 const RANDOM_SITES_LIMIT = 4;
 
@@ -17,7 +18,9 @@ const fetchSiteDetail = async (id: string): Promise<SiteDetail | null> => {
 
 export async function RandomSitesContainer() {
   const { sitesService } = createServerContainer();
-  const ids = await sitesService.getRandomSites(RANDOM_SITES_LIMIT);
+  // Sin los que ya salen en "Sitios populares". Si no queda ninguno, la sección no se pinta.
+  const popular = await fetchHomeSites();
+  const ids = await sitesService.getRandomSites(RANDOM_SITES_LIMIT, popular.map((s) => s.id));
   const sites = (await Promise.all(ids.map(fetchSiteDetail))).filter(
     (site): site is SiteDetail => Boolean(site),
   );

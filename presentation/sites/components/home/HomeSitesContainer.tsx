@@ -2,6 +2,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
 import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
+import { ContentSection } from "@/app/components/layout/shared/ContentSection";
+import { Separator } from "@/app/components/ui/separator";
 
 const HOME_SITES_LIMIT = 4;
 
@@ -13,7 +15,8 @@ const fetchSiteDetail = async (id: string): Promise<SiteDetail | null> => {
   return sitesService.getSiteDetailById(id);
 };
 
-const fetchHomeSites = async (): Promise<SiteDetail[]> => {
+/** Los populares de la home. Compartida con "Lugares para descubrir" para no repetirlos (misma entrada de caché). */
+export const fetchHomeSites = async (): Promise<SiteDetail[]> => {
   "use cache";
   cacheLife("days");
   cacheTag("site-list", "featured-sites");
@@ -27,5 +30,13 @@ export async function HomeSitesContainer() {
   const sites = await fetchHomeSites();
   if (sites.length === 0) return null;
 
-  return <SiteDiscoveryGrid sites={sites} />;
+  return (
+    <ContentSection title="Sitios populares" action={{ href: "/donde-ir" }}>
+      <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        Los mejores lugares de la ciudad para comer, tomar algo, disfrutar y más.
+      </p>
+      <Separator className="my-6" />
+      <SiteDiscoveryGrid sites={sites} />
+    </ContentSection>
+  );
 }
