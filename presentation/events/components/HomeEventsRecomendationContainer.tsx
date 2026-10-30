@@ -66,16 +66,7 @@ export const HomeEventsRecomendationContainer = async () => {
         <FeaturedEventsContainer featuredEvents={featuredEvents} />
       </ContentSection>
 
-      <ContentSection
-        title="Sitios populares"
-        action={{ href: "/donde-ir" }}
-      >
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Los mejores lugares de la ciudad para comer, tomar algo, disfrutar y más.
-        </p>
-        <Separator className="my-6" />
-        <HomeSitesContainer />
-      </ContentSection>
+      <HomeSitesContainer />
 
       <RandomSitesContainer />
 

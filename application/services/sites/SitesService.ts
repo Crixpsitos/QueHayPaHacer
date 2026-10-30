@@ -7,6 +7,7 @@ import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 import type { SiteEventState } from "@/domain/entities/sites/siteEventCount"
 import type { SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
+import { pickDiscoverIds } from "@/domain/entities/sites/siteDiscovery"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
 
@@ -216,9 +217,9 @@ export class SitesService {
     return this.adapter.findAllSiteIds()
   }
 
-  async getRandomSites(limit: number): Promise<string[]> {
-    const ids = await this.adapter.findAllSiteIds()
-    return [...ids].sort(() => Math.random() - 0.5).slice(0, limit)
+  /** Al azar entre los mejor puntuados, sin los de `excludeIds` (los que la home ya muestra como populares). */
+  async getRandomSites(limit: number, excludeIds: readonly string[] = []): Promise<string[]> {
+    return pickDiscoverIds(await this.adapter.findAllSiteIds(), limit, excludeIds)
   }
 
   getAllSitesPage(limit: number, cursor: string | null) {
