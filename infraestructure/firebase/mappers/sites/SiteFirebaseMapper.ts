@@ -92,9 +92,9 @@ export class SiteFirebaseMapper {
       name: dto.name,
       category: (dto.category as SiteDetail["category"]) ?? "other",
       address: dto.location.address,
-      coverUrl:
-        (typeof coverMedia?.markerUrl === "string" ? coverMedia.markerUrl : coverMedia?.markerUrl?.url)
-        ?? coverMedia?.url ?? "",
+      // La portada real va a cards/OG; el marcador (40 px, lo genera un Cloud Function) solo sirve para el pin del mapa.
+      coverUrl: coverMedia?.url ?? "",
+      markerUrl: (typeof coverMedia?.markerUrl === "string" ? coverMedia.markerUrl : coverMedia?.markerUrl?.url) || undefined,
       coordinates: {
         latitude: dto.location.geo.latitude,
         longitude: dto.location.geo.longitude,
