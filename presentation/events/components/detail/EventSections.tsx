@@ -54,6 +54,8 @@ export function EventIntro({
 /** Organizador + colaboradores acreditados. */
 export function EventOrganizer({ event }: { event: EventViewModel }) {
   const name = event.author?.displayName || "Organizador";
+  // Con enlace externo, QHPA solo publica el evento: no lo organiza.
+  const role = event.registrationType === "external" ? "Sube" : "Organiza";
   const avatar = (
     <Avatar className="size-12">
       {event.author?.photoURL && <AvatarImage src={event.author.photoURL} alt="" />}
@@ -64,11 +66,11 @@ export function EventOrganizer({ event }: { event: EventViewModel }) {
   );
 
   return (
-    <section aria-label="Organizador" className="flex flex-col gap-5 rounded-2xl border border-[#E4E4E7] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+    <section aria-label={role === "Sube" ? "Publicado por" : "Organizador"} className="flex flex-col gap-5 rounded-2xl border border-[#E4E4E7] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
         {avatar}
         <div className="min-w-0">
-          <p className="text-sm text-[#71717A]">Organiza</p>
+          <p className="text-sm text-[#71717A]">{role}</p>
           <p className="truncate font-heading text-lg font-semibold text-[#09090B]">{name}</p>
         </div>
         {event.author?.id && (
