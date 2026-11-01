@@ -60,6 +60,9 @@ export interface EventViewModel {
     }[];
   };
   externalUrl?: string;
+  externalButtonLabel?: string;
+  externalButtonColor?: string;
+  externalNotice?: string;
   capacity?: number;
   requiresAttendance?: boolean;
   price: Price;

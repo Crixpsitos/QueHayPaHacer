@@ -55,6 +55,12 @@ export interface Events extends Dates {
     fields: any[];
   };
   externalUrl?: string;
+  /** Texto del botón de registro externo (vacío = "Inscribirme"). */
+  externalButtonLabel?: string;
+  /** Color de fondo del botón externo, `#RRGGBB` (vacío = rojo de marca). */
+  externalButtonColor?: string;
+  /** Aviso bajo el botón externo (vacío = aviso por defecto: solo informamos, no somos socios). */
+  externalNotice?: string;
   capacity?: number;
   /** Si el organizador llevará control de asistencia (check-in) de los inscritos. */
   requiresAttendance?: boolean;

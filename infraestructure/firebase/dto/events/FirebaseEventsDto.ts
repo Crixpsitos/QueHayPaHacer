@@ -53,6 +53,9 @@ export interface FirebaseEventsDto {
     reviewedBy?: string | null;
     registrationType: "none" | "internal" | "external" | "form";
     externalUrl?: string;
+    externalButtonLabel?: string;
+    externalButtonColor?: string;
+    externalNotice?: string;
     registrationEventForm?: {
         fields: {
             id: string;

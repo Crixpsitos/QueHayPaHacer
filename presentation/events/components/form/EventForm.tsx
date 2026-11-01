@@ -292,6 +292,9 @@ export const EventForm = ({
       status: "draft" as const,
       registrationType: "none" as const,
       externalUrl: "",
+      externalButtonLabel: "",
+      externalButtonColor: "",
+      externalNotice: "",
       registrationEventForm: {
         fields: [],
       },
