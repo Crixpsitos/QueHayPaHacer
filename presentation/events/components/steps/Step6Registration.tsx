@@ -11,6 +11,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { Switch } from "@/app/components/ui/switch";
 import {
   Tooltip,
@@ -22,6 +23,14 @@ import { useAuth } from "@/app/store/auth/AuthContext";
 import dynamic from "next/dynamic";
 import { DoorOpen, Users, ExternalLink, ClipboardList } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import {
+  DEFAULT_EXTERNAL_BUTTON_LABEL,
+  DEFAULT_EXTERNAL_NOTICE,
+  EXTERNAL_BUTTON_LABEL_MAX,
+  EXTERNAL_NOTICE_MAX,
+  readableTextColor,
+  safeHexColor,
+} from "@/app/lib/events/externalLink";
 
 interface Step6RegistrationProps {
   form: UseFormReturn<FormEventDto>;
@@ -69,6 +78,9 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                   field.onChange(val);
                   if (val !== "external") {
                     form.setValue("externalUrl", "");
+                    form.setValue("externalButtonLabel", "");
+                    form.setValue("externalButtonColor", "");
+                    form.setValue("externalNotice", "");
                     if (!form.getValues("price.isFree")) {
                       form.setValue("price.isFree", true, { shouldValidate: true });
                       form.setValue("price.amount", 0, { shouldValidate: true });
@@ -174,6 +186,7 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                 </Field>
               )}
             />
+            <ExternalLinkCustomization form={form} />
           </div>
         )}
 
@@ -276,6 +289,90 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
         </FieldGroup>
       </div>
 
+    </div>
+  );
+};
+
+/** Texto, color y aviso del enlace externo: el aviso aclara que solo informamos y no somos socios. */
+const ExternalLinkCustomization = ({ form }: { form: UseFormReturn<FormEventDto> }) => {
+  const label = form.watch("externalButtonLabel") ?? "";
+  const notice = form.watch("externalNotice") ?? "";
+  const customColor = safeHexColor(form.watch("externalButtonColor"));
+  const color = customColor ?? "#D42F3C";
+
+  return (
+    <div className="mt-5 space-y-4">
+      <Controller
+        name="externalButtonLabel"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid.toString()}>
+            <FieldLabel className="text-sm font-semibold text-[#09090B] mb-1.5 block">Texto del botón</FieldLabel>
+            <Input
+              placeholder={DEFAULT_EXTERNAL_BUTTON_LABEL}
+              aria-label="Texto del botón de registro externo"
+              maxLength={EXTERNAL_BUTTON_LABEL_MAX}
+              className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
+              {...field}
+              value={field.value ?? ""}
+            />
+            <p className="mt-1 text-xs text-[#71717A]">Ej: &ldquo;Ver en el sitio del organizador&rdquo;. {label.length}/{EXTERNAL_BUTTON_LABEL_MAX}</p>
+            {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
+          </Field>
+        )}
+      />
+
+      <div>
+        <p className="text-sm font-semibold text-[#09090B] mb-1.5">Color del botón</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="color"
+            aria-label="Color del botón de registro externo"
+            value={color}
+            onChange={(e) => form.setValue("externalButtonColor", e.target.value, { shouldValidate: true })}
+            className="h-11 w-14 cursor-pointer rounded-lg border border-[#E4E4E7] bg-white p-1"
+          />
+          <button
+            type="button"
+            onClick={() => form.setValue("externalButtonColor", "", { shouldValidate: true })}
+            disabled={!customColor}
+            className="text-xs font-medium text-[#D42F3C] hover:underline disabled:cursor-not-allowed disabled:text-[#A1A1AA] disabled:no-underline"
+          >
+            Usar el rojo de la marca
+          </button>
+          <span
+            className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+            style={{ backgroundColor: color, color: readableTextColor(color) }}
+          >
+            {label.trim() || DEFAULT_EXTERNAL_BUTTON_LABEL}
+            <ExternalLink className="size-4" aria-hidden="true" />
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-[#71717A]">El texto del botón se ajusta solo (claro u oscuro) para que siempre se lea.</p>
+      </div>
+
+      <Controller
+        name="externalNotice"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid.toString()}>
+            <FieldLabel className="text-sm font-semibold text-[#09090B] mb-1.5 block">Aviso para quien ve el evento</FieldLabel>
+            <Textarea
+              rows={4}
+              maxLength={EXTERNAL_NOTICE_MAX}
+              placeholder={DEFAULT_EXTERNAL_NOTICE}
+              aria-label="Aviso del enlace externo"
+              className="rounded-lg border-[#E4E4E7] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
+              {...field}
+              value={field.value ?? ""}
+            />
+            <p className="mt-1 text-xs text-[#71717A]">
+              Se muestra siempre bajo el botón. Si lo dejas vacío usamos el texto de arriba. {notice.length}/{EXTERNAL_NOTICE_MAX}
+            </p>
+            {fieldState.invalid && <FieldError>{fieldState.error?.message}</FieldError>}
+          </Field>
+        )}
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { EXTERNAL_BUTTON_LABEL_MAX, EXTERNAL_NOTICE_MAX } from "@/app/lib/events/externalLink";
 
 const ImageSchema = v.object({
   url: v.optional(v.pipe(v.string(), v.url("Url de imagen inválida"))),
@@ -185,6 +186,15 @@ const step6Object = v.object({
     "form",
   ] as const),
   externalUrl: v.optional(v.string()),
+  externalButtonLabel: v.optional(
+    v.pipe(v.string(), v.maxLength(EXTERNAL_BUTTON_LABEL_MAX, `Máximo ${EXTERNAL_BUTTON_LABEL_MAX} caracteres.`)),
+  ),
+  externalButtonColor: v.optional(
+    v.union([v.literal(""), v.pipe(v.string(), v.regex(/^#[0-9a-fA-F]{6}$/, "Color inválido."))]),
+  ),
+  externalNotice: v.optional(
+    v.pipe(v.string(), v.maxLength(EXTERNAL_NOTICE_MAX, `Máximo ${EXTERNAL_NOTICE_MAX} caracteres.`)),
+  ),
   capacity: v.optional(v.number()),
   requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(
@@ -445,6 +455,9 @@ export const FormEventSchema = v.object({
     v.picklist(["none", "internal", "external", "form"] as const),
   ),
   externalUrl: v.optional(v.string()),
+  externalButtonLabel: v.optional(v.pipe(v.string(), v.maxLength(EXTERNAL_BUTTON_LABEL_MAX))),
+  externalButtonColor: v.optional(v.pipe(v.string(), v.maxLength(7))),
+  externalNotice: v.optional(v.pipe(v.string(), v.maxLength(EXTERNAL_NOTICE_MAX))),
   capacity: v.optional(v.number()),
   requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(

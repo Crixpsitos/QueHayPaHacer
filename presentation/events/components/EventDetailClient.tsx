@@ -3,7 +3,7 @@
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
 import { useState, lazy, Suspense } from "react";
 import Link from "next/link";
-import { ExternalLink, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
+import { ExternalLink, Info, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";
 import type { EventViewModel } from "../view-models/EventViewModel";
@@ -18,6 +18,12 @@ import { Lightbox, MediaStrip, buildSlides } from "./detail/EventMedia";
 import { EventPlace, type LinkedSiteInfo } from "./detail/EventPlace";
 import { BackLink, EventIntro, EventOrganizer, EventShare } from "./detail/EventSections";
 import { DateBlock, MobileCtaBar, RegisteredChip, Ticket, ctaClass } from "./detail/Ticket";
+import {
+  DEFAULT_EXTERNAL_BUTTON_LABEL,
+  DEFAULT_EXTERNAL_NOTICE,
+  readableTextColor,
+  safeHexColor,
+} from "@/app/lib/events/externalLink";
 import { AttentionRing, Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
@@ -98,9 +104,19 @@ export function EventDetailClient({
     }
   };
 
+  const isExternal = event.registrationType === "external";
+  const buttonColor = isExternal ? safeHexColor(event.externalButtonColor) : undefined;
+  const buttonLabel = (isExternal && event.externalButtonLabel?.trim()) || DEFAULT_EXTERNAL_BUTTON_LABEL;
+
   const ctaButton = (
-    <button type="button" onClick={register} disabled={!ready} className={cn(ctaClass, "disabled:opacity-60")}>
-      Inscribirme
+    <button
+      type="button"
+      onClick={register}
+      disabled={!ready}
+      className={cn(ctaClass, "disabled:opacity-60")}
+      style={buttonColor ? { backgroundColor: buttonColor, color: readableTextColor(buttonColor) } : undefined}
+    >
+      {buttonLabel}
       {event.registrationType === "external" && <ExternalLink className="size-4" aria-hidden="true" />}
     </button>
   );
@@ -159,8 +175,11 @@ export function EventDetailClient({
     action = (
       <div className="space-y-2">
         <AttentionRing>{ctaButton}</AttentionRing>
-        {event.registrationType === "external" && event.externalUrl && (
-          <p className="text-center text-xs text-[#71717A]">Te llevamos al sitio del organizador para completar la inscripción.</p>
+        {isExternal && event.externalUrl && (
+          <div className="flex gap-2 rounded-xl bg-[#F4F4F5] p-3 text-xs leading-relaxed text-[#3F3F46]">
+            <Info className="mt-0.5 size-4 shrink-0 text-[#71717A]" aria-hidden="true" />
+            <p>{event.externalNotice?.trim() || DEFAULT_EXTERNAL_NOTICE}</p>
+          </div>
         )}
       </div>
     );
