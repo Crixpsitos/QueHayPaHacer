@@ -66,3 +66,8 @@ export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: 
     about: { "@type": "Thing", name: event.categoryInfo.title },
   };
 }
+
+/** Texto listo para `dangerouslySetInnerHTML` de un `<script type="application/ld+json">`: `<` escapado para que un título no cierre el script. */
+export function eventJsonLdHtml(event: EventViewModel, opts: { attendeeCount?: number } = {}): string {
+  return JSON.stringify(buildEventJsonLd(event, opts)).replace(/</g, "\\u003c");
+}

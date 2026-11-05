@@ -5,6 +5,7 @@ import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import { eventJsonLdHtml } from "../lib/eventJsonLd";
 import { ViewItem } from "@/app/components/analytics/ViewItem";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
@@ -43,6 +44,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
     return (
       <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel) }} />
         <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
         <MultiDateEventDetailClient event={viewModel} sessions={sessionVMs} />
       </>
@@ -63,6 +65,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel) }} />
       <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
       <EventDetailClient event={viewModel} linkedSite={linkedSite} />
     </>
