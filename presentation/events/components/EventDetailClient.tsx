@@ -29,6 +29,7 @@ import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
 import { useEventViewer } from "../hooks/useEventViewer";
 import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
+import { analytics as ga } from "@/app/lib/analytics";
 
 // Lazy — solo se carga si el usuario abre el modal
 const EventRegistrationModal = lazy(() =>
@@ -230,6 +231,7 @@ export function EventDetailClient({
                 ...(formData ? { formData: formData as Record<string, string | string[] | number | boolean | null | Record<string, unknown>> } : {}),
               });
               void invalidateMyData();
+              if (result.success) ga.track("register_event", { item_type: "event", item_id: event.id });
               if (result.success || result.alreadyRegistered) setIsRegistered(true);
               return result;
             }}

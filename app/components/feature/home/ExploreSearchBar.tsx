@@ -9,6 +9,7 @@ import { Calendar } from "@/app/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils/cn";
+import { analytics as ga } from "@/app/lib/analytics";
 import { CalendarIcon, Search, X, Sparkles, CalendarDays, DollarSign, Tag } from "lucide-react";
 
 interface ExploreSearchBarProps {
@@ -108,9 +109,10 @@ export function ExploreSearchBar({
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       e?.preventDefault();
+      ga.track("search", { method: query.trim() ? "text" : "filters" }); // solo que se buscó, nunca el texto
       navigateWith({});
     },
-    [navigateWith],
+    [navigateWith, query],
   );
 
   const dateLabel = (() => {

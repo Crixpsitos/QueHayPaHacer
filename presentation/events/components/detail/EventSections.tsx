@@ -10,6 +10,7 @@ import { SITE_URL } from "@/app/lib/site";
 import type { EventViewModel } from "../../view-models/EventViewModel";
 import { EventDetailActions } from "../EventDetailActions";
 import { EventCollaboratorsDialog } from "../EventCollaboratorsDialog";
+import { analytics as ga } from "@/app/lib/analytics";
 
 export function BackLink({ href, label }: { href: string; label: string }) {
   return (
@@ -100,7 +101,8 @@ export function EventShare({ event, path, sessionId }: { event: EventViewModel; 
         url={`${SITE_URL}${path}`}
         title={event.title}
         className="[&>p]:hidden"
-        onShare={() => {
+        onShare={(method) => {
+          ga.track("share", { item_type: "event", item_id: event.id, method });
           void shareEventAction(event.id, sessionId);
         }}
       />

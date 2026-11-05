@@ -52,7 +52,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
   - Acceptance: cada acción emite 1 evento con params permitidos; sin uid/email.
   - Verify: tests de los helpers de eventos; manual con DebugView.
   - Files (≤5): `BookingButton.tsx`, `SiteDetailContainer.tsx`, detalle de evento, helper de `view_item`.
-- [ ] **T5b Compartir, like, inscripción, búsqueda (M)** — `share` (`SocialShareBar`, `FeaturedEventCard`, `ShareProfileButton`, con `method`), `like` (`EventDetailActions`), `register_event`, `search`/filtros (solo categoría/tipo, nunca el texto libre).
+- [x] **T5b Compartir, like, inscripción, búsqueda (M)** — `share` (`SocialShareBar`, `FeaturedEventCard`, `ShareProfileButton`, con `method`), `like` (`EventDetailActions`), `register_event`, `search`/filtros (solo categoría/tipo, nunca el texto libre).
   - Acceptance: igual que T5a; el texto de búsqueda NO se envía.
   - Verify: tests + manual.
   - Files (≤5): los componentes de arriba (dependencia: T5a).
