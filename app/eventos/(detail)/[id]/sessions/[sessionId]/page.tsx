@@ -17,6 +17,8 @@ export async function generateMetadata({ params }: SessionDetailPageProps): Prom
   const sessions = await fetchEventSessions(parent.id);
   const session = sessions.find((s) => s.slug === sessionId) ?? sessions.find((s) => s.id === sessionId);
   if (!session || session.status !== "published") return { robots: { index: false, follow: false } };
+  // Fechas terminadas hace más de 90 días: no aportan (y salen del sitemap con el mismo corte).
+  if (session.endDate.getTime() < Date.now() - 90 * 24 * 60 * 60 * 1000) return { robots: { index: false, follow: true } };
 
   const url = `/eventos/${parent.slug || parent.id}/sessions/${session.slug || session.id}`;
   const title = session.title || parent.title;

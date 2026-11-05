@@ -14,3 +14,8 @@ export function bogotaDayLabel(now: Date): string {
     .format(now)
     .replace(/^(\p{L}+),? (\d+) de /u, "$1 $2 de ");
 }
+
+/** ¿[start, end] cruza la ventana [from, to]? (inclusive). */
+export function overlapsWindow(start: Date, end: Date, from: Date, to: Date): boolean {
+  return end.getTime() >= from.getTime() && start.getTime() <= to.getTime();
+}
