@@ -15,7 +15,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
   - Acceptance: rutas privadas → false; `/eventos/abc`, `/donde-ir/x`, `/`, landings → true; params con `uid`/`email` se eliminan.
   - Verify: `pnpm test` (rojo primero, luego verde).
   - Files: `app/lib/analytics/events.ts`, `events.test.ts`.
-- [ ] **T2 Cliente de analytics (M)** — `app/lib/analytics/client.ts`: init diferido (import dinámico, `isSupported()`), `track()`, `setLoginState()`, `setConsent()`; no-op si SSR, sin ID, bloqueado o sin soporte; todo en try/catch.
+- [x] **T2 Cliente de analytics (M)** — `app/lib/analytics/client.ts`: init diferido (import dinámico, `isSupported()`), `track()`, `setLoginState()`, `setConsent()`; no-op si SSR, sin ID, bloqueado o sin soporte; todo en try/catch.
   - Acceptance: sin `measurementId` no lanza ni importa el SDK; con fake de analytics llama a `logEvent` con params saneados.
   - Verify: `pnpm test` con SDK simulado; `pnpm typecheck`.
   - Files: `client.ts`, `client.test.ts` (dependencia: T0, T1).
