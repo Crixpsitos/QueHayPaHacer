@@ -140,6 +140,10 @@ export class EventsService {
     return this.eventsRepository.findWeekendEvents();
   }
 
+  async getTodayEvents(from: Date, to: Date): Promise<string[]> {
+    return this.eventsRepository.findTodayEvents(from, to);
+  }
+
   async getEventById(id: string): Promise<Events | null> {
     return this.eventsRepository.findById(id);
   }

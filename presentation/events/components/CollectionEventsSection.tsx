@@ -5,7 +5,7 @@ import { InfiniteEventList } from "@/presentation/events/components/InfiniteEven
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { getEventCollections, type CollectionDef } from "@/presentation/events/lib/eventCollections";
 import { groupEventsByCategory } from "@/presentation/events/lib/groupEventsByCategory";
-import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
+import { fetchCollectionEvents, fetchTodayEvents } from "@/presentation/events/data/collectionFetchers";
 import { getAllEventsPage } from "@/presentation/events/data/allEventsPage";
 import { getCategoryEventsPage } from "@/presentation/events/data/categoryEventsPage";
 import { SITE_URL } from "@/app/lib/site";
@@ -72,6 +72,29 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
           initialLikedByEventId={{}}
         />
       </Section>
+    );
+  }
+
+  // Hoy: lista plana por relevancia; sin eventos hoy, los próximos con aviso honesto.
+  if (def.kind === "today") {
+    const { events, fallback } = await fetchTodayEvents();
+    if (events.length === 0) {
+      return (
+        <Section spacing="sm" className="mt-4">
+          <EventCardInteractive events={[]} info={EMPTY_INFO} variant="vertical" />
+        </Section>
+      );
+    }
+    return (
+      <>
+        <ItemListJsonLd events={events} />
+        <ContentSection
+          title={fallback ? "Hoy no hay eventos publicados. Estos son los próximos" : "Eventos de hoy"}
+          action={fallback ? undefined : { href: "/eventos-este-fin-de-semana-ibague", label: "Este fin de semana" }}
+        >
+          <EventCardInteractive events={events.map((e) => EventViewModelMapper.toViewModel(e))} info={EMPTY_INFO} variant="vertical" />
+        </ContentSection>
+      </>
     );
   }
 

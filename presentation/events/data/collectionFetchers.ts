@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { fetchEventDetailById } from "./eventDetailFetchers";
+import { bogotaDayLabel, bogotaDayRange } from "../lib/bogotaDay";
 import type { CollectionDef } from "../lib/eventCollections";
 import type { Events } from "@/domain/entities/events/Events";
 
@@ -39,4 +40,33 @@ export async function fetchCollectionEvents(def: CollectionDef): Promise<Events[
   );
   const events = await Promise.all(ids.map(fetchEventDetailById));
   return events.filter((e): e is Events => Boolean(e));
+}
+
+/**
+ * "Hoy" (hora de Bogotá). Caché corta: la lista cambia durante el día y al pasar la medianoche.
+ * Sin eventos hoy cae a los próximos para que la página nunca quede vacía (`fallback: true`).
+ */
+const fetchTodayEventIds = async (): Promise<{ ids: string[]; fallback: boolean }> => {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("event-list", "collection-today");
+
+  const { eventFeed } = createServerContainer();
+  const now = new Date();
+  const today = await eventFeed.getToday(now, bogotaDayRange(now).end);
+  if (today.length > 0) return { ids: today, fallback: false };
+  return { ids: await eventFeed.getAll(), fallback: true };
+};
+
+export async function fetchTodayEvents(): Promise<{ events: Events[]; fallback: boolean }> {
+  const { ids, fallback } = await fetchTodayEventIds();
+  const events = await Promise.all(ids.map(fetchEventDetailById));
+  return { events: events.filter((e): e is Events => Boolean(e)), fallback };
+}
+
+/** "domingo 8 de noviembre" para el subtítulo de la landing de hoy (caché corta). */
+export async function fetchTodayLabel(): Promise<string> {
+  "use cache";
+  cacheLife("minutes");
+  return bogotaDayLabel(new Date());
 }

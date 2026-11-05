@@ -10,6 +10,8 @@ export interface PaginatedEventIds {
 export interface IEventsRepository extends IBaseRepository<Events>{
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
+    /** Ids de eventos publicados que siguen vigentes en [from, to] (hoy, en hora de Bogotá, lo decide quien llama). */
+    findTodayEvents(from: Date, to: Date): Promise<string[]>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
     /** Paginación por cursor de una categoría. Acepta docId y slug (algunos eventos
      *  fueron seeded con categoryInfo.id = slug). orderBy score + tiebreaker documentId. */

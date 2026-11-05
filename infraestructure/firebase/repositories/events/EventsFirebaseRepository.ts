@@ -152,6 +152,20 @@ export class EventsFirebaseRepository
     return snapshot.docs.map((doc) => doc.id);
   }
 
+  /** Mismo índice y forma que `findWeekendEvents`: solapa [from, to] y sigue vigente. */
+  async findTodayEvents(from: Date, to: Date): Promise<string[]> {
+    const snapshot = await this.collection
+      .where("status", "==", "published")
+      .where("endDate", ">=", from)
+      .where("startDate", "<=", to)
+      .orderBy("analytics.score", "desc")
+      .limit(50)
+      .select()
+      .get();
+
+    return snapshot.docs.map((doc) => doc.id);
+  }
+
   async incrementLikes(eventId: string, delta: number): Promise<void> {
     await this.collection.doc(eventId).update({
       "analytics.likes": FieldValue.increment(delta),

@@ -47,6 +47,9 @@ export class EventsAdapter implements IEventsRepository {
   async findWeekendEvents(): Promise<string[]> {
     return await this.repository.findWeekendEvents();
   }
+  async findTodayEvents(from: Date, to: Date): Promise<string[]> {
+    return await this.repository.findTodayEvents(from, to);
+  }
   async incrementLikes(eventId: string, delta: number): Promise<void> {
     await this.repository.incrementLikes(eventId, delta);
   }
