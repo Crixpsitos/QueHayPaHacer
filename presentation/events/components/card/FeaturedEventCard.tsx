@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Calendar, MapPin, Heart, Share2, Layers } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
+import { analytics as ga } from "@/app/lib/analytics";
 import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { setLikedId } from "@/app/lib/clientCache/likedIds";
@@ -29,7 +30,10 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
     if (!user) return false;
     try {
       const res = await likeEventAction(event.id, next);
-      if (res?.success) setLikedId("events", user.uid, event.id, next);
+      if (res?.success) {
+        setLikedId("events", user.uid, event.id, next);
+        if (next) ga.track("like", { item_type: "event", item_id: event.id });
+      }
       return Boolean(res?.success);
     } catch {
       return false;
@@ -43,11 +47,14 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
 
   const handleShare = useCallback(async () => {
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug || event.id}`;
+    let method = "native";
     try {
       await navigator.share({ title: event.title, url });
     } catch {
       await navigator.clipboard.writeText(url);
+      method = "copy";
     }
+    ga.track("share", { item_type: "event", item_id: event.id, method });
     void shareEventAction(event.id);
   }, [event]);
 
