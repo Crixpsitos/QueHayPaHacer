@@ -69,7 +69,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
 - [ ] **T6c (AUTORIZADO, pero SIN subir costos; confirmar el valor con el usuario antes de aplicar)** — `maxInstances` es solo un techo; NO tocar `minInstances` (sigue 0). Fijar `maxInstances` en `apphosting.production.yaml` y alerta de solicitudes/presupuesto; runbook.
 
 ## Fase 5 — Documentación y revisión
-- [ ] **T7 Guía del dueño (S)** — `docs/` (y runbook): cómo registrar la dimensión personalizada `login_state`, reportes útiles (canal, red social, páginas, eventos), plantilla de enlaces con UTM por red (Facebook, Instagram, TikTok, WhatsApp, QR), límites de GA4 (subestima).
+- [x] **T7 Guía del dueño (S)** — `docs/` (y runbook): cómo registrar la dimensión personalizada `login_state`, reportes útiles (canal, red social, páginas, eventos), plantilla de enlaces con UTM por red (Facebook, Instagram, TikTok, WhatsApp, QR), límites de GA4 (subestima).
 - [ ] **T8 Revisión (M)** — `agent-skills:code-reviewer` y `security-auditor` con el diff (sin darles mis conclusiones), `web-performance-auditor`/Lighthouse antes y después (LCP/TBT no deben empeorar), `pnpm typecheck && test && lint && build`. Corregir hallazgos.
 
 ## Fase 6 — Ship
