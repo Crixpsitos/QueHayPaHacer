@@ -16,7 +16,7 @@ export interface IEventsRepository extends IBaseRepository<Events>{
     /** Paginación por cursor de una categoría. Acepta docId y slug (algunos eventos
      *  fueron seeded con categoryInfo.id = slug). orderBy score + tiebreaker documentId. */
     findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
-    findSitemapEntries(limit: number): Promise<{ id: string; slug: string; updatedAt: Date | null }[]>;
+    findSitemapEntries(limit: number): Promise<{ id: string; slug: string; eventType: string; updatedAt: Date | null }[]>;
   findAllPublished(): Promise<string[]>;
     /** "Todos los eventos": próximos (endDate >= ahora) por score desc, desempate por id. Cursor opaco. */
     findAllPaginated(limit: number, cursor: string | null): Promise<PaginatedEventIds>;

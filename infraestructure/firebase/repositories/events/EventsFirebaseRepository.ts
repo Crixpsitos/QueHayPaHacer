@@ -281,13 +281,15 @@ export class EventsFirebaseRepository
   async findSitemapEntries(limit: number) {
     const snapshot = await this.collection
       .where("status", "==", "published")
-      .where("endDate", ">=", new Date())
-      .select("slug", "updatedAt")
+      // Terminados hace menos de 90 días siguen en el sitemap: conservan búsquedas ("candlelight ibagué").
+      .where("endDate", ">=", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000))
+      .select("slug", "updatedAt", "eventType")
       .limit(limit)
       .get();
     return snapshot.docs.map((d) => ({
       id: d.id,
       slug: (d.get("slug") as string | undefined) ?? "",
+      eventType: (d.get("eventType") as string | undefined) ?? "single",
       updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
     }));
   }
