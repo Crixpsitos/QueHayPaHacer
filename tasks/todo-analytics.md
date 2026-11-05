@@ -70,7 +70,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
 
 ## Fase 5 — Documentación y revisión
 - [x] **T7 Guía del dueño (S)** — `docs/` (y runbook): cómo registrar la dimensión personalizada `login_state`, reportes útiles (canal, red social, páginas, eventos), plantilla de enlaces con UTM por red (Facebook, Instagram, TikTok, WhatsApp, QR), límites de GA4 (subestima).
-- [ ] **T8 Revisión (M)** — `agent-skills:code-reviewer` y `security-auditor` con el diff (sin darles mis conclusiones), `web-performance-auditor`/Lighthouse antes y después (LCP/TBT no deben empeorar), `pnpm typecheck && test && lint && build`. Corregir hallazgos.
+- [x] **T8 Revisión (M)** (HECHO 2026-11-05: code-reviewer + security-auditor; corregido: perfiles no se miden, cuerpo leído en streaming con tope en bytes, aviso de log del tope global, compartir cancelado no cuenta, `seen` solo si el evento estaba publicado, política dice qué pasa sin decidir. PENDIENTE de decisión del usuario: IP falsificable por X-Forwarded-For + `maxInstances`.) — `agent-skills:code-reviewer` y `security-auditor` con el diff (sin darles mis conclusiones), `web-performance-auditor`/Lighthouse antes y después (LCP/TBT no deben empeorar), `pnpm typecheck && test && lint && build`. Corregir hallazgos.
 
 ## Fase 6 — Ship
 - [ ] **T9 Producción (S) — solo con orden explícita** — merge `--no-ff` a `main` desde worktree temporal, push, rollout de App Hosting por REST, verificar con el ID real (`G-H2HVSKEBNZ` vía secreto) en Tiempo real de GA4, plan de reversa (`git revert -m 1`). Sin tocar functions.

@@ -11,12 +11,12 @@ export type AnalyticsEventName =
   | "register_event"
   | "search";
 
-// Mismas rutas privadas que proxy.ts (+ estudio, API y herramientas internas).
-const PRIVATE_PREFIXES = ["/studio", "/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/api", "/dev", "/reset-password"];
+// Mismas rutas privadas que proxy.ts (+ estudio, API y herramientas internas). Los perfiles (también los públicos) no se
+// miden: su URL y su título llevan el nombre de una persona.
+const PRIVATE_PREFIXES = ["/profile", "/studio", "/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/api", "/dev", "/reset-password"];
 const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
 
 export function isTrackablePath(pathname: string): boolean {
-  if (pathname === "/profile") return false; // /profile/<usuario> es público
   if (PRIVATE_EVENT_PATH.test(pathname)) return false;
   return !PRIVATE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }

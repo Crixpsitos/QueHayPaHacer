@@ -42,3 +42,39 @@ test("readBoundedJson rechaza cuerpos grandes, no-JSON y tipos de contenido ajen
   assert.equal(await readBoundedJson(post("no es json"), 1024), null)
   assert.equal(await readBoundedJson(post('{"type":"view"}', "text/plain"), 1024), null)
 })
+
+test("readBoundedJson corta la lectura de un cuerpo en streaming sin Content-Length", async () => {
+  let pulled = 0
+  const stream = new ReadableStream({
+    pull(controller) {
+      pulled++
+      if (pulled > 50) return controller.close()
+      controller.enqueue(new TextEncoder().encode("a".repeat(512)))
+    },
+  })
+  const req = new Request("https://qhpa.test/x", {
+    method: "POST",
+    body: stream,
+    headers: { "content-type": "application/json" },
+    // @ts-expect-error duplex es obligatorio en Node para cuerpos en stream
+    duplex: "half",
+  })
+  assert.equal(await readBoundedJson(req, 1024), null)
+  assert.ok(pulled < 10, `leyó ${pulled} trozos: debió abortar al pasar 1 KB`)
+})
+
+test("readBoundedJson cuenta bytes, no caracteres", async () => {
+  const body = JSON.stringify({ x: "ñ".repeat(600) }) // ~1.2 KB en bytes, ~620 caracteres
+  assert.equal(await readBoundedJson(post(body), 1024), null)
+})
+
+test("tope global: avisa UNA vez por ventana al activarse", () => {
+  let now = 1_000_000
+  let trips = 0
+  const allowed = createGlobalLimiter(2, () => now, () => trips++)
+  for (let i = 0; i < 5; i++) allowed()
+  assert.equal(trips, 1)
+  now += 61_000
+  for (let i = 0; i < 3; i++) allowed()
+  assert.equal(trips, 2, "otra ventana, otro aviso")
+})

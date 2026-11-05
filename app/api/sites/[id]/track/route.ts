@@ -7,7 +7,7 @@ import { clientIp, createIpLimiter } from "@/app/api/_lib/ipRateLimit"
 import { createGlobalLimiter, isSameOriginBeacon, readBoundedJson } from "@/app/api/_lib/beaconGuard"
 
 const allowed = createIpLimiter(60)
-const globalAllowed = createGlobalLimiter(600)
+const globalAllowed = createGlobalLimiter(600, undefined, () => console.warn("[beacon-sites] tope global por minuto superado: se descartan conteos"))
 const MAX_BODY = 1024
 const DROPPED = () => new NextResponse(null, { status: 204 }) // lo descartado no se distingue de lo aceptado
 

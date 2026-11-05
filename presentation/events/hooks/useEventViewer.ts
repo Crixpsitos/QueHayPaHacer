@@ -43,7 +43,7 @@ export function useEventViewer(eventId: string, sessionId?: string): EventViewer
     fetch(`/api/events/${encodeURIComponent(eventId)}/viewer${qs}`, { cache: "no-store", signal: controller.signal })
       .then((r) => (r.ok ? (r.json() as Promise<ViewerPayload>) : Promise.reject(new Error(String(r.status)))))
       .then((viewer) => {
-        markEventSeen(uid, eventId);
+        if ("liked" in viewer) markEventSeen(uid, eventId); // sin `liked` el evento no estaba publicado: no se registró vista
         if (!sessionId) saveFreshLikes("events", uid, [eventId], { [eventId]: viewer.liked });
         setData({ key, viewer });
       })

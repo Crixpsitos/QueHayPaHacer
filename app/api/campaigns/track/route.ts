@@ -11,7 +11,7 @@ const Body = v.object({
 });
 
 const allowed = createIpLimiter(60);
-const globalAllowed = createGlobalLimiter(600);
+const globalAllowed = createGlobalLimiter(600, undefined, () => console.warn("[beacon-campaigns] tope global por minuto superado: se descartan conteos"));
 
 /**
  * Cuenta vistas y clics de un banner (para anunciantes). Público: lo llama el navegador con sendBeacon.

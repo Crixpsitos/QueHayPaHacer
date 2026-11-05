@@ -48,13 +48,15 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
   const handleShare = useCallback(async () => {
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}/eventos/${event.slug || event.id}`;
     let method = "native";
+    let cancelled = false;
     try {
       await navigator.share({ title: event.title, url });
-    } catch {
+    } catch (e) {
+      cancelled = (e as Error)?.name === "AbortError"; // cerró el menú de compartir: no es un compartir
       await navigator.clipboard.writeText(url);
       method = "copy";
     }
-    ga.track("share", { item_type: "event", item_id: event.id, method });
+    if (!cancelled) ga.track("share", { item_type: "event", item_id: event.id, method });
     void shareEventAction(event.id);
   }, [event]);
 

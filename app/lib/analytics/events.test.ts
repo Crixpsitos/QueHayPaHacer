@@ -5,7 +5,7 @@ import { cleanLocation, isTrackablePath, sanitizeParams, siteClickEvent } from "
 test("mide páginas públicas", () => {
   for (const path of [
     "/", "/eventos", "/eventos/abc", "/eventos/abc/sessions/s1", "/donde-ir/x", "/eventos-musica-ibague",
-    "/explorar", "/privacidad", "/profile/handle", "/login", "/register",
+    "/explorar", "/privacidad", "/login", "/register",
   ]) {
     assert.equal(isTrackablePath(path), true, path)
   }
@@ -14,7 +14,7 @@ test("mide páginas públicas", () => {
 test("no mide rutas privadas ni internas", () => {
   for (const path of [
     "/studio", "/studio/events/1", "/mis-eventos", "/mis-inscripciones", "/mis-invitaciones/3",
-    "/profile", "/sites", "/sites/1/edit", "/eventos/create", "/eventos/abc/edit", "/eventos/abc/edit/media",
+    "/profile", "/profile/handle", "/sites", "/sites/1/edit", "/eventos/create", "/eventos/abc/edit", "/eventos/abc/edit/media",
     "/eventos/abc/sessions", "/eventos/abc/sessions/", "/api/auth/me", "/dev", "/reset-password",
   ]) {
     assert.equal(isTrackablePath(path), false, path)

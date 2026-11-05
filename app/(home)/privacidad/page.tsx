@@ -111,7 +111,7 @@ export default function PrivacidadPage() {
         </p>
         <p>
           Si rechazas, no se guardan cookies de analítica y a Google solo se le envía un conteo básico de la visita, sin
-          cookies. Firebase puede guardar en tu navegador un identificador técnico de instalación. Puedes cambiar tu
+          cookies. Mientras no elijas, se aplica lo mismo que si rechazaras. Firebase puede guardar en tu navegador un identificador técnico de instalación. Puedes cambiar tu
           decisión cuando quieras en «Preferencias de cookies», en el pie de página.
         </p>
         <p>No usamos cookies de publicidad ni personalizamos anuncios.</p>
