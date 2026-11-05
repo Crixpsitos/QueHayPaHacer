@@ -6,6 +6,7 @@ import { EventForm } from "./EventForm";
 import { EventTypeSelector } from "./EventTypeSelector";
 import { createDraftEventAction } from "@/app/actions/events/create-draft-event.action";
 import { updateEventAction } from "@/app/actions/events/update-event.action";
+import { editOutcome } from "../../lib/editOutcome";
 import { migrateEventTypeAction } from "@/app/actions/events/migrate-event-type.action";
 import { notify } from "@/presentation/shared/lib/notify";
 import { Events } from "@/domain/entities/events/Events";
@@ -190,10 +191,11 @@ export const EventClientWrapper = ({
       const cleanDraft: FormEventDto = JSON.parse(JSON.stringify(eventDraft));
       const { id, ...draftData } = cleanDraft;
 
-      const result: { success?: boolean; error?: string; eventInfo?: Events } =
-        id
-          ? await updateEventAction(id, draftData)
-          : await createDraftEventAction(draftData);
+      // ponytail: `eventInfo` de createDraft es un EventViewModel que aquí se trata como Events (ya era así: TS lo ocultaba al
+      // reducir la unión); solo se usa su `id`. Unificar tipos si algún día se lee más de ese campo.
+      const result = (id
+        ? await updateEventAction(id, draftData)
+        : await createDraftEventAction(draftData)) as { success?: boolean; error?: string; eventInfo?: Events };
       void invalidateMyData();
 
       if (result.success) {
@@ -207,6 +209,27 @@ export const EventClientWrapper = ({
     [],
   );
 
+  // ── handleSaveChanges ─────────────────────────────────────────────────────
+  // "Guardar cambios" del encabezado en un evento ya publicado: guarda y se queda editando, salvo que la edición lo
+  // devuelva a validación (entonces avisa y lleva a Mis eventos, igual que "Actualizar evento").
+  const handleSaveChanges = useCallback(
+    async (eventDraft: FormEventDto): Promise<void> => {
+      const { id, ...data } = JSON.parse(JSON.stringify(eventDraft)) as FormEventDto;
+      if (!id) throw new Error("Falta el id del evento.");
+      const result = await updateEventAction(id, data);
+      void invalidateMyData();
+      if (!result.success) {
+        const message = result.error ?? "Error al guardar los cambios.";
+        notify.error(message);
+        throw new Error(message);
+      }
+      const outcome = editOutcome(result.status);
+      notify.success(outcome.message);
+      if (outcome.goTo === "my-events") startTransition(() => router.push("/mis-eventos"));
+    },
+    [router],
+  );
+
   const handlePublishSubmit = useCallback(
     async (eventDraft: FormEventDto, declaration: boolean): Promise<void> => {
       try {
@@ -216,7 +239,7 @@ export const EventClientWrapper = ({
 
         if (result.success) {
           if (result.status === "pending") {
-            notify.success("Evento enviado a validación.");
+            notify.success(mode === "edit" ? editOutcome("pending").message : "Evento enviado a validación.");
             startTransition(() => router.push("/mis-eventos"));
           } else {
             // La auditoría posterior es un proceso interno: el dueño no necesita verla.
@@ -290,6 +313,7 @@ export const EventClientWrapper = ({
         initialStep={initialStep}
         onPublish={handlePublishSubmit}
         onSaveDraft={handleDraftSubmit}
+        onSaveChanges={handleSaveChanges}
         onToggleEventType={handleToggleEventType}
         isMigratingEventType={isMigrating}
       />

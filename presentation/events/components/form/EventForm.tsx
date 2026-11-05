@@ -155,6 +155,8 @@ interface EventFormProps {
   initialStep?: number;
   onPublish: (data: FormEventDto, declaration: boolean) => Promise<void>;
   onSaveDraft: (data: FormEventDto) => Promise<Events | null>;
+  /** "Guardar cambios" de un evento ya publicado (guarda y avisa si volvió a validación). */
+  onSaveChanges: (data: FormEventDto) => Promise<void>;
   /** Si se provee, el toggle “Varias fechas” llama este handler en lugar de hacer router.push directo. */
   onToggleEventType?: (formId?: string, formSnapshot?: FormEventDto) => void;
   /** Bloquea el toggle mientras el padre está ejecutando una migración. */
@@ -168,6 +170,7 @@ export const EventForm = ({
   initialStep,
   onPublish,
   onSaveDraft,
+  onSaveChanges,
   onToggleEventType,
   isMigratingEventType = false,
 }: EventFormProps) => {
@@ -466,6 +469,19 @@ export const EventForm = ({
     }
   }, [form, onSaveDraft, eventType]);
 
+  const handleSaveChanges = useCallback(async () => {
+    try {
+      setIsSubmitting(true);
+      await onSaveChanges({
+        ...form.getValues(),
+        description: JSON.parse(JSON.stringify(form.getValues("description"))),
+        eventType: eventType,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [form, onSaveChanges, eventType]);
+
   // router.back() puede devolver a la misma ruta u otra inesperada; push a "/" es predecible.
   const navigateAway = useCallback(() => {
     router.push("/");
@@ -719,14 +735,14 @@ export const EventForm = ({
               size="sm"
               disabled={isSubmitting}
               onClick={() =>
-                notify.promise(handleDraftSubmit(), {
-                  loading: "Guardando...",
-                  success: () =>
-                    mode === "edit" && status === "published"
-                      ? "Cambios guardados."
-                      : "Borrador guardado.",
-                  error: "Error al guardar",
-                })
+                mode === "edit" && status === "published"
+                  ? // El mensaje (guardado o "enviado a validación") lo muestra onSaveChanges: depende de la respuesta del servidor.
+                    void handleSaveChanges().catch(() => {})
+                  : notify.promise(handleDraftSubmit(), {
+                      loading: "Guardando...",
+                      success: () => "Borrador guardado.",
+                      error: "Error al guardar",
+                    })
               }
               className="border-[#E4E4E7] text-[#09090B] hover:bg-[#FAFAFC] rounded-lg text-sm"
             >
