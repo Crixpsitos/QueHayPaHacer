@@ -36,6 +36,8 @@ function contentFields(data: SiteInput) {
     bookingUrl: data.bookingUrl,
     // undefined = no tocar (merge); null = quitar el bloque
     ...(data.transit !== undefined ? { transit: data.transit } : {}),
+    // undefined = no tocar: el formulario actual no conoce las secciones y no debe borrarlas
+    ...(data.sections !== undefined ? { sections: data.sections } : {}),
     // publishedAs/verification NO se editan: respaldan la declaración ya registrada.
     kind: data.kind,
   }
