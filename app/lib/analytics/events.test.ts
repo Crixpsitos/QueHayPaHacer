@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { cleanLocation, isTrackablePath, sanitizeParams } from "./events"
+import { cleanLocation, isTrackablePath, sanitizeParams, siteClickEvent } from "./events"
 
 test("mide páginas públicas", () => {
   for (const path of [
@@ -49,4 +49,34 @@ test("cleanLocation conserva solo UTM y click ids, sin hash", () => {
 
 test("cleanLocation sin query útil devuelve solo la ruta", () => {
   assert.equal(cleanLocation("https://qhpa.test/login?redirect_to=%2Fstudio"), "https://qhpa.test/login")
+})
+
+test("siteClickEvent: cómo llegar y transporte", () => {
+  for (const type of ["directions", "transit"]) {
+    assert.deepEqual(siteClickEvent("s1", type, "https://www.google.com/maps/search/?api=1&query=1,2"), {
+      name: "click_como_llegar",
+      params: { item_type: "site", item_id: "s1", destination: type },
+    })
+  }
+})
+
+test("siteClickEvent: enlaces de WhatsApp (reserva, social o llamada) cuentan como click_whatsapp", () => {
+  for (const href of ["https://wa.me/573001234567", "https://api.whatsapp.com/send?text=hola", "https://chat.whatsapp.com/abc"]) {
+    assert.equal(siteClickEvent("s1", "booking", href)?.name, "click_whatsapp", href)
+  }
+})
+
+test("siteClickEvent: otras salidas son click_out con su destino", () => {
+  assert.deepEqual(siteClickEvent("s1", "website", "https://ejemplo.co"), {
+    name: "click_out",
+    params: { item_type: "site", item_id: "s1", destination: "website" },
+  })
+  assert.equal(siteClickEvent("s1", "booking", "https://ejemplo.co/reservas")?.name, "click_out")
+  assert.equal(siteClickEvent("s1", "call", "tel:+573001234567")?.name, "click_out")
+})
+
+test("siteClickEvent: share va como share; view o tipos desconocidos no generan evento", () => {
+  assert.deepEqual(siteClickEvent("s1", "share"), { name: "share", params: { item_type: "site", item_id: "s1" } })
+  assert.equal(siteClickEvent("s1", "view"), null)
+  assert.equal(siteClickEvent("s1", "hack"), null)
 })

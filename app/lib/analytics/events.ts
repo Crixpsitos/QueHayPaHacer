@@ -5,6 +5,7 @@ export type AnalyticsEventName =
   | "view_item"
   | "click_whatsapp"
   | "click_como_llegar"
+  | "click_out"
   | "share"
   | "like"
   | "register_event"
@@ -46,4 +47,38 @@ export function cleanLocation(href: string): string {
   }
   const query = kept.toString();
   return `${url.origin}${url.pathname}${query ? `?${query}` : ""}`;
+}
+
+const isWhatsAppHref = (href: string | undefined): boolean => {
+  try {
+    const { hostname } = new URL(href ?? "");
+    return hostname === "wa.me" || hostname === "whatsapp.com" || hostname.endsWith(".whatsapp.com");
+  } catch {
+    return false;
+  }
+};
+
+/** Traduce un clic medido en la ficha de un sitio (`data-site-track`) al evento de Analytics; null = no se manda nada. */
+export function siteClickEvent(
+  siteId: string,
+  type: string,
+  href?: string,
+): { name: AnalyticsEventName; params: Record<string, string> } | null {
+  const base = { item_type: "site", item_id: siteId };
+  switch (type) {
+    case "directions":
+    case "transit":
+      return { name: "click_como_llegar", params: { ...base, destination: type } };
+    case "booking":
+    case "website":
+    case "social":
+    case "call":
+      return isWhatsAppHref(href)
+        ? { name: "click_whatsapp", params: { ...base, destination: type } }
+        : { name: "click_out", params: { ...base, destination: type } };
+    case "share":
+      return { name: "share", params: base };
+    default:
+      return null;
+  }
 }

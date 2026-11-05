@@ -3,6 +3,8 @@
 import { useEffect, type ReactNode } from "react"
 import { firstViewOfSession, trackSite } from "@/app/lib/siteTrack"
 import { isSiteTrackType } from "@/domain/entities/sites/siteStats"
+import { analytics } from "@/app/lib/analytics"
+import { siteClickEvent } from "@/app/lib/analytics/events"
 
 /**
  * Mide la ficha pública: una vista por sitio y sesión (cuando la pestaña está activa) y clics en los elementos con
@@ -15,6 +17,7 @@ export function SiteTracker({ siteId, children }: { siteId: string; children: Re
     const countView = () => {
       if (document.visibilityState !== "visible") return
       document.removeEventListener("visibilitychange", countView)
+      analytics.track("view_item", { item_type: "site", item_id: siteId }) // Analytics: una por apertura de la ficha
       if (firstViewOfSession(siteId)) trackSite(siteId, "view")
     }
     if (document.visibilityState === "visible") countView()
@@ -26,8 +29,11 @@ export function SiteTracker({ siteId, children }: { siteId: string; children: Re
     <div
       className="contents"
       onClickCapture={(e) => {
-        const type = (e.target as HTMLElement).closest<HTMLElement>("[data-site-track]")?.dataset.siteTrack
+        const el = (e.target as HTMLElement).closest<HTMLElement>("[data-site-track]")
+        const type = el?.dataset.siteTrack
         if (isSiteTrackType(type) && type !== "view") trackSite(siteId, type)
+        const click = type ? siteClickEvent(siteId, type, (el as HTMLAnchorElement).href) : null
+        if (click) analytics.track(click.name, click.params)
       }}
     >
       {children}

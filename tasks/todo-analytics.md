@@ -48,7 +48,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
 - [ ] Aviso aprobado por el usuario (copy y diseño) en develop.
 
 ## Fase 3 — Eventos de producto
-- [ ] **T5a Ver ficha y clics (M)** — `view_item` (tipo evento/sitio, id, categoría) en detalle de evento y de sitio; `click_whatsapp` (`BookingButton`), `click_como_llegar` (`SiteDetailContainer`).
+- [x] **T5a Ver ficha y clics (M)** — `view_item` (tipo evento/sitio, id, categoría) en detalle de evento y de sitio; `click_whatsapp` (`BookingButton`), `click_como_llegar` (`SiteDetailContainer`).
   - Acceptance: cada acción emite 1 evento con params permitidos; sin uid/email.
   - Verify: tests de los helpers de eventos; manual con DebugView.
   - Files (≤5): `BookingButton.tsx`, `SiteDetailContainer.tsx`, detalle de evento, helper de `view_item`.
