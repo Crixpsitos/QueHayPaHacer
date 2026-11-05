@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { fetchEventDetailById } from "./eventDetailFetchers";
-import { bogotaDayLabel, bogotaDayRange } from "../lib/bogotaDay";
+import { fetchEventDetailById, fetchEventSessions } from "./eventDetailFetchers";
+import { bogotaDayLabel, bogotaDayRange, overlapsWindow } from "../lib/bogotaDay";
 import type { CollectionDef } from "../lib/eventCollections";
 import type { Events } from "@/domain/entities/events/Events";
 
@@ -53,7 +53,19 @@ const fetchTodayEventIds = async (): Promise<{ ids: string[]; fallback: boolean 
 
   const { eventFeed } = createServerContainer();
   const now = new Date();
-  const today = await eventFeed.getToday(now, bogotaDayRange(now).end);
+  const end = bogotaDayRange(now).end;
+  const candidates = await eventFeed.getToday(now, end);
+  // Un multi-fecha cuyo rango abarca hoy NO sucede hoy si ninguna de sus fechas cae hoy: se comprueban las sesiones.
+  const checked = await Promise.all(
+    candidates.map(async (id) => {
+      const e = await fetchEventDetailById(id);
+      if (!e) return null;
+      if (e.eventType !== "multi-date") return id;
+      const sessions = await fetchEventSessions(id);
+      return sessions.some((s) => s.status === "published" && overlapsWindow(s.startDate, s.endDate, now, end)) ? id : null;
+    }),
+  );
+  const today = checked.filter((id): id is string => id !== null);
   if (today.length > 0) return { ids: today, fallback: false };
   return { ids: await eventFeed.getAll(), fallback: true };
 };

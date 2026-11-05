@@ -289,7 +289,7 @@ export class EventsFirebaseRepository
     return snapshot.docs.map((d) => ({
       id: d.id,
       slug: (d.get("slug") as string | undefined) ?? "",
-      eventType: (d.get("eventType") as string | undefined) ?? "single",
+      eventType: (d.get("eventType") as string | undefined) ?? "standard",
       updatedAt: (d.get("updatedAt") as { toDate?: () => Date } | undefined)?.toDate?.() ?? null,
     }));
   }

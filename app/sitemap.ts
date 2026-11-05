@@ -65,11 +65,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const multi = events.filter((e) => e.eventType === "multi-date");
     const perEvent = await Promise.all(
       multi.map(async (e) => {
-        const sessions = await fetchEventSessions(e.id).catch(() => []);
+        const sessions = await fetchEventSessions(e.id).catch((error) => {
+          console.error("[sitemap] no se pudieron leer las sesiones de", e.id, error);
+          return [];
+        });
+        // Mismo corte que los eventos: terminadas hace más de 90 días salen del sitemap.
+        const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
         return sessions
-          .filter((s) => s.status === "published")
+          .filter((s) => s.status === "published" && s.endDate.getTime() >= cutoff)
           .map((s) => ({
             url: `${SITE_URL}/eventos/${e.slug || e.id}/sessions/${s.slug || s.id}`,
+            lastModified: e.updatedAt ?? undefined,
             changeFrequency: "daily" as const,
             priority: 0.6,
           }));
