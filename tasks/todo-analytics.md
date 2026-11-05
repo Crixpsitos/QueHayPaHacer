@@ -24,6 +24,11 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
   - Verify: `pnpm typecheck && pnpm test && pnpm build`; manual en develop con DebugView.
   - Files: `AnalyticsProvider.tsx`, `app/layout.tsx` (dependencia: T2).
 
+### RESULTADO T0–T3 (verificado local 2026-11-05 15:40, Playwright + `window.dataLayer`; script en ~/.cache/qhpa-qa/ga-probe.mjs)
+- OK: `consent default` (todo `denied`) sale ANTES de `config`; `send_page_view:false`; `login_state:"anon"`; `page_view` con `page_location` limpio (UTM sí, `token` no) y `page_path`; 0 cookies. El entorno usa el ID de develop `G-9WQ0EDSYJ0`.
+- NO verificado: que Google RECIBA los datos. Este equipo no alcanza `googletagmanager.com` (ni con curl): `ERR_CONNECTION_REFUSED`. Falta verlo en develop desplegado (Tiempo real de GA4). Requiere orden del usuario para subir a develop.
+- **DECISIÓN DEL USUARIO PENDIENTE:** aun con consentimiento `denied`, el SDK de Firebase crea en IndexedDB `firebase-installations-database` (ID de instalación, no es cookie) y envía `firebase_id`. Opciones: (1) iniciar Analytics SOLO tras aceptar (más estricto con Ley 1581; sin aceptación no se cuenta nada, ni anónimo); (2) iniciar siempre y declararlo en la política como identificador técnico (cuenta mejor el tráfico, la política debe decirlo). Por defecto el código hace (2) y T4b lo redacta; cambiar a (1) es una línea.
+
 ### Checkpoint 1 — tras T0–T3
 - [ ] Tests/typecheck/build verdes; visita anónima a una ficha aparece en Tiempo real (develop) con su fuente (`?utm_source=facebook` incluido); 0 escrituras Firestore nuevas.
 - [ ] Revisión del usuario antes de seguir.
