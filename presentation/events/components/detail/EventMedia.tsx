@@ -99,7 +99,7 @@ export function Lightbox({ slides, initial, onClose }: { slides: MediaSlide[]; i
         <Carousel setApi={setApi} opts={{ loop: true, dragFree: false }} className="h-full w-full">
           <CarouselContent className="ml-0 h-full">
             {slides.map((slide, i) => (
-              <CarouselItem key={i} className="flex h-full items-center justify-center px-14 py-4 pl-0 sm:px-20">
+              <CarouselItem key={i} className="flex h-full items-center justify-center px-14 py-4 sm:px-20">
                 {slide.type === "image" ? (
                   <div className="relative h-full max-h-[90vh] w-full">
                     <Image src={slide.url} alt={slide.alt || ""} fill className="object-contain" sizes="100vw" quality={90} loading={i === initial ? "eager" : "lazy"} />

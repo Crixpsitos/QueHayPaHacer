@@ -219,7 +219,8 @@ export const EventClientWrapper = ({
             notify.success("Evento enviado a validación.");
             startTransition(() => router.push("/mis-eventos"));
           } else {
-            notify.success("Evento publicado. La auditoría está pendiente.");
+            // La auditoría posterior es un proceso interno: el dueño no necesita verla.
+            notify.success(mode === "edit" ? "Cambios guardados." : "Evento publicado.");
             startTransition(() => router.push(`/eventos/${result.slug}`));
           }
         } else {
@@ -232,7 +233,7 @@ export const EventClientWrapper = ({
         throw new Error("Error al publicar evento");
       }
     },
-    [router],
+    [router, mode],
   );
 
   const stepParam = searchParams.get("step");
