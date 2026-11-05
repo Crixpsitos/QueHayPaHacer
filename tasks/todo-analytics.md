@@ -65,7 +65,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
   - Acceptance: 1000 POST seguidos = 0 escrituras tras el tope; recargar la ficha el mismo día = 0 beacons nuevos; peticiones cross-site → 403/204 sin escribir.
   - Verify: test del limitador global y de validación; manual contando escrituras en develop.
   - Files: `app/api/_lib/ipRateLimit.ts`, `app/api/sites/[id]/track/route.ts`, `app/lib/siteTrack.ts`, tests.
-- [ ] **T6b (AUTORIZADO) Lecturas de `recordEventView`** — evitar `get()` por cada vista de usuario con sesión: `create()` en vez de get+set y no llamar si el cliente ya marcó "visto". Toca `analytics.views` (ranking): confirmar con el usuario y comprobar si `analytics.score` depende de las vistas ANTES.
+- [x] **T6b (AUTORIZADO) Lecturas de `recordEventView`** — evitar `get()` por cada vista de usuario con sesión: `create()` en vez de get+set y no llamar si el cliente ya marcó "visto". Toca `analytics.views` (ranking): confirmar con el usuario y comprobar si `analytics.score` depende de las vistas ANTES.
 - [ ] **T6c (AUTORIZADO, pero SIN subir costos; confirmar el valor con el usuario antes de aplicar)** — `maxInstances` es solo un techo; NO tocar `minInstances` (sigue 0). Fijar `maxInstances` en `apphosting.production.yaml` y alerta de solicitudes/presupuesto; runbook.
 
 ## Fase 5 — Documentación y revisión

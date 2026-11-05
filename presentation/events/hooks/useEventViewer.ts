@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { saveFreshLikes } from "@/app/lib/clientCache/likedIds";
 import { useStoredLiked } from "@/app/lib/clientCache/useStoredLiked";
 import { useAuth } from "@/app/store/auth/AuthContext";
+import { hasSeenEvent, markEventSeen } from "@/app/lib/events/viewSeen";
 import type { TeamViewerRole } from "../components/EventDetailClient";
 
 export interface EventViewer {
@@ -35,10 +36,14 @@ export function useEventViewer(eventId: string, sessionId?: string): EventViewer
   useEffect(() => {
     if (isHydrating || !uid) return;
     const controller = new AbortController();
-    const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : "";
+    const params = new URLSearchParams();
+    if (sessionId) params.set("sessionId", sessionId);
+    if (hasSeenEvent(uid, eventId)) params.set("seen", "1"); // ya la vio: el servidor se ahorra comprobarlo
+    const qs = params.size ? `?${params}` : "";
     fetch(`/api/events/${encodeURIComponent(eventId)}/viewer${qs}`, { cache: "no-store", signal: controller.signal })
       .then((r) => (r.ok ? (r.json() as Promise<ViewerPayload>) : Promise.reject(new Error(String(r.status)))))
       .then((viewer) => {
+        markEventSeen(uid, eventId);
         if (!sessionId) saveFreshLikes("events", uid, [eventId], { [eventId]: viewer.liked });
         setData({ key, viewer });
       })

@@ -35,7 +35,9 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/events/[
     isOwner ? createServerContainer().userService.getUserById(uid) : null,
   ]);
 
-  after(() => recordEventView(id, uid));
+  // `seen=1`: el navegador recuerda que esta persona ya la vio; se omite la comprobación (1 lectura). Sin la marca, el
+  // servidor verifica y nunca cuenta dos veces, así que un cliente que mienta solo se quita su propia vista.
+  if (request.nextUrl.searchParams.get("seen") !== "1") after(() => recordEventView(id, uid));
 
   return NextResponse.json(
     {
