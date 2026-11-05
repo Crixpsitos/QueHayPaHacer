@@ -2,26 +2,31 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 
-// retryEventMediaAction reescribe objetos en Storage: debe exigir permiso de edición sobre el evento, comprobar que el
-// evento es del dueño y no tocar Storage sin pasar por decideRetry (que limita el path a la carpeta del evento).
-const src = readFileSync(new URL("../retry-event-media.action.ts", import.meta.url), "utf8")
+// Las acciones de "Reintentar" reescriben objetos en Storage: deben exigir permiso de edición, pasar por decideRetry
+// (que limita el path al ámbito del evento/sesión) y aplicar el enfriamiento antes de tocar Storage.
+const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8")
+const eventAction = read("../retry-event-media.action.ts")
+const sessionAction = read("../retry-session-media.action.ts")
+const apply = read("./applyRetry.ts")
 
-test("exige permiso edit_event antes de leer el evento", () => {
-  assert.ok(src.includes('requireEventPermission(eventId, "edit_event"'))
-  assert.ok(src.indexOf("requireEventPermission(") < src.indexOf("getEventById("))
+test("evento: exige permiso edit_event antes de leer el evento y verifica al dueño", () => {
+  assert.ok(eventAction.includes('requireEventPermission(eventId, "edit_event"'))
+  assert.ok(eventAction.indexOf("requireEventPermission(") < eventAction.indexOf("getEventById("))
+  assert.ok(eventAction.includes("event.author.id !== access.ownerId"))
 })
 
-test("verifica que el evento pertenezca al dueño", () => {
-  assert.ok(src.includes("event.author.id !== access.ownerId"))
+test("sesión: usa el guard de sesiones antes de leer la sesión y limita el path a esa sesión", () => {
+  assert.ok(sessionAction.includes("sessionOwnerError(eventId)"))
+  assert.ok(sessionAction.indexOf("sessionOwnerError(") < sessionAction.indexOf("getById("))
+  assert.ok(sessionAction.includes("sessionScope(sessionId)"))
 })
 
-test("solo reescribe el path que devuelve decideRetry", () => {
-  assert.ok(src.includes("decideRetry("))
-  assert.ok(src.includes("storageService.retrigger(decision.path)"))
-  assert.ok(src.indexOf("decideRetry(") < src.indexOf("storageService.retrigger("))
+test("ambas acciones solo reescriben lo que decide decideRetry", () => {
+  assert.ok(eventAction.includes("decideRetry(") && sessionAction.includes("decideRetry("))
+  assert.ok(eventAction.includes("applyRetry(") && sessionAction.includes("applyRetry("))
 })
 
-test("aplica enfriamiento en el servidor antes de reescribir", () => {
-  assert.ok(src.includes("canRetryNow(age)"))
-  assert.ok(src.indexOf("canRetryNow(") < src.indexOf("storageService.retrigger("))
+test("applyRetry aplica el enfriamiento antes de reescribir el objeto", () => {
+  assert.ok(apply.includes("canRetryNow(age)"))
+  assert.ok(apply.indexOf("canRetryNow(") < apply.indexOf("storage.retrigger("))
 })

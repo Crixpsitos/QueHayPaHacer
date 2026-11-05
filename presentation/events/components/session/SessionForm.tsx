@@ -36,6 +36,8 @@ import { updateEventSessionAction } from "@/app/actions/events/update-event-sess
 import { saveDraftSessionAction } from "@/app/actions/events/save-draft-session.action";
 import { prepareUpload, putToStorage, type UploadOptions } from "../../lib/upload/uploadToGoogleStorage";
 import { uploadMediaPersistFirst } from "../../lib/upload/uploadMediaPersistFirst";
+import { retrySessionMediaAction } from "@/app/actions/events/retry-session-media.action";
+import { applyRetryResult } from "../../lib/media/applyRetryResult";
 import { getImageData } from "../../lib/image/getImageData";
 import { getVideoData } from "../../lib/video/getVideoData";
 import { AlertTriangleIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -421,6 +423,18 @@ export function SessionForm({
     });
   };
 
+  const retryMedia = async (mediaId: string) => {
+    const sessionId = savedSessionIdRef.current ?? form.getValues("id");
+    if (!sessionId) return;
+    applyRetryResult({
+      result: await retrySessionMediaAction(event.id, sessionId, mediaId),
+      mediaId,
+      media: form.getValues("media") ?? [],
+      setMedia: (m) => form.setValue("media", m, { shouldValidate: true }),
+      notify,
+    });
+  };
+
   const removeMediaFile = (id: string) => {
     const current = form.getValues("media") ?? [];
     form.setValue(
@@ -584,6 +598,7 @@ export function SessionForm({
               value={(mediaItems as MediaItem[]) ?? []}
               onChange={saveMediaFiles}
               removeMediaFile={removeMediaFile}
+              onRetry={retryMedia}
             />
           </div>
         );
