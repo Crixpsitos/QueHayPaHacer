@@ -3,6 +3,7 @@ import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
 import type { IEventsFirebaseRepository } from "./IEventsFirebaseRepository";
 import { FEATURED_MAX, decodeScoreCursor, encodeScoreCursor, isPromotionActive, mergeFeaturedIds } from "@/application/services/events/eventsListing";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
+import { mergeMediaStatus } from "./mergeMediaStatus";
 
 export class EventsFirebaseRepository
   extends FirebaseBaseRepository
@@ -14,7 +15,12 @@ export class EventsFirebaseRepository
     super(db);
   }
   async updateEvent(event: FirebaseEventsDto): Promise<void> {
-    await this.collection.doc(event.id).set(event, { merge: true });
+    const ref = this.collection.doc(event.id);
+    // Transacción: lee lo guardado y no deja que una copia local en "processing" pise lo que el CF ya terminó.
+    await this.db.runTransaction(async (tx) => {
+      const stored = (await tx.get(ref)).data() as Parameters<typeof mergeMediaStatus>[1];
+      tx.set(ref, mergeMediaStatus(event, stored), { merge: true });
+    });
   }
   async deleteEvent(id: string): Promise<void> {
     await this.collection.doc(id).delete();

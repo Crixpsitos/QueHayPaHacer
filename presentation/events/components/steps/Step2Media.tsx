@@ -9,7 +9,9 @@ import { ImageMainDropzone } from "../Dropzone/ImageMainDropzone";
 import { notify } from "@/presentation/shared/lib/notify";
 import { getVideoData } from "../../lib/video/getVideoData";
 import { getImageData } from "../../lib/image/getImageData";
-import { uploadToGoogleStorage } from "../../lib/upload/uploadToGoogleStorage";
+import { prepareUpload, putToStorage, type UploadOptions } from "../../lib/upload/uploadToGoogleStorage";
+import { uploadMediaPersistFirst } from "../../lib/upload/uploadMediaPersistFirst";
+import { retryEventMediaAction } from "@/app/actions/events/retry-event-media.action";
 import { useEventModalStore } from "@/presentation/events/store/useEventModalStore";
 interface Step2Props {
   form: UseFormReturn<FormEventDto>;
@@ -74,20 +76,37 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     
     const currentEventId = form.getValues("id") as string;
 
-    const result = await uploadToGoogleStorage(file, "events", currentEventId, {
+    const uploadOptions: UploadOptions = {
       fileName: `deoptimized-main-image-${file.name}`,
       contentType: file.type,
       isPublic: true,
-    });
-    
+    };
+    const prepared = await prepareUpload(file, "events", currentEventId, uploadOptions);
+
     form.clearErrors("mainImage");
 
-    // set UI state: we uploaded a temporary public URL, optimization happens async
-    // store path + url + status + temporaryUrl inside mainImage object
-    form.setValue("mainImage", { url: result.publicUrl, path: result.path, status: "processing", temporaryUrl: result.publicUrl }, { shouldValidate: false, shouldDirty: true });
+    // Se guarda "processing" ANTES de subir: el CF lee/escribe mainImage al terminar la subida y un guardado posterior
+    // con la copia local (processing) deshacía su resultado.
+    const mainImageBase = { url: prepared.publicUrl, path: prepared.path, temporaryUrl: prepared.publicUrl };
+    const previousMainImage = form.getValues("mainImage");
+    form.setValue("mainImage", { ...mainImageBase, status: "processing" }, { shouldValidate: false, shouldDirty: true });
+    try {
+      await saveDraftEvent();
+    } catch (error) {
+      // Nada se subió: volver a la portada anterior en vez de dejar una "processing" que apunta a un archivo inexistente.
+      form.setValue("mainImage", previousMainImage, { shouldValidate: false, shouldDirty: true });
+      throw error;
+    }
 
-    await saveDraftEvent();
+    try {
+      await putToStorage(file, prepared, uploadOptions);
+    } catch (error) {
+      form.setValue("mainImage", { ...mainImageBase, status: "error" }, { shouldValidate: false, shouldDirty: true });
+      await saveDraftEvent();
+      throw error;
+    }
 
+    const result = { publicUrl: prepared.publicUrl, path: prepared.path };
     return result;
   };
 
@@ -103,6 +122,30 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     },
   });
   };
+  const retryMedia = async (mediaId: string) => {
+    const result = await retryEventMediaAction(eventId, mediaId);
+    const current = form.getValues("media") ?? [];
+    if (result.success) {
+      if (result.status === "already-ready") {
+        // Firestore ya lo tenía listo: reflejarlo en el formulario.
+        form.setValue("media", current.map((m) => (m.id === mediaId ? result.item : m)), { shouldValidate: true });
+        notify.success("El archivo ya estaba listo.");
+      } else {
+        notify.success("Reintentando. Puede tardar unos segundos.");
+      }
+      return;
+    }
+    if (result.code === "missing-original") {
+      // No hay nada que reprocesar: dejarlo en error para que el usuario lo elimine y lo vuelva a subir.
+      form.setValue(
+        "media",
+        current.map((m) => (m.id === mediaId ? ({ ...m, data: { ...m.data, status: "error" } } as MediaItem) : m)),
+        { shouldValidate: true },
+      );
+    }
+    notify.error(result.error);
+  };
+
   const saveMediaFiles = async (files: File[]) => {
     setIsOpen(false);
 
@@ -113,68 +156,76 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
 
       const currentEventId = form.getValues("id") as string;
 
-      const uploadResults = await Promise.all(
-        files.map((file) =>
-          uploadToGoogleStorage(file, "events", currentEventId, {
-            fileName: `deoptimized-media-${file.name}`,
-            contentType: file.type,
-            isPublic: true,
-          }),
-        ),
-      );
+      const uploadOptions = (file: File): UploadOptions => ({
+        fileName: `deoptimized-media-${file.name}`,
+        contentType: file.type,
+        isPublic: true,
+      });
 
-      const processedMedia: MediaItem[] = [];
+      const supported = files.filter((f) => f.type.startsWith("video/") || f.type.startsWith("image/"));
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const result = uploadResults[i];
-        const isVideo = file.type.startsWith("video/");
-
-        if (isVideo) {
-          const videoData = await getVideoData(file);
-
-          processedMedia.push({
-            id: crypto.randomUUID(),
-            type: "video",
-            data: {
-              status: "processing",
-              temporaryUrl: result.publicUrl,
-              url: result.publicUrl,
-              path: result.path,
-              width: videoData.width,
-              height: videoData.height,
-              duration: videoData.duration,
-              mimeType: file.type as "video/mp4" | "video/webm" | "video/ogg",
-            },
-          });
-        } else if (file.type.startsWith("image/")) {
+      // Preparar → guardar los items "processing" en Firestore → recién entonces subir (ver uploadMediaPersistFirst).
+      const { items, failedIds } = await uploadMediaPersistFirst(supported, {
+        prepare: (file) => prepareUpload(file, "events", currentEventId, uploadOptions(file)),
+        buildItem: async (file, prepared): Promise<MediaItem> => {
+          if (file.type.startsWith("video/")) {
+            const videoData = await getVideoData(file);
+            return {
+              id: crypto.randomUUID(),
+              type: "video",
+              data: {
+                status: "processing",
+                temporaryUrl: prepared.publicUrl,
+                url: prepared.publicUrl,
+                path: prepared.path,
+                width: videoData.width,
+                height: videoData.height,
+                duration: videoData.duration,
+                mimeType: file.type as "video/mp4" | "video/webm" | "video/ogg",
+              },
+            };
+          }
           const imageData = await getImageData(file);
-
-          processedMedia.push({
+          return {
             id: crypto.randomUUID(),
             type: "image",
             data: {
               status: "processing",
-              temporaryUrl: result.publicUrl,
-              url: result.publicUrl,
-              path: result.path,
+              temporaryUrl: prepared.publicUrl,
+              url: prepared.publicUrl,
+              path: prepared.path,
               width: imageData.width,
               height: imageData.height,
               alt: file.name,
             },
-          });
-        }
-      }
-
-      const existing = form.getValues("media") ?? [];
-      form.clearErrors("media");
-      form.setValue("media", [...existing, ...processedMedia], {
-        shouldValidate: true,
+          };
+        },
+        persist: async (newItems) => {
+          const existing = form.getValues("media") ?? [];
+          form.clearErrors("media");
+          form.setValue("media", [...existing, ...newItems], { shouldValidate: true });
+          try {
+            await saveDraftEvent();
+          } catch (error) {
+            // Nada se subió: no dejar items "processing" huérfanos que un guardado posterior persistiría.
+            form.setValue("media", existing, { shouldValidate: true });
+            throw error;
+          }
+        },
+        put: (file, prepared) => putToStorage(file, prepared, uploadOptions(file)),
+        markError: async (ids) => {
+          const current = form.getValues("media") ?? [];
+          form.setValue(
+            "media",
+            current.map((m) => (ids.includes(m.id) ? ({ ...m, data: { ...m.data, status: "error" } } as MediaItem) : m)),
+            { shouldValidate: true },
+          );
+          await saveDraftEvent();
+        },
       });
 
-      await saveDraftEvent();
-
-      return processedMedia;
+      if (failedIds.length > 0) throw new Error(`partial-upload:${failedIds.length}`);
+      return items;
     };
 
     notify.promise(processFiles(), {
@@ -182,6 +233,8 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
       success: () => "Archivos subidos exitosamente.",
       error: (error) => {
         console.error("Error subiendo media:", error);
+        const failed = error instanceof Error && error.message.match(/^partial-upload:(\d+)$/)?.[1];
+        if (failed) return `No se pudieron subir ${failed} archivo(s). Quedaron marcados con error: elimínalos y vuelve a subirlos.`;
         return "Error al subir los archivos.";
       },
     });
@@ -224,6 +277,7 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
               value={value ?? []}
               onChange={saveMediaFiles}
               removeMediaFile={removeMediaFile}
+              onRetry={retryMedia}
               error={
                 fieldState.error?.message ??
                 (fieldState.invalid ? "Por favor revisa los archivos cargados" : undefined)

@@ -13,6 +13,12 @@ export interface IStorageService {
 
     delete(path: string): Promise<void>;
 
+    /** Milisegundos desde la última modificación del objeto, o null si no existe. */
+    ageMs(path: string): Promise<number | null>;
+
+    /** Reescribe el objeto sobre sí mismo (nueva generación): vuelve a disparar `onObjectFinalized`. */
+    retrigger(path: string): Promise<void>;
+
     generateSignedUrl(
         path: string,
         isPublic: boolean,

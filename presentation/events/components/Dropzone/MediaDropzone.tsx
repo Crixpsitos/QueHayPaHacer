@@ -1,12 +1,13 @@
 "use client";
 
-import { ImagePlus, X, Loader2, AlertCircle } from "lucide-react";
+import { ImagePlus, X, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { LazyMotion, motion, domAnimation, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/app/lib/utils/cn";
 import { MediaItem } from "@/application/dto/events/EventDto";
+import { isRetryable } from "@/presentation/events/lib/media/isRetryable";
 
 const MAX_GALLERY = 6;
 
@@ -15,6 +16,69 @@ interface MediaDropzoneProps {
   onChange: (files: File[]) => void;
   error?: string;
   removeMediaFile: (id: string) => void;
+  /** Reintenta un medio atascado (en "processing" por mucho tiempo o en "error"). */
+  onRetry?: (id: string) => Promise<void>;
+}
+
+/** Botones de una tarjeta. Lleva su propio reloj: el item no guarda hora de subida, se mide desde que aparece. */
+function TileActions({ status, hasError, onRetry, onRemove }: {
+  status: "processing" | "ready" | "error" | undefined;
+  hasError: boolean;
+  onRetry?: () => Promise<void>;
+  onRemove: () => void;
+}) {
+  const [since, setSince] = useState(() => Date.now());
+  const [now, setNow] = useState(since);
+  const [retrying, setRetrying] = useState(false);
+
+  useEffect(() => {
+    if (status !== "processing") return;
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(timer);
+  }, [status]);
+
+  const canRetry = !!onRetry && isRetryable(status, since, now);
+
+  const retry = async () => {
+    if (!onRetry) return;
+    setRetrying(true);
+    const t = Date.now();
+    setSince(t);
+    setNow(t);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  return (
+    <>
+      {canRetry && (
+        <button
+          type="button"
+          disabled={retrying}
+          onClick={(e) => { e.stopPropagation(); void retry(); }}
+          className="absolute inset-x-1.5 bottom-1.5 z-10 flex items-center justify-center gap-1 rounded-lg bg-white/95 px-2 py-1.5 text-[11px] font-semibold text-[#09090B] shadow-sm transition-colors hover:bg-white disabled:opacity-60"
+        >
+          <RotateCcw className={cn("size-3", retrying && "animate-spin")} />
+          {retrying ? "Reintentando…" : "Reintentar"}
+        </button>
+      )}
+      <button
+        type="button"
+        disabled={status === "processing" && !canRetry}
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        aria-label="Eliminar archivo"
+        className={cn(
+          "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-white/90 shadow-sm text-[#09090B] transition-all hover:text-[#D42F3C] disabled:opacity-30",
+          hasError ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+        )}
+      >
+        <X className="size-3" />
+      </button>
+    </>
+  );
 }
 
 export const MediaDropzone = ({
@@ -22,6 +86,7 @@ export const MediaDropzone = ({
   onChange,
   error,
   removeMediaFile,
+  onRetry,
 }: MediaDropzoneProps) => {
   const currentFiles = value ?? [];
   const [selectedFile, setSelectedFile] = useState<MediaItem | null>(null);
@@ -100,18 +165,12 @@ export const MediaDropzone = ({
                     </div>
                   </div>
                 )}
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={(e) => { e.stopPropagation(); removeMediaFile(file.id); }}
-                  aria-label="Eliminar archivo"
-                  className={cn(
-                    "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-full bg-white/90 shadow-sm text-[#09090B] transition-all hover:text-[#D42F3C] disabled:opacity-30",
-                    hasError ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                  )}
-                >
-                  <X className="size-3" />
-                </button>
+                <TileActions
+                  status={file.data.status}
+                  hasError={hasError}
+                  onRetry={onRetry ? () => onRetry(file.id) : undefined}
+                  onRemove={() => removeMediaFile(file.id)}
+                />
               </motion.div>
             );
           })}
