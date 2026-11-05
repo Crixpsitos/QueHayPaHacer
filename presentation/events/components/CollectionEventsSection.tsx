@@ -81,7 +81,15 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
     if (events.length === 0) {
       return (
         <Section spacing="sm" className="mt-4">
-          <EventCardInteractive events={[]} info={EMPTY_INFO} variant="vertical" />
+          <EventCardInteractive
+            events={[]}
+            info={{
+              title: "Hoy no hay eventos publicados",
+              description: "Mira la agenda completa o los planes de este fin de semana.",
+              action: { href: "/eventos", label: "Ver todos los eventos" },
+            }}
+            variant="vertical"
+          />
         </Section>
       );
     }
