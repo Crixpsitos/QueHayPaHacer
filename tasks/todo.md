@@ -9,7 +9,7 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
   - Files: ninguno del repo.
 
 ## Fase 1 — Cerrar la carrera
-- [ ] **T1 Merge en servidor (M) — dirección B:** `mergeMediaStatus` puro + uso dentro de una transacción del repositorio (`EventsFirebaseRepository`) llamada desde `updateEventAction`, para `media` y `mainImage` (confirmado por T0).
+- [x] **T1 Merge en servidor (M) — dirección B:** `mergeMediaStatus` puro + uso dentro de una transacción del repositorio (`EventsFirebaseRepository`) llamada desde `updateEventAction`, para `media` y `mainImage` (confirmado por T0).
   - Acceptance: item local `processing` + guardado `ready|error` (mismo id) → queda el guardado; ítems nuevos y borrados se respetan; sin guardado previo no cambia nada.
   - Verify: test que falla sin el fix (`pnpm test`), `pnpm typecheck`.
   - Files: `app/actions/events/lib/mergeMediaStatus.ts` (+ `.test.ts`), `app/actions/events/update-event.action.ts`, `infraestructure/firebase/repositories/events/EventsFirebaseRepository.ts` (+ interfaz).
