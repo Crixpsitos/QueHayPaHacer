@@ -34,7 +34,8 @@ import { notify } from "@/presentation/shared/lib/notify";
 import { createEventSessionAction } from "@/app/actions/events/create-event-session.action";
 import { updateEventSessionAction } from "@/app/actions/events/update-event-session.action";
 import { saveDraftSessionAction } from "@/app/actions/events/save-draft-session.action";
-import { uploadToGoogleStorage } from "../../lib/upload/uploadToGoogleStorage";
+import { prepareUpload, putToStorage, type UploadOptions } from "../../lib/upload/uploadToGoogleStorage";
+import { uploadMediaPersistFirst } from "../../lib/upload/uploadMediaPersistFirst";
 import { getImageData } from "../../lib/image/getImageData";
 import { getVideoData } from "../../lib/video/getVideoData";
 import { AlertTriangleIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -277,29 +278,38 @@ export function SessionForm({
         throw new Error("invalid-resolution");
       }
 
-      const result = await uploadToGoogleStorage(file, "sessions", sessionId, {
+      const uploadOptions: UploadOptions = {
         fileName: `session-${sessionId}-main-${file.name}`,
         contentType: file.type,
         isPublic: true,
         subFolder: "", // → public/sessions/{sessionId}/{fileName}
         customMetadata: { "event-id": event.id },
         cacheControl: "public, max-age=31536000",
-      });
+      };
+      const prepared = await prepareUpload(file, "sessions", sessionId, uploadOptions);
 
-      form.setValue(
-        "mainImage",
-        {
-          url: result.publicUrl,
-          path: result.path,
-          status: "processing",
-          temporaryUrl: result.publicUrl,
-        },
-        { shouldDirty: true },
-      );
-
-      await saveDraftSessionAction(event.id, form.getValues());
+      // "processing" se guarda ANTES de subir: el CF actualiza mainImage al terminar la subida y un guardado posterior
+      // con la copia local deshacía su resultado.
+      const base = { url: prepared.publicUrl, path: prepared.path, temporaryUrl: prepared.publicUrl };
+      const previousMainImage = form.getValues("mainImage");
+      form.setValue("mainImage", { ...base, status: "processing" }, { shouldDirty: true });
+      const saved = await saveDraftSessionAction(event.id, form.getValues());
+      if (!saved.success) {
+        // Nada se subió: volver a la portada anterior en vez de dejar una "processing" huérfana.
+        form.setValue("mainImage", previousMainImage, { shouldDirty: true });
+        throw new Error(saved.error);
+      }
       void invalidateMyData();
-      return result;
+
+      try {
+        await putToStorage(file, prepared, uploadOptions);
+      } catch (error) {
+        form.setValue("mainImage", { ...base, status: "error" }, { shouldDirty: true });
+        await saveDraftSessionAction(event.id, form.getValues());
+        throw error;
+      }
+
+      return { publicUrl: prepared.publicUrl, path: prepared.path };
     };
 
     await notify.promise(processFile(), {
@@ -324,67 +334,78 @@ export function SessionForm({
       const sessionId = await ensureSessionId();
       if (!sessionId) throw new Error("no-session-id");
 
-      const uploadResults = await Promise.all(
-        files.map((file) =>
-          uploadToGoogleStorage(file, "sessions", sessionId, {
-            fileName: `session-${sessionId}-media-${file.name}`,
-            contentType: file.type,
-            isPublic: true,
-            subFolder: "media", // → public/sessions/{sessionId}/media/{fileName}
-            customMetadata: { "event-id": event.id },
-            cacheControl: "public, max-age=31536000",
-          }),
-        ),
-      );
+      const uploadOptions = (file: File): UploadOptions => ({
+        fileName: `session-${sessionId}-media-${file.name}`,
+        contentType: file.type,
+        isPublic: true,
+        subFolder: "media", // → public/sessions/{sessionId}/media/{fileName}
+        customMetadata: { "event-id": event.id },
+        cacheControl: "public, max-age=31536000",
+      });
 
-      const processedMedia: MediaItem[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const result = uploadResults[i];
-        const isVideo = file.type.startsWith("video/");
+      const supported = files.filter((f) => f.type.startsWith("video/") || f.type.startsWith("image/"));
 
-        if (isVideo) {
-          const videoData = await getVideoData(file);
-          processedMedia.push({
-            id: crypto.randomUUID(),
-            type: "video",
-            data: {
-              status: "processing",
-              temporaryUrl: result.publicUrl,
-              url: result.publicUrl,
-              path: result.path,
-              width: videoData.width,
-              height: videoData.height,
-              duration: videoData.duration,
-              mimeType: file.type as "video/mp4" | "video/webm" | "video/ogg",
-            },
-          });
-        } else if (file.type.startsWith("image/")) {
+      // Preparar → guardar los items "processing" → recién entonces subir (ver uploadMediaPersistFirst).
+      const { items, failedIds } = await uploadMediaPersistFirst(supported, {
+        prepare: (file) => prepareUpload(file, "sessions", sessionId, uploadOptions(file)),
+        buildItem: async (file, prepared): Promise<MediaItem> => {
+          if (file.type.startsWith("video/")) {
+            const videoData = await getVideoData(file);
+            return {
+              id: crypto.randomUUID(),
+              type: "video",
+              data: {
+                status: "processing",
+                temporaryUrl: prepared.publicUrl,
+                url: prepared.publicUrl,
+                path: prepared.path,
+                width: videoData.width,
+                height: videoData.height,
+                duration: videoData.duration,
+                mimeType: file.type as "video/mp4" | "video/webm" | "video/ogg",
+              },
+            };
+          }
           const imageData = await getImageData(file);
-          processedMedia.push({
+          return {
             id: crypto.randomUUID(),
             type: "image",
             data: {
               status: "processing",
-              temporaryUrl: result.publicUrl,
-              url: result.publicUrl,
-              path: result.path,
+              temporaryUrl: prepared.publicUrl,
+              url: prepared.publicUrl,
+              path: prepared.path,
               width: imageData.width,
               height: imageData.height,
               alt: file.name,
             },
-          });
-        }
-      }
-
-      const existing = form.getValues("media") ?? [];
-      form.setValue("media", [...existing, ...processedMedia], {
-        shouldValidate: true,
+          };
+        },
+        persist: async (newItems) => {
+          const existing = form.getValues("media") ?? [];
+          form.setValue("media", [...existing, ...newItems], { shouldValidate: true });
+          const saved = await saveDraftSessionAction(event.id, form.getValues());
+          if (!saved.success) {
+            // Nada se subió: no dejar items "processing" huérfanos que un guardado posterior persistiría.
+            form.setValue("media", existing, { shouldValidate: true });
+            throw new Error(saved.error);
+          }
+          void invalidateMyData();
+        },
+        put: (file, prepared) => putToStorage(file, prepared, uploadOptions(file)),
+        markError: async (ids) => {
+          const current = form.getValues("media") ?? [];
+          form.setValue(
+            "media",
+            current.map((m) => (ids.includes(m.id) ? ({ ...m, data: { ...m.data, status: "error" } } as MediaItem) : m)),
+            { shouldValidate: true },
+          );
+          await saveDraftSessionAction(event.id, form.getValues());
+        },
       });
 
-      await saveDraftSessionAction(event.id, form.getValues());
-      void invalidateMyData();
-      return processedMedia;
+      if (failedIds.length > 0) throw new Error(`partial-upload:${failedIds.length}`);
+      return items;
     };
 
     notify.promise(processFiles(), {
@@ -393,6 +414,8 @@ export function SessionForm({
       error: (err) => {
         if ((err as Error).message === "no-session-id")
           return "No se pudo inicializar la sesión.";
+        const failed = (err as Error).message.match(/^partial-upload:(\d+)$/)?.[1];
+        if (failed) return `No se pudieron subir ${failed} archivo(s). Quedaron marcados con error: elimínalos y vuelve a subirlos.`;
         return "Error al subir los archivos.";
       },
     });

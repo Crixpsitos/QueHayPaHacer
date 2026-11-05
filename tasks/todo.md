@@ -68,3 +68,11 @@ Medición previa (SSIM, fotos de Multicentro, escritorio 1920): cadena actual 0,
 - [x] **Q2 app:** `images.qualities: [75, 90]` en `next.config.ts` y `quality={90}` en `EventHero` y `EventMedia` (diapositivas). Verificado en dev: `q=90` → 200 y archivo mayor; `q=80` → 400.
 - [ ] **Q3 despliegue:** functions a develop → subir una foto de Multicentro a un evento de develop → comparar a ojo con la anterior (usuario) → luego prod con orden explícita.
   - Pendiente decidir: ¿extender 1920/q90 a sitios y sesiones? (hoy NO).
+
+
+---
+# Módulo `session-media-race` (SPEC-session-media-race.md) — 2026-11-05
+- [x] **S1 functions:** `patchEventMedia` acepta `docPath`; los triggers de sesiones (galería imagen/video) lo usan (reintento 5 min, sin marcar error mientras reintenta) y la portada guarda `mainImage.originalPath`. Se eliminan `patchSessionMediaByPath`/`markSessionMediaError`. Tests 26/26. Commit 1d9cf4d (functions).
+- [x] **S2 app:** `SessionForm` sube galería y portada con persistir-primero (+ rollback si falla el guardado, aviso si falla la subida, revisa `{success:false}`); `EventSessionFirebaseRepository.update` fusiona con `mergeMediaStatus` en transacción. Guardia de regresión en `sessionPersistFirst.test.ts`. Tests 361/361, build OK.
+- [ ] **S3 "Reintentar" en sesiones:** `retryEventMedia` solo cubre eventos; extender a `events/{e}/sessions/{s}` (spec criterio 4). Pendiente.
+- [ ] **S4 despliegue:** functions de sesiones (`optimizeSessionImages`, `optimizeSessionVideos`) y app; probar en develop con 6 archivos en una sesión; prod con orden.
