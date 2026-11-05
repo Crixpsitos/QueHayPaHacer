@@ -8,6 +8,7 @@ import type { IEventSessionFirebaseRepository } from "./IEventSessionFirebaseRep
 import type { EventSession } from "@/domain/entities/events/EventSession";
 import { EventSessionFirebaseMapper } from "../../mappers/events/EventSessionFirebaseMapper";
 import type { FirebaseEventSessionDto } from "../../dto/events/FirebaseEventSessionDto";
+import { mergeMediaStatus } from "./mergeMediaStatus";
 
 export class EventSessionFirebaseRepository
   implements IEventSessionFirebaseRepository
@@ -115,7 +116,11 @@ export class EventSessionFirebaseRepository
     if (data.price !== undefined) partial.price = data.price;
     if (data.status !== undefined) partial.status = data.status;
 
-    await ref.set(partial, { merge: true });
+    // Transacción: no deja que una copia local en "processing" pise lo que el CF ya terminó (ver mergeMediaStatus).
+    await this.db.runTransaction(async (tx) => {
+      const stored = (await tx.get(ref)).data() as Parameters<typeof mergeMediaStatus>[1];
+      tx.set(ref, mergeMediaStatus(partial, stored), { merge: true });
+    });
 
     const updated = await ref.get();
     return { id: updated.id, ...updated.data() } as FirebaseEventSessionDto;

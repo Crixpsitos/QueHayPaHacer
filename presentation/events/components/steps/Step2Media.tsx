@@ -12,6 +12,7 @@ import { getImageData } from "../../lib/image/getImageData";
 import { prepareUpload, putToStorage, type UploadOptions } from "../../lib/upload/uploadToGoogleStorage";
 import { uploadMediaPersistFirst } from "../../lib/upload/uploadMediaPersistFirst";
 import { retryEventMediaAction } from "@/app/actions/events/retry-event-media.action";
+import { applyRetryResult } from "../../lib/media/applyRetryResult";
 import { useEventModalStore } from "@/presentation/events/store/useEventModalStore";
 interface Step2Props {
   form: UseFormReturn<FormEventDto>;
@@ -123,27 +124,13 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
   });
   };
   const retryMedia = async (mediaId: string) => {
-    const result = await retryEventMediaAction(eventId, mediaId);
-    const current = form.getValues("media") ?? [];
-    if (result.success) {
-      if (result.status === "already-ready") {
-        // Firestore ya lo tenía listo: reflejarlo en el formulario.
-        form.setValue("media", current.map((m) => (m.id === mediaId ? result.item : m)), { shouldValidate: true });
-        notify.success("El archivo ya estaba listo.");
-      } else {
-        notify.success("Reintentando. Puede tardar unos segundos.");
-      }
-      return;
-    }
-    if (result.code === "missing-original") {
-      // No hay nada que reprocesar: dejarlo en error para que el usuario lo elimine y lo vuelva a subir.
-      form.setValue(
-        "media",
-        current.map((m) => (m.id === mediaId ? ({ ...m, data: { ...m.data, status: "error" } } as MediaItem) : m)),
-        { shouldValidate: true },
-      );
-    }
-    notify.error(result.error);
+    applyRetryResult({
+      result: await retryEventMediaAction(eventId, mediaId),
+      mediaId,
+      media: form.getValues("media") ?? [],
+      setMedia: (m) => form.setValue("media", m, { shouldValidate: true }),
+      notify,
+    });
   };
 
   const saveMediaFiles = async (files: File[]) => {

@@ -61,3 +61,26 @@ test("enfriamiento: no reintenta si el objeto cambió hace menos de 2 min", () =
   assert.equal(canRetryNow(RETRY_COOLDOWN_MS - 1), false)
   assert.equal(canRetryNow(RETRY_COOLDOWN_MS), true)
 })
+
+// ── Sesiones: originales en public/sessions/{sid}/media/session-{sid}-media-<nombre>-<uuid> ──
+const S = { folder: "public/sessions/S1/media/", namePrefix: "session-S1-media-" }
+const SP = "public/sessions/S1/media/session-S1-media-foto.jpg-uuid"
+
+test("sesión: reescribe el original de la galería de ESA sesión", () => {
+  assert.deepEqual(decideRetry("E1", [item("processing", SP)], "m1", S), { kind: "rewrite", path: SP })
+})
+
+test("sesión: rechaza archivos de otra sesión, optimizados o fuera de /media", () => {
+  for (const bad of [
+    "public/sessions/OTRA/media/session-OTRA-media-foto.jpg-uuid",
+    "public/sessions/S1/media/optimized_session-S1-media-foto.webp",
+    "public/sessions/S1/session-S1-main-portada.jpg-uuid",
+    "public/events/E1/images/deoptimized-media-foto.jpg-uuid",
+  ]) {
+    assert.deepEqual(decideRetry("E1", [item("processing", bad)], "m1", S), { kind: "bad-path" }, bad)
+  }
+})
+
+test("sesión: un item ya ready no se toca", () => {
+  assert.deepEqual(decideRetry("E1", [item("ready", SP)], "m1", S), { kind: "already-ready" })
+})
