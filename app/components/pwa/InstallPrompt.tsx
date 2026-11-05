@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Download, Share, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { EASE_OUT } from "@/app/components/motion/primitives";
+import { useConsent } from "@/app/lib/analytics/useConsent";
 
 const DISMISS_KEY = "qhpa-install-dismissed";
 
@@ -148,7 +149,9 @@ export function InstallBanner() {
   const still = useReducedMotion();
   const [visits] = useState(() => (typeof window !== "undefined" ? countVisit() : 0));
 
-  const show = available && visits >= 2 && BANNER_PATHS.includes(pathname);
+  const { state: consent } = useConsent();
+  // No se apila con el aviso de cookies: espera a que la persona decida.
+  const show = available && visits >= 2 && BANNER_PATHS.includes(pathname) && (consent === "granted" || consent === "denied");
   return (
     <AnimatePresence>
       {show && (

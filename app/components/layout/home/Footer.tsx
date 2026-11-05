@@ -4,6 +4,7 @@ import { Container } from "../shared/Container";
 import { FooterYear } from "./FooterYear";
 import { TE_PROTEJO_URL } from "../shared/LegalDocument";
 import { InstallPrompt } from "@/app/components/pwa/InstallPrompt";
+import { CookiePreferencesButton } from "@/app/components/analytics/CookiePreferencesButton";
 
 const LINKS = [
   { href: "/eventos", label: "Eventos" },
@@ -44,6 +45,7 @@ export const Footer = () => {
         <span className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/terminos" className="transition-colors hover:text-white">Términos y condiciones</Link>
           <Link href="/privacidad" className="transition-colors hover:text-white">Política de privacidad</Link>
+          <CookiePreferencesButton />
           <a href={TE_PROTEJO_URL} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white">Denunciar abuso infantil</a>
         </span>
       </Container>

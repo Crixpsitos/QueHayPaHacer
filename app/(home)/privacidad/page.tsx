@@ -83,7 +83,8 @@ export default function PrivacidadPage() {
           </li>
           <li>
             <strong>Proveedores tecnológicos</strong> que tratan datos por nuestra cuenta: Google Cloud y Firebase
-            (Google LLC) para alojar la plataforma, la base de datos, las imágenes y la autenticación.
+            (Google LLC) para alojar la plataforma, la base de datos, las imágenes y la autenticación, y Google Analytics
+            (Google LLC) para medir el uso de la plataforma, con las cookies solo si lo aceptas.
           </li>
         </ul>
         <p>No vendemos tus datos ni los cedemos a terceros con fines comerciales.</p>
@@ -100,10 +101,20 @@ export default function PrivacidadPage() {
 
       <section>
         <h2>Cookies</h2>
+        <p>Usamos cookies estrictamente necesarias para mantener tu sesión iniciada.</p>
         <p>
-          Usamos cookies estrictamente necesarias para mantener tu sesión iniciada. No usamos cookies de publicidad ni
-          de seguimiento de terceros.
+          Si aceptas el aviso de cookies, usamos además Google Analytics (Google LLC) para medir el uso de la plataforma:
+          qué páginas se visitan, desde qué red social o enlace llegas y qué acciones se hacen (por ejemplo, tocar el
+          WhatsApp de un sitio, compartir o dar me gusta). Esa medición guarda cookies de analítica en tu navegador y no
+          incluye tu nombre, tu correo ni otros datos que te identifiquen; solo sabemos si la visita fue con o sin sesión
+          iniciada. Usamos esta información para decidir qué mejorar, nunca para publicidad.
         </p>
+        <p>
+          Si rechazas, no se guardan cookies de analítica y a Google solo se le envía un conteo básico de la visita, sin
+          cookies. Mientras no elijas, se aplica lo mismo que si rechazaras. Firebase puede guardar en tu navegador un identificador técnico de instalación. Puedes cambiar tu
+          decisión cuando quieras en «Preferencias de cookies», en el pie de página.
+        </p>
+        <p>No usamos cookies de publicidad ni personalizamos anuncios.</p>
       </section>
 
       <section>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { setLikedId } from "@/app/lib/clientCache/likedIds";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
+import { analytics as ga } from "@/app/lib/analytics";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { HeartLikeButton } from "./card/HeartLikeButton";
@@ -48,6 +49,7 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
     if (result.error) return false;
 
     setLikedId("events", user?.uid, eventId, liked);
+    if (liked) ga.track("like", { item_type: "event", item_id: eventId });
     // HeartLikeButton already handles optimistic state — no router.refresh() needed
     return true;
   }, [user, isHydrating]);
@@ -56,7 +58,10 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
     await refreshUser();
     if (pendingLike) {
       const res = await likeEventAction(event.id, pendingLike.liked);
-      if (res.success) setAppliedLike(pendingLike.liked);
+      if (res.success) {
+        setAppliedLike(pendingLike.liked);
+        if (pendingLike.liked) ga.track("like", { item_type: "event", item_id: event.id });
+      }
     }
     setIsLoginOpen(false);
     setPendingLike(null);

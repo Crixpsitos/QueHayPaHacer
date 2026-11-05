@@ -20,3 +20,14 @@ export function firstViewOfSession(siteId: string, storage?: Pick<Storage, "getI
   } catch {}
   return true
 }
+
+/** Una vista por sitio y día, también si se recarga o se cierra la pestaña. Almacenamiento bloqueado = cuenta (el tope del servidor acota). */
+export function firstViewOfDay(siteId: string, day: string, storage?: Pick<Storage, "getItem" | "setItem">): boolean {
+  try {
+    const s = storage ?? localStorage
+    const key = `qhpa:site-view-day:${siteId}`
+    if (s.getItem(key) === day) return false
+    s.setItem(key, day)
+  } catch {}
+  return true
+}

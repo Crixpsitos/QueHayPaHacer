@@ -5,6 +5,7 @@ import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "../mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import { ViewItem } from "@/app/components/analytics/ViewItem";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
 import {
@@ -40,7 +41,12 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
       viewModel.mainImage?.url,
     ).filter((s) => s.status === "published");
 
-    return <MultiDateEventDetailClient event={viewModel} sessions={sessionVMs} />;
+    return (
+      <>
+        <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
+        <MultiDateEventDetailClient event={viewModel} sessions={sessionVMs} />
+      </>
+    );
   }
 
   // Sitio vinculado (si el evento tiene location.siteId)
@@ -56,6 +62,9 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
   }
 
   return (
-    <EventDetailClient event={viewModel} linkedSite={linkedSite} />
+    <>
+      <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
+      <EventDetailClient event={viewModel} linkedSite={linkedSite} />
+    </>
   );
 };

@@ -2,6 +2,7 @@
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import type { CSSProperties } from "react";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
+import { analytics as ga } from "@/app/lib/analytics";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import Link from "next/link";
 import { useAuth } from "@/app/store/auth/AuthContext";
@@ -131,6 +132,7 @@ export function EventCardInteractive({
     }
 
     setLikedId("events", user?.uid, eventId, liked);
+    if (liked) ga.track("like", { item_type: "event", item_id: eventId });
     return true;
   };
 
@@ -142,6 +144,8 @@ export function EventCardInteractive({
         const retryResult = await likeEventAction(pendingLike.eventId, pendingLike.liked);
         if (retryResult.error) {
           showToast(retryResult.error, "error");
+        } else if (pendingLike.liked) {
+          ga.track("like", { item_type: "event", item_id: pendingLike.eventId });
         }
       }
 

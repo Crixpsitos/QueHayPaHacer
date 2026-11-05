@@ -1,3 +1,13 @@
+# Capacidad de Cloud Run en producción. Los valores = lo que ya corría (cpu 2, 1 GB, concurrencia 80, mínimo 0), salvo
+# `maxInstances`: 10 → 5. Es un TECHO de gasto (un pico o un bot no puede encender más de 5 servidores); no sube costos.
+# `minInstances` se queda en 0 a propósito: subirlo sí cobra por tener servidores encendidos sin tráfico.
+runConfig:
+  minInstances: 0
+  maxInstances: 5
+  concurrency: 80
+  cpu: 2
+  memoryMiB: 1024
+
 env:
   # Dominio propio de producción (sitemap, robots, canónicas y vistas previas).
   - variable: NEXT_PUBLIC_SITE_URL

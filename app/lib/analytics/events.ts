@@ -1,0 +1,84 @@
+/** Reglas puras de Analytics: qué rutas se miden y qué parámetros pueden salir. Sin DOM ni SDK (testeable). */
+
+export type AnalyticsEventName =
+  | "page_view"
+  | "view_item"
+  | "click_whatsapp"
+  | "click_como_llegar"
+  | "click_out"
+  | "share"
+  | "like"
+  | "register_event"
+  | "search";
+
+// Mismas rutas privadas que proxy.ts (+ estudio, API y herramientas internas). Los perfiles (también los públicos) no se
+// miden: su URL y su título llevan el nombre de una persona.
+const PRIVATE_PREFIXES = ["/profile", "/studio", "/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/api", "/dev", "/reset-password"];
+const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
+
+export function isTrackablePath(pathname: string): boolean {
+  if (PRIVATE_EVENT_PATH.test(pathname)) return false;
+  return !PRIVATE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+// Lista permitida: lo que no esté aquí no sale nunca (uid, correo, nombre, texto de búsqueda...).
+const ALLOWED_PARAMS = new Set(["item_type", "item_id", "item_category", "method", "destination"]);
+const MAX_VALUE = 100;
+
+export function sanitizeParams(params: Record<string, unknown>): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (!ALLOWED_PARAMS.has(key)) continue;
+    if (typeof value === "string" && value.length <= MAX_VALUE) out[key] = value;
+    else if (typeof value === "number" || typeof value === "boolean") out[key] = value;
+  }
+  return out;
+}
+
+const KEEP_QUERY = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid"];
+
+/** URL para `page_location`: solo UTM y click ids, nunca `redirect_to`, tokens ni hash. */
+export function cleanLocation(href: string): string {
+  const url = new URL(href);
+  const kept = new URLSearchParams();
+  for (const key of KEEP_QUERY) {
+    const value = url.searchParams.get(key);
+    if (value) kept.set(key, value);
+  }
+  const query = kept.toString();
+  return `${url.origin}${url.pathname}${query ? `?${query}` : ""}`;
+}
+
+const isWhatsAppHref = (href: string | undefined): boolean => {
+  try {
+    const { hostname } = new URL(href ?? "");
+    return hostname === "wa.me" || hostname === "whatsapp.com" || hostname.endsWith(".whatsapp.com");
+  } catch {
+    return false;
+  }
+};
+
+/** Traduce un clic medido en la ficha de un sitio (`data-site-track`) al evento de Analytics; null = no se manda nada. */
+export function siteClickEvent(
+  siteId: string,
+  type: string,
+  href?: string,
+): { name: AnalyticsEventName; params: Record<string, string> } | null {
+  const base = { item_type: "site", item_id: siteId };
+  switch (type) {
+    case "directions":
+    case "transit":
+      return { name: "click_como_llegar", params: { ...base, destination: type } };
+    case "booking":
+    case "website":
+    case "social":
+    case "call":
+      return isWhatsAppHref(href)
+        ? { name: "click_whatsapp", params: { ...base, destination: type } }
+        : { name: "click_out", params: { ...base, destination: type } };
+    case "share":
+      return { name: "share", params: base };
+    default:
+      return null;
+  }
+}

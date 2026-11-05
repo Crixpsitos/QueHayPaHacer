@@ -11,8 +11,8 @@ interface SocialShareBarProps {
   url: string;
   /** Título del contenido */
   title: string;
-  /** Callback que se ejecuta al compartir (para registrar el share en analytics) */
-  onShare?: () => Promise<void> | void;
+  /** Callback que se ejecuta al compartir (para registrar el share en analytics). `method`: whatsapp, x, facebook o copy. */
+  onShare?: (method: string) => Promise<void> | void;
   className?: string;
 }
 
@@ -51,8 +51,8 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(title);
 
-  const handleNetworkClick = () => {
-    onShare?.();
+  const handleNetworkClick = (method: string) => {
+    onShare?.(method);
   };
 
   const networks = [
@@ -82,7 +82,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
       setCopied(true);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 1500);
-      onShare?.();
+      onShare?.("copy");
     } catch { /* noop */ }
   };
 
@@ -99,7 +99,7 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleNetworkClick}
+            onClick={() => handleNetworkClick(label.toLowerCase())}
             aria-label={`Compartir en ${label}`}
             className={cn(
               "flex min-h-11 items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3.5 py-1.5 text-xs font-medium text-[#52525B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2",
