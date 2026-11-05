@@ -67,12 +67,12 @@ export const Step1BasicInfo = ({ form }: Step1Props) => {
                 <FieldLabel htmlFor="shortDescription" className="text-sm font-semibold text-[#09090B]">
                   Gancho corto
                 </FieldLabel>
-                <span className="text-xs text-[#A1A1AA] tabular-nums">{shortDescriptionValue.length}/150</span>
+                <span className="text-xs text-[#A1A1AA] tabular-nums">{shortDescriptionValue.length}/100</span>
               </div>
               <Textarea
                 {...field}
                 id="shortDescription"
-                maxLength={150}
+                maxLength={100}
                 placeholder="¿Por qué no te lo puedes perder?"
                 className="w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 min-h-16 resize-none transition-all"
               />
