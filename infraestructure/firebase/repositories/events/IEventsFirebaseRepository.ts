@@ -7,7 +7,7 @@ export interface IEventsFirebaseRepository {
     findTodayEvents(from: Date, to: Date): Promise<string[]>;
     findAllEvents(): Promise<string[]>;
     /** Eventos publicados y vigentes para el sitemap (slug + última edición). */
-    findSitemapEntries(limit: number): Promise<{ id: string; slug: string; updatedAt: Date | null }[]>;
+    findSitemapEntries(limit: number): Promise<{ id: string; slug: string; eventType: string; updatedAt: Date | null }[]>;
     findAllPaginated(limit: number, cursor: string | null): Promise<PaginatedEventIds>;
     findByTopCategory(categoryIds: string[]): Promise<string[]>;
     findByCategoryPaginated(categoryId: string, categorySlug: string | null, limit: number, cursor: string | null): Promise<PaginatedEventIds>;
