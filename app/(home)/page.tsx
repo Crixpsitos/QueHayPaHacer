@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { CampaignCarouselContainer } from "@/app/components/feature/home/campaign/CampaignCarouselContainer";
 import { CampaignCarouselSkeleton } from "@/app/components/feature/home/campaign/CampaignCarouselSkeleton";
 import { HomeSearchBar } from "@/app/components/feature/home/HomeSearchBar";
+import Link from "next/link";
 import { Suspense } from "react";
 import { CategoriesContainer } from "@/presentation/categories/components/CategoriesContainer";
 import { CategoriesSkeleton } from "@/presentation/categories/components/CategoriesSkeleton";
@@ -31,6 +32,22 @@ export default function HomePage() {
       </Suspense>
       <Section spacing="sm" className="mt-4">
         <HomeSearchBar />
+        {/* Enlaces internos a las landings que responden a "qué hacer hoy" / "este fin de semana" */}
+        <nav aria-label="Atajos" className="mt-3 flex flex-wrap gap-2">
+          {[
+            { href: "/eventos-hoy-ibague", label: "Qué hacer hoy" },
+            { href: "/eventos-este-fin-de-semana-ibague", label: "Este fin de semana" },
+            { href: "/donde-ir", label: "Dónde ir" },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="inline-flex min-h-10 items-center rounded-full border border-[#E4E4E7] bg-white px-4 text-sm font-medium text-[#09090B] transition-colors hover:bg-[#F4F4F5] focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
       </Section>
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
