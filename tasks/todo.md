@@ -19,12 +19,12 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
   - Verify: `npm run build && npm test` en functions (test falla sin el fix); `npm run lint`.
   - Files: `functions/src/modules/events/helpers/patchEventMedia.ts` (+ test), `onObjectFinalized.optimizeImages.ts`, `onObjectFinalized.optimizeVideos.ts`, `functions/package.json`.
   - Deps: ninguna.
-- [ ] **T3 Galería: persistir antes de subir (M):** separar `uploadToGoogleStorage` en `prepareUpload` + `putToStorage` (la actual los compone); `saveMediaFiles` pasa a preparar → items `processing` → `saveDraftEvent()` → PUT; si el PUT falla, item `error` + toast.
+- [x] **T3 Galería: persistir antes de subir (M):** separar `uploadToGoogleStorage` en `prepareUpload` + `putToStorage` (la actual los compone); `saveMediaFiles` pasa a preparar → items `processing` → `saveDraftEvent()` → PUT; si el PUT falla, item `error` + toast.
   - Acceptance: el item existe en Firestore antes del PUT; fallo de PUT deja `error` borrable; otros llamadores de `uploadToGoogleStorage` siguen igual.
   - Verify: test del orquestador con dependencias falsas (orden: prepare → persist → put); `pnpm typecheck && pnpm test`.
   - Files: `presentation/events/lib/upload/uploadToGoogleStorage.ts`, `presentation/events/lib/upload/uploadMediaPersistFirst.ts` (+ test), `presentation/events/components/steps/Step2Media.tsx`.
   - Deps: ninguna.
-- [ ] **T4 Portada: persistir antes de subir (S):** mismo orden en `saveMainImage` reusando T3.
+- [x] **T4 Portada: persistir antes de subir (S):** mismo orden en `saveMainImage` reusando T3.
   - Acceptance: `mainImage` `processing` con `path` guardado antes del PUT.
   - Verify: test del orquestador; `pnpm typecheck && pnpm test`.
   - Files: `Step2Media.tsx` (+ test existente del orquestador).

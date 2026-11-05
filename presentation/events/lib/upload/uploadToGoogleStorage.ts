@@ -1,23 +1,23 @@
 import { generateUploadUrl } from "@/presentation/shared/actions/generateUploadUrl";
 
-export async function uploadToGoogleStorage(
+export type UploadOptions = {
+  fileName: string;
+  contentType: string;
+  isPublic?: boolean;
+  subFolder?: string;
+  customMetadata?: Record<string, string>;
+  cacheControl?: string;
+};
+
+export type PreparedUpload = { uploadUrl: string; publicUrl: string; path: string };
+
+/** Paso 1: pide la URL firmada. Devuelve `path`/`publicUrl` ANTES de subir, para poder guardar el item primero. */
+export async function prepareUpload(
   file: File,
   entityName: string,
   entityId: string,
-  options: {
-    fileName: string;
-    contentType: string;
-    isPublic?: boolean;
-    subFolder?: string;
-    customMetadata?: Record<string, string>;
-    cacheControl?: string;
-  } = {
-    fileName: "",
-    contentType: "",
-  },
-) {
-
-
+  options: UploadOptions = { fileName: "", contentType: "" },
+): Promise<PreparedUpload> {
   const { uploadUrl, publicUrl, path } = await generateUploadUrl({
     entityName,
     entityId,
@@ -32,7 +32,15 @@ export async function uploadToGoogleStorage(
   if (!uploadUrl) {
     throw new Error("La URL de subida llegó vacía desde el servidor.");
   }
+  return { uploadUrl, publicUrl, path };
+}
 
+/** Paso 2: sube el archivo a la URL firmada. */
+export async function putToStorage(
+  file: File,
+  { uploadUrl }: PreparedUpload,
+  options: UploadOptions = { fileName: "", contentType: "" },
+) {
   try {
     const response = await fetch(uploadUrl, {
       method: "PUT",
@@ -58,10 +66,19 @@ export async function uploadToGoogleStorage(
     if (!response.ok) {
       throw new Error(`Google respondió con status: ${response.status}`);
     }
-
-    return { publicUrl, path };
   } catch (fetchError) {
     console.error("❌ Error al subir archivo a Google Storage:", fetchError);
     throw fetchError;
   }
+}
+
+export async function uploadToGoogleStorage(
+  file: File,
+  entityName: string,
+  entityId: string,
+  options: UploadOptions = { fileName: "", contentType: "" },
+) {
+  const prepared = await prepareUpload(file, entityName, entityId, options);
+  await putToStorage(file, prepared, options);
+  return { publicUrl: prepared.publicUrl, path: prepared.path };
 }
