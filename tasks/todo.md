@@ -14,7 +14,7 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
   - Verify: test que falla sin el fix (`pnpm test`), `pnpm typecheck`.
   - Files: `app/actions/events/lib/mergeMediaStatus.ts` (+ `.test.ts`), `app/actions/events/update-event.action.ts`, `infraestructure/firebase/repositories/events/EventsFirebaseRepository.ts` (+ interfaz).
   - Deps: ninguna.
-- [ ] **T2 CF: reintento si falta el item (M) — dirección A:** helper `patchEventMedia` con ventana de 5 min; usado por `onObjectFinalizedOptimizeImages` y `…Videos`; ampliar glob de `npm test`.
+- [x] **T2 CF: reintento si falta el item (M) — dirección A:** helper `patchEventMedia` con ventana de 5 min; usado por `onObjectFinalizedOptimizeImages` y `…Videos`; ampliar glob de `npm test`.
   - Acceptance: item ausente + objeto < 5 min → lanza; ausente y viejo → `logger.error` sin lanzar; presente → parchea; imagen y video comparten helper.
   - Verify: `npm run build && npm test` en functions (test falla sin el fix); `npm run lint`.
   - Files: `functions/src/modules/events/helpers/patchEventMedia.ts` (+ test), `onObjectFinalized.optimizeImages.ts`, `onObjectFinalized.optimizeVideos.ts`, `functions/package.json`.
