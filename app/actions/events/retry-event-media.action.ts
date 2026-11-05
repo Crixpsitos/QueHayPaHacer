@@ -2,10 +2,12 @@
 
 import { requireEventPermission } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
+import type { MediaItem } from "@/application/dto/events/EventDto";
 import { decideRetry } from "./lib/decideRetry";
 
 export type RetryEventMediaResult =
-  | { success: true; status: "retriggered" | "already-ready" }
+  | { success: true; status: "retriggered" }
+  | { success: true; status: "already-ready"; item: MediaItem }
   | { success: false; error: string; code: "forbidden" | "not-found" | "missing-original" | "failed" };
 
 /**
@@ -24,8 +26,11 @@ export async function retryEventMediaAction(eventId: string, mediaId: string): P
 
   const decision = decideRetry(eventId, event.media ?? [], mediaId);
   switch (decision.kind) {
-    case "already-ready":
-      return { success: true, status: "already-ready" };
+    case "already-ready": {
+      // El documento ya está listo pero el formulario sigue viendo "processing": devolver el item guardado.
+      const item = event.media.find((m) => m.id === mediaId) as MediaItem;
+      return { success: true, status: "already-ready", item: JSON.parse(JSON.stringify(item)) };
+    }
     case "not-found":
       return { success: false, code: "not-found", error: "No encontramos ese archivo en el evento." };
     case "bad-path":

@@ -42,7 +42,7 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
   - Verify: test de la decisión (función pura `decideRetry`), test de autorización; `pnpm typecheck && pnpm test`.
   - Files: `app/actions/events/retry-event-media.action.ts`, `app/actions/events/lib/decideRetry.ts` (+ test).
   - Deps: T0, T1.
-- [ ] **T7 UI "Reintentar" (S):** botón tras 3 min en `processing`/`error`; estado de carga; refresco desde Firestore.
+- [x] **T7 UI "Reintentar" (S):** botón tras 3 min en `processing`/`error`; estado de carga; refresco desde Firestore.
   - Acceptance: aparece solo pasado el umbral; al pulsar llama a T6 y muestra resultado; accesible (aria, foco).
   - Verify: test de `isRetryable(item, now)`; `pnpm typecheck && pnpm test`; revisión visual a 390 px.
   - Files: `MediaDropzone.tsx`, `presentation/events/lib/media/isRetryable.ts` (+ test), `FormRemoteDataSyncer.tsx` (si hace falta refrescar).

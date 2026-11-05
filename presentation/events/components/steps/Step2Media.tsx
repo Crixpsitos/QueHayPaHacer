@@ -11,6 +11,7 @@ import { getVideoData } from "../../lib/video/getVideoData";
 import { getImageData } from "../../lib/image/getImageData";
 import { prepareUpload, putToStorage, type UploadOptions } from "../../lib/upload/uploadToGoogleStorage";
 import { uploadMediaPersistFirst } from "../../lib/upload/uploadMediaPersistFirst";
+import { retryEventMediaAction } from "@/app/actions/events/retry-event-media.action";
 import { useEventModalStore } from "@/presentation/events/store/useEventModalStore";
 interface Step2Props {
   form: UseFormReturn<FormEventDto>;
@@ -121,6 +122,30 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     },
   });
   };
+  const retryMedia = async (mediaId: string) => {
+    const result = await retryEventMediaAction(eventId, mediaId);
+    const current = form.getValues("media") ?? [];
+    if (result.success) {
+      if (result.status === "already-ready") {
+        // Firestore ya lo tenía listo: reflejarlo en el formulario.
+        form.setValue("media", current.map((m) => (m.id === mediaId ? result.item : m)), { shouldValidate: true });
+        notify.success("El archivo ya estaba listo.");
+      } else {
+        notify.success("Reintentando. Puede tardar unos segundos.");
+      }
+      return;
+    }
+    if (result.code === "missing-original") {
+      // No hay nada que reprocesar: dejarlo en error para que el usuario lo elimine y lo vuelva a subir.
+      form.setValue(
+        "media",
+        current.map((m) => (m.id === mediaId ? ({ ...m, data: { ...m.data, status: "error" } } as MediaItem) : m)),
+        { shouldValidate: true },
+      );
+    }
+    notify.error(result.error);
+  };
+
   const saveMediaFiles = async (files: File[]) => {
     setIsOpen(false);
 
@@ -252,6 +277,7 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
               value={value ?? []}
               onChange={saveMediaFiles}
               removeMediaFile={removeMediaFile}
+              onRetry={retryMedia}
               error={
                 fieldState.error?.message ??
                 (fieldState.invalid ? "Por favor revisa los archivos cargados" : undefined)
