@@ -236,6 +236,8 @@ Verificar: revisión nueva en Cloud Run, entorno (`NEXT_PUBLIC_FIREBASE_PROJECT_
 
 La función `recomputeSiteEvents` (cada hora) está desplegada **solo en producción** (`firebase deploy --only functions:recomputeSiteEvents --project quehaypahacer-prod --force`, desde `QueHayPaHacerPruebas/`). Se dispara a mano con `gcloud scheduler jobs run firebase-schedule-recomputeSiteEvents-us-central1 --location=us-central1 --project=quehaypahacer-prod`. Alerta de producción: "QHPA: falla el recálculo de eventos de sitios" (correo a quehaypahacer6@gmail.com, máx. uno por hora).
 
+Alerta de medios (2026-11-05): "QHPA: falla el procesado de imágenes/videos" — log de severidad ERROR en los optimizadores (`onobjectfinalizedoptimize*`, `optimizemedia*`, `optimizeprofilemedia`, `optimizesession*`); mismo canal, máx. uno por hora. Si salta: logs con `severity>=ERROR` y el dueño usa "Reintentar".
+
 
 ## Dominio propio: yquehaypahacer.com (2026-10-24)
 

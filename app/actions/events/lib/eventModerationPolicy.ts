@@ -16,7 +16,22 @@ type EventModerationFields = Pick<
 export function moderationFieldsForSubmission(
   author: User,
   submittedAt = new Date(),
+  isAdmin = false,
 ): EventModerationFields {
+  // El admin de QHPA es quien audita: publica ya aprobado, sin auditoría posterior.
+  if (isAdmin) {
+    return {
+      status: "published",
+      moderationStatus: "approved",
+      moderationMode: "post_publication",
+      rejectionReason: null,
+      submittedAt,
+      reviewedAt: submittedAt,
+      reviewedBy: author.uid,
+      publishedAt: submittedAt,
+    };
+  }
+
   if (author.creatorVerified) {
     return {
       status: "published",

@@ -23,6 +23,7 @@ import { linkedSiteIds, notifySiteAuthorsOfEvent } from "@/app/lib/sites/siteEve
 import { DECLARATION_ERROR, hasDeclared } from "@/app/lib/legal/declaration";
 import { requireEventPermission } from "@/app/actions/_session";
 import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
+import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 type PublishEventActionResult =
@@ -186,7 +187,7 @@ export async function publishEventAction(
   const parsedData = enforcePlanFeatures(withTeam, author);
   // userId = dueño (tags de perfil, "primer evento"); el actor solo firma la declaración.
   const userId = ownerId;
-  Object.assign(parsedData, moderationFieldsForSubmission(author));
+  Object.assign(parsedData, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid)));
 
   try {
     // Detectar primer evento ANTES de publicar para setear metadata.isFirstEvent

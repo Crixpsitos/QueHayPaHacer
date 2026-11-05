@@ -35,6 +35,20 @@ test("verified creators publish while awaiting a later audit", () => {
     publishedAt: submittedAt,
   });
 });
+test("QHPA admins publish as already approved, with no pending audit", () => {
+  const admin = { uid: "admin1", creatorVerified: true } as User;
+  assert.deepEqual(moderationFieldsForSubmission(admin, submittedAt, true), {
+    status: "published",
+    moderationStatus: "approved",
+    moderationMode: "post_publication",
+    rejectionReason: null,
+    submittedAt,
+    reviewedAt: submittedAt,
+    reviewedBy: "admin1",
+    publishedAt: submittedAt,
+  });
+});
+
 test("client payload never overwrites server-owned event fields", () => {
   const createdAt = new Date("2025-01-01T00:00:00.000Z");
   const existing = {

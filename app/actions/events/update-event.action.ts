@@ -20,6 +20,7 @@ import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { refreshSitesOfEvent } from "./lib/refreshSites";
 import { siteLinkError } from "./lib/siteLink";
 import { linkedSiteIds } from "@/app/lib/sites/siteEvents";
+import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
 
 interface UpdateEventActionResult {
@@ -132,7 +133,7 @@ export async function updateEventAction(
   const updatedEvent = enforcePlanFeatures(withTeam, author);
 
   if (existingEvent.status === "published") {
-    Object.assign(updatedEvent, moderationFieldsForSubmission(author));
+    Object.assign(updatedEvent, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid)));
   }
 
   try {
