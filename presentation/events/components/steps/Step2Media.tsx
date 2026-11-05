@@ -87,8 +87,15 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     // Se guarda "processing" ANTES de subir: el CF lee/escribe mainImage al terminar la subida y un guardado posterior
     // con la copia local (processing) deshacía su resultado.
     const mainImageBase = { url: prepared.publicUrl, path: prepared.path, temporaryUrl: prepared.publicUrl };
+    const previousMainImage = form.getValues("mainImage");
     form.setValue("mainImage", { ...mainImageBase, status: "processing" }, { shouldValidate: false, shouldDirty: true });
-    await saveDraftEvent();
+    try {
+      await saveDraftEvent();
+    } catch (error) {
+      // Nada se subió: volver a la portada anterior en vez de dejar una "processing" que apunta a un archivo inexistente.
+      form.setValue("mainImage", previousMainImage, { shouldValidate: false, shouldDirty: true });
+      throw error;
+    }
 
     try {
       await putToStorage(file, prepared, uploadOptions);
@@ -133,7 +140,7 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
       const supported = files.filter((f) => f.type.startsWith("video/") || f.type.startsWith("image/"));
 
       // Preparar → guardar los items "processing" en Firestore → recién entonces subir (ver uploadMediaPersistFirst).
-      const { items } = await uploadMediaPersistFirst(supported, {
+      const { items, failedIds } = await uploadMediaPersistFirst(supported, {
         prepare: (file) => prepareUpload(file, "events", currentEventId, uploadOptions(file)),
         buildItem: async (file, prepared): Promise<MediaItem> => {
           if (file.type.startsWith("video/")) {
@@ -172,7 +179,13 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
           const existing = form.getValues("media") ?? [];
           form.clearErrors("media");
           form.setValue("media", [...existing, ...newItems], { shouldValidate: true });
-          await saveDraftEvent();
+          try {
+            await saveDraftEvent();
+          } catch (error) {
+            // Nada se subió: no dejar items "processing" huérfanos que un guardado posterior persistiría.
+            form.setValue("media", existing, { shouldValidate: true });
+            throw error;
+          }
         },
         put: (file, prepared) => putToStorage(file, prepared, uploadOptions(file)),
         markError: async (ids) => {
@@ -186,8 +199,8 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
         },
       });
 
-      const processedMedia = items;
-      return processedMedia;
+      if (failedIds.length > 0) throw new Error(`partial-upload:${failedIds.length}`);
+      return items;
     };
 
     notify.promise(processFiles(), {
@@ -195,6 +208,8 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
       success: () => "Archivos subidos exitosamente.",
       error: (error) => {
         console.error("Error subiendo media:", error);
+        const failed = error instanceof Error && error.message.match(/^partial-upload:(\d+)$/)?.[1];
+        if (failed) return `No se pudieron subir ${failed} archivo(s). Quedaron marcados con error: elimínalos y vuelve a subirlos.`;
         return "Error al subir los archivos.";
       },
     });

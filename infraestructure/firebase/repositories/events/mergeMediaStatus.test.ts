@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mergeMediaStatus, optimizedPathFor } from "./mergeMediaStatus"
+import { mergeMediaStatus } from "./mergeMediaStatus"
 
 const processing = (id: string) => ({ id, type: "image", data: { url: `u-${id}`, path: `p-${id}`, status: "processing" as const, temporaryUrl: `t-${id}` } })
 const ready = (id: string) => ({ id, type: "image", data: { url: `opt-${id}`, path: `optimized_${id}`, status: "ready" as const, width: 1200, height: 800 } })
@@ -37,27 +37,28 @@ test("respeta el orden del cliente al sustituir", () => {
   assert.deepEqual(out.media, [processing("b"), ready("a")])
 })
 
-test("optimizedPathFor refleja el nombre que genera compressImage", () => {
-  assert.equal(
-    optimizedPathFor("public/events/E1/images/deoptimized-main-image-alumbrado_dos.webp-3f091f91-0c37-498e"),
-    "public/events/E1/images/optimized_main-image-alumbrado_dos.webp",
-  )
-  assert.equal(
-    optimizedPathFor("public/events/E1/images/deoptimized-media-foto.jpeg-e4c4eafa-947f"),
-    "public/events/E1/images/optimized_media-foto.webp",
-  )
+const UP = "public/events/E1/images/deoptimized-main-image-f.webp-uuid1"
+const mainProcessing = (path: string) => ({ mainImage: { url: "x", path, status: "processing" as const, temporaryUrl: "x" } })
+
+test("portada: processing + ready del CF para ESA misma subida (originalPath igual) → queda el ready", () => {
+  const stored = { mainImage: { url: "opt", path: "public/events/E1/images/optimized_main-image-f.webp", originalPath: UP, status: "ready" as const } }
+  assert.deepEqual(mergeMediaStatus(mainProcessing(UP), stored).mainImage, stored.mainImage)
 })
 
-test("portada: processing + ready del CF para ESA subida → queda el ready", () => {
-  const incoming = { mainImage: { url: "x", path: "public/events/E1/images/deoptimized-main-image-f.webp-uuid1", status: "processing" as const, temporaryUrl: "x" } }
+test("portada: re-subir un archivo con el MISMO nombre (otro uuid) no adopta el ready anterior", () => {
+  const UP2 = "public/events/E1/images/deoptimized-main-image-f.webp-uuid2"
+  const stored = { mainImage: { url: "opt", path: "public/events/E1/images/optimized_main-image-f.webp", originalPath: UP, status: "ready" as const } }
+  assert.deepEqual(mergeMediaStatus(mainProcessing(UP2), stored).mainImage, mainProcessing(UP2).mainImage)
+})
+
+test("portada: ready viejo sin originalPath (anterior a este cambio) no se adopta", () => {
   const stored = { mainImage: { url: "opt", path: "public/events/E1/images/optimized_main-image-f.webp", status: "ready" as const } }
-  assert.deepEqual(mergeMediaStatus(incoming, stored).mainImage, stored.mainImage)
+  assert.deepEqual(mergeMediaStatus(mainProcessing(UP), stored).mainImage, mainProcessing(UP).mainImage)
 })
 
-test("portada: subida nueva con otro archivo NO adopta el ready de la portada anterior", () => {
-  const incoming = { mainImage: { url: "x", path: "public/events/E1/images/deoptimized-main-image-nueva.webp-uuid2", status: "processing" as const, temporaryUrl: "x" } }
-  const stored = { mainImage: { url: "opt", path: "public/events/E1/images/optimized_main-image-vieja.webp", status: "ready" as const } }
-  assert.deepEqual(mergeMediaStatus(incoming, stored).mainImage, incoming.mainImage)
+test("un error del cliente (subida falló en el navegador) no pisa un ready del CF", () => {
+  const out = mergeMediaStatus({ media: [failed("a")] }, { media: [ready("a")] })
+  assert.deepEqual(out.media, [ready("a")])
 })
 
 test("sin media/mainImage en el evento (guardado parcial) no inventa nada", () => {
