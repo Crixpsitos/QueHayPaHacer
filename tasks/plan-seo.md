@@ -9,6 +9,6 @@ Orden por valor y riesgo. Un commit por tarea. Archivo aparte: `tasks/plan.md` t
 6. Acceso a "Qué hacer hoy" en la home (XS/S).
    Checkpoint B.
 7. Sitemap: `explorar`, `contactanos`, sesiones (tras inspeccionar), eventos terminados 90 días, lastModified real; armado puro + test (M).
-8. `/sites/[id]` → 308 (XS).
+8. (descartada: `/sites` es privada, ver spec).
 9. Perfiles públicos al sitemap SOLO si el usuario lo aprueba (pregunta abierta).
    Checkpoint C: revisión independiente (code-reviewer), build, curl; luego aviso antes de `git push origin develop`.
