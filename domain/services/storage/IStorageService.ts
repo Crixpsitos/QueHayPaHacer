@@ -13,6 +13,11 @@ export interface IStorageService {
 
     delete(path: string): Promise<void>;
 
+    exists(path: string): Promise<boolean>;
+
+    /** Reescribe el objeto sobre sí mismo (nueva generación): vuelve a disparar `onObjectFinalized`. */
+    retrigger(path: string): Promise<void>;
+
     generateSignedUrl(
         path: string,
         isPublic: boolean,

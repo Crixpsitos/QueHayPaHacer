@@ -58,6 +58,17 @@ export class StorageService implements IStorageService {
     };
   }
 
+  async exists(path: string): Promise<boolean> {
+    const [found] = await this.bucket.file(path).exists();
+    return found;
+  }
+
+  async retrigger(path: string): Promise<void> {
+    const file = this.bucket.file(path);
+    // Los originales de eventos se suben públicos; la reescritura no debe dejarlos privados (preview mientras procesa).
+    await file.copy(file, { predefinedAcl: "publicRead" });
+  }
+
   async generateSignedUrl(
   path: string,
   isPublic: boolean,

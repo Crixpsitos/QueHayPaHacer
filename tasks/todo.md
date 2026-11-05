@@ -37,7 +37,7 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
 - [ ] Revisión humana antes de seguir
 
 ## Fase 2 — Recuperación
-- [ ] **T6 Server action `retryEventMedia` (M):** reescribe el original con `rewriteTo` (confirmado en T0). Auth, dueño/admin (reusar helper existente), original existe?, ya hay `optimized_*` → `ready`, si no reescribir original, si no existe original → `error` con mensaje; idempotente.
+- [x] **T6 Server action `retryEventMedia` (M):** reescribe el original con `rewriteTo` (confirmado en T0). Auth, dueño/admin (reusar helper existente), original existe?, ya hay `optimized_*` → `ready`, si no reescribir original, si no existe original → `error` con mensaje; idempotente.
   - Acceptance: criterio 6 del spec; no actúa si el item ya es `ready`; no permite tocar eventos ajenos.
   - Verify: test de la decisión (función pura `decideRetry`), test de autorización; `pnpm typecheck && pnpm test`.
   - Files: `app/actions/events/retry-event-media.action.ts`, `app/actions/events/lib/decideRetry.ts` (+ test).
