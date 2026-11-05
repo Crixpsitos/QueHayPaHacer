@@ -54,6 +54,7 @@ export function EventHero({
       alt={`Imagen principal de ${event.title}`}
       fill
       sizes="(max-width: 1280px) 100vw, 1216px"
+      quality={90}
       className="object-cover"
       preload
     />

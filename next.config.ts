@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
   images: {
     // App Hosting fuerza unoptimized:true si esta clave no está declarada (sin srcSet ni /_next/image).
     unoptimized: false,
+    // Next 16 solo permite [75] por defecto; 90 es para las imágenes grandes de eventos (portada y galería del detalle).
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: "https",

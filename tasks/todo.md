@@ -59,3 +59,12 @@ Repos: app = `QueHayPaHacer-copilot` (`develop`) · functions = `../functions` (
 - [ ] 3 pruebas manuales de 6 archivos en develop sin ítems atascados
 - [ ] `agent-skills:review` + `security-and-hardening` sobre T6 (server action con auth)
 - [ ] Orden explícita del usuario antes de desplegar a prod (`agent-skills:ship`)
+
+
+---
+# Módulo `image-quality` (SPEC-image-quality.md) — añadido 2026-11-05
+Medición previa (SSIM, fotos de Multicentro, escritorio 1920): cadena actual 0,913/0,870 → 1920 px + q90 guardado + `/_next/image` q90: 0,986/0,966. Subir a 2400 px no aporta. Casi toda la mejora viene de pasar `/_next/image` de q75 a q90.
+- [x] **Q1 functions:** `encodeWebp.ts` (`EVENT_IMAGE_OPTIONS` 1920 px / q90 / effort 5) + `compressImage` lo usa; solo los triggers de eventos pasan las opciones (sesiones, sitios y perfil conservan las suyas). Tests 24/24. Commit 02a5004 (repo functions).
+- [x] **Q2 app:** `images.qualities: [75, 90]` en `next.config.ts` y `quality={90}` en `EventHero` y `EventMedia` (diapositivas). Verificado en dev: `q=90` → 200 y archivo mayor; `q=80` → 400.
+- [ ] **Q3 despliegue:** functions a develop → subir una foto de Multicentro a un evento de develop → comparar a ojo con la anterior (usuario) → luego prod con orden explícita.
+  - Pendiente decidir: ¿extender 1920/q90 a sitios y sesiones? (hoy NO).
