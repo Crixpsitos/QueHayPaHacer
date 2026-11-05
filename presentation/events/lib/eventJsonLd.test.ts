@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { buildEventJsonLd } from "./eventJsonLd"
+import { buildEventJsonLd, eventJsonLdHtml } from "./eventJsonLd"
 import type { EventViewModel } from "../view-models/EventViewModel"
 
 const base = {
@@ -56,4 +56,11 @@ test("multi-fecha: sin ubicación ni oferta (viven en las sesiones)", () => {
   const ld = buildEventJsonLd({ ...base, eventType: "multi-date" } as unknown as EventViewModel) as any
   assert.equal(ld.offers, undefined)
   assert.equal(ld.location, undefined)
+})
+
+test("el HTML del script no puede cerrarse con </script> del título (XSS)", () => {
+  const html = eventJsonLdHtml({ ...base, title: "x</script><img src=x onerror=alert(1)>" } as unknown as EventViewModel)
+  assert.ok(!html.includes("</script>"))
+  assert.ok(!html.includes("<img"))
+  assert.equal(JSON.parse(html).name, "x</script><img src=x onerror=alert(1)>")
 })

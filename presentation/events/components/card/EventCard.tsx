@@ -10,7 +10,7 @@ import { cn } from "@/app/lib/utils/cn";
 import { CardLikeButton } from "./CardLikeButton";
 import { compactCount, registrationLabel, spotsInfo, timingBadge } from "./cardMeta";
 import { EventViewModel } from "../../view-models/EventViewModel";
-import { buildEventJsonLd } from "../../lib/eventJsonLd";
+import { eventJsonLdHtml } from "../../lib/eventJsonLd";
 import {
   dateParts,
   formatDateRange,
@@ -95,7 +95,7 @@ export const EventCard = ({
   const authorName = event.author?.displayName?.trim() || "Organizador";
   const place = hasLocation ? [event.location.venue, event.location.city?.name].filter(Boolean).join(", ") : "";
 
-  const jsonLd = buildEventJsonLd(event, { attendeeCount });
+  const jsonLd = eventJsonLdHtml(event, { attendeeCount });
 
   return (
     <article
@@ -107,7 +107,7 @@ export const EventCard = ({
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
 
       <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F4F5]">
