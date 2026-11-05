@@ -24,6 +24,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      {/* ponytail: h1 solo para lectores de pantalla y buscadores; el título visible lo pone el carrusel de campaña (h2, cambia por campaña) */}
+      <h1 className="sr-only">Que Hay Pa Hacer? Eventos y planes en Ibagué: qué hacer hoy, este fin de semana y dónde ir</h1>
       <Suspense fallback={<CampaignCarouselSkeleton />}>
         <CampaignCarouselContainer />
       </Suspense>
