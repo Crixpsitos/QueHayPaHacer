@@ -75,3 +75,10 @@ Resueltas el 2026-11-05: triggers = `onObjectFinalizedOptimizeImages` (galería 
 Abiertas (se resuelven con un spike al inicio del plan):
 1. ¿Reescribir un objeto sobre sí mismo en GCS (`file.copy` al mismo nombre) crea una nueva generación y dispara `onObjectFinalized`? Si no, alternativa: copiar a un nombre temporal y renombrar, o llamar a la compresión desde la server action. Probar en develop antes de elegir.
 2. `mainImage` usa `update()` directo (no busca item): si el doc aún no existe lanza y reintenta. Confirmar que no tiene el mismo síntoma antes de excluirlo del arreglo.
+
+## Cambios de implementación respecto al spec (2026-11-05)
+- Criterio 6: la acción `retryEventMedia` **siempre reescribe el original** (`rewriteTo`/`file.copy`) y deja que el CF sea el único que escribe `ready`; se eliminó la rama "ya existe `optimized_*` → marcar ready" (no duplica la lógica de dimensiones). Si el item ya está `ready` devuelve el item guardado para refrescar el form.
+- El umbral de 3 min se mide en el cliente (por tarjeta, desde que aparece en `processing`) porque los items no guardan hora de subida; `error` se reintenta de inmediato. No se cambió la forma del documento.
+- Añadido `mainImage.originalPath` (lo escribe el CF) para que el merge del servidor no adopte el `ready` de una subida anterior con el mismo nombre.
+- Pendiente de despliegue: functions (develop y luego prod), alerta de logs (T8), `retryEventMedia` solo cubre la galería (la portada no tiene botón: su camino de error es otro y el síntoma no se reportó).
+- Costos conocidos aceptados: reintentos del CF dentro de la ventana de 5 min vuelven a comprimir si el usuario borró el item justo entonces; ediciones de `alt` hechas mientras un item procesa se pierden al adoptar el `ready`.
