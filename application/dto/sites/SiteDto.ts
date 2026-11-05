@@ -3,6 +3,7 @@ import * as v from "valibot"
 import { SITE_TIP_IDS, TIP_NOTE_MAX } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { TRANSIT_MAX_ROUTES, TRANSIT_NOTE_MAX, TRANSIT_ROUTE_ID_RE } from "@/domain/entities/sites/value-objects/SiteTransit"
+import { SECTIONS_MAX, SECTION_BODY_MAX, SECTION_TITLE_MAX, SECTIONS_TOTAL_MAX } from "@/domain/entities/sites/value-objects/SiteSections"
 import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 
 const SITE_CATEGORIES = [
@@ -59,6 +60,15 @@ const Transit = v.object({
   ),
 })
 
+const Sections = v.pipe(
+  v.array(v.object({ title: text(SECTION_TITLE_MAX, "Título de sección"), body: text(SECTION_BODY_MAX, "Texto de sección") })),
+  v.maxLength(SECTIONS_MAX, `Máximo ${SECTIONS_MAX} secciones`),
+  v.check(
+    (list) => list.reduce((n, s) => n + s.title.length + s.body.length, 0) <= SECTIONS_TOTAL_MAX,
+    `Las secciones suman demasiado texto (máximo ${SECTIONS_TOTAL_MAX} caracteres)`,
+  ),
+)
+
 const fields = {
   name: text(120, "Nombre"),
   description: text(5000, "Descripción"),
@@ -84,6 +94,7 @@ const fields = {
   recommendations: v.optional(v.object({ tips: v.array(v.picklist(SITE_TIP_IDS)), note: v.optional(text(TIP_NOTE_MAX, "Nota de recomendaciones")) })),
   bookingUrl: v.optional(OptionalHttpUrl),
   transit: v.optional(Transit),
+  sections: v.optional(Sections),
   kind: v.optional(v.picklist(SITE_KINDS)),
   // "qhpa" no está: lo decide el servidor, nunca el cliente.
   publishedAs: v.optional(v.picklist(SITE_PUBLISHED_AS_FORM)),

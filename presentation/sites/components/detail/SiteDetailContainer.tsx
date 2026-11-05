@@ -28,6 +28,7 @@ import { TrustBadge } from "../TrustBadge";
 import { CompleteBadge } from "../CompleteBadge";
 import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
+import { SectionsAccordion } from "./SectionsAccordion";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
 import { SiteClaimCta } from "../claim/SiteClaimCta";
@@ -251,6 +252,8 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
               <p className="leading-relaxed text-muted-foreground whitespace-pre-line">{site!.description}</p>
             </section>
           )}
+
+          {!!site!.sections?.length && <SectionsAccordion sections={site!.sections} />}
 
           <Separator />
 
