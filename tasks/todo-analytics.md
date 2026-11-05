@@ -19,7 +19,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
   - Acceptance: sin `measurementId` no lanza ni importa el SDK; con fake de analytics llama a `logEvent` con params saneados.
   - Verify: `pnpm test` con SDK simulado; `pnpm typecheck`.
   - Files: `client.ts`, `client.test.ts` (dependencia: T0, T1).
-- [ ] **T3 Proveedor + page_view + login_state (M)** — `app/components/analytics/AnalyticsProvider.tsx` (client, sin UI) montado en `app/layout.tsx` bajo `<Suspense fallback={null}>`: `page_view` por ruta/UTM (solo públicas), `login_state` desde `useAuth()`.
+- [x] **T3 Proveedor + page_view + login_state (M)** — `app/components/analytics/AnalyticsProvider.tsx` (client, sin UI) montado en `app/layout.tsx` bajo `<Suspense fallback={null}>`: `page_view` por ruta/UTM (solo públicas), `login_state` desde `useAuth()`.
   - Acceptance: navegar entre 3 páginas públicas = 3 `page_view`; entrar a `/studio` = 0; con sesión `login_state=logged_in`, sin sesión `anon`.
   - Verify: `pnpm typecheck && pnpm test && pnpm build`; manual en develop con DebugView.
   - Files: `AnalyticsProvider.tsx`, `app/layout.tsx` (dependencia: T2).

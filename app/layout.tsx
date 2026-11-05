@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
+import { AnalyticsProvider } from "./components/analytics/AnalyticsProvider";
 import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "./lib/site";
 import "./globals.css";
 
@@ -107,6 +108,7 @@ export default function RootLayout({
         <AuthProvider user={null}>
             <Suspense fallback={null}>
               <AuthPathWatcher />
+              <AnalyticsProvider />
             </Suspense>
             {children}
         </AuthProvider>
