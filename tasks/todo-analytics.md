@@ -61,7 +61,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
 - [ ] Tabla "evento → dónde se dispara" revisada por el usuario; todo verde; reportes de GA4 muestran los eventos.
 
 ## Fase 4 — Protección de abuso de lo que ya escribe (spec, sección obligatoria)
-- [ ] **T6a Endurecer `/api/sites/[id]/track` (M)** — tope GLOBAL por instancia además del de IP (descarta con 204 sin tocar Firestore), exigir `Sec-Fetch-Site: same-origin`, `Content-Type` JSON y cuerpo ≤ 1 KB, y en el cliente (`app/lib/siteTrack.ts`) una sola vista por sitio/navegador/día (`localStorage`, con try/catch) y solo con pestaña visible.
+- [x] **T6a Endurecer `/api/sites/[id]/track` (M)** — tope GLOBAL por instancia además del de IP (descarta con 204 sin tocar Firestore), exigir `Sec-Fetch-Site: same-origin`, `Content-Type` JSON y cuerpo ≤ 1 KB, y en el cliente (`app/lib/siteTrack.ts`) una sola vista por sitio/navegador/día (`localStorage`, con try/catch) y solo con pestaña visible.
   - Acceptance: 1000 POST seguidos = 0 escrituras tras el tope; recargar la ficha el mismo día = 0 beacons nuevos; peticiones cross-site → 403/204 sin escribir.
   - Verify: test del limitador global y de validación; manual contando escrituras en develop.
   - Files: `app/api/_lib/ipRateLimit.ts`, `app/api/sites/[id]/track/route.ts`, `app/lib/siteTrack.ts`, tests.

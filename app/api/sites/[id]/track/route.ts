@@ -4,8 +4,12 @@ import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteIdSchema, SiteTrackBodySchema } from "@/application/dto/sites/SiteTrackDto"
 import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { clientIp, createIpLimiter } from "@/app/api/_lib/ipRateLimit"
+import { createGlobalLimiter, isSameOriginBeacon, readBoundedJson } from "@/app/api/_lib/beaconGuard"
 
 const allowed = createIpLimiter(60)
+const globalAllowed = createGlobalLimiter(600)
+const MAX_BODY = 1024
+const DROPPED = () => new NextResponse(null, { status: 204 }) // lo descartado no se distingue de lo aceptado
 
 /**
  * Cuenta una vista o un clic de la ficha pública de un sitio. Público: lo llama el navegador con sendBeacon.
@@ -14,12 +18,14 @@ const allowed = createIpLimiter(60)
  * ponytail: no distingue sitios públicos de borradores (exigiría una lectura por evento); el impacto es solo un contador.
  */
 export async function POST(request: NextRequest, ctx: RouteContext<"/api/sites/[id]/track">) {
+  if (!isSameOriginBeacon(request.headers)) return DROPPED()
   const { id } = await ctx.params
-  const body = v.safeParse(SiteTrackBodySchema, await request.json().catch(() => null))
+  const body = v.safeParse(SiteTrackBodySchema, await readBoundedJson(request, MAX_BODY))
   if (!v.safeParse(SiteIdSchema, id).success || !body.success) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 })
   }
   if (!allowed(clientIp(request))) return new NextResponse(null, { status: 429 })
+  if (!globalAllowed()) return DROPPED()
 
   try {
     await createServerContainer().sitesService.recordTrack(id, body.output.type, bogotaDay())
