@@ -79,3 +79,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  # Cuenta admin de QHPA (uid no es secreto): publica sin auditoría posterior y accede a acciones de admin.
+  - variable: QHPA_ADMIN_UIDS
+    value: rwBy8op3QSRseVwU7EeCnYneCHw1
+    availability:
+      - RUNTIME
