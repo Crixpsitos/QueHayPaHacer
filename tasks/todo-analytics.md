@@ -34,7 +34,7 @@ Convención: un commit por tarea; marcar [x] al terminar; no desplegar sin orden
 - [ ] Revisión del usuario antes de seguir.
 
 ## Fase 2 — Consentimiento (UI)
-- [ ] **T4 Aviso de consentimiento (M)** — banner accesible (aceptar y rechazar con el mismo peso visual, teclado, foco, `role="dialog"` no bloqueante, 320–1440 px), recuerda la decisión en `localStorage` (con try/catch) y enlace "Preferencias de cookies" en el pie para cambiarla. Textos claros en español; enlace a la política (ver pregunta 2). Seguir ui-design/frontend-design con la identidad actual (ver DESING.md); sin "dark patterns". Convive con `InstallBanner` (no apilarse en móvil).
+- [x] **T4 Aviso de consentimiento (M)** — banner accesible (aceptar y rechazar con el mismo peso visual, teclado, foco, `role="dialog"` no bloqueante, 320–1440 px), recuerda la decisión en `localStorage` (con try/catch) y enlace "Preferencias de cookies" en el pie para cambiarla. Textos claros en español; enlace a la política (ver pregunta 2). Seguir ui-design/frontend-design con la identidad actual (ver DESING.md); sin "dark patterns". Convive con `InstallBanner` (no apilarse en móvil).
   - Acceptance: primera visita muestra el aviso; aceptar → `granted`; rechazar → sigue `denied`; recargar no reaparece; el pie permite cambiar.
   - Verify: tests de la lógica de estado; revisión con `web-design-guidelines`; prueba manual a 390 px y escritorio.
   - Files: `ConsentBanner.tsx`, `consent.ts`(+test), pie de página, `layout.tsx` (dependencia: T2).

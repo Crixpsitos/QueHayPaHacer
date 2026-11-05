@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { AuthProvider, AuthPathWatcher } from "./store/auth/AuthProvider";
 import { AnalyticsProvider } from "./components/analytics/AnalyticsProvider";
+import { ConsentBanner } from "./components/analytics/ConsentBanner";
 import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "./lib/site";
 import "./globals.css";
 
@@ -113,6 +114,9 @@ export default function RootLayout({
             {children}
         </AuthProvider>
         <Toaster />
+        <Suspense fallback={null}>
+          <ConsentBanner />
+        </Suspense>
         <ServiceWorkerRegister />
         <Suspense fallback={null}>
           <InstallBanner />
