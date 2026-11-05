@@ -10,6 +10,7 @@ import { cn } from "@/app/lib/utils/cn";
 import { CardLikeButton } from "./CardLikeButton";
 import { compactCount, registrationLabel, spotsInfo, timingBadge } from "./cardMeta";
 import { EventViewModel } from "../../view-models/EventViewModel";
+import { buildEventJsonLd } from "../../lib/eventJsonLd";
 import {
   dateParts,
   formatDateRange,
@@ -94,61 +95,7 @@ export const EventCard = ({
   const authorName = event.author?.displayName?.trim() || "Organizador";
   const place = hasLocation ? [event.location.venue, event.location.city?.name].filter(Boolean).join(", ") : "";
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: event.title,
-    description: event.shortDescription,
-    ...(event.startDate ? { startDate: event.startDate } : {}),
-    ...(event.endDate ? { endDate: event.endDate } : {}),
-    eventStatus:
-      event.status === "published"
-        ? "https://schema.org/EventScheduled"
-        : event.status === "cancelled"
-          ? "https://schema.org/EventCancelled"
-          : "https://schema.org/EventPostponed",
-    ...(hasLocation
-      ? {
-          location: {
-            "@type": "Place",
-            name: event.location.venue,
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: event.location.address,
-              addressLocality: event.location.city.name,
-              addressRegion: event.location.department.name,
-              addressCountry: event.location.country.name,
-            },
-            geo: {
-              "@type": "GeoCoordinates",
-              latitude: event.location.coordinates.lat,
-              longitude: event.location.coordinates.lng,
-            },
-          },
-        }
-      : {}),
-    organizer: {
-      "@type": "Person",
-      name: event.author.displayName,
-    },
-    image: event.mainImage?.url,
-    ...(isMultiDate
-      ? {}
-      : {
-          offers: {
-            "@type": "Offer",
-            price: isFree ? "0" : event.price.amount.toString(),
-            priceCurrency: event.price.currency ?? "COP",
-            availability:
-              attendeeCount > 0 && event.capacity && attendeeCount >= event.capacity
-                ? "https://schema.org/SoldOut"
-                : "https://schema.org/InStock",
-            url: detailUrl,
-          },
-        }),
-    keywords: event.categoryInfo.tags.join(", "),
-    about: { "@type": "Thing", name: event.categoryInfo.title },
-  };
+  const jsonLd = buildEventJsonLd(event, { attendeeCount });
 
   return (
     <article
