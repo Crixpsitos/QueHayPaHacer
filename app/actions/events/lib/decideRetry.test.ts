@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { decideRetry } from "./decideRetry"
+import { decideRetry, canRetryNow, RETRY_COOLDOWN_MS } from "./decideRetry"
 
 const item = (status: string, path?: string, id = "m1") => ({ id, data: { status, path } })
 const P = "public/events/E1/images/deoptimized-media-foto.jpg-uuid"
@@ -38,4 +38,26 @@ test("rechaza paths fuera de la carpeta del evento (no reescribir objetos ajenos
 
 test("no reintenta los archivos ya optimizados (optimized_*) para no crear bucles", () => {
   assert.deepEqual(decideRetry("E1", [item("processing", "public/events/E1/images/optimized_foto.webp")], "m1"), { kind: "bad-path" })
+})
+
+test("solo reescribe originales deoptimized-* (no miniaturas ni otros archivos de la carpeta)", () => {
+  for (const bad of [
+    "public/events/E1/images/foto.jpg",
+    "public/events/E1/images/thumb_foto.jpg",
+    "public/events/E1/images/optimized_foto_thumbnail.jpg",
+  ]) {
+    assert.deepEqual(decideRetry("E1", [item("processing", bad)], "m1"), { kind: "bad-path" }, bad)
+  }
+})
+
+test("rechaza barras invertidas y segmentos vacíos en el path", () => {
+  for (const bad of ["public/events/E1/images\\deoptimized-x", "public/events/E1//images/deoptimized-x"]) {
+    assert.deepEqual(decideRetry("E1", [item("processing", bad)], "m1"), { kind: "bad-path" }, bad)
+  }
+})
+
+test("enfriamiento: no reintenta si el objeto cambió hace menos de 2 min", () => {
+  assert.equal(canRetryNow(30_000), false)
+  assert.equal(canRetryNow(RETRY_COOLDOWN_MS - 1), false)
+  assert.equal(canRetryNow(RETRY_COOLDOWN_MS), true)
 })

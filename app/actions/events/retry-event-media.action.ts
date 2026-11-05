@@ -3,7 +3,7 @@
 import { requireEventPermission } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { MediaItem } from "@/application/dto/events/EventDto";
-import { decideRetry } from "./lib/decideRetry";
+import { canRetryNow, decideRetry } from "./lib/decideRetry";
 
 export type RetryEventMediaResult =
   | { success: true; status: "retriggered" }
@@ -38,8 +38,13 @@ export async function retryEventMediaAction(eventId: string, mediaId: string): P
   }
 
   try {
-    if (!(await storageService.exists(decision.path))) {
+    const age = await storageService.ageMs(decision.path);
+    if (age === null) {
       return { success: false, code: "missing-original", error: "El archivo original ya no existe. Vuelve a subirlo." };
+    }
+    // Cada reintento lanza una compresión (imagen o ffmpeg): sin enfriamiento un bucle del cliente sale caro.
+    if (!canRetryNow(age)) {
+      return { success: false, code: "failed", error: "Ya se está reintentando. Espera un par de minutos." };
     }
     await storageService.retrigger(decision.path);
     return { success: true, status: "retriggered" };

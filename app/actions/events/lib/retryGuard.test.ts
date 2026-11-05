@@ -20,3 +20,8 @@ test("solo reescribe el path que devuelve decideRetry", () => {
   assert.ok(src.includes("storageService.retrigger(decision.path)"))
   assert.ok(src.indexOf("decideRetry(") < src.indexOf("storageService.retrigger("))
 })
+
+test("aplica enfriamiento en el servidor antes de reescribir", () => {
+  assert.ok(src.includes("canRetryNow(age)"))
+  assert.ok(src.indexOf("canRetryNow(") < src.indexOf("storageService.retrigger("))
+})

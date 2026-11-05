@@ -13,7 +13,8 @@ export interface IStorageService {
 
     delete(path: string): Promise<void>;
 
-    exists(path: string): Promise<boolean>;
+    /** Milisegundos desde la última modificación del objeto, o null si no existe. */
+    ageMs(path: string): Promise<number | null>;
 
     /** Reescribe el objeto sobre sí mismo (nueva generación): vuelve a disparar `onObjectFinalized`. */
     retrigger(path: string): Promise<void>;

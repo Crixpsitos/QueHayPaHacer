@@ -58,9 +58,11 @@ export class StorageService implements IStorageService {
     };
   }
 
-  async exists(path: string): Promise<boolean> {
-    const [found] = await this.bucket.file(path).exists();
-    return found;
+  async ageMs(path: string): Promise<number | null> {
+    const file = this.bucket.file(path);
+    if (!(await file.exists())[0]) return null;
+    const [meta] = await file.getMetadata();
+    return Date.now() - new Date(meta.updated ?? meta.timeCreated ?? 0).getTime();
   }
 
   async retrigger(path: string): Promise<void> {
