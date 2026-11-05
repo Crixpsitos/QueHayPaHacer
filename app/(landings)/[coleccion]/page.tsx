@@ -10,6 +10,7 @@ import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollection
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "@/app/lib/site";
 import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
 import { MapPin } from "lucide-react";
+import { fetchTodayLabel } from "@/presentation/events/data/collectionFetchers";
 
 function CollectionSkeleton({ kind }: { kind: CollectionKind }) {
   if (kind === "category") {
@@ -97,13 +98,17 @@ async function CollectionLanding({ params }: PageProps) {
   // Colección de eventos
   const def = await getEventCollectionBySlug(coleccion);
   if (!def) notFound();
+  // Hoy: el subtítulo lleva el día ("planes para hoy domingo 8 de noviembre"), las palabras de las búsquedas reales.
+  const description = def.kind === "today"
+    ? `Planes para hoy ${await fetchTodayLabel()} en ${def.cityLabel}: eventos, conciertos, cultura y gastronomía.`
+    : def.description;
 
   return (
     <>
       <Section spacing="sm" className="mt-4">
         <h1 className="text-3xl font-bold">{def.title}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          {def.description}
+          {description}
         </p>
       </Section>
 

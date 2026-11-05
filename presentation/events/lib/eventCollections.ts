@@ -15,7 +15,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
  * de mañana regenera todas las combinaciones sin tocar el resto.
  */
 
-export type CollectionKind = "featured" | "weekend" | "all" | "category";
+export type CollectionKind = "featured" | "weekend" | "today" | "all" | "category";
 
 export interface CollectionDef {
   /** Slug completo de la ruta: `${baseSlug}-${citySlug}`. */
@@ -73,6 +73,16 @@ const BASE_COLLECTIONS: {
     metaTitle: (c) => `Eventos destacados en ${c}`,
     metaDescription: (c) =>
       `Descubre los eventos más destacados y populares en ${c}. Encuentra los mejores planes cerca de ti.`,
+  },
+  {
+    baseSlug: "hoy",
+    kind: "today",
+    shortLabel: "Hoy",
+    title: (c) => `Qué hacer hoy en ${c}`,
+    description: (c) => `Eventos y planes para hoy en ${c}: conciertos, cultura, gastronomía y más.`,
+    metaTitle: (c) => `Qué hacer hoy en ${c}: eventos y planes`,
+    metaDescription: (c) =>
+      `Mira qué hay para hacer hoy en ${c}: eventos y planes de hoy, con horario y lugar. También los de este fin de semana.`,
   },
   {
     baseSlug: "este-fin-de-semana",

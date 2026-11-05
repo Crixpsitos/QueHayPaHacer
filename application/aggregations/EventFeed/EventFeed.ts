@@ -22,6 +22,10 @@ export class EventFeed {
     return await this.eventsService.getWeekendEvents();
   }
 
+  async getToday(from: Date, to: Date): Promise<string[]> {
+    return await this.eventsService.getTodayEvents(from, to);
+  }
+
   async getByUserPreferences(topCategoryIds: string[]): Promise<string[]> {
     return await this.eventsService.getEventsByUserPreferences(topCategoryIds);
   }

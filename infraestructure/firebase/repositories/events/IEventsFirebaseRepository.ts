@@ -4,6 +4,7 @@ import type { PaginatedEventIds } from "@/domain/repository/events/IEventsReposi
 export interface IEventsFirebaseRepository {
     findFeaturedEvents(): Promise<string[]>;
     findWeekendEvents(): Promise<string[]>;
+    findTodayEvents(from: Date, to: Date): Promise<string[]>;
     findAllEvents(): Promise<string[]>;
     /** Eventos publicados y vigentes para el sitemap (slug + última edición). */
     findSitemapEntries(limit: number): Promise<{ id: string; slug: string; updatedAt: Date | null }[]>;
