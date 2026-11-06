@@ -2,6 +2,7 @@ import type { SiteKind, SitePublishedAs, SitePublishedAsForm, SiteVerification }
 import type { SiteTransit, SiteTransitDraft } from "@/domain/entities/sites/value-objects/SiteTransit"
 import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import type { SiteFact } from "@/domain/entities/sites/value-objects/SiteFacts"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 export type SiteCategory =
   | "cafe"
@@ -69,6 +70,8 @@ export interface SiteFormViewModel {
   recommendations: SiteRecommendations
   /** Secciones desplegables de la ficha (datos de consulta); opcional. */
   sections: SiteSection[]
+  /** Datos rápidos arriba de la descripción; opcional. */
+  facts: SiteFact[]
   bookingUrl: string
   /** Buses que llegan (rutas del catálogo); el servidor valida y fija `updatedAt`. */
   transit: SiteTransitDraft
@@ -171,6 +174,7 @@ export interface SiteDetail extends SiteListItem {
   bookingUrl?: string
   transit?: SiteTransit
   sections?: SiteSection[]
+  facts?: SiteFact[]
   kind?: SiteKind
   /** Geo de la location — se recarga al editar para no borrarla al guardar. */
   city?: { name: string; slug: string }

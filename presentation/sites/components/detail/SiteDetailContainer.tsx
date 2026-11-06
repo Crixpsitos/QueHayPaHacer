@@ -29,6 +29,7 @@ import { CompleteBadge } from "../CompleteBadge";
 import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { SectionsAccordion } from "./SectionsAccordion";
+import { FactsRow } from "./FactsRow";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
 import { SiteClaimCta } from "../claim/SiteClaimCta";
@@ -246,6 +247,8 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
 
         <div className="lg:col-span-2 space-y-10">
+          {!!site!.facts?.length && <FactsRow facts={site!.facts} />}
+
           {site!.description && (
             <section>
               <h2 className="mb-3 text-lg font-semibold">Sobre este lugar</h2>

@@ -5,6 +5,7 @@ import { buildSiteMedia } from "./buildSiteMedia"
 import { declarationVariant } from "@/app/lib/legal/declaration"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeFacts } from "@/domain/entities/sites/value-objects/SiteFacts"
 import { normalizeSections } from "@/domain/entities/sites/value-objects/SiteSections"
 import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
@@ -61,6 +62,7 @@ export function buildSiteInput(
     recommendations: { note: "", ...normalizeRecommendations(form.recommendations) },
     // Lista siempre presente: el formulario carga las secciones al editar, así que [] significa "las quitó".
     sections: normalizeSections(form.sections),
+    facts: normalizeFacts(form.facts),
     bookingUrl: form.bookingUrl ?? "",
     kind: form.kind ?? "business",
     publishedAs,

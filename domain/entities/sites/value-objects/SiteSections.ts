@@ -1,3 +1,5 @@
+import { moveItem, removeItem, updateItem } from "./listOps"
+
 /**
  * Secciones desplegables de la ficha ("Cómo llegar", "Qué incluye", "Fuentes"…): título + texto plano.
  * Opcionales; la `description` queda como pitch corto y el dato de consulta vive aquí.
@@ -37,15 +39,8 @@ export function normalizeSections(raw: unknown): SiteSection[] {
 export const addSection = (list: SiteSection[]): SiteSection[] =>
   list.length >= SECTIONS_MAX ? list : [...list, { title: "", body: "" }]
 
-export const updateSection = (list: SiteSection[], i: number, patch: Partial<SiteSection>): SiteSection[] =>
-  list.map((s, idx) => (idx === i ? { ...s, ...patch } : s))
+export const updateSection = (list: SiteSection[], i: number, patch: Partial<SiteSection>): SiteSection[] => updateItem(list, i, patch)
 
-export const removeSection = (list: SiteSection[], i: number): SiteSection[] => list.filter((_, idx) => idx !== i)
+export const removeSection = (list: SiteSection[], i: number): SiteSection[] => removeItem(list, i)
 
-export function moveSection(list: SiteSection[], i: number, dir: -1 | 1): SiteSection[] {
-  const j = i + dir
-  if (i < 0 || i >= list.length || j < 0 || j >= list.length) return list
-  const next = [...list]
-  ;[next[i], next[j]] = [next[j], next[i]]
-  return next
-}
+export const moveSection = (list: SiteSection[], i: number, dir: -1 | 1): SiteSection[] => moveItem(list, i, dir)

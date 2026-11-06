@@ -6,7 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
-  Share2, Link, AlertTriangle, Lightbulb, Bus, Rows3,
+  Share2, Link, AlertTriangle, Lightbulb, Bus, Rows3, Zap,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -29,6 +29,8 @@ import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
 import { completenessFromForm } from "../../lib/completeness"
 import { TransitContent } from "./TransitContent"
 import { SectionsContent } from "./SectionsContent"
+import { FactsContent } from "./FactsContent"
+import { SECTIONS_TOTAL_MAX } from "@/domain/entities/sites/value-objects/SiteSections"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -851,7 +853,7 @@ function TemporarilyClosedContent({
 
 // ── Sections config ───────────────────────────────────────────────────────────
 
-type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "sections" | "social" | "booking" | "transit" | "status"
+type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "facts" | "sections" | "social" | "booking" | "transit" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
@@ -859,6 +861,7 @@ const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "media",    title: "Fotos y videos",         icon: <ImageIcon className="size-4" /> },
   { id: "schedule", title: "Horario",                icon: <Clock className="size-4" /> },
   { id: "tips",     title: "Recomendaciones",        icon: <Lightbulb className="size-4" /> },
+  { id: "facts",    title: "Datos rápidos",          icon: <Zap className="size-4" /> },
   { id: "sections", title: "Más información (secciones)", icon: <Rows3 className="size-4" /> },
   { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
   { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
@@ -917,9 +920,11 @@ export function SiteFormDrawer({
 
   const isBusy = submitState === "saving" || submitState === "publishing"
   const hasCoverReady = form.media.some((m) => m.type === "image" && m.isCover && m.status === "ready")
-  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared
+  // El servidor rechaza secciones que suman de más: se avisa y se bloquea antes, no después del clic.
+  const sectionsTooLong = form.sections.reduce((n, s) => n + s.title.length + s.body.length, 0) > SECTIONS_TOTAL_MAX
+  const publishDisabled = isBusy || isMediaProcessing || !hasCoverReady || !declared || sectionsTooLong
   // Qué impide publicar, para decirlo siempre (antes solo se veía la portada).
-  const missing = [!hasCoverReady && "la portada", !declared && "la declaración"].filter(Boolean) as string[]
+  const missing = [!hasCoverReady && "la portada", !declared && "la declaración", sectionsTooLong && "recortar las secciones"].filter(Boolean) as string[]
 
   const toggle = (id: SectionKey) => setOpenSection((prev) => (prev === id ? ("" as SectionKey) : id))
 
@@ -929,6 +934,7 @@ export function SiteFormDrawer({
     media:    !!errors.media,
     schedule: false,
     tips:     false,
+    facts:    false,
     sections: false,
     social:   false,
     booking:  false,
@@ -982,6 +988,9 @@ export function SiteFormDrawer({
               {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} openingPolicy={form.openingPolicy} onUpdateOpeningPolicy={onUpdateOpeningPolicy} />}
               {s.id === "tips" && (
                 <TipsContent value={form.recommendations} onChange={(v) => onUpdateField("recommendations", v)} />
+              )}
+              {s.id === "facts" && (
+                <FactsContent value={form.facts} onChange={(v) => onUpdateField("facts", v)} />
               )}
               {s.id === "sections" && (
                 <SectionsContent value={form.sections} onChange={(v) => onUpdateField("sections", v)} />
@@ -1042,7 +1051,7 @@ export function SiteFormDrawer({
             </>
           ) : (
             <>
-              <Button variant="outline" className="flex-1" onClick={onSaveDraft} disabled={isBusy || isMediaProcessing}>
+              <Button variant="outline" className="flex-1" onClick={onSaveDraft} disabled={isBusy || isMediaProcessing || sectionsTooLong}>
                 {(submitState === "saving" || isMediaProcessing) ? <Loader2 className="size-4 animate-spin" /> : null}
                 Guardar borrador
               </Button>

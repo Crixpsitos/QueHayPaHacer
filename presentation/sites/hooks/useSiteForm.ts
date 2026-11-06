@@ -293,6 +293,7 @@ export function useSiteForm() {
       openingPolicy: site.openingPolicy ?? {},
       recommendations: site.recommendations ?? { tips: [] },
       sections: site.sections ?? [],
+      facts: site.facts ?? [],
       bookingUrl: site.bookingUrl ?? "",
       transit: { routes: site.transit?.routes ?? [] },
       kind: site.kind ?? "business",
