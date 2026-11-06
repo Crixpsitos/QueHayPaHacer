@@ -35,7 +35,7 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
       <span
         aria-disabled
         className={cn(
-          "inline-flex cursor-not-allowed items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium opacity-50",
+          "inline-flex cursor-not-allowed items-center gap-2 min-h-11 rounded-xl border px-5 py-2.5 text-sm font-medium opacity-50",
           isWA
             ? "border-green-300 bg-green-50 text-green-700"
             : "border-border bg-muted text-muted-foreground",
@@ -43,9 +43,9 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
         )}
       >
         {isWA ? (
-          <><WhatsAppIcon className="size-4 shrink-0" />Reservar por WhatsApp</>
+          <><WhatsAppIcon className="size-5 shrink-0" />Reservar por WhatsApp</>
         ) : (
-          <><ExternalLink className="size-4 shrink-0" />Ir a reservar</>
+          <><ExternalLink className="size-5 shrink-0" />Ir a reservar</>
         )}
       </span>
     );
@@ -58,7 +58,7 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors",
+        "inline-flex items-center gap-2 min-h-11 rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors",
         isWA
           ? "border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 active:bg-green-700"
           : "border-primary bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
@@ -66,9 +66,9 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
       )}
     >
       {isWA ? (
-        <><WhatsAppIcon className="size-4 shrink-0" />Reservar por WhatsApp</>
+        <><WhatsAppIcon className="size-5 shrink-0" />Reservar por WhatsApp</>
       ) : (
-        <><ExternalLink className="size-4 shrink-0" />Ir a reservar</>
+        <><ExternalLink className="size-5 shrink-0" />Ir a reservar</>
       )}
     </a>
   );
