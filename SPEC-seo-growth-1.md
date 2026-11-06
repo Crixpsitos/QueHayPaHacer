@@ -3,12 +3,12 @@
 Origen: auditoría `seo-audit` de producción (2026-11-05) + Search Console: te buscan por "qué hay para hacer hoy", "planes para hoy domingo", "qué hay para hoy". Todo el HTML se verificó con curl/Googlebot en prod.
 
 ## Objective
-Que Google entienda cada evento (fecha, lugar, precio) y que exista UNA página que responda a "qué hacer hoy". Éxito = (a) home con un `<h1>`, (b) cada `/eventos/<slug>` con JSON-LD `Event` válido, (c) `/eventos-hoy-ibague` indexable, con eventos de hoy en hora de Colombia, en el sitemap.
+Que Google entienda cada evento (fecha, lugar, precio) y que exista UNA página que responda a "qué hacer hoy". Éxito = (a) home con un `<h1>`, (b) cada `/eventos/<slug>` con JSON-LD `Event` válido, (c) `/que-hay-hoy-ibague` indexable, con eventos de hoy en hora de Colombia, en el sitemap.
 
 ## Hallazgos que cubre (verificados)
 1. Home sin `<h1>` (solo `<h2>`; el título del carrusel "Bienvenido a Que hay pa hacer" es h2).
 2. Detalle de evento: JSON-LD solo `WebSite` + `Organization`. El `Event` vive únicamente en `EventCard.tsx:97` (tarjetas de listados).
-3. `/eventos-hoy-ibague` y `/que-hacer-hoy-en-ibague` hoy dan `noindex` (no existen). El framework de landings (`presentation/events/lib/eventCollections.ts`, `app/(landings)/[coleccion]/page.tsx`) ya sabe crear colecciones nuevas.
+3. `/que-hay-hoy-ibague` y `/que-hacer-hoy-en-ibague` hoy dan `noindex` (no existen). El framework de landings (`presentation/events/lib/eventCollections.ts`, `app/(landings)/[coleccion]/page.tsx`) ya sabe crear colecciones nuevas.
 
 ## Assumptions
 1. Slug: `eventos-hoy-ibague` (mismo patrón `eventos-{coleccion}-ibague`; ver memoria eventos-routes-seo). Una sola página para hoy; el domingo/sábado se resuelve con el texto del día, no con URLs por día.
@@ -55,7 +55,7 @@ Funciones puras con test `node:test` junto al archivo (ej. `siteCompleteness.tes
 ## Success Criteria
 1. Home: exactamente un `<h1>` (con "Qué hay pa' hacer" + Ibagué), sin romper el diseño del hero.
 2. Todo `/eventos/<slug>` publicado: un `Event` JSON-LD con name, startDate, endDate, eventStatus, location (si hay), image, offers (si hay), organizer; válido en Rich Results Test (usuario).
-3. `/eventos-hoy-ibague`: 200, `index, follow`, canonical propio, en `sitemap.xml`, eventos de hoy en hora de Bogotá, vacío con respaldo (próximos), caché corta.
+3. `/que-hay-hoy-ibague`: 200, `index, follow`, canonical propio, en `sitemap.xml`, eventos de hoy en hora de Bogotá, vacío con respaldo (próximos), caché corta.
 4. `pnpm test`, `pnpm typecheck`, `pnpm build` verdes; curl local confirma 1–3.
 5. Ninguna landing existente cambia de URL, título ni canonical.
 
@@ -83,7 +83,7 @@ Rutas públicas hoy: `/`, `/eventos`, `/donde-ir`, `/premium`, `/terminos`, `/pr
 1. `/explorar` (indexable, con canonical, fuera del sitemap).
 2. `/contactanos` (idem).
 3. Páginas de sesión de eventos multi-fecha `/eventos/<id>/sessions/<sessionId>` (sin `generateMetadata`: heredan el título genérico; no hay canonical). Primero se inspecciona qué muestran; si repiten el evento → canonical al evento, si aportan fecha propia → título/descripción propios y al sitemap.
-4. Landing nueva `/eventos-hoy-ibague` (entra sola por `getEventCollections()`).
+4. Landing nueva `/que-hay-hoy-ibague` (entra sola por `getEventCollections()`).
 **Decisión tuya (por ser datos de personas / criterio):**
 5. Perfiles públicos `/profile/<handle>`: ya son indexables si el usuario eligió "público", pero no están en el sitemap. Recomendado: agregar SOLO los `isPublic`. Si no quieres exponer personas, se dejan como están.
 6. Eventos ya terminados: el sitemap solo lista vigentes (`endDate >= now`, por eso hay 5). Recomendado: seguir listando los terminados en los últimos 90 días (conservan búsquedas como "candlelight ibagué") con el estado "finalizado" en el JSON-LD; más allá de 90 días salen del sitemap pero su página sigue indexable.
