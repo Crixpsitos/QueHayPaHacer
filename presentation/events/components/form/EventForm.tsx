@@ -643,7 +643,7 @@ export const EventForm = ({
   // Mapa de títulos y textos de ayuda por paso
   const STEP_META: Partial<Record<StepKey, { title: string; subtitle: string }>> = {
     basic:        { title: "Cuéntanos qué va a pasar", subtitle: "El título y el gancho son lo único que la gente ve en el listado. Sé concreto: qué es, para quién y qué lo hace distinto." },
-    media:        { title: "Imagen de tu evento", subtitle: "Una buena imagen aumenta hasta 3× las visitas. Usa 1920×1080 px o superior." },
+    media:        { title: "Imagen de tu evento", subtitle: "Una buena imagen aumenta hasta 3× las visitas. Mínimo 1280×720 px; lo ideal es 1920×1080 o más." },
     class:        { title: "Ayuda a que lo encuentren", subtitle: "La categoría define en qué sección aparece. Las etiquetas alimentan la búsqueda y las recomendaciones del feed." },
     location:     { title: "¿Dónde ocurre?", subtitle: "La ubicación precisa mejora la asistencia y el posicionamiento en búsquedas." },
     dates:        { title: "Cuándo empieza y cuándo cierra", subtitle: "Mostramos la hora local. Si el plan cruza la medianoche, deja el cierre en el día siguiente: el listado lo entiende." },

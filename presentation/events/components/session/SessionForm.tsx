@@ -1,5 +1,6 @@
 "use client";
 
+import { meetsMinResolution, minResolutionText } from "../../lib/image/imageLimits";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useForm, useWatch } from "react-hook-form";
@@ -271,11 +272,11 @@ export function SessionForm({
       if (!sessionId) throw new Error("no-session-id");
 
       const imageData = await getImageData(file);
-      const isValidResolution = imageData.width >= 1920 && imageData.height >= 1080;
+      const isValidResolution = meetsMinResolution(imageData.width, imageData.height);
       if (!isValidResolution) {
         form.setError("mainImage" as never, {
           type: "validate",
-          message: "La imagen debe tener una resolución mínima de 1920×1080 px.",
+          message: `La imagen debe tener una resolución mínima de ${minResolutionText()}.`,
         });
         throw new Error("invalid-resolution");
       }
@@ -319,7 +320,7 @@ export function SessionForm({
       success: () => "Portada subida.",
       error: (err) => {
         if ((err as Error).message === "invalid-resolution")
-          return "Resolución inválida. Mínimo 1920×1080 px.";
+          return `Resolución inválida. Mínimo ${minResolutionText()}.`;
         if ((err as Error).message === "no-session-id")
           return "No se pudo inicializar la sesión.";
         return "Error al subir la imagen.";
