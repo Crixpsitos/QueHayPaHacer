@@ -66,6 +66,7 @@ const SITE_JSONLD = [
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { NewVersionNotice } from "@/app/components/feature/NewVersionNotice";
 import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/app/components/pwa/ServiceWorkerRegister";
 
@@ -114,6 +115,7 @@ export default function RootLayout({
             {children}
         </AuthProvider>
         <Toaster />
+        <NewVersionNotice />
         <Suspense fallback={null}>
           <ConsentBanner />
         </Suspense>
