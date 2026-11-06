@@ -64,3 +64,14 @@ test("el HTML del script no puede cerrarse con </script> del título (XSS)", () 
   assert.ok(!html.includes("<img"))
   assert.equal(JSON.parse(html).name, "x</script><img src=x onerror=alert(1)>")
 })
+
+test("url personalizada (página de sesión) reemplaza la del evento en url y en la oferta", () => {
+  const url = "https://yquehaypahacer.com/eventos/jornada/sessions/viejoteca"
+  const ld = buildEventJsonLd(base, { url }) as any
+  assert.equal(ld.url, url)
+  assert.equal(ld.offers.url, url)
+})
+
+test("una sesión ya terminada sigue siendo EventScheduled (sucedió; no es aplazada)", () => {
+  assert.equal((buildEventJsonLd({ ...base, status: "ended" } as unknown as EventViewModel) as any).eventStatus, "https://schema.org/EventScheduled")
+})

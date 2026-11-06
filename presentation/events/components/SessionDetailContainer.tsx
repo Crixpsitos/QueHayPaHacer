@@ -5,6 +5,8 @@ import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "@/presentation/events/mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import { eventJsonLdHtml } from "../lib/eventJsonLd";
+import { SITE_URL } from "@/app/lib/site";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import {
   fetchEventDetailById,
@@ -65,7 +67,12 @@ export async function SessionDetailContainer({
 
   const parentRef = parent.slug || parent.id;
 
+  const sessionPath = `/eventos/${parentRef}/sessions/${session.slug || session.id}`;
+
   return (
+    <>
+    {/* Cada fecha es un Event propio para Google (fecha, lugar y precio de la sesión). */}
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(mergedVM, { url: `${SITE_URL}${sessionPath}` }) }} />
     <EventDetailClient
       event={mergedVM}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
@@ -74,5 +81,6 @@ export async function SessionDetailContainer({
       sessionId={session.id}
       linkedSite={linkedSite}
     />
+    </>
   );
 }
