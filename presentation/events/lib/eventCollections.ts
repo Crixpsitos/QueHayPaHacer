@@ -56,6 +56,8 @@ export const CITIES: City[] = [{ slug: "ibague", label: "Ibagué" }];
 /** Colecciones base (no dependen de datos): destacados y fin de semana. */
 const BASE_COLLECTIONS: {
   baseSlug: string;
+  /** Slug completo si no sigue el patrón `eventos-{base}-{ciudad}` (ej. `que-hay-hoy-ibague`). */
+  slugFor?: (citySlug: string) => string;
   kind: Exclude<CollectionKind, "category">;
   shortLabel: string;
   title: (city: string) => string;
@@ -76,6 +78,7 @@ const BASE_COLLECTIONS: {
   },
   {
     baseSlug: "hoy",
+    slugFor: (city) => `que-hay-hoy-${city}`,
     kind: "today",
     shortLabel: "Hoy",
     title: (c) => `Qué hacer hoy en ${c}`,
@@ -131,7 +134,7 @@ export async function getEventCollections(): Promise<CollectionDef[]> {
   for (const city of CITIES) {
     for (const base of BASE_COLLECTIONS) {
       out.push({
-        slug: `eventos-${base.baseSlug}-${city.slug}`,
+        slug: base.slugFor?.(city.slug) ?? `eventos-${base.baseSlug}-${city.slug}`,
         kind: base.kind,
         citySlug: city.slug,
         cityLabel: city.label,

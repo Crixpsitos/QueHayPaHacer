@@ -96,7 +96,7 @@ const nextConfig: NextConfig = {
       { source: "/eventos/:id((?!create$)[^/]+)", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
       { source: "/eventos/:id/sessions/:sessionId", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
       { source: "/donde-ir/:id", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/:coleccion(eventos-.*-ibague|donde-ir-.*-ibague)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/:coleccion(eventos-.*-ibague|donde-ir-.*-ibague|que-hay-hoy-ibague)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
       {
         source: "/sw.js",
         headers: [
@@ -114,6 +114,8 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // Nombre anterior de la landing de hoy (estuvo publicada unas horas).
+      { source: "/eventos-hoy-ibague", destination: "/que-hay-hoy-ibague", permanent: true },
       {
         source: "/events/:path*",
         destination: "/eventos/:path*",

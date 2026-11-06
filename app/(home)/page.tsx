@@ -35,7 +35,7 @@ export default function HomePage() {
         {/* Enlaces internos a las landings que responden a "qué hacer hoy" / "este fin de semana" */}
         <nav aria-label="Atajos" className="mt-3 flex flex-wrap gap-2">
           {[
-            { href: "/eventos-hoy-ibague", label: "Qué hacer hoy" },
+            { href: "/que-hay-hoy-ibague", label: "Qué hacer hoy" },
             { href: "/eventos-este-fin-de-semana-ibague", label: "Este fin de semana" },
             { href: "/donde-ir", label: "Dónde ir" },
           ].map((l) => (
