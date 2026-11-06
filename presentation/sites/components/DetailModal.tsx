@@ -606,7 +606,7 @@ function SocialLink({ href, label, icon }: { href: string; label: string; icon: 
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="inline-flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-3 py-1.5 text-xs font-medium text-[#52525B] transition-colors hover:border-[#09090B] hover:text-[#09090B]"
+      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#D4D4D8] bg-white px-4 text-sm font-medium text-[#27272A] transition-colors hover:border-[#09090B] hover:bg-[#F4F4F5] focus-visible:outline-2 focus-visible:outline-offset-2 [&>svg]:size-5 [&>svg]:shrink-0"
     >
       {icon}
       {label}
