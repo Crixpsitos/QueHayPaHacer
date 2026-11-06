@@ -1,5 +1,6 @@
 "use client";
 
+import { meetsMinResolution, minResolutionText } from "../../lib/image/imageLimits";
 import { useEffect } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { FormEventDto, MediaItem } from "@/application/dto/events/EventDto";
@@ -60,13 +61,12 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
 
   const processFile = async () => {
     const imageData = await getImageData(file);
-    const isValidMainResolution =
-      imageData.width >= 1280 && imageData.height >= 720;
+    const isValidMainResolution = meetsMinResolution(imageData.width, imageData.height);
 
     if (!isValidMainResolution) {
       form.setError("mainImage", {
         type: "validate",
-        message: "La imagen principal debe tener una resolución mínima de 1280x720 píxeles.",
+        message: `La imagen principal debe tener una resolución mínima de ${minResolutionText()}.`,
       });
       throw new Error("invalid-main-image-resolution");
     }
@@ -116,7 +116,7 @@ export const Step2Media = ({ form, saveDraftEvent, hideMedia = false }: Step2Pro
     success: () => "Imagen subida.",
     error: (error) => {
       if (error instanceof Error && error.message === "invalid-main-image-resolution") {
-        return "Resolución inválida. La imagen principal debe tener al menos 1280x720.";
+        return `Resolución inválida. La imagen principal debe tener al menos ${minResolutionText()}.`;
       }
       console.error("Error:", error);
       return "Error al subir la imagen principal.";
