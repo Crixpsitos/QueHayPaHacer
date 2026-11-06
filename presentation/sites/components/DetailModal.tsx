@@ -1,5 +1,7 @@
 "use client"
 
+import { FactsRow } from "./detail/FactsRow";
+import { SectionsAccordion } from "./detail/SectionsAccordion";
 import { useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import {
@@ -399,6 +401,13 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
           <p className="text-sm italic text-[#A1A1AA]">Sin descripción disponible.</p>
         )}
       </section>
+
+      {!!site.facts?.length && (
+        <div className="mt-5"><FactsRow facts={site.facts} /></div>
+      )}
+      {!!site.sections?.length && (
+        <div className="mt-5"><SectionsAccordion sections={site.sections} /></div>
+      )}
 
       {/* ── Separador ───────────────────────────────────────────── */}
       <div className="my-5 h-px bg-[#F4F4F5]" role="separator" />

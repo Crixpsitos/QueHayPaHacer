@@ -38,6 +38,7 @@ function contentFields(data: SiteInput) {
     ...(data.transit !== undefined ? { transit: data.transit } : {}),
     // undefined = no tocar: el formulario actual no conoce las secciones y no debe borrarlas
     ...(data.sections !== undefined ? { sections: data.sections } : {}),
+    ...(data.facts !== undefined ? { facts: data.facts } : {}),
     // publishedAs/verification NO se editan: respaldan la declaración ya registrada.
     kind: data.kind,
   }

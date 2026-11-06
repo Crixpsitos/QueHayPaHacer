@@ -4,6 +4,7 @@ import { SITE_TIP_IDS, TIP_NOTE_MAX } from "@/domain/entities/sites/value-object
 import type { SiteCategory, WeekDay } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { TRANSIT_MAX_ROUTES, TRANSIT_NOTE_MAX, TRANSIT_ROUTE_ID_RE } from "@/domain/entities/sites/value-objects/SiteTransit"
 import { SECTIONS_MAX, SECTION_BODY_MAX, SECTION_TITLE_MAX, SECTIONS_TOTAL_MAX } from "@/domain/entities/sites/value-objects/SiteSections"
+import { FACTS_MAX, FACT_ICON_IDS, FACT_LABEL_MAX, FACT_VALUE_MAX } from "@/domain/entities/sites/value-objects/SiteFacts"
 import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 
 const SITE_CATEGORIES = [
@@ -69,6 +70,15 @@ const Sections = v.pipe(
   ),
 )
 
+const Facts = v.pipe(
+  v.array(v.object({
+    icon: v.picklist(FACT_ICON_IDS, "Icono inválido"),
+    label: text(FACT_LABEL_MAX, "Etiqueta del dato"),
+    value: text(FACT_VALUE_MAX, "Dato rápido"),
+  })),
+  v.maxLength(FACTS_MAX, `Máximo ${FACTS_MAX} datos rápidos`),
+)
+
 const fields = {
   name: text(120, "Nombre"),
   description: text(5000, "Descripción"),
@@ -95,6 +105,7 @@ const fields = {
   bookingUrl: v.optional(OptionalHttpUrl),
   transit: v.optional(Transit),
   sections: v.optional(Sections),
+  facts: v.optional(Facts),
   kind: v.optional(v.picklist(SITE_KINDS)),
   // "qhpa" no está: lo decide el servidor, nunca el cliente.
   publishedAs: v.optional(v.picklist(SITE_PUBLISHED_AS_FORM)),

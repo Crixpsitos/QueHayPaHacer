@@ -2,6 +2,7 @@
 import type { GeoPoint, Timestamp } from "firebase-admin/firestore"
 import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
+import type { SiteFact } from "@/domain/entities/sites/value-objects/SiteFacts"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 import type { SiteTransit } from "@/domain/entities/sites/value-objects/SiteTransit"
 
@@ -135,6 +136,7 @@ export interface FirebaseSiteDto {
   // Consejos del autor para quien visita (opcional).
   recommendations?: SiteRecommendations
   sections?: SiteSection[]
+  facts?: SiteFact[]
   // Tipo y confianza de la ficha (ver SiteListing). Opcionales: los sitios viejos no los traen.
   kind?: "public" | "business"
   publishedAs?: "owner" | "proposer" | "qhpa"

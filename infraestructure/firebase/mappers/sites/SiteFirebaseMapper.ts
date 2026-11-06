@@ -8,6 +8,7 @@ import { Site } from "@/domain/entities/sites/Site"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteDetail, SiteMediaItem } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeFacts } from "@/domain/entities/sites/value-objects/SiteFacts"
 import { normalizeSections } from "@/domain/entities/sites/value-objects/SiteSections"
 import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 
@@ -141,6 +142,7 @@ export class SiteFirebaseMapper {
       recommendations: normalizeRecommendations(dto.recommendations),
       bookingUrl: dto.bookingUrl ?? "",
       sections: normalizeSections(dto.sections),
+      facts: normalizeFacts(dto.facts),
       transit: dto.transit ?? undefined,
       // Sin dato = no se afirma ningún vínculo con el lugar.
       kind: dto.kind ?? "business",

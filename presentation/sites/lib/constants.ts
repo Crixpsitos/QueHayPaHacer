@@ -110,6 +110,7 @@ export function createInitialForm() {
     openingPolicy: {},
     recommendations: { tips: [] },
     sections: [],
+    facts: [],
     bookingUrl: "",
     transit: { routes: [] },
     kind: "business" as const,
