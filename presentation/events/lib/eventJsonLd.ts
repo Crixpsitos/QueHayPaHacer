@@ -5,9 +5,9 @@ import type { EventViewModel } from "../view-models/EventViewModel";
  * JSON-LD `Event` (schema.org) de un evento. Fuente única: lo usan las tarjetas de los listados
  * y la página de detalle. Multi-fecha: ubicación y precio viven en las sesiones, así que se omiten.
  */
-export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: number } = {}): Record<string, unknown> {
+export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: number; url?: string } = {}): Record<string, unknown> {
   const attendeeCount = opts.attendeeCount ?? 0;
-  const url = `${SITE_URL}/eventos/${event.slug || event.id}`;
+  const url = opts.url ?? `${SITE_URL}/eventos/${event.slug || event.id}`;
   const isFree = event.price?.isFree ?? event.price?.amount === 0;
   const isMultiDate = event.eventType === "multi-date";
   const hasLocation = !isMultiDate && !!event.location;
@@ -21,7 +21,7 @@ export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: 
     ...(event.startDate ? { startDate: event.startDate } : {}),
     ...(event.endDate ? { endDate: event.endDate } : {}),
     eventStatus:
-      event.status === "published"
+      event.status === "published" || event.status === "ended"
         ? "https://schema.org/EventScheduled"
         : event.status === "cancelled"
           ? "https://schema.org/EventCancelled"
@@ -68,6 +68,6 @@ export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: 
 }
 
 /** Texto listo para `dangerouslySetInnerHTML` de un `<script type="application/ld+json">`: `<` escapado para que un título no cierre el script. */
-export function eventJsonLdHtml(event: EventViewModel, opts: { attendeeCount?: number } = {}): string {
+export function eventJsonLdHtml(event: EventViewModel, opts: { attendeeCount?: number; url?: string } = {}): string {
   return JSON.stringify(buildEventJsonLd(event, opts)).replace(/</g, "\\u003c");
 }
