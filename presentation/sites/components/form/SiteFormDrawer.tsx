@@ -6,7 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
 import {
   ArrowLeft, CheckCircle2, ChevronDown, Clock, ImageIcon,
   Info, Loader2, MapPin, Send, Star, Trash2, X,
-  Share2, Link, AlertTriangle, Lightbulb, Bus,
+  Share2, Link, AlertTriangle, Lightbulb, Bus, Rows3,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
@@ -28,6 +28,7 @@ import {
 import { getSiteCompleteness } from "@/domain/entities/sites/siteCompleteness"
 import { completenessFromForm } from "../../lib/completeness"
 import { TransitContent } from "./TransitContent"
+import { SectionsContent } from "./SectionsContent"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
@@ -850,7 +851,7 @@ function TemporarilyClosedContent({
 
 // ── Sections config ───────────────────────────────────────────────────────────
 
-type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "social" | "booking" | "transit" | "status"
+type SectionKey = "location" | "info" | "media" | "schedule" | "tips" | "sections" | "social" | "booking" | "transit" | "status"
 
 const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "location", title: "Ubicación",              icon: <MapPin className="size-4" /> },
@@ -858,6 +859,7 @@ const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
   { id: "media",    title: "Fotos y videos",         icon: <ImageIcon className="size-4" /> },
   { id: "schedule", title: "Horario",                icon: <Clock className="size-4" /> },
   { id: "tips",     title: "Recomendaciones",        icon: <Lightbulb className="size-4" /> },
+  { id: "sections", title: "Más información (secciones)", icon: <Rows3 className="size-4" /> },
   { id: "social",   title: "Redes sociales",         icon: <Share2 className="size-4" /> },
   { id: "booking",  title: "Botón de reserva",       icon: <Link className="size-4" /> },
   { id: "transit",  title: "Cómo llegar en bus",     icon: <Bus className="size-4" /> },
@@ -927,6 +929,7 @@ export function SiteFormDrawer({
     media:    !!errors.media,
     schedule: false,
     tips:     false,
+    sections: false,
     social:   false,
     booking:  false,
     transit:  false,
@@ -979,6 +982,9 @@ export function SiteFormDrawer({
               {s.id === "schedule" && <ScheduleContent schedule={form.schedule} onUpdateSchedule={onUpdateSchedule} openingPolicy={form.openingPolicy} onUpdateOpeningPolicy={onUpdateOpeningPolicy} />}
               {s.id === "tips" && (
                 <TipsContent value={form.recommendations} onChange={(v) => onUpdateField("recommendations", v)} />
+              )}
+              {s.id === "sections" && (
+                <SectionsContent value={form.sections} onChange={(v) => onUpdateField("sections", v)} />
               )}
               {s.id === "social" && (
                 <SocialMediaContent

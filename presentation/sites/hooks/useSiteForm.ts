@@ -292,6 +292,7 @@ export function useSiteForm() {
       temporarilyClosed: site.temporarilyClosed ?? { isClosed: false, reason: "" },
       openingPolicy: site.openingPolicy ?? {},
       recommendations: site.recommendations ?? { tips: [] },
+      sections: site.sections ?? [],
       bookingUrl: site.bookingUrl ?? "",
       transit: { routes: site.transit?.routes ?? [] },
       kind: site.kind ?? "business",

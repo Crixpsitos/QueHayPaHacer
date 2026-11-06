@@ -67,6 +67,8 @@ export interface SiteFormViewModel {
   openingPolicy: SiteOpeningPolicy
   /** Consejos para quien visita; opcional. */
   recommendations: SiteRecommendations
+  /** Secciones desplegables de la ficha (datos de consulta); opcional. */
+  sections: SiteSection[]
   bookingUrl: string
   /** Buses que llegan (rutas del catálogo); el servidor valida y fija `updatedAt`. */
   transit: SiteTransitDraft
