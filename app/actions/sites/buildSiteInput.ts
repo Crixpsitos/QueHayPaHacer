@@ -5,6 +5,7 @@ import { buildSiteMedia } from "./buildSiteMedia"
 import { declarationVariant } from "@/app/lib/legal/declaration"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { normalizeOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
+import { normalizeSections } from "@/domain/entities/sites/value-objects/SiteSections"
 import { normalizeRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import { initialVerification, type SitePublishedAs } from "@/domain/entities/sites/value-objects/SiteListing"
 import type { SiteInput } from "@/application/services/sites/SitesService"
@@ -58,6 +59,8 @@ export function buildSiteInput(
     openingPolicy: normalizeOpeningPolicy(form.openingPolicy),
     // note "" (no omitida) para que el set(merge) de la edición pueda borrar una nota anterior
     recommendations: { note: "", ...normalizeRecommendations(form.recommendations) },
+    // Lista siempre presente: el formulario carga las secciones al editar, así que [] significa "las quitó".
+    sections: normalizeSections(form.sections),
     bookingUrl: form.bookingUrl ?? "",
     kind: form.kind ?? "business",
     publishedAs,

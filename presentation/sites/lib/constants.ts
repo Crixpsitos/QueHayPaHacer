@@ -109,6 +109,7 @@ export function createInitialForm() {
     temporarilyClosed: { isClosed: false, reason: "" },
     openingPolicy: {},
     recommendations: { tips: [] },
+    sections: [],
     bookingUrl: "",
     transit: { routes: [] },
     kind: "business" as const,
