@@ -81,9 +81,9 @@ const BASE_COLLECTIONS: {
     slugFor: (city) => `que-hay-hoy-${city}`,
     kind: "today",
     shortLabel: "Hoy",
-    title: (c) => `Qué hacer hoy en ${c}`,
+    title: (c) => `Qué hay para hacer hoy en ${c}`,
     description: (c) => `Eventos y planes para hoy en ${c}: conciertos, cultura, gastronomía y más.`,
-    metaTitle: (c) => `Qué hacer hoy en ${c}: eventos y planes`,
+    metaTitle: (c) => `Qué hay para hacer hoy en ${c}: eventos y planes`,
     metaDescription: (c) =>
       `Mira qué hay para hacer hoy en ${c}: eventos y planes de hoy, con horario y lugar. También los de este fin de semana.`,
   },
