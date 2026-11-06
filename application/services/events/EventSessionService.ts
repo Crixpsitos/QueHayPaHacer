@@ -42,7 +42,8 @@ export class EventSessionService {
   async createSession(
     data: Omit<EventSession, "id" | "createdAt" | "updatedAt">,
   ): Promise<{ session: EventSession; hasOverlap: boolean }> {
-    if (await this.repo.hasOverlap(data.eventId, data.startDate, data.endDate)) {
+    // Un borrador lleva un horario provisional (ahora → +1 h): el choque solo se exige al publicar.
+    if (data.status !== "draft" && (await this.repo.hasOverlap(data.eventId, data.startDate, data.endDate))) {
       throw new SessionOverlapError();
     }
     const slug = data.slug || (await this.buildUniqueSlug(data.eventId, data.title));
@@ -71,7 +72,7 @@ export class EventSessionService {
   }
 
   /**
-   * Actualiza una sesión. Si trae fechas, bloquea (lanza SessionOverlapError)
+   * Actualiza una sesión. Si trae fechas y NO es borrador, bloquea (lanza SessionOverlapError)
    * cuando colisiona con otra sesión. Sin fechas (p.ej. solo cambio de estado)
    * no verifica solapamiento.
    */
@@ -80,7 +81,7 @@ export class EventSessionService {
     sessionId: string,
     data: Partial<Omit<EventSession, "id" | "eventId" | "createdAt">>,
   ): Promise<{ session: EventSession; hasOverlap: boolean }> {
-    if (data.startDate && data.endDate) {
+    if (data.status !== "draft" && data.startDate && data.endDate) {
       if (
         await this.repo.hasOverlap(
           eventId,
