@@ -26,7 +26,7 @@ import {
 } from "@/app/lib/events/externalLink";
 import { AttentionRing, Reveal } from "@/app/components/motion/primitives";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
-import { dateParts, formatPrice, formatTimeRange } from "./detail/format";
+import { dateParts, formatPrice, formatTierAmount, formatTimeRange, priceTiers } from "./detail/format";
 import { useEventViewer } from "../hooks/useEventViewer";
 import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 import { analytics as ga } from "@/app/lib/analytics";
@@ -280,6 +280,16 @@ export function EventDetailClient({
                   <div>
                     <p className="text-sm text-[#71717A]">Entrada</p>
                     <p className="font-heading text-3xl font-bold tracking-tight text-[#09090B] tabular-nums">{price}</p>
+                    {priceTiers(event.price).length > 0 && (
+                      <ul className="mt-2 space-y-1 text-sm text-[#09090B]">
+                        {priceTiers(event.price).map((t) => (
+                          <li key={t.name} className="flex justify-between gap-6">
+                            <span>{t.name}</span>
+                            <span className="font-semibold tabular-nums">{formatTierAmount(event.price, t.amount)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   {capacity > 0 && (
                     <p className={cn("text-right text-sm tabular-nums", isOverCapacity ? "font-semibold text-amber-700" : "text-[#71717A]")}>

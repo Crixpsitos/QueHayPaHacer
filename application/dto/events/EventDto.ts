@@ -250,6 +250,11 @@ export const step6Schema = v.pipe(
     ["registrationEventForm"],
   ),
 );
+const PriceTierSchema = v.object({
+  name: v.pipe(v.string(), v.trim(), v.nonEmpty("Ponle nombre a la categoría."), v.maxLength(40, "Máximo 40 caracteres.")),
+  amount: v.pipe(v.number("El precio debe ser un número válido"), v.minValue(1, "El valor debe ser mayor a 0")),
+});
+
 const step7Object = v.object({
   price: v.object({
     isFree: v.boolean(),
@@ -265,6 +270,8 @@ const step7Object = v.object({
       v.minValue(0, "El monto no puede ser negativo"),
     ),
     currency: v.pipe(v.string(), v.nonEmpty("Debes seleccionar una divisa")),
+    // Categorías de entrada ("Estándar", "Premium"…). `amount` guarda la más barata.
+    tiers: v.optional(v.pipe(v.array(PriceTierSchema), v.maxLength(6, "Máximo 6 categorías."))),
   }),
 });
 
@@ -471,6 +478,7 @@ export const FormEventSchema = v.object({
       isFree: v.optional(v.boolean()),
       amount: v.optional(v.number()),
       currency: v.optional(v.string()),
+      tiers: v.optional(v.array(v.object({ name: v.string(), amount: v.number() }))),
     }),
   ),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),

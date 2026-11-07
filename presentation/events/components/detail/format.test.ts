@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dateParts, formatPrice, formatPriceSummary, formatTimeRange, sameDay } from "./format";
+import { dateParts, formatPrice, priceTiers, formatPriceSummary, formatTimeRange, sameDay } from "./format";
 
 test("fechas en hora de Colombia, no del servidor", () => {
   // 00:30 UTC del 11 = 19:30 del 10 en Bogotá
@@ -23,4 +23,11 @@ test("precios", () => {
     /^Desde .*15\.000$/,
   );
   assert.equal(formatPriceSummary([{ isFree: true, amount: 0 }]), "Gratis");
+});
+
+test("categorías de precio: 'Desde' el menor; con una sola no cuenta", () => {
+  const tiers = [{ name: "Premium", amount: 90000 }, { name: "Estándar", amount: 50000 }];
+  assert.match(formatPrice({ isFree: false, amount: 50000, currency: "COP", tiers }), /^Desde .*50\.000$/);
+  assert.equal(priceTiers({ isFree: false, amount: 50000, tiers: [tiers[0]] }).length, 0);
+  assert.equal(priceTiers({ isFree: true, amount: 0, tiers }).length, 0);
 });

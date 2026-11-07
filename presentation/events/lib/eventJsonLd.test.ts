@@ -75,3 +75,10 @@ test("url personalizada (página de sesión) reemplaza la del evento en url y en
 test("una sesión ya terminada sigue siendo EventScheduled (sucedió; no es aplazada)", () => {
   assert.equal((buildEventJsonLd({ ...base, status: "ended" } as unknown as EventViewModel) as any).eventStatus, "https://schema.org/EventScheduled")
 })
+
+test("categorías de precio → una oferta por categoría", () => {
+  const ld = buildEventJsonLd({ ...base, price: { isFree: false, amount: 50000, currency: "COP", tiers: [{ name: "Estándar", amount: 50000 }, { name: "Premium", amount: 90000 }] } } as unknown as EventViewModel) as any
+  assert.equal(ld.offers.length, 2)
+  assert.equal(ld.offers[1].name, "Premium")
+  assert.equal(ld.offers[1].price, "90000")
+})

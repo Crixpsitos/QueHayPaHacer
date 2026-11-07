@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/app/lib/site";
+import { priceTiers } from "../components/detail/format";
 import type { EventViewModel } from "../view-models/EventViewModel";
 
 /**
@@ -51,16 +52,18 @@ export function buildEventJsonLd(event: EventViewModel, opts: { attendeeCount?: 
     ...(isMultiDate
       ? {}
       : {
-          offers: {
-            "@type": "Offer",
-            price: isFree ? "0" : event.price.amount.toString(),
-            priceCurrency: event.price.currency ?? "COP",
-            availability:
+          offers: (() => {
+            const availability =
               attendeeCount > 0 && event.capacity && attendeeCount >= event.capacity
                 ? "https://schema.org/SoldOut"
-                : "https://schema.org/InStock",
-            url,
-          },
+                : "https://schema.org/InStock";
+            const currency = event.price.currency ?? "COP";
+            const tiers = priceTiers(event.price);
+            if (tiers.length) {
+              return tiers.map((t) => ({ "@type": "Offer", name: t.name, price: t.amount.toString(), priceCurrency: currency, availability, url }));
+            }
+            return { "@type": "Offer", price: isFree ? "0" : event.price.amount.toString(), priceCurrency: currency, availability, url };
+          })(),
         }),
     keywords: event.categoryInfo.tags.join(", "),
     about: { "@type": "Thing", name: event.categoryInfo.title },

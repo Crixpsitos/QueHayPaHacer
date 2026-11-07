@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { FormEventDto } from "@/application/dto/events/EventDto";
-import { Gift, Ticket, Info, ExternalLink } from "lucide-react";
+import { Gift, Ticket, Info, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 
 interface Step7PricingProps {
@@ -24,11 +24,27 @@ const parseDots = (formatted: string): number => {
 };
 
 const PRICE_PRESETS = [10_000, 25_000, 50_000];
+const MAX_TIERS = 6;
+
+type Tier = { name: string; amount: number };
 
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
   const registrationType = form.watch("registrationType");
   const isExternal = registrationType === "external";
+
+  const tiers: Tier[] = form.watch("price.tiers") ?? [];
+  const tierMode = tiers.length > 1;
+  const tiersError = form.formState.errors.price?.tiers;
+
+  // `price.amount` guarda siempre la categoría más barata: filtros, tarjetas y SEO lo leen.
+  const setTiers = (next: Tier[]) => {
+    form.setValue("price.tiers", next.length > 1 ? next : [], { shouldValidate: true, shouldDirty: true });
+    const positives = next.map((t) => t.amount).filter((a) => a > 0);
+    form.setValue("price.amount", positives.length ? Math.min(...positives) : 0, { shouldValidate: true, shouldDirty: true });
+  };
+  const patchTier = (i: number, patch: Partial<Tier>) =>
+    setTiers(tiers.map((t, idx) => (idx === i ? { ...t, ...patch } : t)));
 
   const [displayAmount, setDisplayAmount] = useState<string>(() => {
     const initial = form.getValues("price.amount");
@@ -37,9 +53,21 @@ export function Step7Pricing({ form }: Step7PricingProps) {
   // Controla si mostramos el modal de advertencia (solo cuando pagado + no externo)
   const [showPaymentWarning, setShowPaymentWarning] = useState(false);
 
+  const startTiers = () =>
+    setTiers([
+      { name: "Entrada estándar", amount: parseDots(displayAmount) },
+      { name: "Entrada premium", amount: 0 },
+    ]);
+  const removeTier = (i: number) => {
+    const next = tiers.filter((_, idx) => idx !== i);
+    if (next.length === 1) setDisplayAmount(next[0].amount ? formatWithDots(next[0].amount) : "");
+    setTiers(next);
+  };
+
   const handleSelectFree = () => {
     form.setValue("price.isFree", true, { shouldValidate: true });
     form.setValue("price.amount", 0, { shouldValidate: true });
+    form.setValue("price.tiers", [], { shouldDirty: true });
     setDisplayAmount("");
     // No cambiamos registrationType: gratis admite cualquier tipo de registro
   };
@@ -167,6 +195,48 @@ export function Step7Pricing({ form }: Step7PricingProps) {
       {!isFree && (
         <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card space-y-5">
 
+          {tierMode ? (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-[#09090B]">Categorías de entrada</p>
+              {tiers.map((t, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    aria-label={`Nombre de la categoría ${i + 1}`}
+                    maxLength={40}
+                    placeholder="Ej. Entrada premium"
+                    value={t.name}
+                    onChange={(e) => patchTier(i, { name: e.target.value })}
+                    className="h-12 min-w-0 flex-1 rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm font-medium text-[#09090B] outline-none placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
+                  />
+                  <div className="flex h-12 w-40 shrink-0 items-center gap-2 rounded-lg border border-[#E4E4E7] bg-white px-3 focus-within:border-[#D42F3C] focus-within:ring-1 focus-within:ring-[#D42F3C]/20">
+                    <span className="shrink-0 text-sm font-semibold text-[#71717A]">$</span>
+                    <input
+                      aria-label={`Valor de la categoría ${i + 1}`}
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={t.amount ? formatWithDots(t.amount) : ""}
+                      onChange={(e) => patchTier(i, { amount: parseDots(e.target.value) })}
+                      className="min-w-0 flex-1 bg-transparent text-sm font-semibold tabular-nums text-[#09090B] outline-none placeholder:text-[#A1A1AA]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeTier(i)}
+                    aria-label={`Quitar categoría ${t.name || i + 1}`}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-[#71717A] transition-colors hover:bg-[#F4F4F5] hover:text-[#D42F3C]"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              ))}
+              <input type="hidden" name="price.currency" value="COP" />
+              {tiersError && (
+                <p role="alert" className="text-xs text-[#D42F3C]">
+                  Cada categoría necesita un nombre y un valor mayor a 0.
+                </p>
+              )}
+            </div>
+          ) : (
           <Controller
             name="price.amount"
             control={form.control}
@@ -224,6 +294,18 @@ export function Step7Pricing({ form }: Step7PricingProps) {
               </Field>
             )}
           />
+          )}
+
+          {tiers.length < MAX_TIERS && (
+            <button
+              type="button"
+              onClick={tierMode ? () => setTiers([...tiers, { name: "", amount: 0 }]) : startTiers}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#D42F3C] hover:underline"
+            >
+              <Plus className="size-4" />
+              {tierMode ? "Agregar otra categoría" : "Tengo varias categorías de entrada (estándar, premium…)"}
+            </button>
+          )}
 
           {/* Nota informativa: pagado + externo (combinación válida) */}
           {isExternal && (
