@@ -68,3 +68,9 @@ test("a paid multi-date session accepts external registration with URL", () => {
 
   assert.equal(result.success, true);
 });
+test("SessionSchema conserva las categorías de precio", () => {
+  const tiers = [{ name: "Estándar", amount: 50000 }, { name: "Premium", amount: 90000 }];
+  const r = safeParse(SessionSchema, { ...baseSession, registrationType: "external", externalUrl: "https://x.test", price: { isFree: false, amount: 50000, currency: "COP", tiers } });
+  assert.equal(r.success, true, JSON.stringify(r.issues));
+  assert.deepEqual((r.output as { price: { tiers: unknown } }).price.tiers, tiers);
+});

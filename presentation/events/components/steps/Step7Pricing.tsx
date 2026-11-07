@@ -197,18 +197,21 @@ export function Step7Pricing({ form }: Step7PricingProps) {
 
           {tierMode ? (
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-[#09090B]">Categorías de entrada</p>
+              <div>
+                <p className="text-sm font-semibold text-[#09090B]">Categorías de entrada</p>
+                <p className="mt-0.5 text-xs text-[#71717A]">Valor por persona de cada una. En el evento se mostrará "Desde" el más bajo.</p>
+              </div>
               {tiers.map((t, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={i} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                   <input
                     aria-label={`Nombre de la categoría ${i + 1}`}
                     maxLength={40}
                     placeholder="Ej. Entrada premium"
                     value={t.name}
                     onChange={(e) => patchTier(i, { name: e.target.value })}
-                    className="h-12 min-w-0 flex-1 rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm font-medium text-[#09090B] outline-none placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
+                    className="h-12 min-w-0 basis-full rounded-lg border sm:basis-0 sm:flex-1 border-[#E4E4E7] bg-white px-3 text-sm font-medium text-[#09090B] outline-none placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
                   />
-                  <div className="flex h-12 w-40 shrink-0 items-center gap-2 rounded-lg border border-[#E4E4E7] bg-white px-3 focus-within:border-[#D42F3C] focus-within:ring-1 focus-within:ring-[#D42F3C]/20">
+                  <div className="flex h-12 min-w-0 flex-1 items-center gap-2 sm:w-40 sm:flex-none sm:shrink-0 rounded-lg border border-[#E4E4E7] bg-white px-3 focus-within:border-[#D42F3C] focus-within:ring-1 focus-within:ring-[#D42F3C]/20">
                     <span className="shrink-0 text-sm font-semibold text-[#71717A]">$</span>
                     <input
                       aria-label={`Valor de la categoría ${i + 1}`}
@@ -300,10 +303,10 @@ export function Step7Pricing({ form }: Step7PricingProps) {
             <button
               type="button"
               onClick={tierMode ? () => setTiers([...tiers, { name: "", amount: 0 }]) : startTiers}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#D42F3C] hover:underline"
+              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#D4D4D8] px-3 text-sm font-semibold text-[#D42F3C] transition-colors hover:border-[#D42F3C] hover:bg-[#FDF2F4]"
             >
               <Plus className="size-4" />
-              {tierMode ? "Agregar otra categoría" : "Tengo varias categorías de entrada (estándar, premium…)"}
+              {tierMode ? "Agregar otra categoría" : "Dividir en categorías (estándar, premium…)"}
             </button>
           )}
 

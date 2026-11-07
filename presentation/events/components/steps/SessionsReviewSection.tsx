@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPrice as formatPriceLabel } from "../detail/format";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -34,10 +35,6 @@ const REGISTRATION_LABELS: Record<string, string> = {
   form: "Formulario",
 };
 
-function formatPrice(price: EventSession["price"]): string {
-  if (!price || price.isFree) return "Gratis";
-  return `${price.amount?.toLocaleString("es-CO")} ${price.currency ?? "COP"}`;
-}
 
 function SessionPreviewCard({ session }: { session: EventSession }) {
   const start = session.startDate
@@ -84,7 +81,7 @@ function SessionPreviewCard({ session }: { session: EventSession }) {
         </div>
         <div className="flex items-center gap-1.5">
           <DollarSign className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-          <span>{formatPrice(session.price)}</span>
+          <span>{formatPriceLabel(session.price)}</span>
         </div>
       </div>
     </div>

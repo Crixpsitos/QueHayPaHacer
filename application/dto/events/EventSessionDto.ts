@@ -1,3 +1,4 @@
+import { PriceTierSchema } from "./EventDto";
 import * as v from "valibot";
 import { getTiptapPlainText } from "./EventDto";
 
@@ -54,6 +55,7 @@ const SessionPriceSchema = v.object({
   isFree: v.boolean(),
   amount: v.number(),
   currency: v.string(),
+  tiers: v.optional(v.pipe(v.array(PriceTierSchema), v.maxLength(6, "Máximo 6 categorías."))),
 });
 
 // ─── Schema completo de sesión (para publicar) ────────────────────────────────
@@ -191,6 +193,7 @@ export const FormSessionSchema = v.pipe(
       isFree: v.optional(v.boolean()),
       amount: v.optional(v.number()),
       currency: v.optional(v.string()),
+      tiers: v.optional(v.array(v.object({ name: v.string(), amount: v.number() }))),
     }),
   ),
   status: v.optional(
