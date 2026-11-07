@@ -283,7 +283,10 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
             {site!.owner ? (
               <div className="flex items-center gap-4">
                 <SiteOwnerBadge owner={site!.owner} />
-                <p className="font-semibold">{site!.owner.displayName}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold">{site!.owner.displayName}</p>
+                  <p className="text-sm text-muted-foreground">Administrado por Que hay pa hacer</p>
+                </div>
               </div>
             ) : (
             <Link href={buildProfileHref({ id: site!.author.id })} className="flex items-center gap-4 group w-fit">

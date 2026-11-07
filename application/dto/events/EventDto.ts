@@ -250,7 +250,7 @@ export const step6Schema = v.pipe(
     ["registrationEventForm"],
   ),
 );
-const PriceTierSchema = v.object({
+export const PriceTierSchema = v.object({
   name: v.pipe(v.string(), v.trim(), v.nonEmpty("Ponle nombre a la categoría."), v.maxLength(40, "Máximo 40 caracteres.")),
   amount: v.pipe(v.number("El precio debe ser un número válido"), v.minValue(1, "El valor debe ser mayor a 0")),
 });
