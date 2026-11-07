@@ -64,15 +64,30 @@ interface PriceLike {
   isFree: boolean;
   amount: number;
   currency?: string;
+  tiers?: { name: string; amount: number }[];
+}
+
+function money(amount: number, currency?: string) {
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: currency || "COP",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/** Categorías de entrada (solo si hay 2 o más; con una sola no hay nada que elegir). */
+export function priceTiers(price: PriceLike) {
+  return !price.isFree && price.tiers && price.tiers.length > 1 ? price.tiers : [];
 }
 
 export function formatPrice(price: PriceLike) {
   if (price.isFree || !price.amount) return "Gratis";
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: price.currency || "COP",
-    maximumFractionDigits: 0,
-  }).format(price.amount);
+  const min = priceTiers(price).length ? Math.min(...price.tiers!.map((t) => t.amount)) : price.amount;
+  return `${priceTiers(price).length ? "Desde " : ""}${money(min, price.currency)}`;
+}
+
+export function formatTierAmount(price: PriceLike, amount: number) {
+  return money(amount, price.currency);
 }
 
 /** Resumen de precio para varias fechas: "Gratis", "$ 20.000" o "Desde $ 15.000". */
@@ -82,5 +97,5 @@ export function formatPriceSummary(prices: PriceLike[]) {
   if (paid.length < prices.length) return "Desde gratis";
   const min = paid.reduce((a, b) => (b.amount < a.amount ? b : a));
   const allSame = paid.every((p) => p.amount === min.amount);
-  return `${allSame ? "" : "Desde "}${formatPrice(min)}`;
+  return `${allSame ? "" : "Desde "}${formatPrice({ ...min, tiers: undefined })}`;
 }
