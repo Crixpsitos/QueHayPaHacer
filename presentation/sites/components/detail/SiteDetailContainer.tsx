@@ -24,6 +24,7 @@ import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "
 import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
 import { getInitials } from "@/app/lib/utils/getInitials";
+import { SiteOwnerBadge } from "../SiteOwnerBadge";
 import { TrustBadge } from "../TrustBadge";
 import { CompleteBadge } from "../CompleteBadge";
 import { SiteEventsBadge } from "../SiteEventsBadge";
@@ -278,7 +279,13 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           )}
 
           <section>
-            <h2 className="mb-4 text-lg font-semibold">Publicado por</h2>
+            <h2 className="mb-4 text-lg font-semibold">{site!.owner ? "Dueño del sitio" : "Publicado por"}</h2>
+            {site!.owner ? (
+              <div className="flex items-center gap-4">
+                <SiteOwnerBadge owner={site!.owner} />
+                <p className="font-semibold">{site!.owner.displayName}</p>
+              </div>
+            ) : (
             <Link href={buildProfileHref({ id: site!.author.id })} className="flex items-center gap-4 group w-fit">
               <Avatar size="lg" className="size-12 border border-border">
                 {site!.author.photoURL && <AvatarImage src={site!.author.photoURL} alt={site!.author.displayName} />}
@@ -288,6 +295,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
               </Avatar>
               <p className="font-semibold group-hover:underline">{site!.author.displayName}</p>
             </Link>
+            )}
           </section>
 
           <Separator />

@@ -64,6 +64,8 @@ export function buildSiteInput(
     sections: normalizeSections(form.sections),
     facts: normalizeFacts(form.facts),
     bookingUrl: form.bookingUrl ?? "",
+    // Dueño del sitio: solo cuentas de QHPA lo eligen; para el resto no se toca.
+    ...(isQhpaAdmin(uid) ? { owner: form.owner ?? null } : {}),
     kind: form.kind ?? "business",
     publishedAs,
     verification: initialVerification(publishedAs),
