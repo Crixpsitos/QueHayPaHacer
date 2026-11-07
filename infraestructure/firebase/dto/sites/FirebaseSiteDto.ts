@@ -129,6 +129,8 @@ export interface FirebaseSiteDto {
     reason: string
   }
   bookingUrl?: string
+  // Dueño (perfil externo) de un sitio administrado por QHPA. undefined = no tocar; null = quitar.
+  owner?: { id: string; displayName: string; photoURL: string } | null
   // Buses que llegan (a mano, del catálogo). null = el autor lo quitó. `updatedAt` lo fija el servidor.
   transit?: SiteTransit | null
   // Qué hace el sitio en festivos y con lluvia (opcional: sin dato = sin confirmar).

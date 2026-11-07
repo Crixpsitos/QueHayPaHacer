@@ -1,5 +1,6 @@
 "use client"
 
+import { SiteOwnerPicker } from "./SiteOwnerPicker"
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
@@ -178,7 +179,10 @@ const RELATION_OPTIONS = [
 function BasicInfoContent({
   form, errors, relationLocked,
   onNameChange, onDescriptionChange, onCategoryChange, onKindChange, onPublishedAsChange,
+  isQhpaAdmin = false, onOwnerChange,
 }: {
+  isQhpaAdmin?: boolean
+  onOwnerChange: (v: SiteFormViewModel["owner"]) => void
   form: SiteFormViewModel
   errors: FormErrors
   relationLocked: boolean
@@ -203,6 +207,7 @@ function BasicInfoContent({
           No se puede cambiar: respalda la declaración registrada al publicar.
         </p>
       )}
+      {isQhpaAdmin && <SiteOwnerPicker value={form.owner} onChange={onOwnerChange} />}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-foreground" htmlFor="site-name">Nombre</label>
         <Input id="site-name" value={form.name} onChange={(e) => onNameChange(e.target.value)} placeholder="Ej. Café Berlín" aria-invalid={!!errors.name} className="rounded-lg" />
@@ -967,6 +972,8 @@ export function SiteFormDrawer({
                   form={form} errors={errors} relationLocked={relationLocked}
                   onKindChange={(v) => onUpdateField("kind", v)}
                   onPublishedAsChange={(v) => onUpdateField("publishedAs", v)}
+                  isQhpaAdmin={isQhpaAdmin}
+                  onOwnerChange={(v) => onUpdateField("owner", v)}
                   onNameChange={(v) => { onUpdateField("name", v); onClearError("name") }}
                   onDescriptionChange={(v) => { onUpdateField("description", v); onClearError("description") }}
                   onCategoryChange={(v) => { onUpdateField("category", v); onClearError("category") }}

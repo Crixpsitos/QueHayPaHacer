@@ -26,3 +26,10 @@ test("toSiteDetail: sin marcador, markerUrl queda vacío y coverUrl no cambia", 
   assert.equal(s.coverUrl, "https://x.test/real.webp");
   assert.equal(s.markerUrl, undefined);
 });
+
+test("toSiteDetail: el dueño llega a la ficha; sin dueño queda undefined", () => {
+  const base = dto(null);
+  assert.equal(new SiteFirebaseMapper().toSiteDetail(base).owner, undefined);
+  const owner = { id: "ext1", displayName: "Hotel Sol", photoURL: "https://x.test/sol.png" };
+  assert.deepEqual(new SiteFirebaseMapper().toSiteDetail({ ...base, owner }).owner, owner);
+});

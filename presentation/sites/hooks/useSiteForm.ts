@@ -295,6 +295,7 @@ export function useSiteForm() {
       sections: site.sections ?? [],
       facts: site.facts ?? [],
       bookingUrl: site.bookingUrl ?? "",
+      owner: site.owner ?? null,
       transit: { routes: site.transit?.routes ?? [] },
       kind: site.kind ?? "business",
       publishedAs: site.publishedAs === "owner" ? "owner" : "proposer",

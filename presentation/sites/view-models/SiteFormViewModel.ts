@@ -3,6 +3,7 @@ import type { SiteTransit, SiteTransitDraft } from "@/domain/entities/sites/valu
 import type { SiteOpeningPolicy } from "@/domain/entities/sites/value-objects/SiteOpeningPolicy"
 import type { SiteRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations"
 import type { SiteFact } from "@/domain/entities/sites/value-objects/SiteFacts"
+import type { SiteOwner } from "@/domain/entities/sites/value-objects/SiteOwner"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 export type SiteCategory =
   | "cafe"
@@ -73,6 +74,8 @@ export interface SiteFormViewModel {
   /** Datos rápidos arriba de la descripción; opcional. */
   facts: SiteFact[]
   bookingUrl: string
+  /** Dueño del sitio administrado por QHPA (solo lo elige una cuenta de QHPA). */
+  owner?: SiteOwner | null
   /** Buses que llegan (rutas del catálogo); el servidor valida y fija `updatedAt`. */
   transit: SiteTransitDraft
   /** Atractivo público o negocio privado. */
@@ -172,6 +175,7 @@ export interface SiteDetail extends SiteListItem {
   openingPolicy?: SiteOpeningPolicy
   recommendations?: SiteRecommendations
   bookingUrl?: string
+  owner?: SiteOwner
   transit?: SiteTransit
   sections?: SiteSection[]
   facts?: SiteFact[]

@@ -103,6 +103,8 @@ const fields = {
   openingPolicy: v.optional(OpeningPolicy),
   recommendations: v.optional(v.object({ tips: v.array(v.picklist(SITE_TIP_IDS)), note: v.optional(text(TIP_NOTE_MAX, "Nota de recomendaciones")) })),
   bookingUrl: v.optional(OptionalHttpUrl),
+  // Solo lo respeta el servidor para cuentas de QHPA (buildSiteInput).
+  owner: v.optional(v.nullable(v.object({ id: v.string(), displayName: text(120, "Nombre del dueño"), photoURL: v.string() }))),
   transit: v.optional(Transit),
   sections: v.optional(Sections),
   facts: v.optional(Facts),

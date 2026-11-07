@@ -141,6 +141,7 @@ export class SiteFirebaseMapper {
       openingPolicy: normalizeOpeningPolicy(dto.openingPolicy),
       recommendations: normalizeRecommendations(dto.recommendations),
       bookingUrl: dto.bookingUrl ?? "",
+      owner: dto.owner ?? undefined,
       sections: normalizeSections(dto.sections),
       facts: normalizeFacts(dto.facts),
       transit: dto.transit ?? undefined,

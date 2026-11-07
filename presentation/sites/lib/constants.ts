@@ -112,6 +112,7 @@ export function createInitialForm() {
     sections: [],
     facts: [],
     bookingUrl: "",
+    owner: null,
     transit: { routes: [] },
     kind: "business" as const,
     // Lo más conservador: no se afirma ser dueño hasta que la persona lo elija.
