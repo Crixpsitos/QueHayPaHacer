@@ -24,7 +24,7 @@ import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "
 import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
 import { getInitials } from "@/app/lib/utils/getInitials";
-import { SiteOwnerBadge } from "../SiteOwnerBadge";
+import { SiteOwnerDialog } from "./SiteOwnerDialog";
 import { TrustBadge } from "../TrustBadge";
 import { CompleteBadge } from "../CompleteBadge";
 import { SiteEventsBadge } from "../SiteEventsBadge";
@@ -281,13 +281,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           <section>
             <h2 className="mb-4 text-lg font-semibold">{site!.owner ? "Dueño del sitio" : "Publicado por"}</h2>
             {site!.owner ? (
-              <div className="flex items-center gap-4">
-                <SiteOwnerBadge owner={site!.owner} />
-                <div className="min-w-0">
-                  <p className="font-semibold">{site!.owner.displayName}</p>
-                  <p className="text-sm text-muted-foreground">Administrado por Que hay pa hacer</p>
-                </div>
-              </div>
+              <SiteOwnerDialog owner={site!.owner} />
             ) : (
             <Link href={buildProfileHref({ id: site!.author.id })} className="flex items-center gap-4 group w-fit">
               <Avatar size="lg" className="size-12 border border-border">
