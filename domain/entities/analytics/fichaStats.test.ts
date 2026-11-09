@@ -9,11 +9,11 @@ test("sumStats suma días: vistas, clics y orígenes; ignora campos inválidos",
     { views: "x" as never, clicks: -4, bySource: { evil: Number.NaN } as never },
     {},
   ]);
-  assert.deepEqual(out, { views: 13, clicks: 2, bySource: { instagram: 8, direct: 5, whatsapp: 1 } });
+  assert.deepEqual(out, { views: 13, clicks: 2, bySource: { instagram: 8, direct: 5, whatsapp: 1 }, viewsBy: {}, linkClicks: {}, byType: {} });
 });
 
 test("sumStats sin días → ceros", () => {
-  assert.deepEqual(sumStats([]), { views: 0, clicks: 0, bySource: {} });
+  assert.deepEqual(sumStats([]), { views: 0, clicks: 0, bySource: {}, viewsBy: {}, linkClicks: {}, byType: {} });
 });
 
 test("sourceShares: ordena, calcula % sobre el total, nombres en español y agrupa la cola en 'Otros'", () => {

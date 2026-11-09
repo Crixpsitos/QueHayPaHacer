@@ -7,10 +7,11 @@ const fichas = [
   { type: "site" as const, id: "s1", name: "Nebraska" },
   { type: "event" as const, id: "e2", name: "Sin visitas" },
 ];
+const z = { viewsBy: {}, linkClicks: {}, byType: {} };
 const stats = {
-  "event:e1": { views: 120, clicks: 14, bySource: { instagram: 90, direct: 44 } },
-  "site:s1": { views: 12, clicks: 3, bySource: { whatsapp: 15 } },
-  "event:e2": { views: 0, clicks: 0, bySource: {} },
+  "event:e1": { views: 120, clicks: 14, bySource: { instagram: 90, direct: 44 }, ...z },
+  "site:s1": { views: 12, clicks: 3, bySource: { whatsapp: 15 }, ...z },
+  "event:e2": { views: 0, clicks: 0, bySource: {}, ...z },
 };
 const links = [
   { code: "AAAAAAA", label: "IG bio", targetType: "event" as const, targetId: "e1", targetName: "Candlelight", clicks: 30 },
