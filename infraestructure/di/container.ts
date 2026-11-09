@@ -48,6 +48,8 @@ import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFir
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
+import { LinksService } from "@/application/services/links/LinksService";
+import { LinksFirebaseRepository } from "@/infraestructure/firebase/repositories/links/LinksFirebaseRepository";
 import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
 import { EventSessionAdapter } from "../adapters/events/EventSessionAdapter";
 import { EventSessionFirebaseMapper } from "../firebase/mappers/events/EventSessionFirebaseMapper";
@@ -156,6 +158,9 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
+  // enlaces de campaña (/r/<código>)
+  const linksService = new LinksService(new LinksFirebaseRepository(getFirebaseFirestore()));
+
   // studio (Estudio del Organizador)
   const studioFirebaseRepository = new StudioFirebaseRepository(getEnterpriseFirestore());
   const studioRepository = new StudioAdapter(studioFirebaseRepository, new StudioFirebaseMapper());
@@ -214,6 +219,7 @@ export const createServerContainer = () => {
   );
 
   return {
+    linksService,
     userService,
     campaignService,
     categoriesService,
