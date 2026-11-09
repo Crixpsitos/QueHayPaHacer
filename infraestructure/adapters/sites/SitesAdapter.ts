@@ -1,3 +1,4 @@
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { Site } from "@/domain/entities/sites/Site"
 import type { ISiteRepository } from "@/domain/repository/sites/ISiteRepository"
 import type { ISitesFirebaseRepository } from "@/infraestructure/firebase/repositories/sites/ISitesFirebaseRepository"
@@ -17,8 +18,8 @@ export class SitesAdapter implements ISiteRepository {
     return dto ? this.mapper.toDomain(dto) : null
   }
 
-  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
-    return this.repo.recordTrack(id, type, day)
+  recordTrack(id: string, type: SiteTrackType, day: string, source?: TrafficSource): Promise<void> {
+    return this.repo.recordTrack(id, type, day, source)
   }
 
   /** Raw DTO — avoids domain mapping (robust against legacy media shapes). */

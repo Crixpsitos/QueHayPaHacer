@@ -1,10 +1,12 @@
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
+import { landingSource } from "./eventTrack"
 
 /** Envía una vista o clic de la ficha de un sitio sin bloquear la navegación (sendBeacon; fetch keepalive de respaldo). */
 export function trackSite(siteId: string, type: SiteTrackType) {
   const url = `/api/sites/${encodeURIComponent(siteId)}/track`
-  const body = JSON.stringify({ type })
   try {
+    const src = landingSource({ href: window.location.href, referrer: document.referrer })
+    const body = JSON.stringify(src === "direct" ? { type } : { type, src })
     if (navigator.sendBeacon?.(url, new Blob([body], { type: "application/json" }))) return
     void fetch(url, { method: "POST", body, keepalive: true, headers: { "content-type": "application/json" } })
   } catch {}
