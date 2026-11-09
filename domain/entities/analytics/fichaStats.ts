@@ -1,20 +1,44 @@
 /** Por debajo de estas vistas en el período, el panel avisa "pocos datos" en vez de sacar conclusiones (spec analytics-v2). */
 export const FEW_DATA_BELOW = 30
 
-export interface DailyStatsDoc { views?: number; clicks?: number; bySource?: Record<string, number> }
-export interface StatsTotals { views: number; clicks: number; bySource: Record<string, number> }
+/** Acciones medidas por tipo en el doc diario (lista cerrada; el resto de campos del doc no son acciones). */
+export const ACTION_FIELDS = ["share", "directions", "transit", "website", "social", "booking", "whatsapp", "call", "register_external"] as const
+type Counts = Record<string, number>
+export interface DailyStatsDoc { day?: string; views?: number; clicks?: number; bySource?: Counts; viewsBy?: Counts; linkClicks?: Counts; [k: string]: unknown }
+export interface StatsTotals {
+  views: number
+  clicks: number
+  /** Visitas Y acciones por origen (mezclado). */
+  bySource: Counts
+  /** SOLO visitas por origen. */
+  viewsBy: Counts
+  /** Clics en los enlaces cortos automáticos, por canal. */
+  linkClicks: Counts
+  /** Acciones por tipo (`share`, `directions`, `register_external`…). */
+  byType: Counts
+}
 
 const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 0)
 
+const addCounts = (into: Counts, from: unknown) => {
+  for (const [k, v] of Object.entries((from ?? {}) as Record<string, unknown>)) {
+    const c = n(v)
+    if (c) into[k] = (into[k] ?? 0) + c
+  }
+}
+
 /** Suma los docs diarios `events|sites/{id}/stats/{día}`. Campos que no son números positivos cuentan 0. */
 export function sumStats(docs: DailyStatsDoc[]): StatsTotals {
-  const out: StatsTotals = { views: 0, clicks: 0, bySource: {} }
+  const out: StatsTotals = { views: 0, clicks: 0, bySource: {}, viewsBy: {}, linkClicks: {}, byType: {} }
   for (const d of docs) {
     out.views += n(d.views)
     out.clicks += n(d.clicks)
-    for (const [k, v] of Object.entries(d.bySource ?? {})) {
-      const c = n(v)
-      if (c) out.bySource[k] = (out.bySource[k] ?? 0) + c
+    addCounts(out.bySource, d.bySource)
+    addCounts(out.viewsBy, d.viewsBy)
+    addCounts(out.linkClicks, d.linkClicks)
+    for (const f of ACTION_FIELDS) {
+      const c = n(d[f])
+      if (c) out.byType[f] = (out.byType[f] ?? 0) + c
     }
   }
   return out

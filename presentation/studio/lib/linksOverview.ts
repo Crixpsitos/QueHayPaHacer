@@ -8,7 +8,7 @@ export interface LinksOverview { fichas: FichaCard[]; totals: { views: number; c
 /** Une fichas + estadísticas (clave `tipo:id`) + enlaces en las tarjetas del panel. Más vistas primero; el empate conserva el orden recibido. */
 export function buildLinksOverview(fichas: FichaRef[], stats: Record<string, StatsTotals>, links: LinkRow[]): LinksOverview {
   const cards = fichas.map((f): FichaCard => {
-    const s = stats[`${f.type}:${f.id}`] ?? { views: 0, clicks: 0, bySource: {} }
+    const s = stats[`${f.type}:${f.id}`] ?? { views: 0, clicks: 0, bySource: {}, viewsBy: {}, linkClicks: {}, byType: {} }
     return {
       ...f,
       views: s.views,
