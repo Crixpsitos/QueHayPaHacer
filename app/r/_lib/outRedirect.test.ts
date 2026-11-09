@@ -10,7 +10,6 @@ function setup(over: Partial<Parameters<typeof createOutHandler>[0]> = {}) {
     ipLimit: () => true,
     readLimit: () => true,
     globalLimit: () => true,
-    schedule: (fn) => void fn(), // ponytail: en producción es after()
     ...over,
   });
   const call = (id: string, qs: string, ip = "1.1.1.1") =>
@@ -75,7 +74,6 @@ test("HEAD (vistas previas, comprobadores de enlaces) redirige pero no cuenta co
     ipLimit: () => true,
     readLimit: () => true,
     globalLimit: () => true,
-    schedule: (fn) => void fn(),
   });
   const res = await handle(new Request("https://yquehaypahacer.com/r/e/abc?to=register", { method: "HEAD" }), "abc", new URLSearchParams("to=register"));
   assert.equal(res.status, 307);
@@ -90,7 +88,6 @@ test("lecturas acotadas: el mismo destino se resuelve una vez por minuto (tambi�
     ipLimit: () => true,
     readLimit: () => true,
     globalLimit: () => true,
-    schedule: (fn) => void fn(),
     now: () => t,
   });
   const go = (id: string) => handle(new Request(`https://x.co/r/e/${id}?to=register`), id, new URLSearchParams("to=register"));
@@ -109,7 +106,6 @@ test("barrido de ids: tras el tope de lecturas por IP, los desconocidos dan 429 
     ipLimit: () => true,
     readLimit: () => allowed-- > 0,
     globalLimit: () => true,
-    schedule: (fn) => void fn(),
   });
   const go = (id: string) => handle(new Request(`https://x.co/r/e/${id}?to=register`), id, new URLSearchParams("to=register"));
   assert.equal((await go("abc")).status, 307); // gasta el único permiso de lectura
@@ -118,4 +114,29 @@ test("barrido de ids: tras el tope de lecturas por IP, los desconocidos dan 429 
   assert.equal((await go("otro2")).status, 429);
   assert.equal(reads, before);
   assert.equal((await go("abc")).status, 307); // en caché: no necesita permiso
+});
+
+test("espera a que el conteo termine antes de responder (en Cloud Run, trabajo después de responder se pierde)", async () => {
+  let done = false;
+  const handle = createOutHandler({
+    resolve: async () => "https://tickets.example.com/e1",
+    record: async () => { await new Promise((r) => setTimeout(r, 30)); done = true; },
+    ipLimit: () => true, readLimit: () => true, globalLimit: () => true,
+  });
+  const res = await handle(new Request("https://x.co/r/e/abc?to=register"), "abc", new URLSearchParams("to=register"));
+  assert.equal(res.status, 307);
+  assert.equal(done, true);
+});
+
+test("un conteo colgado no traba la redirección: se abandona al pasar el tope de tiempo", async () => {
+  const handle = createOutHandler({
+    resolve: async () => "https://tickets.example.com/e1",
+    record: () => new Promise<void>(() => {}), // nunca termina
+    ipLimit: () => true, readLimit: () => true, globalLimit: () => true,
+    countTimeoutMs: 40,
+  });
+  const t0 = Date.now();
+  const res = await handle(new Request("https://x.co/r/e/abc?to=register"), "abc", new URLSearchParams("to=register"));
+  assert.equal(res.status, 307);
+  assert.ok(Date.now() - t0 < 500);
 });

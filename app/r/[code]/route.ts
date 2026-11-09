@@ -1,4 +1,4 @@
-import { after, type NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { landingPath } from "@/domain/entities/links/link"
@@ -16,7 +16,6 @@ const handle = createOutHandler({
   ipLimit: createIpLimiter(60),
   readLimit: createIpLimiter(30), // lecturas a la base por IP y minuto (solo destinos fuera de caché)
   globalLimit: createGlobalLimiter(300, undefined, () => console.warn("[out-links] tope global por minuto superado: se descartan conteos")),
-  schedule: (fn) => after(fn),
 })
 
 /** Enlace de campaña `yquehaypahacer.com/r/<código>` → 307 a la ficha con `utm_*` y `qr=<código>`; código desconocido → 404. */

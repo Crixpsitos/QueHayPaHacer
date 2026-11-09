@@ -16,15 +16,15 @@ interface Deps {
   /** Tope por IP de LECTURAS a la base (solo cuando el destino no está en caché): frena el barrido de ids al azar. */
   readLimit: (ip: string) => boolean
   globalLimit: () => boolean
-  /** `after()` de Next en producción: contar no retrasa la redirección. */
-  schedule: (fn: () => Promise<void>) => void
   now?: () => number
+  /** Tope de espera del conteo antes de redirigir igual (por defecto 1500 ms). */
+  countTimeoutMs?: number
 }
 
 /**
  * Lógica de `GET /r/e|s/[id]?to=…`. `to` solo ELIGE qué campo del documento se usa; la URL de `Location` sale siempre del
- * documento (ver resolveTarget). Contar es best-effort: topes por IP y global y un conteo por persona/día; si se descarta
- * o falla, la persona igual llega a su destino.
+ * documento (ver resolveTarget). Contar es best-effort: topes por IP y global y un conteo por persona/día; si se descarta,
+ * falla o tarda más del tope, la persona igual llega a su destino.
  */
 export function createOutHandler(deps: Deps) {
   const dedupe = createDailyDedupe()
@@ -53,14 +53,19 @@ export function createOutHandler(deps: Deps) {
     const ua = request.headers.get("user-agent") ?? ""
     const resource = `${id}:${to}`
     if (request.method !== "HEAD" && deps.ipLimit(ip) && !dedupe.isRepeat(ip, ua, resource) && deps.globalLimit()) {
-      deps.schedule(async () => {
+      // Se ESPERA la escritura (con tope): en Cloud Run el trabajo posterior a la respuesta (`after()`) puede perderse
+      // porque la CPU se limita al responder; medido en develop: 5 de 6 clics contados.
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const count = (async () => {
         try {
           await deps.record(id, to)
           dedupe.mark(ip, ua, resource)
         } catch (error) {
           console.error("[out-redirect]", error)
         }
-      })
+      })()
+      await Promise.race([count, new Promise<void>((r) => (timer = setTimeout(r, deps.countTimeoutMs ?? 1500)))])
+      clearTimeout(timer)
     }
     return new NextResponse(null, { status: 307, headers: { Location: target, "Cache-Control": "no-store" } })
   }
