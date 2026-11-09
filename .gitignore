@@ -55,3 +55,6 @@ next-env.d.ts
 # El gestor es pnpm (pnpm-lock.yaml); otros lockfiles rompen la CI.
 package-lock.json
 yarn.lock
+
+# graphify (artefactos locales; no van al repo)
+graphify-out/
