@@ -8,6 +8,7 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import { registerEventAction } from "@/app/actions/events/register-event.action";
+import { trackEventAction } from "@/app/lib/eventTrack";
 import { recordExternalRegistrationClickAction } from "@/app/actions/studio/record-external-registration-click.action";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
 import { PastEventState } from "./PastEventState";
@@ -98,6 +99,7 @@ export function EventDetailClient({
       if (event.externalUrl) {
         // Registra el click ANTES de redirigir (no bloqueante).
         void recordExternalRegistrationClickAction(event.id);
+        trackEventAction(event.id, "register_external");
         window.open(event.externalUrl, "_blank", "noopener,noreferrer");
       }
     } else {
@@ -210,7 +212,14 @@ export function EventDetailClient({
   }
 
   return (
-    <>
+    // Los clics se escuchan en este contenedor, no en `document` (ver SiteTracker): con Cache Components quedan fichas ocultas montadas.
+    <div
+      className="contents"
+      onClickCapture={(e) => {
+        const type = (e.target as HTMLElement).closest<HTMLElement>("[data-event-track]")?.dataset.eventTrack;
+        if (type === "directions") trackEventAction(event.id, type);
+      }}
+    >
       {lightboxIndex !== null && <Lightbox slides={slides} initial={lightboxIndex} onClose={() => setLightboxIndex(null)} />}
 
       {registrationModalOpen && (
@@ -340,6 +349,6 @@ export function EventDetailClient({
           {ctaButton}
         </MobileCtaBar>
       )}
-    </>
+    </div>
   );
 }

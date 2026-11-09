@@ -90,6 +90,7 @@ export function EventPlace({ event, linkedSite }: { event: EventViewModel; linke
             <dd className="pt-1">
               <a
                 href={mapsHref}
+                data-event-track="directions"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#09090B] underline decoration-[#E4E4E7] underline-offset-4 hover:decoration-[#09090B]"
