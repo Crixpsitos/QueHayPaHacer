@@ -131,6 +131,13 @@ export class SitesService {
     }
   }
 
+  /** Destinos de salida de un sitio PÚBLICO (publicado y aprobado); null si no existe o no es público. Ver app/r/s/[id]. */
+  async getOutLinks(id: string): Promise<{ bookingUrl?: string; socialMedia?: Record<string, string | undefined> } | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto || dto.publicationStatus !== "published" || dto.moderationStatus !== "approved") return null
+    return { bookingUrl: dto.bookingUrl, socialMedia: dto.socialMedia }
+  }
+
   async publish(data: SiteInput): Promise<string> {
     return this.adapter.createRaw({ ...data, publicationStatus: "published", moderationStatus: "pending" })
   }
