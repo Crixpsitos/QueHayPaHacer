@@ -68,8 +68,8 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
   - Archivos: acción de crear, página `app/(studio)/studio/links/*`, componente de lista.
 
 ### Checkpoint B
-- [ ] Tests/typecheck/build verdes; guion en develop; `security-auditor` revisó redirecciones.
-- [ ] Prod solo con orden explícita.
+- [x] Tests (546)/typecheck verdes; guion en develop (ráfaga de 6 clics: 6 contados); `security-auditor` revisó redirecciones (sin críticos/altos; ver docs/30 puntos 6–13). `pnpm build` no corrido.
+- [x] Prod: T8–T11 en `main` `4cd89c9` por orden del usuario. Pendiente medido: qué agrega el frente de Google a `X-Forwarded-For` antes de cambiar `clientIp`.
 
 ## Fase 3 — `intent` (puede ir en paralelo con Fase 2)
 
