@@ -3,6 +3,7 @@ import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
+import { sourceKey, type TrafficSource } from "@/domain/entities/analytics/trafficSource"
 
 const FEATURED_LIMIT = 8
 
@@ -156,7 +157,7 @@ export class SitesFirebaseRepository
     return { id: doc.id, ...doc.data() } as FirebaseSiteDto
   }
 
-  async recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
+  async recordTrack(id: string, type: SiteTrackType, day: string, source: TrafficSource = "direct"): Promise<void> {
     const ref = this.collection.doc(id)
     const isView = type === "view"
     try {
@@ -169,6 +170,9 @@ export class SitesFirebaseRepository
     await ref
       .collection("stats")
       .doc(day)
-      .set({ day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? {} : { clicks: FieldValue.increment(1) }) }, { merge: true })
+      .set(
+        { day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? {} : { clicks: FieldValue.increment(1) }), bySource: { [sourceKey(source)]: FieldValue.increment(1) } },
+        { merge: true },
+      )
   }
 }

@@ -1,3 +1,4 @@
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import type { FirebaseSiteDto } from "@/infraestructure/firebase/dto/sites/FirebaseSiteDto"
@@ -54,8 +55,8 @@ export class SitesService {
   constructor(private readonly adapter: SitesAdapter) {}
 
   /** Vista o clic de la ficha pública (ver app/api/sites/[id]/track). */
-  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void> {
-    return this.adapter.recordTrack(id, type, day)
+  recordTrack(id: string, type: SiteTrackType, day: string, source?: TrafficSource): Promise<void> {
+    return this.adapter.recordTrack(id, type, day, source)
   }
 
   async getMySites(uid: string): Promise<SiteDetail[]> {

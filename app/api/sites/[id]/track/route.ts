@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import * as v from "valibot"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SiteIdSchema, SiteTrackBodySchema } from "@/application/dto/sites/SiteTrackDto"
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { clientIp, createIpLimiter } from "@/app/api/_lib/ipRateLimit"
 import { createGlobalLimiter, isSameOriginBeacon, readBoundedJson } from "@/app/api/_lib/beaconGuard"
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/sites/[
   if (!globalAllowed()) return DROPPED()
 
   try {
-    await createServerContainer().sitesService.recordTrack(id, body.output.type, bogotaDay())
+    await createServerContainer().sitesService.recordTrack(id, body.output.type, bogotaDay(), body.output.src as TrafficSource | undefined)
   } catch (error) {
     console.error("[site-track]", error)
   }

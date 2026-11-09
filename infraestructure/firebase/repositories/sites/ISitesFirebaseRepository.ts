@@ -1,3 +1,4 @@
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 
@@ -29,5 +30,5 @@ export interface ISitesFirebaseRepository {
   /** Busca un sitio por su slug único. */
   findBySlug(slug: string): Promise<FirebaseSiteDto | null>
   /** Suma una vista o un clic al total del sitio y al doc diario `day` (YYYY-MM-DD). Sitio inexistente: no hace nada. */
-  recordTrack(id: string, type: SiteTrackType, day: string): Promise<void>
+  recordTrack(id: string, type: SiteTrackType, day: string, source?: TrafficSource): Promise<void>
 }
