@@ -46,7 +46,7 @@ export function sumStats(docs: DailyStatsDoc[]): StatsTotals {
 
 const LABELS: Record<string, string> = {
   instagram: "Instagram", facebook: "Facebook", whatsapp: "WhatsApp", tiktok: "TikTok", x: "X",
-  google: "Google", direct: "Directo", link: "Tus enlaces", other: "Otros",
+  google: "Google", direct: "Directo", link: "Tus enlaces", qr: "Afiche con QR", other: "Otros",
 }
 export interface SourceShare { key: string; label: string; count: number; pct: number }
 
@@ -54,8 +54,13 @@ export interface SourceShare { key: string; label: string; count: number; pct: n
  * Orígenes ordenados con su % del total (suma de visitas y clics: `bySource` no los separa). Muestra los `top` mayores y
  * agrupa el resto en "Otros". Los % son enteros y nunca suman más de 100.
  */
+// Los canales de enlaces automáticos se agrupan por plataforma: ch_ig y ch_ig_h son "Instagram".
+const PLATFORM: Record<string, string> = { ch_ig: "instagram", ch_ig_h: "instagram", ch_wa: "whatsapp", ch_fb: "facebook", ch_x: "x", ch_tt: "tiktok", ch_qr: "qr" }
+
 export function sourceShares(bySource: Record<string, number>, top = 4): SourceShare[] {
-  const entries = Object.entries(bySource).filter(([, c]) => n(c) > 0).sort((a, b) => b[1] - a[1])
+  const grouped: Record<string, number> = {}
+  for (const [k, c] of Object.entries(bySource)) grouped[PLATFORM[k] ?? k] = (grouped[PLATFORM[k] ?? k] ?? 0) + n(c)
+  const entries = Object.entries(grouped).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1])
   const total = entries.reduce((s, [, c]) => s + c, 0)
   if (!total) return []
   const head = entries.slice(0, top)

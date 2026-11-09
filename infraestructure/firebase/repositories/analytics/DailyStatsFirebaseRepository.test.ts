@@ -47,3 +47,9 @@ test("recordLinkClick: suma 1 a linkClicks.<canal> del doc diario (merge) y vali
   await assert.rejects(repo.recordLinkClick("users" as never, "e1", "ig", "2026-11-09"));
   assert.equal(ops.length, 1);
 });
+
+test("readDays: devuelve los docs diarios con su día, para la serie por día", async () => {
+  const db = { collection: () => ({ doc: () => ({ collection: () => ({ where: () => ({ get: async () => ({ docs: [{ id: "2026-11-08", data: () => ({ views: 3 }) }, { id: "2026-11-09", data: () => ({ views: 5 }) }] }) }) }) }) }) } as any;
+  const out = await new DailyStatsFirebaseRepository(db).readDays("events", "e1", "2026-11-01");
+  assert.deepEqual(out, [{ views: 3, day: "2026-11-08" }, { views: 5, day: "2026-11-09" }]);
+});
