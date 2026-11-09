@@ -1,0 +1,27 @@
+/** De dónde llegó una visita. Lista cerrada: nada de texto libre como clave en Firestore (cardinalidad acotada). */
+export const SOURCES = ["instagram", "facebook", "tiktok", "whatsapp", "google", "direct", "other"] as const
+export type Source = (typeof SOURCES)[number]
+export type TrafficSource = Source | `link:${string}`
+
+const ALIASES: Record<string, Source> = { instagram: "instagram", ig: "instagram", facebook: "facebook", fb: "facebook", tiktok: "tiktok", whatsapp: "whatsapp", wa: "whatsapp", google: "google" }
+const HOSTS: Array<[Source, string]> = [["instagram", "instagram.com"], ["facebook", "facebook.com"], ["facebook", "fb.com"], ["tiktok", "tiktok.com"], ["whatsapp", "whatsapp.com"], ["whatsapp", "wa.me"], ["google", "google.com"]]
+const OWN_HOST = "yquehaypahacer.com"
+const CODE = /^[A-Za-z0-9]{7}$/
+
+const isHostOrSub = (host: string, domain: string) => host === domain || host.endsWith(`.${domain}`)
+
+/** Prioridad: enlace de campaña (`qr`) > `utm_source` > referrer > direct. Puro: sin DOM. */
+export function trafficSource(i: { utm_source?: string; ref?: string; qr?: string }): TrafficSource {
+  if (i.qr && CODE.test(i.qr)) return `link:${i.qr}`
+  const utm = i.utm_source?.trim().toLowerCase()
+  if (utm) return ALIASES[utm] ?? "other"
+  if (!i.ref) return "direct"
+  let host: string
+  try {
+    host = new URL(i.ref).hostname.toLowerCase()
+  } catch {
+    return "direct"
+  }
+  if (isHostOrSub(host, OWN_HOST)) return "direct"
+  return HOSTS.find(([, d]) => isHostOrSub(host, d))?.[0] ?? "other"
+}
