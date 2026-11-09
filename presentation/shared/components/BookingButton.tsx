@@ -5,6 +5,8 @@ import { cn } from "@/app/lib/utils/cn";
 
 interface BookingButtonProps {
   url: string;
+  /** Ruta rastreada (`/r/s/…`) a la que apunta el enlace; `url` sigue sirviendo para el estilo (WhatsApp) y para Analytics. */
+  trackedHref?: string;
   disabled?: boolean;
   className?: string;
 }
@@ -27,7 +29,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function BookingButton({ url, disabled = false, className }: BookingButtonProps) {
+export function BookingButton({ url, trackedHref, disabled = false, className }: BookingButtonProps) {
   const isWA = isWhatsAppUrl(url);
 
   if (disabled) {
@@ -53,8 +55,9 @@ export function BookingButton({ url, disabled = false, className }: BookingButto
 
   return (
     <a
-      href={url}
+      href={trackedHref ?? url}
       data-site-track="booking"
+      {...(trackedHref ? { "data-site-dest": url, "data-site-counted": "1" } : {})}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(

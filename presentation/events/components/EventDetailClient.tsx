@@ -9,7 +9,7 @@ import { cn } from "@/app/lib/utils/cn";
 import type { EventViewModel } from "../view-models/EventViewModel";
 import { registerEventAction } from "@/app/actions/events/register-event.action";
 import { trackEventAction } from "@/app/lib/eventTrack";
-import { recordExternalRegistrationClickAction } from "@/app/actions/studio/record-external-registration-click.action";
+import { eventOutHref } from "@/app/r/_lib/outHref";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
 import { PastEventState } from "./PastEventState";
 import { isEventPast } from "../utils/eventTemporalUtils";
@@ -97,10 +97,8 @@ export function EventDetailClient({
   const register = () => {
     if (event.registrationType === "external") {
       if (event.externalUrl) {
-        // Registra el click ANTES de redirigir (no bloqueante).
-        void recordExternalRegistrationClickAction(event.id);
-        trackEventAction(event.id, "register_external");
-        window.open(event.externalUrl, "_blank", "noopener,noreferrer");
+        // /r/e/[id] cuenta el clic en el servidor (contador del estudio + stats diarias) y redirige al externalUrl guardado.
+        window.open(eventOutHref(event.id, "register"), "_blank", "noopener,noreferrer");
       }
     } else {
       setRegistrationModalOpen(true);

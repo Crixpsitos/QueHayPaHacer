@@ -52,7 +52,7 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
   - Aceptación: lee el destino del documento, 307, cuenta con `after()`; `to` inválido o destino vacío → 404 sin escritura; ningún valor del query llega a `Location`.
   - Verifica: tests de no-redirección-abierta (`?to=https://malo.com` ignorado); `pnpm test`.
   - Archivos: `app/r/e/[id]/route.ts`, `app/r/s/[id]/route.ts`, `app/r/_lib/resolveTarget.ts` (+ test).
-- [ ] **T9 Botones apuntan a `/r/…` (M)**
+- [x] **T9 Botones apuntan a `/r/…` (M)**
   - Aceptación: registro externo, entradas, reserva y redes de eventos y sitios usan la ruta rastreada; el `href` real sigue funcionando sin JS.
   - Verifica: guion de clics en develop; los contadores suben.
   - Archivos: botones de evento y sitio (`presentation/events/…`, `presentation/sites/components/detail/*`).

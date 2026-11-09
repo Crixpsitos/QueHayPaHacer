@@ -20,6 +20,7 @@ import { SiteSocialShare } from "./SiteSocialShare";
 import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { SiteLocalBusinessJsonLd } from "../discovery/SiteJsonLd";
 import { BookingButton } from "@/presentation/shared/components/BookingButton";
+import { siteOutHref } from "@/app/r/_lib/outHref";
 import { CATEGORY_ICON_MAP, CATEGORY_COLOR_MAP, CATEGORY_FALLBACK_COLOR } from "@/presentation/categories/lib/categoryIconMap";
 import { cn } from "@/app/lib/utils/cn";
 import { SITE_URL } from "@/app/lib/site";
@@ -107,11 +108,11 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
 
   const social = site.socialMedia;
   const socialLinks = [
-    { href: social?.instagram, label: "Instagram", Icon: InstagramIcon },
-    { href: social?.facebook, label: "Facebook", Icon: FacebookIcon },
-    { href: social?.tiktok, label: "TikTok", Icon: TikTokIcon },
-    { href: social?.twitter, label: "X", Icon: XIcon },
-    { href: social?.website, label: "Sitio web", Icon: Globe },
+    { href: social?.instagram, label: "Instagram", net: "instagram", Icon: InstagramIcon },
+    { href: social?.facebook, label: "Facebook", net: "facebook", Icon: FacebookIcon },
+    { href: social?.tiktok, label: "TikTok", net: "tiktok", Icon: TikTokIcon },
+    { href: social?.twitter, label: "X", net: "twitter", Icon: XIcon },
+    { href: social?.website, label: "Sitio web", net: undefined, Icon: Globe },
   ].filter((l): l is typeof l & { href: string } => Boolean(l.href));
   const hasLinks = Boolean(site.bookingUrl) || socialLinks.length > 0;
 
@@ -199,6 +200,7 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           {site!.bookingUrl && (
             <BookingButton
               url={site!.bookingUrl}
+              trackedHref={siteOutHref(siteId, "booking")}
               disabled={site!.temporarilyClosed?.isClosed}
               className="w-full justify-center sm:w-fit"
             />
@@ -206,11 +208,13 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           {socialLinks.length > 0 && (
             // Objetivos táctiles de 44 px; en celular 2 por fila (el último impar ocupa todo el ancho).
             <ul aria-label="Redes sociales y sitio web" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              {socialLinks.map(({ href, label, Icon }) => (
+              {socialLinks.map(({ href, label, net, Icon }) => (
                 <li key={label} className="last:odd:col-span-2 sm:last:odd:col-span-1">
                   <a
-                    href={href}
+                    href={net ? siteOutHref(siteId, "social", net) : siteOutHref(siteId, "website")}
                     data-site-track={label === "Sitio web" ? "website" : "social"}
+                    data-site-dest={href}
+                    data-site-counted="1"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#D4D4D8] bg-white px-5 text-sm font-medium text-[#27272A] transition-colors hover:border-[#09090B] hover:bg-[#F4F4F5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#09090B]"
