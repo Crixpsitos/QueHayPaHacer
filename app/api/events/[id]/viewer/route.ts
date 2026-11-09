@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getEventAccess, getSessionUid } from "@/app/actions/_session";
-import { recordEventView } from "@/app/actions/events/_recordEventView";
 import {
   fetchEventDetailById,
   fetchUserLiked,
@@ -14,7 +12,6 @@ const NO_STORE = { "Cache-Control": "private, no-store" };
 /**
  * Estado de la PERSONA que mira un evento (me gusta, inscripción, dueño, equipo). La página pública del evento es
  * igual para todos y se cachea en el CDN; esto se pide aparte desde el cliente y nunca se cachea.
- * Aquí también se registra la vista (antes la registraba el render del servidor, que ya no ve a cada visitante).
  */
 export async function GET(request: NextRequest, ctx: RouteContext<"/api/events/[id]/viewer">) {
   const uid = await getSessionUid();
@@ -34,10 +31,6 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/events/[
     isOwner ? null : getEventAccess(id),
     isOwner ? createServerContainer().userService.getUserById(uid) : null,
   ]);
-
-  // `seen=1`: el navegador recuerda que esta persona ya la vio; se omite la comprobación (1 lectura). Sin la marca, el
-  // servidor verifica y nunca cuenta dos veces, así que un cliente que mienta solo se quita su propia vista.
-  if (request.nextUrl.searchParams.get("seen") !== "1") after(() => recordEventView(id, uid));
 
   return NextResponse.json(
     {

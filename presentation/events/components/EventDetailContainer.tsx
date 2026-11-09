@@ -7,6 +7,7 @@ import { SessionViewModelMapper } from "../mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
 import { eventJsonLdHtml } from "../lib/eventJsonLd";
 import { ViewItem } from "@/app/components/analytics/ViewItem";
+import { EventViewTracker } from "@/app/components/analytics/EventViewTracker";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
 import { MultiDateEventDetailClient } from "./MultiDateEventDetailClient";
 import {
@@ -46,6 +47,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
       <>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel) }} />
         <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
+        <EventViewTracker eventId={viewModel.id} />
         <MultiDateEventDetailClient event={viewModel} sessions={sessionVMs} />
       </>
     );
@@ -67,6 +69,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel) }} />
       <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
+        <EventViewTracker eventId={viewModel.id} />
       <EventDetailClient event={viewModel} linkedSite={linkedSite} />
     </>
   );
