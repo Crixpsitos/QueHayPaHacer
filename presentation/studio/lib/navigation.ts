@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Users,
+  Link2,
   LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
@@ -17,6 +18,7 @@ export interface StudioNavItem {
 export const STUDIO_NAV: StudioNavItem[] = [
   { label: "Resumen", href: "/studio", icon: LayoutDashboard, exact: true },
   { label: "Mis eventos", href: "/studio/events", icon: CalendarDays },
+  { label: "Mis enlaces", href: "/studio/links", icon: Link2 },
   { label: "Colaboradores", href: "/studio/collaborators", icon: Users },
   { label: "Soporte prioritario", href: "/studio/support", icon: LifeBuoy },
 ];

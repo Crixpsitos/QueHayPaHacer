@@ -62,7 +62,7 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
   - Archivos: `domain/entities/links/*`, servicio, repo, `app/r/[code]/route.ts`.
 - [x] **T10b Compartir marcado por canal (S)** — los botones WhatsApp/Facebook/X agregan `utm_source=<canal>&utm_medium=share` (`shareUrl`); "copiar enlace" queda limpio; `x` entra a la lista cerrada de orígenes.
   - Archivos: `domain/entities/analytics/shareUrl.ts` (+ test), `trafficSource.ts`, `SocialShareBar.tsx`.
-- [ ] **T11 "Mis enlaces" en el estudio (M)**
+- [x] **T11 "Mis enlaces" en el estudio (M)**
   - Aceptación: el dueño crea un enlace sobre **su** evento/sitio con etiqueta, lo copia y ve clics; no puede crear sobre ajenos (403).
   - Verifica: test de autorización; guion: crear → abrir → ver "1 clic" en ≤ 1 min.
   - Archivos: acción de crear, página `app/(studio)/studio/links/*`, componente de lista.

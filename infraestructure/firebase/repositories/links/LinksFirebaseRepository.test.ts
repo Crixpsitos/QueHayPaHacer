@@ -40,3 +40,44 @@ test("recordClick: suma 1 al doc diario del enlace con merge (no toca el doc del
   assert.equal(f.ops[0].data.day, "2026-11-09");
   assert.ok("clicks" in f.ops[0].data);
 });
+
+function fakeListDb(links: any[], stats: Record<string, Array<{ id: string; clicks: number }>>) {
+  const calls: any = { where: [], statsWhere: [] };
+  const db = {
+    collection: (c: string) => ({
+      where: (f: string, op: string, v: any) => {
+        calls.where.push([f, op, v]);
+        const mine = links.filter((l) => l[f] === v);
+        return {
+          limit: () => ({ get: async () => ({ docs: mine.map((l) => ({ data: () => l })) }) }),
+          count: () => ({ get: async () => ({ data: () => ({ count: mine.length }) }) }),
+        };
+      },
+      doc: (code: string) => ({
+        collection: () => ({
+          where: (_f: any, op: string, since: string) => {
+            calls.statsWhere.push([op, since]);
+            return { get: async () => ({ docs: (stats[code] ?? []).filter((s) => s.id >= since).map((s) => ({ id: s.id, data: () => ({ clicks: s.clicks }) })) }) };
+          },
+        }),
+      }),
+    }),
+  } as any;
+  return { db, calls };
+}
+
+test("listByOwner: solo los del dueño, con clics desde el día indicado y el más reciente primero", async () => {
+  const mk = (code: string, owner: string, ms: number) => ({ code, label: code, target: { type: "event", id: "e" }, ownerUid: owner, active: true, createdAt: { toMillis: () => ms } });
+  const f = fakeListDb(
+    [mk("AAAAAAA", "u1", 1), mk("BBBBBBB", "u1", 2), mk("CCCCCCC", "u2", 3)],
+    { AAAAAAA: [{ id: "2026-10-01", clicks: 99 }, { id: "2026-11-05", clicks: 3 }, { id: "2026-11-09", clicks: 4 }], BBBBBBB: [] },
+  );
+  const out = await new LinksFirebaseRepository(f.db).listByOwner("u1", "2026-10-10");
+  assert.deepEqual(out.map((l) => [l.code, l.clicks]), [["BBBBBBB", 0], ["AAAAAAA", 7]]);
+  assert.deepEqual(f.calls.where[0], ["ownerUid", "==", "u1"]);
+});
+
+test("countByOwner cuenta sin leer los documentos", async () => {
+  const f = fakeListDb([{ code: "AAAAAAA", ownerUid: "u1" }, { code: "BBBBBBB", ownerUid: "u1" }], {});
+  assert.equal(await new LinksFirebaseRepository(f.db).countByOwner("u1"), 2);
+});

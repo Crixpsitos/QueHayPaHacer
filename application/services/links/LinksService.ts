@@ -1,11 +1,15 @@
+import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { generateLinkCode, isLinkCode, isLinkTargetType, type LinkTarget } from "@/domain/entities/links/link"
 
 export interface LinkDoc { code: string; label: string; target: LinkTarget; ownerUid: string; active: boolean }
+export interface LinkWithClicks extends LinkDoc { clicks: number }
 export interface LinksRepo {
   /** Falla con code 6 (ALREADY_EXISTS) si el código ya está tomado. */
   create(link: Omit<LinkDoc, "active">): Promise<void>
   findByCode(code: string): Promise<LinkDoc | null>
   recordClick(code: string, day: string): Promise<void>
+  countByOwner(ownerUid: string): Promise<number>
+  listByOwner(ownerUid: string, sinceDay: string): Promise<LinkWithClicks[]>
 }
 
 const MAX_LABEL = 60
@@ -55,5 +59,14 @@ export class LinksService {
 
   recordClick(code: string, day: string): Promise<void> {
     return this.repo.recordClick(code, day)
+  }
+
+  countByOwner(ownerUid: string): Promise<number> {
+    return this.repo.countByOwner(ownerUid)
+  }
+
+  /** Enlaces del dueño con clics de los últimos 30 días (para "Mis enlaces"). */
+  listWithClicks(ownerUid: string): Promise<LinkWithClicks[]> {
+    return this.repo.listByOwner(ownerUid, bogotaDay(new Date(this.now() - 30 * 24 * 3600_000)))
   }
 }
