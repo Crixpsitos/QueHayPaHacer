@@ -38,3 +38,10 @@ test("landingSource: un valor guardado inválido se ignora y se recalcula", () =
   s.setItem("qhpa:landing-src", "evil.com")
   assert.equal(landingSource({ href: "https://yquehaypahacer.com/?utm_source=fb", referrer: "" }, s), "facebook")
 })
+
+test("landingSource: llegada por enlace automático (?ch=) se fija como ch:<canal> y se recuerda", () => {
+  const s = memory()
+  assert.equal(landingSource({ href: "https://yquehaypahacer.com/eventos/x?ch=ig_h&utm_source=instagram&utm_medium=stories", referrer: "" }, s), "ch:ig_h")
+  assert.equal(landingSource({ href: "https://yquehaypahacer.com/eventos/y", referrer: "https://yquehaypahacer.com/eventos/x" }, s), "ch:ig_h")
+  assert.equal(landingSource({ href: "https://yquehaypahacer.com/eventos/x?ch=evil", referrer: "" }, memory()), "direct")
+})
