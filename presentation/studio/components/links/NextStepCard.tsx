@@ -1,7 +1,7 @@
 import type { PanelDetail } from "@/presentation/studio/lib/panelModel";
 import { autoLinkHref } from "@/domain/entities/links/autoLinks";
 import { AUTO_CHANNELS } from "@/domain/entities/links/autoLinks";
-import { CopyButton } from "./CopyButton";
+import { CopyButton } from "@/presentation/shared/components/CopyButton";
 
 /** Un solo consejo concreto sacado de los datos (o ninguno: mejor callar que inventar). */
 export function NextStepCard({ detail, baseUrl }: { detail: PanelDetail; baseUrl: string }) {

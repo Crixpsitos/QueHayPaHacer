@@ -7,13 +7,15 @@ import { notify } from "@/presentation/shared/lib/notify";
 import { createLinkAction } from "@/app/actions/studio/create-link.action";
 import { autoLinkHref } from "@/domain/entities/links/autoLinks";
 import type { PanelDetail } from "@/presentation/studio/lib/panelModel";
-import { CopyButton } from "./CopyButton";
+import { CopyButton } from "@/presentation/shared/components/CopyButton";
+import { ShareKit } from "@/presentation/shared/components/ShareKit";
 import { fmt } from "./format";
 
 /** Enlaces automáticos por canal (ya existen, solo se copian) con su rendimiento, y los enlaces propios opcionales. */
 export function ChannelLinksCard({ detail, baseUrl }: { detail: PanelDetail; baseUrl: string }) {
   const router = useRouter();
   const [composing, setComposing] = useState(false);
+  const [kitOpen, setKitOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [pending, startTransition] = useTransition();
   const show = (u: string) => u.replace(/^https?:\/\//, "");
@@ -32,8 +34,16 @@ export function ChannelLinksCard({ detail, baseUrl }: { detail: PanelDetail; bas
 
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white p-5 sm:p-7">
-      <h3 className="text-[22px] font-semibold text-slate-900">Tus enlaces, ya listos</h3>
-      <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-600">Uno por canal, sin crear nada. Cópialo, pégalo donde publicas y aquí verás cuánta gente trae cada uno.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 className="text-[22px] font-semibold text-slate-900">Tus enlaces, ya listos</h3>
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-600">Uno por canal, sin crear nada. Cópialo, pégalo donde publicas y aquí verás cuánta gente trae cada uno.</p>
+        </div>
+        <button type="button" onClick={() => setKitOpen(true)} className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          Descargar afiche con QR
+        </button>
+      </div>
+      {kitOpen && <ShareKit open kind={detail.type} id={detail.id} title={detail.name} onClose={() => setKitOpen(false)} />}
 
       <ul className="mt-5 flex flex-col">
         <li aria-hidden className="hidden grid-cols-[minmax(0,1.1fr)_minmax(0,1.6fr)_80px_90px_110px] gap-4 border-b border-slate-200 pb-2.5 text-xs font-semibold text-slate-500 md:grid">
