@@ -71,6 +71,14 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
 - [x] Tests (546)/typecheck verdes; guion en develop (ráfaga de 6 clics: 6 contados); `security-auditor` revisó redirecciones (sin críticos/altos; ver docs/30 puntos 6–13). `pnpm build` no corrido.
 - [x] Prod: T8–T11 en `main` `4cd89c9` por orden del usuario. Pendiente medido: qué agrega el frente de Google a `X-Forwarded-For` antes de cambiar `clientIp`.
 
+## Panel v2 (rediseño acordado 2026-11-09, reemplaza T15–T17 parcialmente)
+
+- [x] **S1 Medición por canal** — origen `ch:<canal>` (lista cerrada ig, ig_h, wa, fb, x, tt, qr) y `viewsBy` (vistas separadas de acciones).
+- [x] **S2 Enlaces automáticos** — `/r/e|s/<id>/<canal>` → 307 a la ficha con `ch`+utm; cuenta `linkClicks.<canal>`; sin crear nada.
+- [x] **S3 Panel "Visitas y enlaces"** — fichas con miniatura, período 7/30/90, veredicto (bandas fijas; "pocos datos" bajo 30 visitas), KPIs con variación solo si el período anterior tiene ≥30 visitas, gráfica diaria con pico, embudo a escala, orígenes (solo visitas), siguiente paso, enlaces por canal y propios.
+- [x] **S4 Kit para compartir** — modal con QR, afiche PNG, enlaces por canal y mensaje de WhatsApp; se abre al publicar un evento nuevo, al enviar un sitio (en revisión) y desde el panel.
+- [ ] **Pendiente** — comparación con eventos parecidos (≥5 pares), abrir el panel básico a cuentas no Premium, mostrar el kit al APROBARSE un sitio, `pnpm build`, verificación end-to-end en develop desplegado (visita por `?ch=` → `viewsBy.ch_*`), revisión independiente de S1–S4, texto de privacidad.
+
 ## Fase 3 — `intent` (puede ir en paralelo con Fase 2)
 
 - [ ] **T12 Guardar: nombre, ícono y contadores privados (M)**
