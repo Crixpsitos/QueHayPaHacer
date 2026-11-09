@@ -8,6 +8,7 @@ function setup(over: Partial<Parameters<typeof createOutHandler>[0]> = {}) {
     resolve: async (id, to) => (id === "abc" && to === "register" ? "https://tickets.example.com/e1" : null),
     record: async (id, to) => void recorded.push(`${id}:${to}`),
     ipLimit: () => true,
+    readLimit: () => true,
     globalLimit: () => true,
     schedule: (fn) => void fn(), // ponytail: en producción es after()
     ...over,
@@ -72,10 +73,49 @@ test("HEAD (vistas previas, comprobadores de enlaces) redirige pero no cuenta co
     resolve: async () => "https://tickets.example.com/e1",
     record: async (id, to) => void recorded.push(`${id}:${to}`),
     ipLimit: () => true,
+    readLimit: () => true,
     globalLimit: () => true,
     schedule: (fn) => void fn(),
   });
   const res = await handle(new Request("https://yquehaypahacer.com/r/e/abc?to=register", { method: "HEAD" }), "abc", new URLSearchParams("to=register"));
   assert.equal(res.status, 307);
   assert.equal(recorded.length, 0);
+});
+
+test("lecturas acotadas: el mismo destino se resuelve una vez por minuto (también los 404)", async () => {
+  let reads = 0, t = 0;
+  const handle = createOutHandler({
+    resolve: async (id) => (reads++, id === "abc" ? "https://tickets.example.com/e1" : null),
+    record: async () => {},
+    ipLimit: () => true,
+    readLimit: () => true,
+    globalLimit: () => true,
+    schedule: (fn) => void fn(),
+    now: () => t,
+  });
+  const go = (id: string) => handle(new Request(`https://x.co/r/e/${id}?to=register`), id, new URLSearchParams("to=register"));
+  await go("abc"); await go("abc"); await go("nope"); await go("nope");
+  assert.equal(reads, 2);
+  t = 61_000;
+  await go("abc");
+  assert.equal(reads, 3);
+});
+
+test("barrido de ids: tras el tope de lecturas por IP, los desconocidos dan 429 sin leer la base; los ya resueltos siguen redirigiendo", async () => {
+  let reads = 0, allowed = 1;
+  const handle = createOutHandler({
+    resolve: async (id) => (reads++, id === "abc" ? "https://tickets.example.com/e1" : null),
+    record: async () => {},
+    ipLimit: () => true,
+    readLimit: () => allowed-- > 0,
+    globalLimit: () => true,
+    schedule: (fn) => void fn(),
+  });
+  const go = (id: string) => handle(new Request(`https://x.co/r/e/${id}?to=register`), id, new URLSearchParams("to=register"));
+  assert.equal((await go("abc")).status, 307); // gasta el único permiso de lectura
+  const before = reads;
+  assert.equal((await go("otro1")).status, 429);
+  assert.equal((await go("otro2")).status, 429);
+  assert.equal(reads, before);
+  assert.equal((await go("abc")).status, 307); // en caché: no necesita permiso
 });

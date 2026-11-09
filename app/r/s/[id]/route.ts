@@ -16,6 +16,7 @@ const handle = createOutHandler({
     await createServerContainer().sitesService.recordTrack(id, to, bogotaDay(), "direct")
   },
   ipLimit: createIpLimiter(60),
+  readLimit: createIpLimiter(30), // lecturas a la base por IP y minuto (solo destinos fuera de caché)
   globalLimit: createGlobalLimiter(600, undefined, () => console.warn("[out-sites] tope global por minuto superado: se descartan conteos")),
   schedule: (fn) => after(fn),
 })

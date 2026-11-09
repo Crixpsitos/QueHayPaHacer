@@ -14,6 +14,7 @@ const handle = createOutHandler({
   },
   record: (code) => createServerContainer().linksService.recordClick(code, bogotaDay()),
   ipLimit: createIpLimiter(60),
+  readLimit: createIpLimiter(30), // lecturas a la base por IP y minuto (solo destinos fuera de caché)
   globalLimit: createGlobalLimiter(300, undefined, () => console.warn("[out-links] tope global por minuto superado: se descartan conteos")),
   schedule: (fn) => after(fn),
 })

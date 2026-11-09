@@ -17,6 +17,7 @@ const handle = createOutHandler({
     await c.studioService.incrementExternalRegistrationClick(id) // contador histórico del botón (lo lee el estudio)
   },
   ipLimit: createIpLimiter(60),
+  readLimit: createIpLimiter(30), // lecturas a la base por IP y minuto (solo destinos fuera de caché)
   globalLimit: createGlobalLimiter(120, undefined, () => console.warn("[out-events] tope global por minuto superado: se descartan conteos")),
   schedule: (fn) => after(fn),
 })
