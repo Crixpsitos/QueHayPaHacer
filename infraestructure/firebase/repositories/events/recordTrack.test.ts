@@ -46,3 +46,8 @@ test("DTO: type inválido y src libre se rechazan", () => {
   assert.ok(!v.safeParse(EventTrackBodySchema, { type: "view", src: "evil.com" }).success);
   assert.ok(!v.safeParse(EventTrackBodySchema, { type: "view", src: "link:../../x" }).success);
 });
+
+test("el cuerpo del beacon acepta el canal de un enlace automático y rechaza canales inventados", () => {
+  assert.equal(v.safeParse(EventTrackBodySchema, { type: "view", src: "ch:ig_h" }).success, true);
+  assert.equal(v.safeParse(EventTrackBodySchema, { type: "view", src: "ch:evil" }).success, false);
+});

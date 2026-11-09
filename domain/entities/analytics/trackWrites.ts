@@ -12,6 +12,7 @@ export function buildTrackWrites<T>(type: EventTrackType, day: string, source: T
   const key = sourceKey(source)
   return {
     event: { [isView ? "analytics.views" : "analytics.clicks"]: inc(1) } as Record<string, T>,
-    stats: { day, [isView ? "views" : type]: inc(1), ...(isView ? {} : { clicks: inc(1) }), bySource: { [key]: inc(1) } } as Record<string, unknown>,
+    // `viewsBy` cuenta SOLO vistas por origen (bySource mezcla vistas y acciones): permite "visitas por canal" sin mezclar.
+    stats: { day, [isView ? "views" : type]: inc(1), ...(isView ? { viewsBy: { [key]: inc(1) } } : { clicks: inc(1) }), bySource: { [key]: inc(1) } } as Record<string, unknown>,
   }
 }
