@@ -1,3 +1,5 @@
+import type { EventTrackType } from "@/domain/entities/analytics/trackTypes";
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
 import type { PaginatedEventIds } from "@/domain/repository/events/IEventsRepository";
 
@@ -20,6 +22,7 @@ export interface IEventsFirebaseRepository {
     findBySlug(slug: string): Promise<FirebaseEventsDto | null>;
     incrementLikes(eventId: string, delta: number): Promise<void>;
     incrementShares(eventId: string, delta: number): Promise<void>;
+    recordTrack(eventId: string, type: EventTrackType, day: string, source: TrafficSource): Promise<void>;
     createEvent(event: FirebaseEventsDto): Promise<FirebaseEventsDto>;
     findPublishedBySiteId(siteId: string, limit?: number): Promise<FirebaseEventsDto[]>;
     updateSiteIds(eventId: string, siteIds: string[]): Promise<string[]>;

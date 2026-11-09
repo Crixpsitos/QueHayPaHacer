@@ -1,3 +1,5 @@
+import type { EventTrackType } from "@/domain/entities/analytics/trackTypes";
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource";
 import { Events } from "@/domain/entities/events/Events";
 import { IEventsRepository } from "@/domain/repository/events/IEventsRepository";
 import { IEventsMapper } from "@/infraestructure/firebase/mappers/events/IEventsMapper";
@@ -56,6 +58,10 @@ export class EventsAdapter implements IEventsRepository {
 
   async incrementShares(eventId: string, delta: number): Promise<void> {
     await this.repository.incrementShares(eventId, delta);
+  }
+
+  async recordTrack(eventId: string, type: EventTrackType, day: string, source: TrafficSource): Promise<void> {
+    await this.repository.recordTrack(eventId, type, day, source);
   }
 
   async findPublishedBySiteId(siteId: string, limit = 8): Promise<Events[]> {

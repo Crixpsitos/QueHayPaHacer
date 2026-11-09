@@ -4,6 +4,8 @@ import type { IUserEventInteractionsProjectionRepository } from "@/domain/reposi
 import type { IEventsRepository } from "@/domain/repository/events/IEventsRepository";
 import type { IEventSessionRepository } from "@/domain/repository/events/IEventSessionRepository";
 import type { Events } from "@/domain/entities/events/Events";
+import type { EventTrackType } from "@/domain/entities/analytics/trackTypes";
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource";
 
 const extractEventData = (event: Events): DenormalizedEventData => ({
   id: event.id,
@@ -69,6 +71,11 @@ export class EventInteractionsService {
     if (likesDelta !== 0) {
       await this.eventsRepository.incrementLikes(eventId, likesDelta);
     }
+  }
+
+  /** Vista o acción pública de la ficha de un evento (ver app/api/events/[id]/track). */
+  recordTrack(eventId: string, type: EventTrackType, day: string, source: TrafficSource): Promise<void> {
+    return this.eventsRepository.recordTrack(eventId, type, day, source);
   }
 
   async registerClick(eventId: string, userId: string): Promise<void> {
