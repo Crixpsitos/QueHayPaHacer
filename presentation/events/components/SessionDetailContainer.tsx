@@ -5,6 +5,7 @@ import { publicTeam } from "@/domain/entities/events/publicCredits";
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
 import { SessionViewModelMapper } from "@/presentation/events/mapper/SessionViewModelMapper";
 import { EventDetailClient } from "./EventDetailClient";
+import { EventViewTracker } from "@/app/components/analytics/EventViewTracker";
 import { eventJsonLdHtml } from "../lib/eventJsonLd";
 import { SITE_URL } from "@/app/lib/site";
 import type { LinkedSiteInfo } from "./detail/EventPlace";
@@ -73,6 +74,7 @@ export async function SessionDetailContainer({
     <>
     {/* Cada fecha es un Event propio para Google (fecha, lugar y precio de la sesión). */}
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(mergedVM, { url: `${SITE_URL}${sessionPath}` }) }} />
+    <EventViewTracker eventId={parent.id} />
     <EventDetailClient
       event={mergedVM}
       shareUrl={`/eventos/${parentRef}/sessions/${session.slug || session.id}`}
