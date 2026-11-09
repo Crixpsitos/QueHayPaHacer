@@ -171,7 +171,7 @@ export class SitesFirebaseRepository
       .collection("stats")
       .doc(day)
       .set(
-        { day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? {} : { clicks: FieldValue.increment(1) }), bySource: { [sourceKey(source)]: FieldValue.increment(1) } },
+        { day, [isView ? "views" : type]: FieldValue.increment(1), ...(isView ? { viewsBy: { [sourceKey(source)]: FieldValue.increment(1) } } : { clicks: FieldValue.increment(1) }), bySource: { [sourceKey(source)]: FieldValue.increment(1) } },
         { merge: true },
       )
   }

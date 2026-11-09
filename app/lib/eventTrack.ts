@@ -42,9 +42,9 @@ export function landingSource(
   try {
     const s = storage ?? sessionStorage
     const saved = s.getItem(LANDING_KEY)
-    if (saved && (SOURCES.includes(saved as never) || /^link:[A-Za-z0-9]{7}$/.test(saved))) return saved as TrafficSource
+    if (saved && (SOURCES.includes(saved as never) || /^link:[A-Za-z0-9]{7}$/.test(saved) || /^ch:(ig|ig_h|wa|fb|x|tt|qr)$/.test(saved))) return saved as TrafficSource
     const url = new URL(page.href)
-    const src = trafficSource({ utm_source: url.searchParams.get("utm_source") ?? undefined, qr: url.searchParams.get("qr") ?? undefined, ref: page.referrer })
+    const src = trafficSource({ utm_source: url.searchParams.get("utm_source") ?? undefined, qr: url.searchParams.get("qr") ?? undefined, ch: url.searchParams.get("ch") ?? undefined, ref: page.referrer })
     s.setItem(LANDING_KEY, src)
     return src
   } catch {

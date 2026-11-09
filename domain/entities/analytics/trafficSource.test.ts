@@ -51,3 +51,24 @@ test("tipos de track", () => {
   assert.ok(!isEventTrackType("like"));
   assert.ok(EVENT_TRACK_TYPES.includes("register_external"));
 });
+
+import { CHANNELS, isChannel, sourceKey } from "./trafficSource";
+
+test("canal de enlace automático: ?ch=ig → ch:ig, con prioridad sobre utm_source y detrás de qr", () => {
+  assert.equal(trafficSource({ ch: "ig" }), "ch:ig");
+  assert.equal(trafficSource({ ch: "ig", utm_source: "instagram" }), "ch:ig");
+  assert.equal(trafficSource({ ch: "ig_h", qr: "aB3xY9Z" }), "link:aB3xY9Z");
+});
+
+test("canal desconocido se ignora (cae a utm_source/referrer)", () => {
+  assert.equal(trafficSource({ ch: "evil", utm_source: "facebook" }), "facebook");
+  assert.equal(trafficSource({ ch: "__proto__" }), "direct");
+  assert.deepEqual([...CHANNELS], ["ig", "ig_h", "wa", "fb", "x", "tt", "qr"]);
+  assert.equal(isChannel("wa"), true);
+  assert.equal(isChannel("zz"), false);
+});
+
+test("sourceKey: ch:ig → ch_ig (clave cerrada, sin texto libre)", () => {
+  assert.equal(sourceKey("ch:wa"), "ch_wa");
+  assert.equal(sourceKey("instagram"), "instagram");
+});
