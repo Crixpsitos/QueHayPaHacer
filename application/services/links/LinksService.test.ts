@@ -11,6 +11,8 @@ function fakeRepo(over: Partial<LinksRepo> = {}) {
     },
     findByCode: async (c) => docs.get(c) ?? null,
     recordClick: async () => {},
+    countByOwner: async () => 0,
+    listByOwner: async () => [],
     ...over,
   };
   return { repo, docs };
