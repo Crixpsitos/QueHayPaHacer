@@ -33,3 +33,17 @@ test("sumSince: solo events o sites y ids seguros (nada de rutas arbitrarias)", 
   await assert.rejects(repo.sumSince("events", "../x", "2026-10-10"));
   assert.equal(f.reads.length, 0);
 });
+
+test("recordLinkClick: suma 1 a linkClicks.<canal> del doc diario (merge) y valida entrada", async () => {
+  const ops: any[] = [];
+  const db = { collection: (c: string) => ({ doc: (id: string) => ({ collection: () => ({ doc: (d: string) => ({ set: async (data: any, opts: any) => void ops.push({ path: `${c}/${id}/stats/${d}`, data, opts }) }) }) }) }) } as any;
+  const repo = new DailyStatsFirebaseRepository(db);
+  await repo.recordLinkClick("events", "e1", "ig_h", "2026-11-09");
+  assert.equal(ops[0].path, "events/e1/stats/2026-11-09");
+  assert.deepEqual(Object.keys(ops[0].data), ["day", "linkClicks"]);
+  assert.deepEqual(Object.keys(ops[0].data.linkClicks), ["ig_h"]);
+  assert.deepEqual(ops[0].opts, { merge: true });
+  await assert.rejects(repo.recordLinkClick("events", "e1", "evil" as never, "2026-11-09"));
+  await assert.rejects(repo.recordLinkClick("users" as never, "e1", "ig", "2026-11-09"));
+  assert.equal(ops.length, 1);
+});
