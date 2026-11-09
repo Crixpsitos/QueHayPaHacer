@@ -68,6 +68,24 @@ export class UserEventInteractionsProjectionFirebaseRepository
       );
   }
 
+  async recordViewProjection(eventId: string, userId: string): Promise<void> {
+    const ref = this.db.collection("users").doc(userId).collection("eventInteractions").doc(eventId);
+    const snap = await ref.get();
+    if (snap.data()?.viewedAt) return;
+    await ref.set(
+      {
+        id: userId,
+        eventId,
+        userId,
+        viewedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        // createdAt solo si el documento es nuevo (los de like/compartir ya lo traen).
+        ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+      },
+      { merge: true },
+    );
+  }
+
   async upsertShareProjection(
     eventId: string,
     userId: string,
