@@ -48,6 +48,7 @@ import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFir
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
+import { DailyStatsFirebaseRepository } from "@/infraestructure/firebase/repositories/analytics/DailyStatsFirebaseRepository";
 import { LinksService } from "@/application/services/links/LinksService";
 import { LinksFirebaseRepository } from "@/infraestructure/firebase/repositories/links/LinksFirebaseRepository";
 import { EventSessionFirebaseRepository } from "../firebase/repositories/events/EventSessionFirebaseRepository";
@@ -158,6 +159,9 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
+  // estadísticas diarias por ficha (solo lectura)
+  const dailyStatsRepository = new DailyStatsFirebaseRepository(getFirebaseFirestore());
+
   // enlaces de campaña (/r/<código>)
   const linksService = new LinksService(new LinksFirebaseRepository(getFirebaseFirestore()));
 
@@ -219,6 +223,7 @@ export const createServerContainer = () => {
   );
 
   return {
+    dailyStatsRepository,
     linksService,
     userService,
     campaignService,

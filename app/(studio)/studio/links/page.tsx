@@ -4,9 +4,11 @@ import { getPremiumSessionUid, redirectLimitedToEvents } from "@/app/actions/_se
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SITE_URL } from "@/app/lib/site"
 import { LinksView } from "@/presentation/studio/components/links/LinksView"
-import type { LinkItem, LinkTargetOption } from "@/presentation/studio/components/links/LinksView"
+import { buildLinksOverview, type FichaRef, type LinkRow } from "@/presentation/studio/lib/linksOverview"
+import { bogotaDay } from "@/domain/entities/sites/siteStats"
+import type { StatsTotals } from "@/domain/entities/analytics/fichaStats"
 
-export const metadata: Metadata = { title: "Mis enlaces" }
+export const metadata: Metadata = { title: "Visitas y enlaces" }
 
 function LinksSkeleton() {
   return (
@@ -32,23 +34,29 @@ async function LinksData() {
   const uid = await getPremiumSessionUid()
   if (!uid) return null
 
-  const { linksService, studioService, sitesService } = createServerContainer()
+  const { linksService, studioService, sitesService, dailyStatsRepository } = createServerContainer()
   const [links, eventsPage, sites] = await Promise.all([
     linksService.listWithClicks(uid),
-    studioService.getOrganizerEvents(uid, { limit: 50 }),
+    studioService.getOrganizerEvents(uid, { limit: 25 }),
     sitesService.getMySites(uid),
   ])
 
-  const events: LinkTargetOption[] = eventsPage.events.map((e) => ({ type: "event", id: e.eventId, name: e.name }))
-  const siteOptions: LinkTargetOption[] = sites.map((s) => ({ type: "site", id: s.id, name: s.name }))
-  const names = new Map([...events, ...siteOptions].map((t) => [`${t.type}:${t.id}`, t.name]))
-  const items: LinkItem[] = links.map((l) => ({
-    code: l.code,
-    label: l.label,
-    targetType: l.target.type,
-    targetName: names.get(`${l.target.type}:${l.target.id}`) ?? (l.target.type === "event" ? "Evento" : "Sitio"),
-    clicks: l.clicks,
-  }))
+  // Solo fichas publicadas (un enlace a un borrador no lleva a nada).
+  const fichas: FichaRef[] = [
+    ...eventsPage.events.filter((e) => e.status === "published").map((e) => ({ type: "event" as const, id: e.eventId, name: e.name, image: e.image })),
+    ...sites.filter((s) => s.publicationStatus === "published").slice(0, 25).map((s) => ({ type: "site" as const, id: s.id, name: s.name, image: s.coverUrl || undefined })),
+  ]
 
-  return <LinksView baseUrl={SITE_URL} links={items} events={events} sites={siteOptions} />
+  const sinceDay = bogotaDay(new Date(Date.now() - 30 * 24 * 3600_000))
+  const stats: Record<string, StatsTotals> = {}
+  await Promise.all(
+    fichas.map(async (f) => {
+      stats[`${f.type}:${f.id}`] = await dailyStatsRepository.sumSince(f.type === "event" ? "events" : "sites", f.id, sinceDay)
+    }),
+  )
+
+  const rows: LinkRow[] = links.map((l) => ({
+    code: l.code, label: l.label, targetType: l.target.type, targetId: l.target.id, targetName: "", clicks: l.clicks,
+  }))
+  return <LinksView baseUrl={SITE_URL} overview={buildLinksOverview(fichas, stats, rows)} />
 }
