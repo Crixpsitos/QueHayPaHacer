@@ -30,7 +30,7 @@ export function createOutHandler(deps: Deps) {
     const ip = clientIp(request)
     const ua = request.headers.get("user-agent") ?? ""
     const resource = `${id}:${to}`
-    if (deps.ipLimit(ip) && !dedupe.isRepeat(ip, ua, resource) && deps.globalLimit()) {
+    if (request.method !== "HEAD" && deps.ipLimit(ip) && !dedupe.isRepeat(ip, ua, resource) && deps.globalLimit()) {
       deps.schedule(async () => {
         try {
           await deps.record(id, to)

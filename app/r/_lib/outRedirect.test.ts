@@ -65,3 +65,17 @@ test("si contar falla, la persona igual llega a su destino", async () => {
   const { call } = setup({ record: async () => { throw new Error("boom"); } });
   assert.equal((await call("abc", "?to=register")).status, 307);
 });
+
+test("HEAD (vistas previas, comprobadores de enlaces) redirige pero no cuenta como clic", async () => {
+  const recorded: string[] = [];
+  const handle = createOutHandler({
+    resolve: async () => "https://tickets.example.com/e1",
+    record: async (id, to) => void recorded.push(`${id}:${to}`),
+    ipLimit: () => true,
+    globalLimit: () => true,
+    schedule: (fn) => void fn(),
+  });
+  const res = await handle(new Request("https://yquehaypahacer.com/r/e/abc?to=register", { method: "HEAD" }), "abc", new URLSearchParams("to=register"));
+  assert.equal(res.status, 307);
+  assert.equal(recorded.length, 0);
+});
