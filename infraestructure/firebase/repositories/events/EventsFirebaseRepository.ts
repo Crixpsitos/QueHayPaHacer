@@ -187,7 +187,9 @@ export class EventsFirebaseRepository
     const ref = this.collection.doc(eventId);
     const w = buildTrackWrites(type, day, source, (n) => FieldValue.increment(n));
     const batch = this.db.batch();
-    // update() (no set): no crea eventos inventados ni toca `updatedAt` (el sitemap lo usa como lastmod).
+    // update() (no set): no crea eventos inventados y esta escritura no toca `updatedAt`. OJO: `analytics.views` está en
+    // SCORE_RELEVANT_FIELDS de ../functions, y recalculateScoreAnalitycs SÍ reescribe `updatedAt` (lastmod del sitemap) y
+    // dispara otros triggers por cada vista aceptada. Ver docs/30-analytics-v2.md ("Efectos conocidos").
     batch.update(ref, w.event);
     batch.set(ref.collection("stats").doc(day), w.stats, { merge: true });
     try {

@@ -72,3 +72,23 @@ test("error del repositorio no rompe la respuesta", async () => {
   const handle = createEventTrackHandler({ record: async () => { throw new Error("db"); }, day: () => "d", ipLimit: () => true, globalLimit: () => true });
   assert.equal((await handle(req({ type: "view" }), "ev1")).status, 204);
 });
+
+test("si el tope global descarta, la persona NO queda marcada como repetida", async () => {
+  let ok = false;
+  const calls: unknown[][] = [];
+  const handle = createEventTrackHandler({ record: async (...a) => void calls.push(a), day: () => "d", ipLimit: () => true, globalLimit: () => ok });
+  await handle(req({ type: "view" }), "ev1");
+  ok = true;
+  await handle(req({ type: "view" }), "ev1");
+  assert.equal(calls.length, 1);
+});
+
+test("si la escritura falla, la persona puede reintentar", async () => {
+  let fail = true;
+  const calls: unknown[][] = [];
+  const handle = createEventTrackHandler({ record: async (...a) => { if (fail) throw new Error("db"); calls.push(a); }, day: () => "d", ipLimit: () => true, globalLimit: () => true });
+  await handle(req({ type: "view" }), "ev1");
+  fail = false;
+  await handle(req({ type: "view" }), "ev1");
+  assert.equal(calls.length, 1);
+});

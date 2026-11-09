@@ -32,3 +32,9 @@ test("landingSource: usa referrer y el parámetro qr", () => {
   assert.equal(landingSource({ href: "https://yquehaypahacer.com/eventos/x?qr=aB3dE5g", referrer: "" }, memory()), "link:aB3dE5g")
   assert.equal(landingSource({ href: "https://yquehaypahacer.com/", referrer: "" }, memory()), "direct")
 })
+
+test("landingSource: un valor guardado inválido se ignora y se recalcula", () => {
+  const s = memory()
+  s.setItem("qhpa:landing-src", "evil.com")
+  assert.equal(landingSource({ href: "https://yquehaypahacer.com/?utm_source=fb", referrer: "" }, s), "facebook")
+})

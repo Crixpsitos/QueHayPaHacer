@@ -1,5 +1,5 @@
 import type { EventTrackType } from "@/domain/entities/analytics/trackTypes"
-import { trafficSource, type TrafficSource } from "@/domain/entities/analytics/trafficSource"
+import { SOURCES, trafficSource, type TrafficSource } from "@/domain/entities/analytics/trafficSource"
 
 type Store = Pick<Storage, "getItem" | "setItem">
 
@@ -42,7 +42,7 @@ export function landingSource(
   try {
     const s = storage ?? sessionStorage
     const saved = s.getItem(LANDING_KEY)
-    if (saved) return saved as TrafficSource
+    if (saved && (SOURCES.includes(saved as never) || /^link:[A-Za-z0-9]{7}$/.test(saved))) return saved as TrafficSource
     const url = new URL(page.href)
     const src = trafficSource({ utm_source: url.searchParams.get("utm_source") ?? undefined, qr: url.searchParams.get("qr") ?? undefined, ref: page.referrer })
     s.setItem(LANDING_KEY, src)

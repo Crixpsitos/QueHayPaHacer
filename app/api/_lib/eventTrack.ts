@@ -19,8 +19,8 @@ interface Deps {
 
 /**
  * Lógica de `POST /api/events/[id]/track` con sus dependencias inyectadas (testeable sin Firebase).
- * Orden: mismo origen → cuerpo ≤ 1 KB → forma válida → tope por IP → repetido de 24 h → tope global → escritura.
- * El repetido va antes del tope global para que un repetido no gaste cupo.
+ * Orden: mismo origen → cuerpo ≤ 1 KB → forma válida → tope por IP → repetido de 24 h → tope global → escritura → marca.
+ * El repetido va antes del tope global para que un repetido no gaste cupo; la marca va al final (ver dailyDedupe).
  */
 export function createEventTrackHandler(deps: Deps) {
   const dedupe = createDailyDedupe()
@@ -35,10 +35,12 @@ export function createEventTrackHandler(deps: Deps) {
     const ip = clientIp(request)
     if (!deps.ipLimit(ip)) return new NextResponse(null, { status: 429 })
     const { type, src = "direct" } = body.output
-    if (dedupe.isRepeat(ip, request.headers.get("user-agent") ?? "", `${id}:${type}`)) return DROPPED()
+    const ua = request.headers.get("user-agent") ?? ""
+    if (dedupe.isRepeat(ip, ua, `${id}:${type}`)) return DROPPED()
     if (!deps.globalLimit()) return DROPPED()
     try {
       await deps.record(id, type, deps.day(), src as TrafficSource)
+      dedupe.mark(ip, ua, `${id}:${type}`) // solo si se escribió: un fallo no deja a la persona sin su conteo
     } catch (error) {
       console.error("[event-track]", error)
     }
