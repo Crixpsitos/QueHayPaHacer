@@ -17,6 +17,7 @@ import { notify } from "@/presentation/shared/lib/notify"
 import { uploadToGoogleStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage"
 import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
+import { ShareKit } from "@/presentation/shared/components/ShareKit"
 import type { SubmitState } from "../../hooks/useSiteForm"
 import { declarationVariant } from "@/app/lib/legal/declaration"
 import {
@@ -888,6 +889,7 @@ export function SiteFormDrawer({
   const relationLocked = isEdit && !isDraft
   const variant = declarationVariant(form.publishedAs, isQhpaAdmin)
   const [openSection, setOpenSection] = useState<SectionKey>("location")
+  const [shareId, setShareId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(true)
   // Declaración del autor: nunca pre-marcada; exigida para publicar/guardar cambios.
   const [declared, setDeclared] = useState(false)
@@ -1081,6 +1083,10 @@ export function SiteFormDrawer({
         ) : null}
       </div>
 
+      {shareId && (
+        <ShareKit open kind="site" id={shareId} title={form.name} where={form.address} pendingReview onClose={() => setShareId(null)} />
+      )}
+
       {/* Success overlay */}
       <AnimatePresence>
         {submitState === "done" && (
@@ -1108,6 +1114,11 @@ export function SiteFormDrawer({
               <Button className="mt-1 w-full" onClick={onReset}>
                 {isEdit ? "Volver a mis sitios" : "Agregar otro"}
               </Button>
+              {(showDraftActions || isRejected) && (
+                <Button variant="outline" className="w-full" onClick={() => { void onEnsureDraftId().then(setShareId).catch(() => {}) }}>
+                  Ver enlaces y QR para compartir
+                </Button>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -20,6 +20,8 @@ import { EventFormSkeleton } from "./EventFormSkeleton";
 import { ConvertToStandardDialog } from "./ConvertToStandardDialog";
 import { ConvertToMultiDateDialog } from "./ConvertToMultiDateDialog";
 import { Loader2 } from "lucide-react";
+import { ShareKit } from "@/presentation/shared/components/ShareKit";
+import { eventWhen } from "@/presentation/shared/lib/shareKit";
 import { invalidateMyData } from "@/app/lib/clientCache/clientCache";
 
 interface EventFormClientWrapperProps {
@@ -47,6 +49,7 @@ export const EventClientWrapper = ({
     : (urlType === "multi-date" && isPremium ? "multi-date" : "standard");
 
   // ── Estado de migración (solo EDIT) ───────────────────────────────────────
+  const [share, setShare] = useState<{ id: string; slug: string; title: string; when?: string; where?: string } | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const migrationStartedRef = useRef(false);
   const migrationTargetRef = useRef<string | null>(null);
@@ -244,7 +247,13 @@ export const EventClientWrapper = ({
           } else {
             // La auditoría posterior es un proceso interno: el dueño no necesita verla.
             notify.success(mode === "edit" ? "Cambios guardados." : "Evento publicado.");
-            startTransition(() => router.push(`/eventos/${result.slug}`));
+            if (mode === "edit") {
+              startTransition(() => router.push(`/eventos/${result.slug}`));
+            } else {
+              // Evento nuevo: primero el kit para compartir (enlaces por canal, QR, afiche); al cerrarlo va a la ficha.
+              const d = cleanDraft as { title?: string; startDate?: string; location?: { venue?: string } };
+              setShare({ id: result.eventId, slug: result.slug, title: d.title ?? "Mi evento", when: eventWhen(d.startDate ?? ""), where: d.location?.venue });
+            }
           }
         } else {
           notify.error(result.error ?? "Error al publicar evento.");
@@ -284,6 +293,17 @@ export const EventClientWrapper = ({
 
   return (
     <>
+      {share && (
+        <ShareKit
+          open
+          kind="event"
+          id={share.id}
+          title={share.title}
+          when={share.when}
+          where={share.where}
+          onClose={() => { const slug = share.slug; setShare(null); startTransition(() => router.push(`/eventos/${slug}`)); }}
+        />
+      )}
       {/* Overlay sobre el formulario — no lo desmonta, preserva su estado si falla la migración. */}
       {isMigrating && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#FAFAFC]/90 backdrop-blur-sm">
