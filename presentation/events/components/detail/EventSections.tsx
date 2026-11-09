@@ -7,6 +7,7 @@ import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar"
 import { shareEventAction } from "@/app/actions/events/share-event.action";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import { SITE_URL } from "@/app/lib/site";
+import { trackEventAction } from "@/app/lib/eventTrack";
 import type { EventViewModel } from "../../view-models/EventViewModel";
 import { EventDetailActions } from "../EventDetailActions";
 import { EventCollaboratorsDialog } from "../EventCollaboratorsDialog";
@@ -104,6 +105,7 @@ export function EventShare({ event, path, sessionId }: { event: EventViewModel; 
         onShare={(method) => {
           ga.track("share", { item_type: "event", item_id: event.id, method });
           void shareEventAction(event.id, sessionId);
+          trackEventAction(event.id, "share");
         }}
       />
     </section>

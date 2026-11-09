@@ -13,6 +13,11 @@ export function trackEvent(eventId: string, type: EventTrackType, src?: TrafficS
   } catch {}
 }
 
+/** Acción de la ficha (clic en el mapa, compartir, registro externo) con el origen de esta visita. Solo en el navegador. */
+export function trackEventAction(eventId: string, type: Exclude<EventTrackType, "view">) {
+  trackEvent(eventId, type, landingSource({ href: window.location.href, referrer: document.referrer }))
+}
+
 /** Una vista por evento y día, también si se recarga o se cierra la pestaña. Almacenamiento bloqueado = cuenta (el tope del servidor acota). */
 export function firstEventViewOfDay(eventId: string, day: string, storage?: Store): boolean {
   try {
