@@ -44,6 +44,7 @@ Este conteo propio **no usa cookies ni identificadores persistentes**. Solo usa 
 9. **El enlace de campaña no comprueba que la ficha sea pública**: lleva a la página, que responde 404 si no existe; el clic igual cuenta. Los enlaces no se pueden desactivar desde la pantalla (existe el campo `active`).
 10. **Tope de 50 enlaces por dueño no es atómico:** llamadas paralelas pueden pasarse; la lista muestra solo 50.
 11. **Vistas previas** (WhatsApp, Slack…) que hacen GET sobre `/r/…` cuentan como clic (HEAD no). No se pueden filtrar por User-Agent (llega siempre como "Google"): el informe debe decir "mínimo contado".
+13. **`after()` pierde clics en Cloud Run (medido).** En develop desplegado, 6 clics a `/r/e/…` dejaron 5 contados: la CPU se limita al responder y la escritura posterior puede cortarse. Por eso `/r/…` ESPERA la escritura antes de redirigir, con un tope de 1,5 s (si tarda más, redirige igual y puede perderse ese conteo). Costo: unos 100–200 ms por clic con conteo. El beacon de `track` (`/api/events/[id]/track`) SÍ espera su escritura.
 12. **Cambio de comportamiento:** `safeHttpUrl` solo acepta http(s) con nombre de dominio público. Un `externalUrl`/`bookingUrl` con IP literal, host sin punto (`http://intranet/`) o `mailto:`/`tel:` ahora da 404 en el botón (antes abría directo).
 
 ## Texto propuesto para `/privacidad` (para revisar)

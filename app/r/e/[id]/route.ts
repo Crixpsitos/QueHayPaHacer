@@ -1,4 +1,4 @@
-import { after, type NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { createIpLimiter } from "@/app/api/_lib/ipRateLimit"
@@ -19,7 +19,6 @@ const handle = createOutHandler({
   ipLimit: createIpLimiter(60),
   readLimit: createIpLimiter(30), // lecturas a la base por IP y minuto (solo destinos fuera de caché)
   globalLimit: createGlobalLimiter(120, undefined, () => console.warn("[out-events] tope global por minuto superado: se descartan conteos")),
-  schedule: (fn) => after(fn),
 })
 
 /** Salida rastreada de un evento: `?to=register` → 307 al `externalUrl` guardado. El destino NUNCA sale de la URL. */
