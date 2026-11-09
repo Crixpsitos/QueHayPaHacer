@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { after } from "next/server";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { getEventAccess, getSessionUid } from "@/app/actions/_session";
 import {
@@ -31,6 +32,13 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/events/[
     isOwner ? null : getEventAccess(id),
     isOwner ? createServerContainer().userService.getUserById(uid) : null,
   ]);
+
+  // Señal de preferencias ("vio el evento"); el contador de vistas es del beacon. Ya exige sesión y evento publicado.
+  after(() =>
+    createServerContainer()
+      .eventInteractionsService.registerView(id, uid)
+      .catch((error) => console.error("[viewer] registerView", error)),
+  );
 
   return NextResponse.json(
     {

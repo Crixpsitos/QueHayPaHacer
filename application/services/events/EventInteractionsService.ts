@@ -73,6 +73,14 @@ export class EventInteractionsService {
     }
   }
 
+  /**
+   * "Esta persona vio el evento" (solo con sesión). Alimenta el aprendizaje de preferencias (`viewedAt` →
+   * syncUserPreference en ../functions). NO cuenta vistas: eso lo hace el beacon público (recordTrack).
+   */
+  registerView(eventId: string, userId: string): Promise<void> {
+    return this.userEventInteractionsProjectionRepository.recordViewProjection(eventId, userId);
+  }
+
   /** Vista o acción pública de la ficha de un evento (ver app/api/events/[id]/track). */
   recordTrack(eventId: string, type: EventTrackType, day: string, source: TrafficSource): Promise<void> {
     return this.eventsRepository.recordTrack(eventId, type, day, source);
