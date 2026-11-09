@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Áreas privadas/funcionales fuera del índice.
-      disallow: ["/studio/", "/api/"],
+      disallow: ["/studio/", "/api/", "/r/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

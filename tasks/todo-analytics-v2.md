@@ -48,7 +48,7 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
 
 ## Fase 2 — `short-links`
 
-- [ ] **T8 Salida rastreada (M)** — `/r/e/[id]?to=…` y `/r/s/[id]?to=…`.
+- [x] **T8 Salida rastreada (M)** — `/r/e/[id]?to=…` y `/r/s/[id]?to=…`.
   - Aceptación: lee el destino del documento, 307, cuenta con `after()`; `to` inválido o destino vacío → 404 sin escritura; ningún valor del query llega a `Location`.
   - Verifica: tests de no-redirección-abierta (`?to=https://malo.com` ignorado); `pnpm test`.
   - Archivos: `app/r/e/[id]/route.ts`, `app/r/s/[id]/route.ts`, `app/r/_lib/resolveTarget.ts` (+ test).
