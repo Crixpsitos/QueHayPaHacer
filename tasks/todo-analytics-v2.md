@@ -56,7 +56,7 @@ Comandos: `pnpm test`, `pnpm typecheck`, `pnpm build`. Tamaño: S ≤ 2 archivos
   - Aceptación: registro externo, entradas, reserva y redes de eventos y sitios usan la ruta rastreada; el `href` real sigue funcionando sin JS.
   - Verifica: guion de clics en develop; los contadores suben.
   - Archivos: botones de evento y sitio (`presentation/events/…`, `presentation/sites/components/detail/*`).
-- [ ] **T10 Enlaces de campaña — dominio y ruta `/r/<código>` (M)**
+- [x] **T10 Enlaces de campaña — dominio y ruta `/r/<código>` (M)**
   - Aceptación: `links/{código}` con `create()` y código base62 de 7 caracteres; solo http(s) y hosts públicos; `/r/<código>` → 307 a la ficha con `utm_source` y `qr`; inexistente → 404; stats diarias `links/{código}/stats/{día}`.
   - Verifica: tests de creación (colisión, URL inválida) y de la ruta.
   - Archivos: `domain/entities/links/*`, servicio, repo, `app/r/[code]/route.ts`.
