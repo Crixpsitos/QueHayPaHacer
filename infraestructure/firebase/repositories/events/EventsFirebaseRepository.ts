@@ -4,6 +4,9 @@ import type { IEventsFirebaseRepository } from "./IEventsFirebaseRepository";
 import { FEATURED_MAX, decodeScoreCursor, encodeScoreCursor, isPromotionActive, mergeFeaturedIds } from "@/application/services/events/eventsListing";
 import { FirebaseEventsDto } from "../../dto/events/FirebaseEventsDto";
 import { mergeMediaStatus } from "./mergeMediaStatus";
+import { buildTrackWrites } from "@/domain/entities/analytics/trackWrites";
+import type { EventTrackType } from "@/domain/entities/analytics/trackTypes";
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource";
 
 export class EventsFirebaseRepository
   extends FirebaseBaseRepository
@@ -178,6 +181,21 @@ export class EventsFirebaseRepository
       "analytics.shares": FieldValue.increment(delta),
       updatedAt: FieldValue.serverTimestamp(),
     });
+  }
+
+  async recordTrack(eventId: string, type: EventTrackType, day: string, source: TrafficSource): Promise<void> {
+    const ref = this.collection.doc(eventId);
+    const w = buildTrackWrites(type, day, source, (n) => FieldValue.increment(n));
+    const batch = this.db.batch();
+    // update() (no set): no crea eventos inventados ni toca `updatedAt` (el sitemap lo usa como lastmod).
+    batch.update(ref, w.event);
+    batch.set(ref.collection("stats").doc(day), w.stats, { merge: true });
+    try {
+      await batch.commit();
+    } catch (e) {
+      if ((e as { code?: number }).code === 5) return; // NOT_FOUND: el batch es atómico, no queda nada escrito
+      throw e;
+    }
   }
 
   async findPublishedBySiteId(siteId: string, limit = 8): Promise<FirebaseEventsDto[]> {
