@@ -31,8 +31,8 @@ export function SiteTracker({ siteId, children }: { siteId: string; children: Re
       onClickCapture={(e) => {
         const el = (e.target as HTMLElement).closest<HTMLElement>("[data-site-track]")
         const type = el?.dataset.siteTrack
-        if (isSiteTrackType(type) && type !== "view") trackSite(siteId, type)
-        const click = type ? siteClickEvent(siteId, type, (el as HTMLAnchorElement).href) : null
+        if (isSiteTrackType(type) && type !== "view" && !el?.dataset.siteCounted) trackSite(siteId, type) // `siteCounted`: ya lo cuenta /r/s en el servidor
+        const click = type ? siteClickEvent(siteId, type, el?.dataset.siteDest ?? (el as HTMLAnchorElement).href) : null
         if (click) analytics.track(click.name, click.params)
       }}
     >
