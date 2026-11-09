@@ -34,3 +34,8 @@ test("sourceShares: vacío → []; 'link' se llama 'Tus enlaces'; porcentajes en
 });
 
 test("umbral de pocos datos", () => assert.equal(FEW_DATA_BELOW, 30));
+
+test("sourceShares agrupa los canales automáticos por plataforma (ch_ig + ch_ig_h + instagram = Instagram)", () => {
+  const out = sourceShares({ ch_ig: 30, ch_ig_h: 10, instagram: 10, ch_qr: 10, direct: 40 });
+  assert.deepEqual(out.map((x) => [x.key, x.label, x.count]), [["direct", "Directo", 40], ["instagram", "Instagram", 50], ["qr", "Afiche con QR", 10]].sort((a, b) => (b[2] as number) - (a[2] as number)));
+});
