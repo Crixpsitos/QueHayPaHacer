@@ -1,13 +1,13 @@
 /** De dónde llegó una visita. Lista cerrada: nada de texto libre como clave en Firestore (cardinalidad acotada). */
-export const SOURCES = ["instagram", "facebook", "tiktok", "whatsapp", "google", "direct", "other"] as const
+export const SOURCES = ["instagram", "facebook", "tiktok", "whatsapp", "x", "google", "direct", "other"] as const
 export type Source = (typeof SOURCES)[number]
 export type TrafficSource = Source | `link:${string}`
 
 /** Clave que se guarda en `bySource`: `link:<código>` cuenta bajo `link` (T10 la afina por enlace); el resto, tal cual. */
 export const sourceKey = (s: TrafficSource): Source | "link" => (s.startsWith("link:") ? "link" : (s as Source))
 
-const ALIASES: Record<string, Source> = { instagram: "instagram", ig: "instagram", facebook: "facebook", fb: "facebook", tiktok: "tiktok", whatsapp: "whatsapp", wa: "whatsapp", google: "google" }
-const HOSTS: Array<[Source, string]> = [["instagram", "instagram.com"], ["facebook", "facebook.com"], ["facebook", "fb.com"], ["tiktok", "tiktok.com"], ["whatsapp", "whatsapp.com"], ["whatsapp", "wa.me"], ["google", "google.com"]]
+const ALIASES: Record<string, Source> = { instagram: "instagram", ig: "instagram", facebook: "facebook", fb: "facebook", tiktok: "tiktok", whatsapp: "whatsapp", wa: "whatsapp", x: "x", twitter: "x", google: "google" }
+const HOSTS: Array<[Source, string]> = [["instagram", "instagram.com"], ["facebook", "facebook.com"], ["facebook", "fb.com"], ["tiktok", "tiktok.com"], ["whatsapp", "whatsapp.com"], ["whatsapp", "wa.me"], ["x", "x.com"], ["x", "t.co"], ["x", "twitter.com"], ["google", "google.com"]]
 const OWN_HOST = "yquehaypahacer.com"
 const CODE = /^[A-Za-z0-9]{7}$/
 

@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { SPRING_SNAPPY } from "@/app/components/motion/primitives";
 import { Link2, Check } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { shareUrl } from "@/domain/entities/analytics/shareUrl";
 
 interface SocialShareBarProps {
   /** URL completa de la página a compartir */
@@ -48,7 +49,8 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
   const still = useReducedMotion();
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const encodedUrl = encodeURIComponent(url);
+  // Cada botón marca su canal en el enlace (utm_source); "copiar enlace" comparte el enlace limpio.
+  const encodedUrl = (channel: string) => encodeURIComponent(shareUrl(url, channel));
   const encodedText = encodeURIComponent(title);
 
   const handleNetworkClick = (method: string) => {
@@ -58,19 +60,19 @@ export function SocialShareBar({ url, title, onShare, className }: SocialShareBa
   const networks = [
     {
       label: "WhatsApp",
-      href: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${title} - ${url}`)}`,
+      href: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${title} - ${shareUrl(url, "whatsapp")}`)}`,
       Icon: WhatsAppIcon,
       colorClass: "hover:border-green-300 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950/30 dark:hover:text-green-400",
     },
     {
       label: "X",
-      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl("x")}`,
       Icon: XIcon,
       colorClass: "hover:border-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
     },
     {
       label: "Facebook",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl("facebook")}`,
       Icon: FacebookIcon,
       colorClass: "hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-400",
     },
