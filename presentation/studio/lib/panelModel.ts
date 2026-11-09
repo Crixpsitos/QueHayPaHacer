@@ -1,7 +1,7 @@
 import { FEW_DATA_BELOW, sourceShares, sumStats, type DailyStatsDoc, type SourceShare, type StatsTotals } from "@/domain/entities/analytics/fichaStats"
 import { buildFunnel, buildSeries, buildVerdict, channelRows, dayRange, nextStep, type ChannelRow, type SeriesPoint } from "@/domain/entities/analytics/panel"
 import type { Channel } from "@/domain/entities/analytics/trafficSource"
-import type { FichaRef, LinkRow } from "./linksOverview"
+import type { FichaRef, LinkRow } from "./panelTypes"
 
 export type Period = 7 | 30 | 90
 export const PERIODS: readonly Period[] = [7, 30, 90]
