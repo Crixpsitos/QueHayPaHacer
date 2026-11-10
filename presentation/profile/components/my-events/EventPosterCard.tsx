@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { BarChart3, ExternalLink, Pencil } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { ShareButton } from "@/presentation/shared/components/ShareButton";
+import { eventWhen } from "@/presentation/shared/lib/shareKit";
 import { cn } from "@/app/lib/utils/cn";
 import type { UserEvent } from "@/domain/repository/profile/IProfileRepository";
 import { conversion, eventKind, type EventKind } from "./myEvents";
@@ -121,6 +123,16 @@ export function EventPosterCard({ event, isPremium, priority = false }: EventPos
                 Ver
               </Link>
             </Button>
+          )}
+          {kind === "published" && (
+            <ShareButton
+              kind="event"
+              id={event.id}
+              title={event.title}
+              when={event.startDate ? eventWhen(new Date(event.startDate).toISOString()) : undefined}
+              where={venue}
+              imageUrl={event.image}
+            />
           )}
           {isPremium && (
             <Button asChild size="sm" variant="ghost">

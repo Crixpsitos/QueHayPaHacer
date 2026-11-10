@@ -8,7 +8,7 @@ export const PERIODS: readonly Period[] = [7, 30, 90]
 
 export interface PanelFicha { key: string; type: "event" | "site"; id: string; name: string; image?: string; views30: number; selected: boolean }
 export interface PanelDetail {
-  type: "event" | "site"; id: string; name: string; publicHref: string
+  type: "event" | "site"; id: string; name: string; image?: string; publicHref: string
   verdict: ReturnType<typeof buildVerdict>
   kpis: { views: number; interest: number; action: number; interestPct: number; actionPct: number; viewsDeltaPct: number | null }
   series: { points: SeriesPoint[]; peak: SeriesPoint | null }
@@ -56,6 +56,7 @@ export function buildPanel(i: Input): PanelVM {
       type: selected.type,
       id: selected.id,
       name: selected.name,
+      image: selected.image,
       publicHref: selected.type === "event" ? `/eventos/${selected.id}` : `/donde-ir/${selected.id}`,
       verdict: buildVerdict({ views: cur.views, actionPct: funnel.actionPct }),
       kpis: {

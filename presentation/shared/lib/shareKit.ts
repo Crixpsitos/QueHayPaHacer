@@ -31,3 +31,10 @@ export function eventWhen(iso: string): string {
   const hour = clean(time).replace(/\s*([ap])\.?\s?m\.?$/i, (_m, x: string) => ` ${x.toLowerCase()}. m.`)
   return `${clean(date).replace(",", "")}, ${hour}`
 }
+
+/** Qué se lleva quien escanea el QR: el gancho del afiche (titular + 3 puntos cortos). */
+export function posterHooks(kind: "event" | "site"): { headline: string; bullets: [string, string, string] } {
+  return kind === "event"
+    ? { headline: "Escanéalo y mira todo en un toque", bullets: ["Fecha, hora y lugar", "Fotos y precio", "Cómo llegar sin perderte"] }
+    : { headline: "Escanéalo y conoce el lugar", bullets: ["Horarios y fotos", "Cómo llegar sin perderte", "Reserva o escríbeles"] }
+}
