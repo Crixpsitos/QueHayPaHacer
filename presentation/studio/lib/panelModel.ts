@@ -3,8 +3,8 @@ import { buildFunnel, buildSeries, buildVerdict, channelRows, dayRange, nextStep
 import type { Channel } from "@/domain/entities/analytics/trafficSource"
 import type { FichaRef, LinkRow } from "./panelTypes"
 
-export type Period = 7 | 30 | 90
-export const PERIODS: readonly Period[] = [7, 30, 90]
+import type { Period, TypeFilter } from "./panelNav"
+export { PERIODS, type Period } from "./panelNav"
 
 export interface PanelFicha { key: string; type: "event" | "site"; id: string; name: string; image?: string; views30: number; selected: boolean }
 export interface PanelDetail {
@@ -17,7 +17,7 @@ export interface PanelDetail {
   next: { channel: Channel | null; title: string; body: string } | null
   customLinks: LinkRow[]
 }
-export interface PanelVM { fichas: PanelFicha[]; period: Period; detail: PanelDetail | null }
+export interface PanelVM { fichas: PanelFicha[]; period: Period; typeFilter: TypeFilter; counts: { all: number; event: number; site: number }; detail: PanelDetail | null }
 
 interface Input {
   fichas: FichaRef[]
@@ -25,6 +25,8 @@ interface Input {
   stats30: Record<string, StatsTotals>
   selectedKey: string | null
   period: Period
+  /** Filtro por tipo (por defecto, todos). */
+  typeFilter?: TypeFilter
   /** Día de hoy en Bogotá (`YYYY-MM-DD`). */
   today: string
   /** Docs diarios de la ficha seleccionada de los últimos 2×período días (actual + anterior). */
@@ -38,10 +40,14 @@ const prevDay = (day: string) => new Date(new Date(`${day}T00:00:00Z`).getTime()
 export function buildPanel(i: Input): PanelVM {
   const keyOf = (f: FichaRef) => `${f.type}:${f.id}`
   const views30 = (f: FichaRef) => i.stats30[keyOf(f)]?.views ?? 0
+  const typeFilter = i.typeFilter ?? "all"
+  const counts = { all: i.fichas.length, event: i.fichas.filter((f) => f.type === "event").length, site: i.fichas.filter((f) => f.type === "site").length }
+  // `fichas` lleva TODAS (el cliente filtra por tipo al instante); la seleccionada sale del tipo filtrado.
   const sorted = [...i.fichas].sort((a, b) => views30(b) - views30(a))
-  const selected = sorted.find((f) => keyOf(f) === i.selectedKey) ?? sorted[0] ?? null
+  const pool = sorted.filter((f) => typeFilter === "all" || f.type === typeFilter)
+  const selected = pool.find((f) => keyOf(f) === i.selectedKey) ?? pool[0] ?? null
   const fichas: PanelFicha[] = sorted.map((f) => ({ key: keyOf(f), type: f.type, id: f.id, name: f.name, image: f.image, views30: views30(f), selected: f === selected }))
-  if (!selected) return { fichas, period: i.period, detail: null }
+  if (!selected) return { fichas, period: i.period, typeFilter, counts, detail: null }
 
   const curDays = dayRange(i.today, i.period)
   const prevDays = dayRange(prevDay(curDays[0]), i.period)
@@ -52,6 +58,8 @@ export function buildPanel(i: Input): PanelVM {
   return {
     fichas,
     period: i.period,
+    typeFilter,
+    counts,
     detail: {
       type: selected.type,
       id: selected.id,

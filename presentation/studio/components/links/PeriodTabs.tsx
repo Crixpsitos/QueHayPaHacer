@@ -1,21 +1,24 @@
-import Link from "next/link";
-import { PERIODS, type Period } from "@/presentation/studio/lib/panelModel";
-import { cn } from "@/app/lib/utils/cn";
+"use client";
 
-export function PeriodTabs({ period, selectedKey }: { period: Period; selectedKey: string | null }) {
+import { PERIODS } from "@/presentation/studio/lib/panelNav";
+import { cn } from "@/app/lib/utils/cn";
+import { usePanelNav } from "./PanelNav";
+
+export function PeriodTabs() {
+  const { nav, go } = usePanelNav();
   return (
-    <nav aria-label="Período" className="flex gap-1 rounded-[10px] bg-slate-200 p-1">
+    <div role="group" aria-label="Período" className="flex gap-1 rounded-[10px] bg-slate-200 p-1">
       {PERIODS.map((p) => (
-        <Link
+        <button
           key={p}
-          href={`?${selectedKey ? `f=${encodeURIComponent(selectedKey)}&` : ""}d=${p}`}
-          scroll={false}
-          aria-current={p === period ? "page" : undefined}
-          className={cn("flex min-h-11 items-center rounded-[7px] px-4 text-sm focus-visible:outline-2 focus-visible:outline-primary", p === period ? "bg-white font-semibold text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900")}
+          type="button"
+          onClick={() => go({ d: p })}
+          aria-pressed={p === nav.d}
+          className={cn("min-h-11 rounded-[7px] px-4 text-sm focus-visible:outline-2 focus-visible:outline-primary", p === nav.d ? "bg-white font-semibold text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900")}
         >
           {p} días
-        </Link>
+        </button>
       ))}
-    </nav>
+    </div>
   );
 }
