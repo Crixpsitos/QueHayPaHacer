@@ -43,7 +43,7 @@ export function ChannelLinksCard({ detail, baseUrl }: { detail: PanelDetail; bas
           Descargar afiche con QR
         </button>
       </div>
-      {kitOpen && <ShareKit open kind={detail.type} id={detail.id} title={detail.name} onClose={() => setKitOpen(false)} />}
+      {kitOpen && <ShareKit open kind={detail.type} id={detail.id} title={detail.name} imageUrl={detail.image} onClose={() => setKitOpen(false)} />}
 
       <ul className="mt-5 flex flex-col">
         <li aria-hidden className="hidden grid-cols-[minmax(0,1.1fr)_minmax(0,1.6fr)_80px_90px_110px] gap-4 border-b border-slate-200 pb-2.5 text-xs font-semibold text-slate-500 md:grid">

@@ -13,6 +13,7 @@ import { CreateEventHere } from "../CreateEventHere"
 import { isLinkableSite } from "@/domain/entities/sites/siteLink"
 import type { SiteListItem } from "../../view-models/SiteFormViewModel"
 import { cn } from "@/app/lib/utils/cn"
+import { ShareButton } from "@/presentation/shared/components/ShareButton"
 
 interface SiteCardProps {
   site: SiteListItem
@@ -158,6 +159,9 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
         ) : <span />}
 
         <div className="flex items-center gap-1.5">
+          {isApproved && (
+            <ShareButton kind="site" id={site.id} title={site.name} where={site.address} imageUrl={site.coverUrl || undefined} className="h-8 gap-1.5 text-xs" />
+          )}
           <Button
             size="sm"
             variant="ghost"

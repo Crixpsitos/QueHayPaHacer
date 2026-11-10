@@ -1084,7 +1084,7 @@ export function SiteFormDrawer({
       </div>
 
       {shareId && (
-        <ShareKit open kind="site" id={shareId} title={form.name} where={form.address} pendingReview onClose={() => setShareId(null)} />
+        <ShareKit open kind="site" id={shareId} title={form.name} where={form.address} imageUrl={coverUrl} pendingReview onClose={() => setShareId(null)} />
       )}
 
       {/* Success overlay */}

@@ -24,3 +24,16 @@ test("eventWhen formatea fecha y hora en español de Colombia (zona Bogotá), o 
   assert.equal(eventWhen("2026-11-22T20:00:00-05:00"), "domingo 22 de noviembre, 8:00 p. m.");
   assert.equal(eventWhen("no es fecha"), "");
 });
+
+import { posterHooks } from "./shareKit";
+
+test("posterHooks: el gancho dice qué gana quien escanea, distinto para evento y sitio, siempre 3 puntos cortos", () => {
+  for (const kind of ["event", "site"] as const) {
+    const h = posterHooks(kind);
+    assert.equal(h.bullets.length, 3);
+    assert.ok(h.headline.length > 10 && h.headline.length <= 48);
+    assert.ok(h.bullets.every((b) => b.length <= 30));
+  }
+  assert.notDeepEqual(posterHooks("event"), posterHooks("site"));
+  assert.match(posterHooks("event").bullets.join(" "), /llegar/i);
+});

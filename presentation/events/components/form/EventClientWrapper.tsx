@@ -48,7 +48,7 @@ export const EventClientWrapper = ({
     : (urlType === "multi-date" && isPremium ? "multi-date" : "standard");
 
   // ── Estado de migración (solo EDIT) ───────────────────────────────────────
-  const [share, setShare] = useState<{ id: string; slug: string; title: string; when?: string; where?: string } | null>(null);
+  const [share, setShare] = useState<{ id: string; slug: string; title: string; when?: string; where?: string; imageUrl?: string } | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const migrationStartedRef = useRef(false);
   const migrationTargetRef = useRef<string | null>(null);
@@ -228,8 +228,8 @@ export const EventClientWrapper = ({
               startTransition(() => router.push(`/eventos/${result.slug}`));
             } else {
               // Evento nuevo: primero el kit para compartir (enlaces por canal, QR, afiche); al cerrarlo va a la ficha.
-              const d = cleanDraft as { title?: string; startDate?: string; location?: { venue?: string } };
-              setShare({ id: result.eventId, slug: result.slug, title: d.title ?? "Mi evento", when: eventWhen(d.startDate ?? ""), where: d.location?.venue });
+              const d = cleanDraft as { title?: string; startDate?: string; location?: { venue?: string }; mainImage?: { url?: string } };
+              setShare({ id: result.eventId, slug: result.slug, title: d.title ?? "Mi evento", when: eventWhen(d.startDate ?? ""), where: d.location?.venue, imageUrl: d.mainImage?.url });
             }
           }
         } else {
@@ -278,6 +278,7 @@ export const EventClientWrapper = ({
           title={share.title}
           when={share.when}
           where={share.where}
+          imageUrl={share.imageUrl}
           onClose={() => { const slug = share.slug; setShare(null); startTransition(() => router.push(`/eventos/${slug}`)); }}
         />
       )}
