@@ -35,6 +35,8 @@ export function PanelNavProvider({ f, d, t, options, children }: { f: Nav["f"]; 
       startTransition(() => {
         setOptimistic(next);
         router.replace(`${pathname}?${navToSearch(next)}`, { scroll: false });
+        // Tras entrar por navegación blanda, el router puede reusar el árbol en caché de otra búsqueda: refresh pide el de esta URL.
+        router.refresh();
       });
     },
     [options, pathname, router, setOptimistic],
