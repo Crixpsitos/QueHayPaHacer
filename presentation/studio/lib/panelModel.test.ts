@@ -54,3 +54,12 @@ test("veredicto, canales y enlaces propios del detalle", () => {
   assert.deepEqual(d.customLinks.map((l) => l.code), ["AAAAAAA"]);
   assert.equal(d.publicHref, "/eventos/e1");
 });
+
+test("filtro por tipo: la seleccionada es de ese tipo y los conteos siguen siendo del total", () => {
+  const stats = { "event:e1": sumStats([day("2026-11-05", 50)]), "site:s1": sumStats([day("2026-11-05", 70)]) };
+  const p = buildPanel({ ...base, typeFilter: "event", selectedKey: "site:s1", stats30: stats, docs: [] });
+  assert.deepEqual(p.fichas.map((f) => [f.key, f.selected]), [["site:s1", false], ["event:e1", true]]); // todas, la seleccionada es del tipo filtrado
+  assert.equal(p.detail?.id, "e1");
+  assert.deepEqual(p.counts, { all: 2, event: 1, site: 1 });
+  assert.equal(p.typeFilter, "event");
+});

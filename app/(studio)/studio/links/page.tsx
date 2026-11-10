@@ -4,11 +4,12 @@ import { getPremiumSessionUid, redirectLimitedToEvents } from "@/app/actions/_se
 import { createServerContainer } from "@/infraestructure/di/container"
 import { SITE_URL } from "@/app/lib/site"
 import { PanelView } from "@/presentation/studio/components/links/PanelView"
-import { buildPanel, PERIODS, type Period } from "@/presentation/studio/lib/panelModel"
+import { buildPanel } from "@/presentation/studio/lib/panelModel"
+import { resolveNav } from "@/presentation/studio/lib/panelNav"
+import { getCachedStats30 } from "@/presentation/studio/lib/cachedPanelData"
 import type { FichaRef, LinkRow } from "@/presentation/studio/lib/panelTypes"
 import { bogotaDay } from "@/domain/entities/sites/siteStats"
 import { dayRange } from "@/domain/entities/analytics/panel"
-import type { StatsTotals } from "@/domain/entities/analytics/fichaStats"
 
 export const metadata: Metadata = { title: "Visitas y enlaces" }
 
@@ -23,7 +24,7 @@ function PanelSkeleton() {
   )
 }
 
-export default function StudioLinksPage({ searchParams }: { searchParams: Promise<{ f?: string; d?: string }> }) {
+export default function StudioLinksPage({ searchParams }: { searchParams: Promise<{ f?: string; d?: string; t?: string }> }) {
   return (
     <Suspense fallback={<PanelSkeleton />}>
       <PanelData searchParams={searchParams} />
@@ -31,14 +32,13 @@ export default function StudioLinksPage({ searchParams }: { searchParams: Promis
   )
 }
 
-async function PanelData({ searchParams }: { searchParams: Promise<{ f?: string; d?: string }> }) {
+async function PanelData({ searchParams }: { searchParams: Promise<{ f?: string; d?: string; t?: string }> }) {
   const sp = await searchParams
   await redirectLimitedToEvents()
   // Premium verificado aquí también: el layout (StudioGate) no protege requests RSC directas.
   const uid = await getPremiumSessionUid()
   if (!uid) return null
 
-  const period = (PERIODS.find((p) => String(p) === sp.d) ?? 30) as Period
   const { linksService, studioService, sitesService, dailyStatsRepository } = createServerContainer()
   const [links, eventsPage, sites] = await Promise.all([
     linksService.listWithClicks(uid),
@@ -54,13 +54,11 @@ async function PanelData({ searchParams }: { searchParams: Promise<{ f?: string;
   const rows: LinkRow[] = links.map((l) => ({ code: l.code, label: l.label, targetType: l.target.type, targetId: l.target.id, targetName: "", clicks: l.clicks }))
 
   const today = bogotaDay()
-  const since30 = dayRange(today, 30)[0]
-  const stats30: Record<string, StatsTotals> = {}
-  await Promise.all(fichas.map(async (f) => { stats30[`${f.type}:${f.id}`] = await dailyStatsRepository.sumSince(f.type === "event" ? "events" : "sites", f.id, since30) }))
+  const stats30 = await getCachedStats30(uid, fichas.map((f) => ({ type: f.type, id: f.id })), dayRange(today, 30)[0])
 
-  // 1.ª pasada: qué ficha queda seleccionada; 2.ª: leer SUS días (2 × período) y armar el detalle.
-  const base = { fichas, stats30, selectedKey: sp.f ?? null, period, today, links: rows }
-  const selected = buildPanel({ ...base, docs: [] }).fichas.find((f) => f.selected)
-  const docs = selected ? await dailyStatsRepository.readDays(selected.type === "event" ? "events" : "sites", selected.id, dayRange(today, period * 2)[0]) : []
-  return <PanelView baseUrl={SITE_URL} panel={buildPanel({ ...base, docs })} />
+  // Un solo lugar decide qué se mira (ficha, período, tipo): el mismo que usa el cliente para resaltar al instante.
+  const nav = resolveNav(fichas.map((f) => ({ key: `${f.type}:${f.id}`, type: f.type, views30: stats30[`${f.type}:${f.id}`]?.views ?? 0 })), sp)
+  const selected = fichas.find((f) => `${f.type}:${f.id}` === nav.f)
+  const docs = selected ? await dailyStatsRepository.readDays(selected.type === "event" ? "events" : "sites", selected.id, dayRange(today, nav.d * 2)[0]) : []
+  return <PanelView baseUrl={SITE_URL} panel={buildPanel({ fichas, stats30, selectedKey: nav.f, period: nav.d, typeFilter: nav.t, today, links: rows, docs })} />
 }
