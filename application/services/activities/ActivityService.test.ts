@@ -13,6 +13,7 @@ class FakeRepo implements IActivityRepository {
   async findByOwner(uid: string) { return this.items.filter((a) => a.ownerUid === uid) }
   async findBySite(siteId: string) { return this.items.filter((a) => a.siteId === siteId) }
   async findListable(limit: number) { return this.items.filter((a) => a.publicationStatus === "published" && a.moderationStatus === "approved" && a.isActive).slice(0, limit) }
+  async findPendingReview(limit: number) { return this.items.filter((a) => a.publicationStatus === "published" && a.moderationStatus === "pending").slice(0, limit) }
   async create(a: Omit<Activity, "id">) { const x = { ...a, id: `n${this.items.length}` } as Activity; this.items.push(x); return x }
   async save(a: Activity) { this.items = this.items.map((x) => (x.id === a.id ? a : x)) }
 }

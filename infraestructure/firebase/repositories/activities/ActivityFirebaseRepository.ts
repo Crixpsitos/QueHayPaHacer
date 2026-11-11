@@ -49,6 +49,11 @@ export class ActivityFirebaseRepository extends FirebaseBaseRepository implement
     return snap.docs.map((d) => this.toDomain(d))
   }
 
+  async findPendingReview(limit: number): Promise<Activity[]> {
+    const snap = await this.collection.where("moderationStatus", "==", "pending").limit(limit).get()
+    return snap.docs.map((d) => this.toDomain(d)).filter((a) => a.publicationStatus === "published")
+  }
+
   async create(activity: Omit<Activity, "id">): Promise<Activity> {
     const ref = this.collection.doc()
     const full = { ...activity, id: ref.id }

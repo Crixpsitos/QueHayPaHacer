@@ -15,6 +15,8 @@ export interface IActivityRepository {
    * públicas agregar índice compuesto (listable + nextOccurrenceAt) y paginar por cursor.
    */
   findListable(limit: number): Promise<Activity[]>
+  /** Publicadas que esperan revisión de QHPA (consulta de igualdad sobre `moderationStatus`; se filtra lo publicado en memoria). */
+  findPendingReview(limit: number): Promise<Activity[]>
   /** Crea con id nuevo y devuelve la actividad guardada. */
   create(activity: Omit<Activity, "id">): Promise<Activity>
   /**

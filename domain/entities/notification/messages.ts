@@ -33,3 +33,9 @@ export function claimResolvedNotification(i: { siteName: string; approved: boole
         href: "/donde-ir",
       };
 }
+
+export function activityModerationNotification(i: { title: string; slug: string; approved: boolean; reason?: string }): NewNotification {
+  return i.approved
+    ? { type: "activity_moderation", title: `Aprobaron tu actividad "${i.title}"`, body: "Ya aparece en Qué Hay Pa Hacer.", href: `/actividades/${i.slug}` }
+    : { type: "activity_moderation", title: `No aprobaron tu actividad "${i.title}"`, body: i.reason?.trim() || undefined, href: "/actividades/mis" };
+}
