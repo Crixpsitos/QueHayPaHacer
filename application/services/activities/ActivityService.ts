@@ -40,6 +40,12 @@ export class ActivityService {
     return a && (await this.keepVisible([a])).length ? a : null
   }
 
+  /** Pública por id (la consulta de quejas solo aplica a actividades públicas). */
+  async getPublicById(id: string): Promise<Activity | null> {
+    const a = await this.repo.findById(id)
+    return a && (await this.keepVisible([a])).length ? a : null
+  }
+
   /** Para quien está logueado: además de las públicas, el dueño y QHPA ven las pendientes (vista previa). */
   async getForViewer(slug: string, viewer: Viewer): Promise<Activity | null> {
     const a = await this.repo.findBySlug(slug)

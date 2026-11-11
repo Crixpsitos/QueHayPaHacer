@@ -20,7 +20,7 @@ export type CtaResult = { ok: true; cta: Cta } | { ok: false; error: string }
 const fail = (error: string): CtaResult => ({ ok: false, error })
 
 /** Quita +57/57, espacios y guiones. Devuelve 10 dígitos o null. */
-function colombianNumber(raw: string): string | null {
+export function colombianNumber(raw: string): string | null {
   const digits = raw.replace(/[\s\-().]/g, "").replace(/^\+/, "")
   if (!/^\d+$/.test(digits)) return null
   const local = digits.length === 12 && digits.startsWith("57") ? digits.slice(2) : digits

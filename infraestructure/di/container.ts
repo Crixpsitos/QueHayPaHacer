@@ -49,6 +49,9 @@ import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
+import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
+import { HostIdentityFirebaseRepository } from "../firebase/repositories/activities/HostIdentityFirebaseRepository";
+import { createIpLimiter } from "@/app/api/_lib/ipRateLimit";
 import { ActivityFirebaseRepository } from "../firebase/repositories/activities/ActivityFirebaseRepository";
 import { DailyStatsFirebaseRepository } from "@/infraestructure/firebase/repositories/analytics/DailyStatsFirebaseRepository";
 import { LinksService } from "@/application/services/links/LinksService";
@@ -81,6 +84,9 @@ import { HolidayService } from "@/application/services/config/HolidayService";
 import { ContentDeclarationService } from "@/application/services/contentDeclaration/ContentDeclarationService";
 import { SiteInteractionService } from "@/application/services/sites/SiteInteractionService";
 
+
+/** Consultas de datos de oferentes para quejas: 5 por minuto por persona, en memoria de la instancia. */
+const complaintLimiter = createIpLimiter(5);
 
 export const createServerContainer = () => {
 
@@ -167,6 +173,9 @@ export const createServerContainer = () => {
     return s ? { published: s.published, active: s.active } : null;
   });
 
+  // registro de oferentes (Ley 1480 art. 53); el límite vive a nivel de módulo (createServerContainer se ejecuta en cada llamada)
+  const hostIdentityService = new HostIdentityService(new HostIdentityFirebaseRepository(getFirebaseFirestore()), () => new Date(), complaintLimiter);
+
   // estadísticas diarias por ficha (solo lectura)
   const dailyStatsRepository = new DailyStatsFirebaseRepository(getFirebaseFirestore());
 
@@ -244,6 +253,7 @@ export const createServerContainer = () => {
     userPreferencesService,
     sitesService,
     activityService,
+    hostIdentityService,
     siteInteractionService,
     storageService,
     profileService,

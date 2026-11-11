@@ -90,3 +90,10 @@ test("isSlugTaken consulta el repositorio", async () => {
   assert.equal(await s.isSlugTaken("tomado"), true)
   assert.equal(await s.isSlugTaken("libre"), false)
 })
+
+test("getPublicById devuelve solo públicas", async () => {
+  const s = svc([makeActivity({ id: "1", slug: "a" }), makeActivity({ id: "2", slug: "b", moderationStatus: "pending" })])
+  assert.equal((await s.getPublicById("1"))?.id, "1")
+  assert.equal(await s.getPublicById("2"), null)
+  assert.equal(await s.getPublicById("zzz"), null)
+})
