@@ -14,6 +14,8 @@ export interface IActivityEngagementRepository {
   listSavedIds(uid: string, limit: number): Promise<string[]>
   /** Ids de actividades donde marcó «Yo fui», las más recientes primero. */
   listVisitedIds(uid: string, limit: number): Promise<string[]>
+  /** Quienes guardaron la actividad (para los avisos de «mañana sale»). */
+  listSaverIds(activityId: string, limit: number): Promise<string[]>
   /** Vista o acción medida desde el navegador (sin datos personales), con el canal de origen. */
   recordTrack(activityId: string, type: ActivityTrackType, day: string, source: TrafficSource): Promise<void>
 }

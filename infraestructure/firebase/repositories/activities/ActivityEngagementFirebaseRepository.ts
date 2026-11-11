@@ -30,9 +30,11 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
       if (!act.exists && saved) return { changed: false } // actividad borrada: no se guarda; sí se puede quitar
       if (saved) {
         tx.set(ref, { type: "activity", targetId: activityId, savedAt: FieldValue.serverTimestamp() })
+        tx.set(activity.collection("savers").doc(uid), { savedAt: FieldValue.serverTimestamp() }) // quién guardó: solo para avisar (uid, sin más datos)
         tx.update(activity, { "analytics.saves": FieldValue.increment(1) })
       } else {
         tx.delete(ref)
+        tx.delete(activity.collection("savers").doc(uid))
         if (act.exists) tx.update(activity, { "analytics.saves": FieldValue.increment(-1) })
       }
       return { changed: true }
@@ -49,6 +51,11 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
     // ponytail: sin filtro por tipo en la consulta (pediría índice compuesto); lo guardado de otros tipos se descarta aquí.
     const s = await this.db.collection("users").doc(uid).collection("saved").orderBy("savedAt", "desc").limit(limit * 3).get()
     return s.docs.filter((d) => d.get("type") === "activity").map((d) => String(d.get("targetId"))).slice(0, limit)
+  }
+
+  async listSaverIds(activityId: string, limit: number): Promise<string[]> {
+    const s = await this.collection.doc(activityId).collection("savers").limit(limit).get()
+    return s.docs.map((d) => d.id)
   }
 
   async listVisitedIds(uid: string, limit: number): Promise<string[]> {

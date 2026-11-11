@@ -51,6 +51,8 @@ import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
+import { ActivityReminderService } from "@/application/services/activities/ActivityReminderService";
+import { holdsSpot } from "@/domain/entities/activities/activityJoin";
 import { ActivityPlansService } from "@/application/services/activities/ActivityPlansService";
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
@@ -285,6 +287,16 @@ export const createServerContainer = () => {
     clock: () => new Date(),
   });
 
+  // barrido diario: avisos de «mañana sale» a quien reservó o guardó (lo llama una Cloud Function programada)
+  const activityReminderService = new ActivityReminderService({
+    listPublic: () => activityService.listPublic(500),
+    reservedFor: async (id, key) => (await activityJoinRepo.list(id, 2000)).filter((r) => r.key === key && holdsSpot(r.status)).map((r) => r.uid),
+    taken: async (id, key) => (await activityJoinRepo.counts(id, [key]))[key] ?? 0,
+    savers: (id) => activityEngagementRepo.listSaverIds(id, 2000),
+    notify: (uid, n, id) => notificationService.notify(uid, n, id),
+    clock: () => new Date(),
+  });
+
   // configuración editable por el administrador (festivos; luego rutas de bus)
   const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
   const transitRouteService = new TransitRouteService(new ConfigFirebaseRepository(getFirebaseFirestore()));
@@ -312,6 +324,7 @@ export const createServerContainer = () => {
     activityEngagementService,
     activityJoinService,
     activityPlansService,
+    activityReminderService,
     hostIdentityService,
     siteInteractionService,
     storageService,
