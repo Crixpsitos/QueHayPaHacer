@@ -4,6 +4,7 @@ import type { ActivityCategory, Companion } from "@/domain/entities/activities/v
 import { describeSchedule, validateSchedule, SCHEDULE_RULES_MAX, type ActivitySchedule, type ScheduleRule, type Weekday } from "@/domain/entities/activities/value-objects/ActivitySchedule"
 import { bogotaDateIso, occurrencesBetween } from "@/domain/entities/activities/value-objects/occurrences"
 import { EXTRAS_MAX, INCLUDES_MAX, PRICE_OPTIONS_MAX, formatCop, validateExtras, validatePriceOptions, type Extra, type ExtraUnit, type PriceOption, type PriceUnit } from "@/domain/entities/activities/value-objects/Price"
+import { JOIN_CAPACITY_MAX, isPaidActivity, validatePayInstructions } from "@/domain/entities/activities/activityJoin"
 import { normalizeCta, type CtaKind } from "@/domain/entities/activities/value-objects/Cta"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 
@@ -67,6 +68,11 @@ export interface ActivityForm {
   ctaKind: CtaKind | ""
   ctaValue: string
   ctaLabel: string
+  /** Reservas en QHPA ("Unirme"). */
+  joinEnabled: boolean
+  /** Vacío = sin tope. */
+  joinCapacity: string
+  payInstructions: string
   sections: SiteSection[]
 }
 
@@ -89,7 +95,7 @@ export const emptyForm = (): ActivityForm => ({
   kind: "global", siteId: null, title: "", tagline: "", description: "", category: "", companions: [], difficulty: "", durationMinutes: "", ageNote: "",
   meetingMode: "fixed", meetingText: "", meetingReferences: "",
   rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "",
-  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", sections: [],
+  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [],
 })
 
 export const addRule = (rules: FormRule[]): FormRule[] => (rules.length >= SCHEDULE_RULES_MAX ? rules : [...rules, blankRule()])
@@ -161,6 +167,7 @@ export function toRawInput(f: ActivityForm): unknown {
     extras: extrasFromForm(f),
     sections: f.sections,
     cta: f.ctaKind && optional(f.ctaValue) ? { kind: f.ctaKind, value: f.ctaValue, ...(optional(f.ctaLabel) ? { label: f.ctaLabel } : {}) } : null,
+    join: f.joinEnabled ? { capacity: f.joinCapacity.trim() ? Number(f.joinCapacity) : null, payInstructions: f.payInstructions } : null,
   }
 }
 
@@ -188,7 +195,9 @@ export function formFromActivity(a: Activity): ActivityForm {
     requiresReservation: a.schedule.requiresReservation, scheduleNote: a.schedule.note ?? "",
     priceOptions: a.priceOptions.map((p) => ({ label: p.label, amount: moneyToString(p.amountCop), unit: p.unit, includes: [...p.includes], note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: moneyToString(x.amountCop), unit: x.unit, note: x.note ?? "" })),
-    ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "", sections: a.sections.map((s) => ({ ...s })),
+    ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "",
+    joinEnabled: a.join !== null, joinCapacity: a.join?.capacity == null ? "" : String(a.join.capacity), payInstructions: a.join?.payInstructions ?? "",
+    sections: a.sections.map((s) => ({ ...s })),
   }
 }
 
@@ -242,6 +251,14 @@ export function stepError(step: number, f: ActivityForm, ctx: StepContext = {}):
       if (ctx.coverCount === undefined || ctx.coverCount === 1) return null
       return ctx.coverCount === 0 ? "Sube al menos una foto: será la portada." : "Elige una sola foto de portada."
     case 7: {
+      if (f.joinEnabled) {
+        const cap = f.joinCapacity.trim()
+        if (cap && (!/^\d+$/.test(cap) || Number(cap) < 1 || Number(cap) > JOIN_CAPACITY_MAX)) return `El cupo debe ser un número entero entre 1 y ${JOIN_CAPACITY_MAX}.`
+        const pay = f.payInstructions.trim()
+        if (isPaidActivity(f.priceOptions.map((p) => ({ amountCop: parseMoney(p.amount) || 0 }))) && !pay) return "Cuéntale a la gente cómo se paga (por ejemplo, tu Nequi)."
+        const e = validatePayInstructions(pay)
+        if (e) return e
+      }
       if (!f.ctaKind || !f.ctaValue.trim()) return null
       const r = normalizeCta({ kind: f.ctaKind, value: f.ctaValue, label: f.ctaLabel })
       return r.ok ? null : r.error

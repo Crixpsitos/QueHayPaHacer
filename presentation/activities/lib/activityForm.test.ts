@@ -111,3 +111,27 @@ test("vista previa con un horario inválido no lanza y avisa", () => {
   assert.deepEqual(p.next, [])
   assert.match(p.error!, /día/i)
 })
+
+test("reservas: apagadas por defecto; encendidas envían cupo y cómo se paga", () => {
+  const off = parseActivityInput(toRawInput(filled()))
+  assert.ok(off.ok && off.value.join === null)
+  const on = parseActivityInput(toRawInput(filled({ joinEnabled: true, joinCapacity: "20", payInstructions: "Nequi 300 765 4321" })))
+  assert.ok(on.ok && on.value.join?.capacity === 20 && on.value.join.payInstructions === "Nequi 300 765 4321")
+  const open = parseActivityInput(toRawInput(filled({ joinEnabled: true, joinCapacity: "", payInstructions: "Nequi" })))
+  assert.ok(open.ok && open.value.join?.capacity === null)
+})
+test("reservas: ida y vuelta con la actividad guardada", () => {
+  const a = makeActivity({ join: { capacity: 12, closed: false, payInstructions: "Nequi 1" } })
+  const f = formFromActivity(a)
+  assert.deepEqual([f.joinEnabled, f.joinCapacity, f.payInstructions], [true, "12", "Nequi 1"])
+  assert.equal(formFromActivity(makeActivity({ join: null })).joinEnabled, false)
+})
+test("paso 7: cupo entre 1 y 500; si cuesta, 'cómo se paga' es obligatorio", () => {
+  assert.equal(stepError(7, filled()), null)
+  assert.match(stepError(7, filled({ joinEnabled: true, joinCapacity: "0", payInstructions: "x" }))!, /cupo/i)
+  assert.match(stepError(7, filled({ joinEnabled: true, joinCapacity: "501", payInstructions: "x" }))!, /cupo/i)
+  assert.match(stepError(7, filled({ joinEnabled: true, joinCapacity: "10", payInstructions: "" }))!, /pago|paga/i)
+  assert.equal(stepError(7, filled({ joinEnabled: true, joinCapacity: "10", payInstructions: "Nequi" })), null)
+  const free = filled({ joinEnabled: true, joinCapacity: "", priceOptions: [{ label: "Gratis", amount: "0", unit: "persona", includes: [], note: "" }] })
+  assert.equal(stepError(7, free), null) // gratis: no hace falta cómo se paga
+})
