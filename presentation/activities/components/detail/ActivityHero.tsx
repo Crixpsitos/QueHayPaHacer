@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Images } from "lucide-react"
 import type { ActivityPublicView } from "@/presentation/activities/lib/publicView"
+import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { ShareButton } from "./ShareButton"
 
 /** Escritorio: la distribución depende de cuántas fotos hay (con 1 o 2 no quedan huecos). */
@@ -16,6 +17,17 @@ function DesktopMosaic({ gallery }: { gallery: ActivityPublicView["gallery"] }) 
           <Image src={g.url} alt={g.alt} fill sizes={i === 0 ? "60vw" : "25vw"} priority={i === 0} className="object-cover transition-transform duration-500 hover:scale-[1.03] motion-reduce:transition-none" />
         </div>
       ))}
+    </div>
+  )
+}
+
+/** Sin fotos: portada compacta con el color y el ícono de la categoría (no un recuadro gris de pantalla completa). */
+function NoPhotoCover({ slug }: { slug: string }) {
+  const c = categoryStyle(slug)
+  return (
+    <div className="relative grid h-64 place-items-center overflow-hidden sm:h-72 sm:rounded-[2rem]" style={{ background: c.bg, color: c.ink }} role="img" aria-label="Portada con el ícono de la categoría">
+      <c.Icon className="absolute -right-6 -top-6 size-64 opacity-15" strokeWidth={1.25} aria-hidden />
+      <c.Icon className="size-16 opacity-70" aria-hidden />
     </div>
   )
 }
@@ -42,7 +54,7 @@ export function ActivityHero({ view, title }: { view: ActivityPublicView; title:
           <DesktopMosaic gallery={gallery} />
         </>
       ) : (
-        <div className="grid aspect-4/5 place-items-center bg-muted text-sm text-muted-foreground sm:aspect-video sm:rounded-[2rem]">Sin fotos todavía</div>
+        <NoPhotoCover slug={view.categorySlug} />
       )}
 
       {/* degradado para que los controles se lean sobre cualquier foto */}

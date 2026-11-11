@@ -5,6 +5,8 @@ import { Button } from "@/app/components/ui/button/button"
 import { SectionsAccordion } from "@/presentation/sites/components/detail/SectionsAccordion"
 import type { ActivityPageData } from "@/presentation/activities/data/fetchers"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
+import { isSparse } from "@/presentation/activities/lib/sparse"
+import { HowItWorks } from "./HowItWorks"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { MoreToDo } from "./MoreToDo"
@@ -37,6 +39,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
     d.companions.length ? { icon: Users, label: "Ideal para ir", value: d.companions.join(", ") } : null,
     d.ageNote ? { icon: Info, label: "Edades", value: d.ageNote } : null,
   ].filter(Boolean) as { icon: typeof Clock; label: string; value: string }[]
+  const sparse = isSparse(d)
   const reserveLabel = d.paid ? `Reservar cupo · ${d.priceFrom.replace("Desde ", "")}` : "Unirme"
 
   return (
@@ -115,6 +118,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
 
           {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
+
+          {sparse ? <HowItWorks joinEnabled={d.joinEnabled} /> : null}
 
           <SectionsAccordion sections={d.sections} />
 
