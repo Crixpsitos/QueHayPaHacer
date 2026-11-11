@@ -1,7 +1,10 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore"
-import { joinDocId, type JoinDecision } from "@/domain/entities/activities/activityJoin"
-import type { IActivityJoinRepository, JoinOutcome, JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
+import { holdsSpot, joinDocId, type JoinDecision, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
+import type { IActivityJoinRepository, JoinOutcome, JoinRow, SetStatusOutcome } from "@/domain/repository/activities/IActivityJoinRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
+
+/** Inscripciones anteriores a los estados no traen `status`: eran confirmadas. */
+const statusOf = (v: unknown): JoinStatusValue => (v === "pending" || v === "noShow" ? v : "confirmed")
 
 const toDate = (v: unknown): Date => (v && typeof (v as { toDate?: () => Date }).toDate === "function" ? (v as { toDate: () => Date }).toDate() : new Date(0))
 
@@ -20,7 +23,10 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     return this.db.collection("activities").doc(activityId).collection("joinCounts").doc(key)
   }
 
-  async join(i: { activityId: string; key: string; uid: string; name: string }, decide: (taken: number) => JoinDecision): Promise<JoinOutcome> {
+  async join(
+    i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null },
+    decide: (taken: number) => JoinDecision,
+  ): Promise<JoinOutcome> {
     const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
     const counter = this.counter(i.activityId, i.key)
     return this.db.runTransaction(async (tx) => {
@@ -28,7 +34,16 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
       if (mine.exists) return "already" as const
       const d = decide(Number(c.get("taken") ?? 0))
       if (!d.ok) return d.reason
-      tx.set(ref, { activityId: i.activityId, key: i.key, uid: i.uid, name: i.name.slice(0, 80), createdAt: FieldValue.serverTimestamp() })
+      tx.set(ref, {
+        activityId: i.activityId,
+        key: i.key,
+        uid: i.uid,
+        name: i.name.slice(0, 80),
+        status: i.status,
+        phone: i.phone,
+        consentVersion: i.phone ? i.consentVersion : null,
+        createdAt: FieldValue.serverTimestamp(),
+      })
       tx.set(counter, { taken: FieldValue.increment(1) }, { merge: true })
       return "joined" as const
     })
@@ -41,8 +56,23 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
       const snap = await tx.get(ref)
       if (!snap.exists || snap.get("activityId") !== i.activityId || snap.get("key") !== i.key) return { changed: false }
       tx.delete(ref)
-      tx.set(counter, { taken: FieldValue.increment(-1) }, { merge: true })
+      if (holdsSpot(statusOf(snap.get("status")))) tx.set(counter, { taken: FieldValue.increment(-1) }, { merge: true })
       return { changed: true }
+    })
+  }
+
+  async setStatus(i: { activityId: string; key: string; uid: string; to: JoinStatusValue }, decide: (taken: number) => JoinDecision): Promise<SetStatusOutcome> {
+    const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
+    const counter = this.counter(i.activityId, i.key)
+    return this.db.runTransaction(async (tx) => {
+      const [snap, c] = await Promise.all([tx.get(ref), tx.get(counter)])
+      if (!snap.exists || snap.get("activityId") !== i.activityId || snap.get("key") !== i.key) return "missing" as const
+      const was = holdsSpot(statusOf(snap.get("status")))
+      const will = holdsSpot(i.to)
+      if (!was && will && !decide(Number(c.get("taken") ?? 0)).ok) return "full" as const
+      tx.update(ref, { status: i.to })
+      if (was !== will) tx.set(counter, { taken: FieldValue.increment(will ? 1 : -1) }, { merge: true })
+      return "ok" as const
     })
   }
 
@@ -62,17 +92,17 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     return Object.fromEntries(snaps.map((s, n) => [keys[n], Math.max(0, Number(s.get("taken") ?? 0))]))
   }
 
-  async mine(activityId: string, uid: string, keys: string[]): Promise<string[]> {
-    if (!keys.length) return []
+  async mine(activityId: string, uid: string, keys: string[]): Promise<Record<string, JoinStatusValue>> {
+    if (!keys.length) return {}
     const snaps = await this.db.getAll(...keys.map((k) => this.collection.doc(joinDocId(activityId, k, uid))))
-    return keys.filter((_, n) => snaps[n].exists)
+    return Object.fromEntries(keys.flatMap((k, n) => (snaps[n].exists ? [[k, statusOf(snaps[n].get("status"))] as const] : [])))
   }
 
   async list(activityId: string, limit: number): Promise<JoinRow[]> {
     // ponytail: una sola igualdad (sin índice compuesto); el volumen por actividad es pequeño y se ordena en memoria.
     const s = await this.collection.where("activityId", "==", activityId).limit(limit).get()
     return s.docs
-      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")) }))
+      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")), status: statusOf(d.get("status")), phone: typeof d.get("phone") === "string" ? (d.get("phone") as string) : null }))
       .sort((a, b) => a.key.localeCompare(b.key) || a.createdAt.getTime() - b.createdAt.getTime())
   }
 }

@@ -1,5 +1,5 @@
 import type { Activity } from "@/domain/entities/activities/Activity"
-import { JOIN_HORIZON_DAYS, joinDecision, resolveOccurrenceKey, spotsLeft } from "@/domain/entities/activities/activityJoin"
+import { JOIN_HORIZON_DAYS, initialJoinStatus, isPaidActivity, joinDecision, normalizePhoneCo, resolveOccurrenceKey, spotsLeft, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
 import { bogotaDateIso, occurrencesBetween } from "@/domain/entities/activities/value-objects/occurrences"
 import type { IActivityJoinRepository, JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
@@ -16,6 +16,14 @@ export interface JoinDeps {
   /** `id` fijo = idempotente (no repite el aviso). */
   notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
+  /** Versión de Términos/Política vigente: prueba de qué texto vio quien autorizó su WhatsApp. */
+  legalVersion: string
+}
+
+/** Lo que la persona entrega al reservar una actividad de pago. */
+export interface JoinContact {
+  phone?: string
+  consent?: boolean
 }
 
 export interface OccurrenceStatus {
@@ -26,10 +34,16 @@ export interface OccurrenceStatus {
   spotsLeft: number | null
   full: boolean
   joined: boolean
+  /** Estado de mi reserva en esta salida (null = no estoy). */
+  myStatus: JoinStatusValue | null
 }
 export interface JoinStatus {
   enabled: boolean
   closed: boolean
+  /** La actividad cuesta: reservar pide WhatsApp y el pago se coordina fuera. */
+  paid: boolean
+  /** Solo se entrega a quien tiene una reserva por pagar. */
+  payInstructions: string | null
   occurrences: OccurrenceStatus[]
 }
 
@@ -43,7 +57,7 @@ const dateLabel = (key: string) => (key === "open" ? null : new Intl.DateTimeFor
 export class ActivityJoinService {
   constructor(private readonly d: JoinDeps) {}
 
-  async join(uid: string, activityId: string, requestedDate: string | null): Promise<Result & { key?: string }> {
+  async join(uid: string, activityId: string, requestedDate: string | null, contact: JoinContact = {}): Promise<Result & { key?: string }> {
     if (!uid?.trim() || !activityId?.trim()) return { ok: false, error: "Inicia sesión para unirte." }
     const a = await this.d.getPublic(activityId)
     if (!a) return { ok: false, error: NOT_FOUND }
@@ -51,8 +65,16 @@ export class ActivityJoinService {
     const k = resolveOccurrenceKey(a.schedule, requestedDate, this.d.clock())
     if (!k.ok) return k
     const join = a.join
+    const paid = isPaidActivity(a.priceOptions)
+    let phone: string | null = null
+    if (paid) {
+      // dato personal: solo con consentimiento explícito y solo en actividades de pago
+      if (contact.consent !== true) return { ok: false, error: "Debes autorizar compartir tu WhatsApp con quien organiza." }
+      phone = normalizePhoneCo(contact.phone)
+      if (!phone) return { ok: false, error: "Escribe un WhatsApp válido de 10 dígitos (empieza por 3)." }
+    }
     const name = (await this.d.displayName(uid)) || "Alguien"
-    const outcome = await this.d.repo.join({ activityId, key: k.key, uid, name }, (taken) => joinDecision(join, taken))
+    const outcome = await this.d.repo.join({ activityId, key: k.key, uid, name, status: initialJoinStatus(paid), phone, consentVersion: this.d.legalVersion }, (taken) => joinDecision(join, taken))
     if (outcome === "closed") return { ok: false, error: "Las inscripciones están cerradas." }
     if (outcome === "full") return { ok: false, error: "Se acabaron los cupos de esta salida." }
     if (outcome === "joined") {
@@ -60,7 +82,7 @@ export class ActivityJoinService {
       // id fijo por (actividad, salida, persona): unirse y cancelar en bucle no vuelve a avisar ni llena la campanita.
       const base = `${activityId}_${k.key}_${uid}`
       await this.d.notify(a.ownerUid, activityJoinNotification({ title: a.title, activityId: a.id, who: name.slice(0, 40), dateLabel: label }), `join_${base}`)
-      await this.d.notify(uid, activityJoinConfirmedNotification({ title: a.title, slug: a.slug, dateLabel: label }), `joinok_${base}`)
+      await this.d.notify(uid, activityJoinConfirmedNotification({ title: a.title, slug: a.slug, dateLabel: label, pending: paid }), `joinok_${base}`)
     }
     return { ok: true, key: k.key }
   }
@@ -75,7 +97,7 @@ export class ActivityJoinService {
   async status(uid: string | null, activityId: string): Promise<JoinStatus | null> {
     const a = await this.d.getPublic(activityId)
     if (!a) return null
-    if (!a.join) return { enabled: false, closed: false, occurrences: [] }
+    if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [] }
     const now = this.d.clock()
     const today = bogotaDateIso(now)
     const dated = a.schedule.rules.some((r) => r.kind !== "always" && r.kind !== "byAppointment")
@@ -95,13 +117,15 @@ export class ActivityJoinService {
       }
     }
     const keys = rows.map((r) => r.key)
-    const [counts, mine] = await Promise.all([this.d.repo.counts(activityId, keys), uid ? this.d.repo.mine(activityId, uid, keys) : Promise.resolve([] as string[])])
+    const [counts, mine] = await Promise.all([this.d.repo.counts(activityId, keys), uid ? this.d.repo.mine(activityId, uid, keys) : Promise.resolve({} as Record<string, JoinStatusValue>)])
     return {
       enabled: true,
       closed: a.join.closed,
+      paid: isPaidActivity(a.priceOptions),
+      payInstructions: Object.values(mine).includes("pending") ? a.join.payInstructions ?? null : null,
       occurrences: rows.map((r) => {
         const left = spotsLeft(a.join!, counts[r.key] ?? 0)
-        return { key: r.key, date: r.date, spotsLeft: left, full: left === 0, joined: mine.includes(r.key) }
+        return { key: r.key, date: r.date, spotsLeft: left, full: left === 0, joined: r.key in mine && mine[r.key] !== "noShow", myStatus: mine[r.key] ?? null }
       }),
     }
   }
@@ -111,6 +135,18 @@ export class ActivityJoinService {
     const a = await this.d.getForManager(activityId, viewer)
     if (!a) return null
     return this.d.repo.list(activityId, 500)
+  }
+
+  /** Confirmar pago / "No pagó" / deshacer: solo dueño o QHPA. `noShow` libera el cupo; deshacerlo lo vuelve a pedir. */
+  async setStatus(viewer: Viewer, activityId: string, key: string, uid: string, to: JoinStatusValue): Promise<Result> {
+    if (!ID.test(activityId) || !KEY.test(key) || !uid?.trim() || uid.includes("/") || !["pending", "confirmed", "noShow"].includes(to)) return { ok: false, error: "Datos inválidos." }
+    const a = await this.d.getForManager(activityId, viewer)
+    if (!a || !a.join) return { ok: false, error: "No encontramos esa actividad." }
+    const join = a.join
+    const r = await this.d.repo.setStatus({ activityId, key, uid, to }, (taken) => joinDecision({ ...join, closed: false }, taken))
+    if (r === "missing") return { ok: false, error: "No encontramos esa reserva." }
+    if (r === "full") return { ok: false, error: "Ya no hay cupo en esa salida para devolverla." }
+    return { ok: true }
   }
 
   async setClosed(viewer: Viewer, activityId: string, closed: boolean): Promise<Result> {

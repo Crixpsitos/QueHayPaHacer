@@ -53,6 +53,7 @@ export function activityJoinNotification(i: { title: string; activityId: string;
   return { type: "activity_join", title: `${i.who} se unió a "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : undefined, href: `/actividades/${i.activityId}/inscritos` };
 }
 
-export function activityJoinConfirmedNotification(i: { title: string; slug: string; dateLabel: string | null }): NewNotification {
+export function activityJoinConfirmedNotification(i: { title: string; slug: string; dateLabel: string | null; pending?: boolean }): NewNotification {
+  if (i.pending) return { type: "activity_join_confirmed", title: `Cupo reservado: "${i.title}"`, body: `${i.dateLabel ? `Salida: ${i.dateLabel}. ` : ""}Quien organiza te escribirá por WhatsApp para coordinar el pago.`, href: `/actividades/${i.slug}` };
   return { type: "activity_join_confirmed", title: `Estás dentro: "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : "Te esperan. Si no puedes ir, cancela desde la actividad.", href: `/actividades/${i.slug}` };
 }

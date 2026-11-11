@@ -53,6 +53,7 @@ import { HostIdentityService } from "@/application/services/activities/HostIdent
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
+import { LEGAL_VERSION } from "@/app/lib/legal/version";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
@@ -269,6 +270,7 @@ export const createServerContainer = () => {
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
     notify: (uid, n, id) => notificationService.notify(uid, n, id),
     clock: () => new Date(),
+    legalVersion: LEGAL_VERSION,
   });
 
   // configuración editable por el administrador (festivos; luego rutas de bus)
