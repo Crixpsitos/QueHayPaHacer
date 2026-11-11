@@ -3,7 +3,7 @@
 import { getSessionUid } from "@/app/actions/_session"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { createServerContainer } from "@/infraestructure/di/container"
-import type { JoinStatus } from "@/application/services/activities/ActivityJoinService"
+import type { JoinStatus, ManagerView } from "@/application/services/activities/ActivityJoinService"
 import type { JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 
 type Result = { success: true } | { success: false; authRequired?: boolean; error: string }
@@ -80,4 +80,11 @@ export async function setJoinStatusAction(activityId: string, key: string, perso
     console.error("[setJoinStatus]", e instanceof Error ? e.message : "error")
     return { success: false, error: "No se pudo cambiar. Intenta de nuevo." }
   }
+}
+
+/** Datos de la pantalla "Reservas" (dueño o QHPA). null = no existe o no es tuya. */
+export async function getReservationsAction(activityId: string): Promise<ManagerView | null> {
+  const uid = await getSessionUid()
+  if (!uid || !validId(activityId)) return null
+  return createServerContainer().activityJoinService.managerView({ uid, isAdmin: isQhpaAdmin(uid) }, activityId)
 }

@@ -47,6 +47,17 @@ export interface JoinStatus {
   occurrences: OccurrenceStatus[]
 }
 
+export interface ManagerView {
+  id: string
+  title: string
+  slug: string
+  join: Activity["join"]
+  paid: boolean
+  views: number
+  visits: number
+  rows: JoinRow[]
+}
+
 const SHOWN = 4
 const ID = /^[A-Za-z0-9-]{1,128}$/ // sin "_": el id de inscripción usa "_" como separador
 const KEY = /^(open|\d{4}-\d{2}-\d{2})$/
@@ -135,6 +146,15 @@ export class ActivityJoinService {
     const a = await this.d.getForManager(activityId, viewer)
     if (!a) return null
     return this.d.repo.list(activityId, 500)
+  }
+
+  /** Todo lo que ve el organizador en "Reservas": datos de la actividad, métricas y la lista. null = no es suya (o no existe). */
+  async managerView(viewer: Viewer, activityId: string): Promise<ManagerView | null> {
+    if (!ID.test(activityId)) return null
+    const a = await this.d.getForManager(activityId, viewer)
+    if (!a) return null
+    const rows = a.join ? await this.d.repo.list(activityId, 500) : []
+    return { id: a.id, title: a.title, slug: a.slug, join: a.join, paid: isPaidActivity(a.priceOptions), views: a.analytics.views, visits: a.analytics.visits, rows }
   }
 
   /** Confirmar pago / "No pagó" / deshacer: solo dueño o QHPA. `noShow` libera el cupo; deshacerlo lo vuelve a pedir. */

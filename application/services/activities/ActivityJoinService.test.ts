@@ -199,3 +199,14 @@ test("estado público: cómo se paga solo lo ve quien tiene una reserva por paga
   assert.equal((await svc.status("u2", "a1"))?.payInstructions, null)
   assert.equal((await svc.status(null, "a1"))?.payInstructions, null)
 })
+
+test("vista del organizador: reservas, cupo y métricas; nadie más la ve (IDOR)", async () => {
+  const { svc } = setup(paidOver)
+  await svc.join("u1", "a1", null, contact)
+  const v = await svc.managerView({ uid: "owner", isAdmin: false }, "a1")
+  assert.ok(v)
+  assert.deepEqual([v.title, v.paid, v.join?.capacity, v.rows.length, v.rows[0].phone], ["Senderismo los domingos", true, 2, 1, "3001234567"])
+  assert.equal(await svc.managerView({ uid: "otro", isAdmin: false }, "a1"), null)
+  assert.equal(await svc.managerView({ uid: null, isAdmin: false }, "a1"), null)
+  assert.equal(await svc.managerView({ uid: "owner", isAdmin: false }, "../x"), null)
+})
