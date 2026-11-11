@@ -7,6 +7,8 @@ export interface JoinSettings {
   capacity: number | null
   /** Cierre manual del creador. */
   closed: boolean
+  /** Cómo se paga fuera de QHPA (se muestra al reservar). Solo tiene sentido si la actividad cuesta. */
+  payInstructions?: string
 }
 
 export const JOIN_CAPACITY_MAX = 500
@@ -48,4 +50,29 @@ export function joinDecision(settings: JoinSettings, taken: number): JoinDecisio
 
 export function spotsLeft(settings: JoinSettings, taken: number): number | null {
   return settings.capacity === null ? null : Math.max(0, settings.capacity - taken)
+}
+
+/** pending = reservó y falta pagar; confirmed = pago confirmado (o actividad gratis); noShow = no pagó (libera el cupo). */
+export type JoinStatusValue = "pending" | "confirmed" | "noShow"
+export const holdsSpot = (s: JoinStatusValue) => s !== "noShow"
+export const initialJoinStatus = (paid: boolean): JoinStatusValue => (paid ? "pending" : "confirmed")
+
+/** De pago = todas las opciones cuestan: con una opción gratis no se pide el teléfono (minimiza el dato personal). */
+export const isPaidActivity = (opts: { amountCop: number }[]) => opts.length > 0 && opts.every((o) => o.amountCop > 0)
+
+/** Móvil colombiano → 10 dígitos (acepta +57, espacios y guiones). null si no es válido. */
+export function normalizePhoneCo(raw: unknown): string | null {
+  if (typeof raw !== "string") return null
+  let d = raw.replace(/[\s().-]/g, "")
+  if (d.startsWith("+")) d = d.slice(1)
+  if (!/^\d+$/.test(d)) return null
+  if (d.length === 12 && d.startsWith("57")) d = d.slice(2)
+  return /^3\d{9}$/.test(d) ? d : null
+}
+
+export const PAY_INSTRUCTIONS_MAX = 200
+export function validatePayInstructions(v: unknown): string | null {
+  if (typeof v !== "string") return "Cómo se paga debe ser texto."
+  if (v.length > PAY_INSTRUCTIONS_MAX || /[\r\n]/.test(v)) return `Cómo se paga: una línea de máximo ${PAY_INSTRUCTIONS_MAX} caracteres.`
+  return null
 }

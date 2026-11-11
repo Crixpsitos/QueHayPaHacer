@@ -41,3 +41,33 @@ test("cupos restantes", () => {
   assert.equal(spotsLeft({ capacity: 10, closed: false }, 12), 0)
   assert.equal(spotsLeft({ capacity: null, closed: false }, 5), null)
 })
+
+import { isPaidActivity, normalizePhoneCo, initialJoinStatus, holdsSpot, validatePayInstructions, PAY_INSTRUCTIONS_MAX } from "./activityJoin"
+
+test("actividad de pago: solo si TODAS las opciones cuestan (con una gratis no se pide teléfono)", () => {
+  const opt = (amountCop: number) => ({ label: "x", amountCop, unit: "persona" as const, includes: [] })
+  assert.equal(isPaidActivity([opt(40000)]), true)
+  assert.equal(isPaidActivity([opt(0)]), false)
+  assert.equal(isPaidActivity([opt(0), opt(40000)]), false)
+  assert.equal(isPaidActivity([]), false)
+})
+test("teléfono colombiano: acepta formatos comunes y devuelve 10 dígitos", () => {
+  assert.equal(normalizePhoneCo("300 123 4567"), "3001234567")
+  assert.equal(normalizePhoneCo("+57 300-123-4567"), "3001234567")
+  assert.equal(normalizePhoneCo("573001234567"), "3001234567")
+  assert.equal(normalizePhoneCo("123"), null)
+  assert.equal(normalizePhoneCo("2001234567"), null) // móvil empieza en 3
+  assert.equal(normalizePhoneCo(undefined), null)
+})
+test("estado inicial y quién ocupa cupo", () => {
+  assert.equal(initialJoinStatus(true), "pending")
+  assert.equal(initialJoinStatus(false), "confirmed")
+  assert.equal(holdsSpot("pending"), true)
+  assert.equal(holdsSpot("confirmed"), true)
+  assert.equal(holdsSpot("noShow"), false)
+})
+test("cómo se paga: texto corto, sin saltos de línea", () => {
+  assert.equal(validatePayInstructions("Nequi 300 765 4321"), null)
+  assert.notEqual(validatePayInstructions("a".repeat(PAY_INSTRUCTIONS_MAX + 1)), null)
+  assert.notEqual(validatePayInstructions("a\nb"), null)
+})
