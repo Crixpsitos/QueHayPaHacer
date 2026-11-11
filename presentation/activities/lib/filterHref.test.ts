@@ -13,3 +13,10 @@ test("agrega, cambia y quita un filtro conservando los demás", () => {
   assert.equal(filterHref({ kind: "site" }, { kind: "global" }), "/actividades?tipo=global")
   assert.equal(filterHref({ siteSlug: "nebraska" }, { category: "en-familia" }), "/actividades?categoria=en-familia&sitio=nebraska")
 })
+
+test("cuándo, presupuesto y con quién viajan en la dirección; un toque en el mismo chip lo quita", () => {
+  assert.equal(filterHref({}, { when: "hoy" }), "/actividades?cuando=hoy")
+  assert.equal(filterHref({ when: "hoy" }, { budget: "gratis" }), "/actividades?cuando=hoy&presupuesto=gratis")
+  assert.equal(filterHref({ when: "hoy", budget: "gratis", companion: "familia" }, { when: undefined }), "/actividades?presupuesto=gratis&con=familia")
+  assert.equal(filterHref({ category: "aire-libre", when: "esta-semana" }, { companion: "pareja" }), "/actividades?categoria=aire-libre&cuando=esta-semana&con=pareja")
+})
