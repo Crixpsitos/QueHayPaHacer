@@ -24,14 +24,16 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
     const ref = this.savedRef(uid, activityId)
     const activity = this.collection.doc(activityId)
     return this.db.runTransaction(async (tx) => {
-      const exists = (await tx.get(ref)).exists
+      const [mine, act] = await Promise.all([tx.get(ref), tx.get(activity)])
+      const exists = mine.exists
       if (exists === saved) return { changed: false }
+      if (!act.exists && saved) return { changed: false } // actividad borrada: no se guarda; sí se puede quitar
       if (saved) {
         tx.set(ref, { type: "activity", targetId: activityId, savedAt: FieldValue.serverTimestamp() })
         tx.update(activity, { "analytics.saves": FieldValue.increment(1) })
       } else {
         tx.delete(ref)
-        tx.update(activity, { "analytics.saves": FieldValue.increment(-1) })
+        if (act.exists) tx.update(activity, { "analytics.saves": FieldValue.increment(-1) })
       }
       return { changed: true }
     })

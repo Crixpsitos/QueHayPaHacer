@@ -38,10 +38,21 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
     const counter = this.counter(i.activityId, i.key)
     return this.db.runTransaction(async (tx) => {
-      if (!(await tx.get(ref)).exists) return { changed: false }
+      const snap = await tx.get(ref)
+      if (!snap.exists || snap.get("activityId") !== i.activityId || snap.get("key") !== i.key) return { changed: false }
       tx.delete(ref)
       tx.set(counter, { taken: FieldValue.increment(-1) }, { merge: true })
       return { changed: true }
+    })
+  }
+
+  async setClosed(activityId: string, closed: boolean): Promise<boolean> {
+    const ref = this.db.collection("activities").doc(activityId)
+    return this.db.runTransaction(async (tx) => {
+      const s = await tx.get(ref)
+      if (!s.exists || !s.get("join")) return false
+      tx.update(ref, { "join.closed": closed }) // solo el campo: no pisa contadores ni moderación
+      return true
     })
   }
 

@@ -15,6 +15,8 @@ export interface IActivityJoinRepository {
   join(i: { activityId: string; key: string; uid: string; name: string }, decide: (taken: number) => JoinDecision): Promise<JoinOutcome>
   /** Cancela la propia inscripción y libera el cupo. `changed` = false si no estaba inscrita. */
   cancel(i: { activityId: string; key: string; uid: string }): Promise<{ changed: boolean }>
+  /** Cierra o reabre solo `join.closed` (sin reescribir la actividad). false si la actividad no recibe inscripciones. */
+  setClosed(activityId: string, closed: boolean): Promise<boolean>
   /** Inscritos vigentes por salida. */
   counts(activityId: string, keys: string[]): Promise<Record<string, number>>
   /** De estas salidas, en cuáles está inscrita la persona. */

@@ -266,9 +266,8 @@ export const createServerContainer = () => {
     repo: new ActivityJoinFirebaseRepository(getFirebaseFirestore()),
     getPublic: (id) => activityService.getPublicById(id),
     getForManager: (id, viewer) => activityService.getForManager(id, viewer),
-    saveActivity: (a) => activityRepository.save(a),
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
-    notify: (uid, n) => notificationService.notify(uid, n),
+    notify: (uid, n, id) => notificationService.notify(uid, n, id),
     clock: () => new Date(),
   });
 

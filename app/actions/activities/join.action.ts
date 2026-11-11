@@ -7,7 +7,7 @@ import type { JoinStatus } from "@/application/services/activities/ActivityJoinS
 import type { JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 
 type Result = { success: true } | { success: false; authRequired?: boolean; error: string }
-const validId = (id: unknown): id is string => typeof id === "string" && id.length > 0 && id.length <= 128
+const validId = (id: unknown): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id)
 const BAD = "Solicitud inválida."
 
 /** Próximas salidas con cupos y si ya estoy dentro. Sin sesión también responde (sin "estás dentro"). */

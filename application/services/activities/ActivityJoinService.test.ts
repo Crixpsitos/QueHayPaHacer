@@ -24,23 +24,24 @@ class FakeRepo implements IActivityJoinRepository {
   async counts(a: string, keys: string[]) { return Object.fromEntries(keys.map((key) => [key, this.taken(a, key)])) }
   async mine(a: string, uid: string, keys: string[]) { return keys.filter((key) => this.rows.has(this.k(a, key, uid))) }
   async list(a: string) { return [...this.rows.values()].filter((r) => r.activityId === a) }
+  closedCalls: [string, boolean][] = []
+  async setClosed(a: string, closed: boolean) { this.closedCalls.push([a, closed]); return true }
 }
 
 function setup(over: Partial<Activity> = {}) {
   const repo = new FakeRepo()
   const activity = makeActivity({ id: "a1", slug: "senderismo", ownerUid: "owner", join: { capacity: 2, closed: false }, ...over })
-  const saved: Activity[] = []
   const notes: { uid: string; n: NewNotification }[] = []
+  const seenIds = new Set<string>()
   const svc = new ActivityJoinService({
     repo,
     getPublic: async (id) => (id === "a1" && activity.publicationStatus === "published" ? activity : null),
     getForManager: async (id, v) => (id === "a1" && (v.isAdmin || v.uid === activity.ownerUid) ? activity : null),
-    saveActivity: async (a) => { saved.push(a) },
     displayName: async (uid) => `Persona ${uid}`,
-    notify: async (uid, n) => { notes.push({ uid, n }) },
+    notify: async (uid, n, id) => { if (id && seenIds.has(id)) return; if (id) seenIds.add(id); notes.push({ uid, n }) },
     clock: () => NOW,
   })
-  return { svc, repo, notes, saved, activity }
+  return { svc, repo, notes, activity }
 }
 
 test("unirse: queda dentro, avisa al creador y confirma al usuario", async () => {
@@ -116,8 +117,21 @@ test("lista del creador: solo dueño o QHPA (IDOR)", async () => {
 })
 
 test("cerrar cupos: solo dueño o QHPA", async () => {
-  const { svc, saved } = setup()
+  const { svc, repo } = setup()
   assert.deepEqual(await svc.setClosed({ uid: "otro", isAdmin: false }, "a1", true), { ok: false, error: "No encontramos esa actividad." })
   assert.deepEqual(await svc.setClosed({ uid: "owner", isAdmin: false }, "a1", true), { ok: true })
-  assert.deepEqual(saved[0].join, { capacity: 2, closed: true })
+  assert.deepEqual(repo.closedCalls, [["a1", true]]) // solo el campo, sin reescribir la actividad
+})
+
+test("unirse y cancelar en bucle avisa al dueño una sola vez por persona y salida", async () => {
+  const { svc, notes } = setup({ join: { capacity: null, closed: false } })
+  for (let i = 0; i < 5; i++) { await svc.join("u1", "a1", null); await svc.cancel("u1", "a1", "2026-11-15") }
+  assert.equal(notes.filter((n) => n.n.type === "activity_join").length, 1)
+})
+
+test("cancelar valida la forma de actividad y salida", async () => {
+  const { svc } = setup()
+  for (const key of ["../x", "2026-11-15_otro", "x/y", "2026-13"]) assert.equal((await svc.cancel("u1", "a1", key)).ok, false, key)
+  assert.equal((await svc.cancel("u1", "a_1", "open")).ok, false)
+  assert.equal((await svc.cancel("u1", "a1", "open")).ok, true)
 })

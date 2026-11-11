@@ -12,9 +12,9 @@ export interface JoinDeps {
   repo: IActivityJoinRepository
   getPublic: (activityId: string) => Promise<Activity | null>
   getForManager: (activityId: string, viewer: Viewer) => Promise<Activity | null>
-  saveActivity: (a: Activity) => Promise<void>
   displayName: (uid: string) => Promise<string>
-  notify: (uid: string, n: NewNotification) => Promise<void>
+  /** `id` fijo = idempotente (no repite el aviso). */
+  notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
 }
 
@@ -34,6 +34,8 @@ export interface JoinStatus {
 }
 
 const SHOWN = 4
+const ID = /^[A-Za-z0-9-]{1,128}$/ // sin "_": el id de inscripción usa "_" como separador
+const KEY = /^(open|\d{4}-\d{2}-\d{2})$/
 const NOT_FOUND = "Esa actividad no existe."
 const dateLabel = (key: string) => (key === "open" ? null : new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bogota" }).format(new Date(`${key}T12:00:00-05:00`)))
 
@@ -55,14 +57,16 @@ export class ActivityJoinService {
     if (outcome === "full") return { ok: false, error: "Se acabaron los cupos de esta salida." }
     if (outcome === "joined") {
       const label = dateLabel(k.key)
-      await this.d.notify(a.ownerUid, activityJoinNotification({ title: a.title, activityId: a.id, who: name, dateLabel: label }))
-      await this.d.notify(uid, activityJoinConfirmedNotification({ title: a.title, slug: a.slug, dateLabel: label }))
+      // id fijo por (actividad, salida, persona): unirse y cancelar en bucle no vuelve a avisar ni llena la campanita.
+      const base = `${activityId}_${k.key}_${uid}`
+      await this.d.notify(a.ownerUid, activityJoinNotification({ title: a.title, activityId: a.id, who: name.slice(0, 40), dateLabel: label }), `join_${base}`)
+      await this.d.notify(uid, activityJoinConfirmedNotification({ title: a.title, slug: a.slug, dateLabel: label }), `joinok_${base}`)
     }
     return { ok: true, key: k.key }
   }
 
   async cancel(uid: string, activityId: string, key: string): Promise<Result> {
-    if (!uid?.trim() || !activityId?.trim() || !key?.trim()) return { ok: false, error: "Datos inválidos." }
+    if (!uid?.trim() || !ID.test(activityId) || !KEY.test(key)) return { ok: false, error: "Datos inválidos." }
     await this.d.repo.cancel({ activityId, key, uid })
     return { ok: true }
   }
@@ -112,7 +116,6 @@ export class ActivityJoinService {
   async setClosed(viewer: Viewer, activityId: string, closed: boolean): Promise<Result> {
     const a = await this.d.getForManager(activityId, viewer)
     if (!a || !a.join) return { ok: false, error: "No encontramos esa actividad." }
-    await this.d.saveActivity({ ...a, join: { ...a.join, closed } })
-    return { ok: true }
+    return (await this.d.repo.setClosed(activityId, closed)) ? { ok: true } : { ok: false, error: "No encontramos esa actividad." }
   }
 }

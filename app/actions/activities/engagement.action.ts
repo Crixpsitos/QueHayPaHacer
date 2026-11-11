@@ -4,7 +4,7 @@ import { getSessionUid } from "@/app/actions/_session"
 import { createServerContainer } from "@/infraestructure/di/container"
 
 type Result = { success: true } | { success: false; authRequired?: boolean; error: string }
-const validId = (id: unknown): id is string => typeof id === "string" && id.length > 0 && id.length <= 128
+const validId = (id: unknown): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id)
 
 /** Lo mío en esta actividad (guardada / "Yo fui"). Sin sesión: nada. El uid sale solo de la cookie. */
 export async function getMyActivityEngagementAction(activityId: string): Promise<{ loggedIn: boolean; saved: boolean; visited: boolean }> {
