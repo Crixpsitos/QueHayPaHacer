@@ -7,8 +7,8 @@ import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 const PRIVATE_PATHS = ["/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/actividades/crear", "/actividades/mis"];
 // Editor y gestor de sesiones. /eventos/:id/sessions/:sessionId es público (detalle).
 const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
-// Editor de actividades. /actividades/:slug (ficha) es público.
-const PRIVATE_ACTIVITY_EDIT = /^\/actividades\/[^/]+\/editar\/?$/;
+// Editor y reservas de actividades. /actividades/:slug (ficha) es público.
+const PRIVATE_ACTIVITY_EDIT = /^\/actividades\/[^/]+\/(editar|inscritos)\/?$/;
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
 
 function isPrivatePath(pathname: string) {

@@ -20,6 +20,8 @@ export interface MyActivitySummary {
   status: { key: StatusKey; label: string; help: string }
   canToggleActive: boolean
   isActive: boolean
+  /** Recibe reservas en QHPA: se muestra el acceso a "Reservas". */
+  joinEnabled: boolean
 }
 
 export function toMySummary(a: Activity): MyActivitySummary {
@@ -33,5 +35,6 @@ export function toMySummary(a: Activity): MyActivitySummary {
     status: activityStatus(a),
     canToggleActive: a.publicationStatus === "published" && a.moderationStatus === "approved",
     isActive: a.isActive,
+    joinEnabled: a.join !== null,
   }
 }

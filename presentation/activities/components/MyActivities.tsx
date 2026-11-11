@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Pencil, Plus, Share2 } from "lucide-react"
+import { Pencil, Plus, Share2, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { setActivityActiveAction } from "@/app/actions/activities/set-activity-active.action"
 import { cn } from "@/app/lib/utils/cn"
@@ -51,6 +51,7 @@ function Row({ a }: { a: MyActivitySummary }) {
         {error ? <p role="alert" className="text-sm font-medium text-destructive">{error}</p> : null}
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild variant="outline" size="lg" className="h-11"><Link href={`/actividades/${a.id}/editar`}><Pencil aria-hidden /> Editar</Link></Button>
+          {a.joinEnabled ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.id}/inscritos`}><Users aria-hidden /> Reservas</Link></Button> : null}
           {a.status.key !== "draft" ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.slug}`}>{a.status.key === "live" ? "Ver" : "Vista previa"}</Link></Button> : null}
           {a.status.key === "live" || a.status.key === "review" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setKit(true)}><Share2 aria-hidden /> Compartir</Button> : null}
           {a.canToggleActive ? <Button type="button" variant="ghost" size="lg" className="h-11" disabled={busy} onClick={() => void toggle()}>{a.isActive ? "Pausar" : "Reactivar"}</Button> : null}
