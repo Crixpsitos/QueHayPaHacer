@@ -40,4 +40,5 @@ Crear de sitio: autor del sitio "de verdad propio" (`isLinkableSite`) o QHPA. Ed
 - **Medios**: `../functions` aún no incluye `activities` en `OPTIMIZABLE_FOLDERS`: las imágenes quedan en `processing` (se ven con el original). Cambio en `../functions` = preguntar antes y empujar su rama.
 - Índice de texto de `activities` en Firestore (F2, búsqueda) = preguntar antes.
 - A23 interfaz de "Unirme" y lista del creador (`/actividades/[slug]/inscritos`) + campo de cupo en el asistente: **requieren prototipo aprobado**.
+- "Yo fui" es autodeclarado (una por cuenta): con cuentas desechables se puede inflar "N personas fueron" (auditoría B4); mitigación futura: antigüedad mínima de cuenta.
 - Guardar usa mecanismo propio para actividades; unificar con los "me gusta" de eventos/sitios es la tarea T12 de analytics-v2.
