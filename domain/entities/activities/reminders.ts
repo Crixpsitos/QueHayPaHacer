@@ -20,6 +20,8 @@ export interface PlannedNotice { uid: string; id: string; notification: NewNotif
 export const reminderId = (day: string, uid: string) => `act-daily-${day}-${uid}`
 
 const at = (a: ReminderActivity) => (a.timeLabel ? ` · ${a.timeLabel}` : "")
+/** Cierra la frase con un punto (la hora ya puede terminar en «p. m.»). */
+const end = (s: string) => (s.endsWith(".") ? s : `${s}.`)
 
 /**
  * Avisos de la campanita para las salidas de MAÑANA. Máximo uno por persona al día:
@@ -44,8 +46,8 @@ export function planReminders(activities: readonly ReminderActivity[], day: stri
     const more = items.length - 1
     const tail = more > 0 ? ` y ${more} más` : ""
     const href = `/actividades/${first.a.slug}`
-    if (first.kind === "lastSpot") return { uid, id: reminderId(day, uid), notification: { type: "activity_last_spot" as const, title: `Queda el último cupo: "${first.a.title}"${tail}`, body: `Sale mañana${at(first.a)}. Resérvalo antes de que se llene.`, href } }
-    if (first.kind === "reserved") return { uid, id: reminderId(day, uid), notification: { type: "activity_reminder" as const, title: `Mañana sale "${first.a.title}"${tail}`, body: `Tu reserva es para mañana${at(first.a)}.`, href } }
-    return { uid, id: reminderId(day, uid), notification: { type: "activity_reminder" as const, title: `Mañana sale "${first.a.title}"${tail}`, body: `La guardaste. Sale mañana${at(first.a)}.`, href } }
+    if (first.kind === "lastSpot") return { uid, id: reminderId(day, uid), notification: { type: "activity_last_spot" as const, title: `Queda el último cupo: "${first.a.title}"${tail}`, body: `${end(`Sale mañana${at(first.a)}`)} Resérvalo antes de que se llene.`, href } }
+    if (first.kind === "reserved") return { uid, id: reminderId(day, uid), notification: { type: "activity_reminder" as const, title: `Mañana sale "${first.a.title}"${tail}`, body: end(`Tu reserva es para mañana${at(first.a)}`), href } }
+    return { uid, id: reminderId(day, uid), notification: { type: "activity_reminder" as const, title: `Mañana sale "${first.a.title}"${tail}`, body: `La guardaste. ${end(`Sale mañana${at(first.a)}`)}`, href } }
   })
 }

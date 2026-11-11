@@ -37,3 +37,8 @@ test("sin gente que avisar o sin salida mañana: nada", () => {
 test("el enlace lleva a la ficha de la actividad", () => {
   assert.equal(planReminders([A], "2026-11-14")[0].notification.href, "/actividades/senderismo")
 })
+
+test("la hora «p. m.» no deja doble punto al cerrar la frase", () => {
+  const b = planReminders([{ ...A, timeLabel: "6:00 p. m." }], "2026-11-14").map((p) => p.notification.body ?? "")
+  assert.ok(b.every((t) => !t.includes("..")))
+})
