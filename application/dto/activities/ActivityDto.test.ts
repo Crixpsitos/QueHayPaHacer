@@ -96,3 +96,13 @@ test("inscripciones: cupo opcional entre 1 y 500; sin 'join' = no recibe inscrip
   assert.ok(cap.ok && cap.value.join?.capacity === 12)
   for (const capacity of [0, -1, 501, 2.5, "10"]) assert.equal(ok({ capacity }).ok, false, String(capacity))
 })
+
+test("inscripciones: 'cómo se paga' opcional, una línea de máximo 200 caracteres", () => {
+  const ok = (payInstructions: unknown) => parseActivityInput({ ...valid(), join: { capacity: 10, payInstructions } })
+  const a = ok("  Nequi 300 765 4321  ")
+  assert.ok(a.ok && a.value.join?.payInstructions === "Nequi 300 765 4321")
+  const none = parseActivityInput({ ...valid(), join: { capacity: 10 } })
+  assert.ok(none.ok && none.value.join?.payInstructions === "")
+  assert.equal(ok("a".repeat(201)).ok, false)
+  assert.equal(ok("a\nb").ok, false)
+})

@@ -126,7 +126,7 @@ export class ActivityPublishService {
       extras: req.input.extras,
       sections: req.input.sections,
       cta: req.input.cta,
-      join: req.input.join ? { capacity: req.input.join.capacity, closed: existing?.join?.closed ?? false } : null,
+      join: req.input.join ? { capacity: req.input.join.capacity, closed: existing?.join?.closed ?? false, payInstructions: req.input.join.payInstructions } : null,
       // El optimizador de ../functions también escribe `media[]`: se combina con lo guardado en vez de pisarlo.
       media: existing ? mergeMedia(existing.media, req.media) : [],
       publicationStatus: publication,

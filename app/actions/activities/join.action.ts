@@ -17,12 +17,13 @@ export async function getJoinStatusAction(activityId: string): Promise<JoinStatu
 }
 
 /** Unirme a una salida (`date` = día de la salida; vacío = la próxima). El uid sale solo de la sesión. */
-export async function joinActivityAction(activityId: string, date: string | null): Promise<Result> {
+export async function joinActivityAction(activityId: string, date: string | null, contact?: { phone?: string; consent?: boolean }): Promise<Result> {
   const uid = await getSessionUid()
   if (!uid) return { success: false, authRequired: true, error: "Inicia sesión para unirte." }
   if (!validId(activityId) || (date !== null && (typeof date !== "string" || date.length > 10))) return { success: false, error: BAD }
   try {
-    const r = await createServerContainer().activityJoinService.join(uid, activityId, date)
+    const safe = { phone: typeof contact?.phone === "string" ? contact.phone.slice(0, 30) : undefined, consent: contact?.consent === true }
+    const r = await createServerContainer().activityJoinService.join(uid, activityId, date, safe)
     return r.ok ? { success: true } : { success: false, error: r.error }
   } catch (e) {
     console.error("[joinActivity]", e instanceof Error ? e.message : "error")
@@ -63,6 +64,20 @@ export async function setJoinClosedAction(activityId: string, closed: boolean): 
     return r.ok ? { success: true } : { success: false, error: r.error }
   } catch (e) {
     console.error("[setJoinClosed]", e instanceof Error ? e.message : "error")
+    return { success: false, error: "No se pudo cambiar. Intenta de nuevo." }
+  }
+}
+
+/** Confirmar pago, "No pagó" o deshacer (dueño o QHPA). */
+export async function setJoinStatusAction(activityId: string, key: string, personUid: string, to: "pending" | "confirmed" | "noShow"): Promise<Result> {
+  const uid = await getSessionUid()
+  if (!uid) return { success: false, authRequired: true, error: "Inicia sesión." }
+  if (!validId(activityId) || !validId(key) || !validId(personUid)) return { success: false, error: BAD }
+  try {
+    const r = await createServerContainer().activityJoinService.setStatus({ uid, isAdmin: isQhpaAdmin(uid) }, activityId, key, personUid, to)
+    return r.ok ? { success: true } : { success: false, error: r.error }
+  } catch (e) {
+    console.error("[setJoinStatus]", e instanceof Error ? e.message : "error")
     return { success: false, error: "No se pudo cambiar. Intenta de nuevo." }
   }
 }

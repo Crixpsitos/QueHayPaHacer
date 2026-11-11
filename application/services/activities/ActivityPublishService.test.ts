@@ -223,12 +223,12 @@ test("pausar y reactivar: solo el dueño o QHPA", async () => {
 
 test("editar conserva el cierre manual de inscripciones y cambia el cupo", async () => {
   const { svc, repo } = setup()
-  await svc.save(user, { input: input({ join: { capacity: 10 } }), media: [], publish: false, declaration: false })
+  await svc.save(user, { input: input({ join: { capacity: 10, payInstructions: "" } }), media: [], publish: false, declaration: false })
   const id = repo.items[0].id
-  assert.deepEqual(repo.items[0].join, { capacity: 10, closed: false })
+  assert.deepEqual(repo.items[0].join, { capacity: 10, closed: false, payInstructions: "" })
   repo.items[0] = { ...repo.items[0], join: { capacity: 10, closed: true } }
-  await svc.save(user, { id, input: input({ join: { capacity: 20 } }), media: [], publish: false, declaration: false })
-  assert.deepEqual(repo.items[0].join, { capacity: 20, closed: true })
+  await svc.save(user, { id, input: input({ join: { capacity: 20, payInstructions: "Nequi 300" } }), media: [], publish: false, declaration: false })
+  assert.deepEqual(repo.items[0].join, { capacity: 20, closed: true, payInstructions: "Nequi 300" })
   await svc.save(user, { id, input: input({ join: null }), media: [], publish: false, declaration: false })
   assert.equal(repo.items[0].join, null)
 })
