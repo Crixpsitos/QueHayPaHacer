@@ -107,3 +107,25 @@ test("getForManager devuelve la actividad (en cualquier estado) solo a su dueño
   assert.equal(await s.getForManager("p", { uid: null, isAdmin: false }), null)
   assert.equal(await s.getForManager("zzz", { uid: "u1", isAdmin: false }), null)
 })
+
+test("search: filtra por categoría/tipo/sitio, ordena por próxima salida y pagina con offset", async () => {
+  const items = [
+    makeActivity({ id: "a", slug: "a", title: "A", category: "aire-libre", schedule: weekdayAt(3, "18:00") }),
+    makeActivity({ id: "b", slug: "b", title: "B", category: "aire-libre", schedule: weekdayAt(4, "18:00") }),
+    makeActivity({ id: "c", slug: "c", title: "C", category: "en-familia", schedule: weekdayAt(5, "18:00") }),
+    makeActivity({ id: "d", slug: "d", title: "D", category: "aire-libre", kind: "site", siteId: "s1", schedule: weekdayAt(6, "18:00") }),
+    makeActivity({ id: "x", slug: "x", title: "X", category: "aire-libre", moderationStatus: "pending", schedule: weekdayAt(2, "18:00") }),
+  ]
+  const s = svc(items, { s1: okSite })
+  const all = await s.search({}, 0, 10)
+  assert.deepEqual(all.items.map((a) => a.id), ["a", "b", "c", "d"])
+  assert.equal(all.nextOffset, null)
+  assert.equal(all.total, 4)
+  assert.deepEqual((await s.search({ category: "aire-libre" }, 0, 10)).items.map((a) => a.id), ["a", "b", "d"])
+  assert.deepEqual((await s.search({ kind: "site" }, 0, 10)).items.map((a) => a.id), ["d"])
+  assert.deepEqual((await s.search({ siteId: "s1" }, 0, 10)).items.map((a) => a.id), ["d"])
+  const p1 = await s.search({}, 0, 3)
+  assert.deepEqual([p1.items.length, p1.nextOffset], [3, 3])
+  const p2 = await s.search({}, p1.nextOffset!, 3)
+  assert.deepEqual([p2.items.map((a) => a.id), p2.nextOffset], [["d"], null])
+})

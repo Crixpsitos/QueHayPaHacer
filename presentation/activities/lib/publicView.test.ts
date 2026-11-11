@@ -53,3 +53,20 @@ test("la vista no trae datos privados ni fechas (es serializable y cacheable)", 
   assert.ok(!json.includes("ownerUid") && !json.includes("reviewedBy"))
   assert.doesNotThrow(() => JSON.parse(json))
 })
+
+import { toCardView } from "./publicView"
+test("tarjeta: datos mínimos, serializables y sin nada privado", () => {
+  const c = toCardView(makeActivity({ media: [makeImage("a", true, { thumbnailUrl: "https://x.test/t.jpg" })] }))
+  assert.deepEqual([c.title, c.hostName, c.categoryName, c.coverUrl, c.priceFrom], ["Senderismo los domingos", "Club Cerros", "Aire libre y aventura", "https://x.test/t.jpg", "Desde $40.000"])
+  assert.equal(c.scheduleText, "Todos los domingos · 6:00 a. m.")
+  assert.equal(c.badge, null)
+  assert.ok(!JSON.stringify(c).includes("ownerUid"))
+})
+
+test("insignia de la tarjeta: en el sitio, gratis o con cita", () => {
+  assert.equal(toCardView(makeActivity({ kind: "site", siteId: "s1" })).badge, "En el sitio")
+  assert.equal(toCardView(makeActivity({ priceOptions: [{ label: "Libre", amountCop: 0, unit: "persona", includes: [] }] })).badge, "Gratis")
+  assert.equal(toCardView(makeActivity({ schedule: { rules: [{ kind: "byAppointment" }], skipDates: [], requiresReservation: true } })).badge, "Con cita")
+  assert.equal(toCardView(makeActivity()).coverUrl, "https://x.test/m1.jpg")
+  assert.equal(toCardView(makeActivity({ media: [] })).coverUrl, null)
+})

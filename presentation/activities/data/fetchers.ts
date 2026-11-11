@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
-import { toPublicView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
+import type { ActivityFilters } from "@/domain/entities/activities/filters"
+import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
 
 export interface ActivityPageData extends ActivityPublicView {
   /** Sitio vinculado (nombre y slug para el enlace), o null en actividades globales. */
@@ -36,4 +37,32 @@ export async function fetchActivityPreview(slug: string, viewer: { uid: string |
   const a = await createServerContainer().activityService.getForViewer(slug, viewer)
   if (!a) return null
   return { data: await withSite(toPublicView(a)), publicationStatus: a.publicationStatus, moderationStatus: a.moderationStatus, isActive: a.isActive }
+}
+
+
+export const HUB_PAGE_SIZE = 12
+
+export interface ActivityPage {
+  items: ActivityCardView[]
+  total: number
+  nextOffset: number | null
+}
+
+/**
+ * Página del hub. Caché corta: las aprobaciones por script no invalidan tags; las acciones de la app sí (`activity-list`).
+ * `siteId` ya viene resuelto (los parámetros primitivos son la clave de caché).
+ */
+export const fetchActivityPage = async (category: string | undefined, kind: string | undefined, siteId: string | undefined, offset: number): Promise<ActivityPage> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list")
+  const filters: ActivityFilters = { category: category as ActivityFilters["category"], kind: kind as ActivityFilters["kind"], siteId }
+  const r = await createServerContainer().activityService.search(filters, offset, HUB_PAGE_SIZE)
+  return { items: r.items.map(toCardView), total: r.total, nextOffset: r.nextOffset }
+}
+
+/** `sitio=<slug>` → id del sitio (null si no existe: el hub muestra vacío en vez de ignorar el filtro). */
+export async function resolveSiteId(slug: string): Promise<string | null> {
+  const site = await createServerContainer().sitesService.getSiteDetailBySlug(slug)
+  return site?.id ?? null
 }

@@ -87,3 +87,38 @@ export function toPublicView(a: Activity): ActivityPublicView {
     cta: a.cta ? { kind: a.cta.kind, label: ctaButtonLabel(a.cta), href: ctaHref(a.cta) } : null,
   }
 }
+
+/** Tarjeta de listado: lo mínimo para decidir si abrir la ficha. */
+export interface ActivityCardView {
+  id: string
+  slug: string
+  title: string
+  hostName: string
+  categoryName: string
+  coverUrl: string | null
+  coverAlt: string
+  priceFrom: string
+  badge: "En el sitio" | "Gratis" | "Con cita" | null
+  scheduleText: string
+  /** Para "Próxima: …" en el navegador. */
+  schedule: ActivitySchedule
+}
+
+export function toCardView(a: Activity): ActivityCardView {
+  const cover = a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")
+  const from = priceFromCop(a.priceOptions)
+  const byAppointment = a.schedule.rules.every((r) => r.kind === "byAppointment")
+  return {
+    id: a.id,
+    slug: a.slug,
+    title: a.title,
+    hostName: a.host.displayName,
+    categoryName: ACTIVITY_CATEGORIES.find((c) => c.slug === a.category)?.name ?? "",
+    coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
+    coverAlt: cover?.alt || a.title,
+    priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
+    badge: a.kind === "site" ? "En el sitio" : from === 0 ? "Gratis" : byAppointment ? "Con cita" : null,
+    scheduleText: describeSchedule(a.schedule),
+    schedule: a.schedule,
+  }
+}
