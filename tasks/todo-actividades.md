@@ -98,12 +98,12 @@ Estado inicial: todas sin marcar.
 
 ## Fase 1 — Interfaz (`activity-publish` + `activity-discovery` + SEO básico)
 
-- [ ] **P1 Prototipo (Artifact): asistente de creación + ficha + tarjeta (S)**
+- [x] **P1 Prototipo (Artifact): asistente de creación + ficha + tarjeta (S)**
   - Aceptación: una página Artifact **privada** con: pasos del asistente (tipo y sitio, qué es, cuándo con constructor de horario y vista previa del texto y de las próximas 5 fechas, cuánto con opciones y extras, dónde, medios, CTA, secciones, declaración + **formulario de registro de oferentes**), ficha pública (móvil y escritorio) con "Próxima salida", precio desglosado, CTA y barra fija, y tarjeta de actividad. Con estados (vacío, error, cargando, éxito) y los tokens reales de `DESING.md`/Tailwind del repo. Cargar skills `artifact-design`, `ui-design`, `frontend-design` y hacer `quickstart` antes de escribir.
   - Verifica: el dueño la abre y aprueba o corrige; **no se codifica la interfaz hasta su OK**.
   - Archivos: solo el Artifact (HTML en el directorio temporal de la sesión).
 
-- [ ] **A14 Asistente de creación (L → se parte en 3 commits M)**
+- [x] **A14 Asistente de creación (L → se parte en 3 commits M)** — hecho: 9 pasos, borrador local antes del paso 6 y en el servidor desde el paso 6, subida "preparar → guardar → subir", publicación con registro de oferentes. **Sin probar en navegador** (build y 766 pruebas verdes; falta guion manual).
   - **A14a Esqueleto y pasos 1–3 (tipo/sitio, qué es, cuándo)**: componentes `ActivityWizard`, `ScheduleBuilder` con texto legible y próximas fechas; ruta `app/actividades/crear` y `app/actividades/[id]/editar`; borrador guardado; mensajes en español (tú); móvil primero.
   - **A14b Pasos 4–6 (cuánto, dónde, medios)**: `PriceBuilder` (opciones + extras), punto de encuentro `fixed|sharedAfterJoining|varies` (texto; mapa opcional), subida de portada/galería/video por URL firmada a `public/activities/{id}/…`, estado "procesando".
   - **A14c Pasos 7–9 (CTA, secciones, registro de oferentes + declaración)**: reutiliza el editor de `sections`; formulario A9; envío con mensaje claro de "en revisión" o "publicada".

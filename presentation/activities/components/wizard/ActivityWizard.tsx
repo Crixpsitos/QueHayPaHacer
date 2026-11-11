@@ -14,6 +14,10 @@ import { StepSchedule } from "./StepSchedule"
 import { StepPrice } from "./StepPrice"
 import { StepMeeting } from "./StepMeeting"
 import { StepMedia } from "./StepMedia"
+import { StepCta } from "./StepCta"
+import { StepSections } from "./StepSections"
+import { StepPublish } from "./StepPublish"
+import { Submitted } from "./Submitted"
 
 const TITLES: Record<number, { title: string; lead: string }> = {
   1: { title: "¿Qué tipo de actividad es?", lead: "Elige si depende de un lugar o no." },
@@ -44,6 +48,7 @@ export function ActivityWizard({ context, initial }: Props) {
   const [step, setStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState<{ slug: string; moderationStatus: "pending" | "approved" | "rejected" } | null>(null)
   const alertRef = useRef<HTMLDivElement>(null)
   /** El borrador local solo se escribe después de haberlo leído: si no, el formulario vacío pisaría el guardado. */
   const draftLoaded = useRef(Boolean(initial))
@@ -99,6 +104,20 @@ export function ActivityWizard({ context, initial }: Props) {
     }
   }, [form, media, activityId])
 
+  /** Publica (o reenvía a revisión). Devuelve el error o null si salió bien. */
+  const publish = useCallback(async (): Promise<string | null> => {
+    if (!activityId) return "Guarda el borrador primero."
+    const r = await saveActivityAction(toRawInput(form), media, { id: activityId, publish: true, declaration: true })
+    if (!r.success) return r.error
+    setDone({ slug: r.slug, moderationStatus: r.moderationStatus })
+    try {
+      localStorage.removeItem(DRAFT_KEY)
+    } catch {
+      /* ignorar */
+    }
+    return null
+  }, [form, media, activityId])
+
   const next = async () => {
     const e = stepError(step, form, { coverCount: step === 6 ? media.filter((m) => m.type === "image" && m.isCover).length : undefined })
     if (e) return fail(e)
@@ -115,6 +134,8 @@ export function ActivityWizard({ context, initial }: Props) {
     else setStep((s) => s - 1)
   }
 
+  if (done) return <Submitted title={form.title} slug={done.slug} moderationStatus={done.moderationStatus} />
+
   const head = TITLES[step]
   let body: ReactNode
   switch (step) {
@@ -130,7 +151,9 @@ export function ActivityWizard({ context, initial }: Props) {
         <p className="text-sm text-muted-foreground">Guardando tu borrador…</p>
       )
       break
-    default: body = <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">Este paso se habilita en la siguiente entrega.</p>
+    case 7: body = <StepCta form={form} patch={patch} context={context} />; break
+    case 8: body = <StepSections form={form} patch={patch} context={context} />; break
+    default: body = <StepPublish context={context} onPublish={publish} onError={fail} />
   }
 
   return (
@@ -159,7 +182,7 @@ export function ActivityWizard({ context, initial }: Props) {
 
       <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border">
         <Button type="button" variant="outline" size="lg" className="h-12 w-28" onClick={back}>Atrás</Button>
-        <Button type="button" size="lg" className="h-12 flex-1 text-base" onClick={next} disabled={saving || step === WIZARD_STEPS}>{saving ? "Guardando…" : "Continuar"}</Button>
+        {step < WIZARD_STEPS ? <Button type="button" size="lg" className="h-12 flex-1 text-base" onClick={next} disabled={saving}>{saving ? "Guardando…" : "Continuar"}</Button> : null}
       </div>
     </div>
   )
