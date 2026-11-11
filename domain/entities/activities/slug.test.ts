@@ -44,3 +44,9 @@ test("búsqueda: recorta, colapsa espacios, quita control y limita el largo", ()
 test("búsqueda: un salto de línea separa palabras en vez de pegarlas", () => {
   assert.equal(normalizeSearchQuery("senderismo\ndomingo"), "senderismo domingo")
 })
+
+test("un título que sería una ruta reservada recibe sufijo (no choca con /actividades/crear ni /actividades/mis)", () => {
+  assert.equal(slugifyActivity("Crear"), "crear-actividad")
+  assert.equal(slugifyActivity("MIS"), "mis-actividad")
+  assert.equal(slugifyActivity("Crear cerámica"), "crear-ceramica")
+})

@@ -1,6 +1,6 @@
 import type { Activity } from "@/domain/entities/activities/Activity"
 import { nextOccurrence } from "@/domain/entities/activities/value-objects/occurrences"
-import { canViewActivity } from "@/domain/entities/activities/permissions"
+import { canManageActivity, canViewActivity } from "@/domain/entities/activities/permissions"
 import { isPubliclyVisible, type LinkedSite } from "@/domain/entities/activities/visibility"
 import type { IActivityRepository } from "@/domain/repository/activities/IActivityRepository"
 
@@ -52,6 +52,12 @@ export class ActivityService {
     if (!a) return null
     const site = a.kind === "site" && a.siteId ? await this.siteLookup(a.siteId) : null
     return canViewActivity(a, viewer, site) ? a : null
+  }
+
+  /** Para editar: solo el dueño o QHPA, en cualquier estado (borrador, en revisión, pausada…). */
+  async getForManager(id: string, viewer: Viewer): Promise<Activity | null> {
+    const a = await this.repo.findById(id)
+    return a && canManageActivity(a, viewer) ? a : null
   }
 
   /** Públicas ordenadas por próxima salida (las que no tienen, como "solo con cita", al final). */

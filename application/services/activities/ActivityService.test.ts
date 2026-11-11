@@ -98,3 +98,12 @@ test("getPublicById devuelve solo públicas", async () => {
   assert.equal(await s.getPublicById("2"), null)
   assert.equal(await s.getPublicById("zzz"), null)
 })
+
+test("getForManager devuelve la actividad (en cualquier estado) solo a su dueño o a QHPA", async () => {
+  const s = svc([makeActivity({ id: "p", slug: "p", ownerUid: "u1", moderationStatus: "pending", publicationStatus: "draft" })])
+  assert.equal((await s.getForManager("p", { uid: "u1", isAdmin: false }))?.id, "p")
+  assert.equal((await s.getForManager("p", { uid: "x", isAdmin: true }))?.id, "p")
+  assert.equal(await s.getForManager("p", { uid: "x", isAdmin: false }), null)
+  assert.equal(await s.getForManager("p", { uid: null, isAdmin: false }), null)
+  assert.equal(await s.getForManager("zzz", { uid: "u1", isAdmin: false }), null)
+})
