@@ -4,7 +4,7 @@ export const DECLARATION_ERROR = "Debes aceptar la declaración de responsabilid
 export const hasDeclared = (declaration: unknown): declaration is true => declaration === true;
 
 /** Un doc por contenido: republicar lo sobrescribe (merge). */
-export const declarationDocId = (targetType: "event" | "site", targetId: string) =>
+export const declarationDocId = (targetType: "event" | "site" | "activity", targetId: string) =>
   `${targetType}_${targetId}`;
 
 export type DeclarationVariant = "owner" | "proposer" | "qhpa";

@@ -1,4 +1,4 @@
-export type DeclarationTargetType = "event" | "site";
+export type DeclarationTargetType = "event" | "site" | "activity";
 
 /** Evidencia de la declaración del autor al publicar (derechos, permisos, responsabilidad). */
 export interface ContentDeclaration {

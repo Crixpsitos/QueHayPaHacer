@@ -50,6 +50,8 @@ import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper
 import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
+import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
+import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
 import { HostIdentityFirebaseRepository } from "../firebase/repositories/activities/HostIdentityFirebaseRepository";
 import { createIpLimiter } from "@/app/api/_lib/ipRateLimit";
 import { ActivityFirebaseRepository } from "../firebase/repositories/activities/ActivityFirebaseRepository";
@@ -213,6 +215,25 @@ export const createServerContainer = () => {
     new ContentDeclarationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // publicar/editar actividades (propiedad del sitio, moderación por confianza, registro de oferente)
+  const activityRepository = new ActivityFirebaseRepository(getFirebaseFirestore());
+  const activityPublishService = new ActivityPublishService({
+    repo: activityRepository,
+    accounts: new ActivityAccountFirebaseRepository(getFirebaseFirestore()),
+    siteSnapshot: (siteId) => sitesService.getActivityLinkSnapshot(siteId),
+    hostGate: (uid) => hostIdentityService.gate(uid),
+    declare: (uid, activityId) => contentDeclarationService.record(uid, "activity", activityId),
+    markCreator: async (uid) => {
+      await userService.markAsCreator(uid);
+    },
+    hostProfile: async (uid) => {
+      const u = await userService.getUserById(uid);
+      return { displayName: u?.displayName ?? "", photoURL: u?.photoURL ?? "" };
+    },
+    clock: () => new Date(),
+    log: (entry) => console.log(JSON.stringify(entry)),
+  });
+
   // reclamos de sitios (dueños que piden verificación)
   const siteClaimService = new SiteClaimService(
     new SiteClaimFirebaseRepository(getFirebaseFirestore()),
@@ -253,6 +274,7 @@ export const createServerContainer = () => {
     userPreferencesService,
     sitesService,
     activityService,
+    activityPublishService,
     hostIdentityService,
     siteInteractionService,
     storageService,
