@@ -176,3 +176,28 @@ export const fetchMoreToDo = async (id: string): Promise<MoreLevelView[]> => {
   const byId = new Map(pool.map((a) => [a.id, a]))
   return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => ({ ...toCardView(byId.get(i.id)!), meters: i.meters })) }))
 }
+
+export interface MapPin { id: string; slug: string; title: string; categorySlug: string; categoryName: string; priceFrom: string; lat: number; lng: number; hhmm: string | null; durationMinutes: number | null; placeName: string }
+export interface HubMapData { date: string; pins: MapPin[]; withoutPlace: number; hours: (string | null)[] }
+
+/** Mapa del hub: las actividades de UN día con coordenadas (punto de encuentro fijo o sitio). Las demás se cuentan aparte. */
+export const fetchHubMap = async (day: string, filters: ActivityFilters): Promise<HubMapData> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list")
+  const c = createServerContainer()
+  const { items } = await c.activityService.search({ ...filters, when: undefined, day }, 0, 200)
+  const hhmmOf = new Map(buildAgenda(items.map((a) => ({ id: a.id, schedule: a.schedule })), dayRange(day), new Date()).flatMap((d) => d.entries.map((e) => [e.id, e.hhmm] as const)))
+  const sites = new Map<string, Awaited<ReturnType<typeof c.sitesService.getActivityLinkSnapshot>>>()
+  for (const siteId of new Set(items.map((a) => a.siteId).filter((x): x is string => !!x))) sites.set(siteId, await c.sitesService.getActivityLinkSnapshot(siteId))
+  const pins: MapPin[] = []
+  let withoutPlace = 0
+  for (const a of items) {
+    const site = a.siteId ? sites.get(a.siteId) : null
+    const g = a.meetingPoint.mode === "fixed" && a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : site?.geo
+    if (!g) { withoutPlace++; continue }
+    const v = toCardView(a)
+    pins.push({ id: a.id, slug: a.slug, title: a.title, categorySlug: a.category, categoryName: v.categoryName, priceFrom: v.priceFrom, lat: g.latitude, lng: g.longitude, hhmm: hhmmOf.get(a.id) ?? null, durationMinutes: a.durationMinutes, placeName: site?.name ?? a.meetingPoint.text })
+  }
+  return { date: day, pins, withoutPlace, hours: [...hhmmOf.values()] }
+}

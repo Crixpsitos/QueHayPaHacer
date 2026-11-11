@@ -10,7 +10,9 @@ import { HubHero } from "@/presentation/activities/components/hub/HubHero"
 import { CategoryTiles } from "@/presentation/activities/components/hub/CategoryTiles"
 import { AgendaView } from "@/presentation/activities/components/hub/AgendaView"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
-import { fetchActivityPage, fetchAgenda, fetchHubMeta, resolveSiteId } from "@/presentation/activities/data/fetchers"
+import { HubMapLazy } from "@/presentation/activities/components/hub/HubMapLazy"
+import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
+import { fetchActivityPage, fetchAgenda, fetchHubMap, fetchHubMeta, resolveSiteId } from "@/presentation/activities/data/fetchers"
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -33,6 +35,7 @@ async function Hub({ searchParams }: PageProps) {
   const agendaMode = Boolean(f.when || f.day)
   const filtered = Object.keys(f).length > 0
 
+  const mapData = noSite ? null : await fetchHubMap(f.day ?? bogotaDateIso(new Date()), { ...filters, day: undefined })
   const agenda = agendaMode && !noSite ? await fetchAgenda(filters) : []
   const page = !agendaMode && !noSite ? await fetchActivityPage(filters, 0) : { items: [], total: 0, nextOffset: null }
   const empty = noSite || (agendaMode ? agenda.length === 0 : page.items.length === 0)
@@ -42,6 +45,8 @@ async function Hub({ searchParams }: PageProps) {
       <HubHero current={f} meta={meta} />
       <div className="grid gap-10 py-8">
         <ActivityFilters current={f} />
+
+        {mapData && (mapData.pins.length || mapData.withoutPlace) ? <HubMapLazy data={mapData} /> : null}
 
         {!filtered ? <CategoryTiles counts={meta.categories} current={f} /> : null}
 
