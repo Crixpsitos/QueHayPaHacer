@@ -3,6 +3,7 @@ import type { Activity } from "@/domain/entities/activities/Activity"
 import type { IActivityRepository } from "@/domain/repository/activities/IActivityRepository"
 import type { FirebaseActivityDto } from "../../dto/activities/FirebaseActivityDto"
 import { ActivityFirebaseMapper } from "../../mappers/activities/ActivityFirebaseMapper"
+import { mergeMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 
 /** Colección `activities`. Solo Admin SDK; todas las consultas son de igualdad de un campo (índice simple). */
@@ -56,6 +57,11 @@ export class ActivityFirebaseRepository extends FirebaseBaseRepository implement
   }
 
   async save(activity: Activity): Promise<void> {
-    await this.collection.doc(activity.id).set(this.mapper.toFirebase(activity))
+    const ref = this.collection.doc(activity.id)
+    await this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref)
+      const stored = snap.exists ? ((snap.data() as FirebaseActivityDto).media ?? []) : []
+      tx.set(ref, this.mapper.toFirebase({ ...activity, media: mergeMedia(stored, activity.media) }))
+    })
   }
 }

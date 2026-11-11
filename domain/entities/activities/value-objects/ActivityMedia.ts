@@ -55,3 +55,38 @@ export function mediaOwnershipError(activityId: string, media: ActivityMedia[]):
   }
   return null
 }
+
+/** Limpia lo que envía el cliente: solo campos conocidos, nunca el `status` (lo fija el servidor). Descarta lo inválido. */
+export function parseMediaInput(raw: unknown): ActivityMedia[] {
+  if (!Array.isArray(raw)) return []
+  const out: ActivityMedia[] = []
+  for (const item of raw) {
+    const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>
+    if ((r.type !== "image" && r.type !== "video") || typeof r.id !== "string" || !r.id || typeof r.path !== "string" || typeof r.url !== "string") continue
+    const num = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n >= 0 ? n : 0)
+    out.push({
+      id: r.id.slice(0, 64),
+      type: r.type,
+      path: r.path.slice(0, 300),
+      url: r.url.slice(0, 600),
+      width: num(r.width),
+      height: num(r.height),
+      alt: typeof r.alt === "string" ? r.alt.slice(0, 200) : "",
+      isCover: r.isCover === true,
+    })
+  }
+  return out
+}
+
+/**
+ * El arreglo `media[]` lo parchea también el optimizador de ../functions (url, path, tamaño, estado). Para no pisar
+ * esas escrituras, el cliente solo decide QUÉ ítems quedan, su ORDEN, la PORTADA y el ALT; todo lo demás de un ítem
+ * existente sale de lo guardado. Un ítem nuevo entra como `processing`.
+ */
+export function mergeMedia(stored: ActivityMedia[], incoming: ActivityMedia[]): ActivityMedia[] {
+  const byId = new Map(stored.map((m) => [m.id, m]))
+  return incoming.map((m) => {
+    const s = byId.get(m.id)
+    return s ? { ...s, isCover: m.isCover, alt: m.alt } : { ...m, status: "processing" as const }
+  })
+}

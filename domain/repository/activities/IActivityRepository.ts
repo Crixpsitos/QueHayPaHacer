@@ -17,6 +17,9 @@ export interface IActivityRepository {
   findListable(limit: number): Promise<Activity[]>
   /** Crea con id nuevo y devuelve la actividad guardada. */
   create(activity: Omit<Activity, "id">): Promise<Activity>
-  /** Reemplaza el documento (set con merge desactivado: la actividad completa es la fuente). */
+  /**
+   * Reemplaza el documento, salvo `media[]`: se combina en una transacción con lo guardado (`mergeMedia`), porque
+   * el optimizador de ../functions también lo escribe y no debe pisarse.
+   */
   save(activity: Activity): Promise<void>
 }

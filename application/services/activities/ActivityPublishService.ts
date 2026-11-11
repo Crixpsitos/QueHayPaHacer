@@ -1,6 +1,6 @@
 import { activityPublishError, type Activity, type ActivityHost, type ActivityModerationStatus, type ActivityPublicationStatus } from "@/domain/entities/activities/Activity"
 import { requiresManualReview } from "@/domain/entities/activities/value-objects/ActivityCategory"
-import { mediaOwnershipError, type ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
+import { mediaOwnershipError, mergeMedia, type ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
 import { slugifyActivity, uniqueSlug } from "@/domain/entities/activities/slug"
 import { canCreateForSite, canManageActivity } from "@/domain/entities/activities/permissions"
 import { isTrustedHost, needsReReview } from "@/domain/entities/activities/trust"
@@ -124,7 +124,8 @@ export class ActivityPublishService {
       extras: req.input.extras,
       sections: req.input.sections,
       cta: req.input.cta,
-      media: existing ? req.media : [],
+      // El optimizador de ../functions también escribe `media[]`: se combina con lo guardado en vez de pisarlo.
+      media: existing ? mergeMedia(existing.media, req.media) : [],
       publicationStatus: publication,
       updatedAt: now,
     }
