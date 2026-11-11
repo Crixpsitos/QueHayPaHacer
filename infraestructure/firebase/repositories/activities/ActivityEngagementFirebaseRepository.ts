@@ -45,12 +45,24 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
     return snaps.filter((s) => s.exists).map((s) => String(s.get("targetId")))
   }
 
+  async listSavedIds(uid: string, limit: number): Promise<string[]> {
+    // ponytail: sin filtro por tipo en la consulta (pediría índice compuesto); lo guardado de otros tipos se descarta aquí.
+    const s = await this.db.collection("users").doc(uid).collection("saved").orderBy("savedAt", "desc").limit(limit * 3).get()
+    return s.docs.filter((d) => d.get("type") === "activity").map((d) => String(d.get("targetId"))).slice(0, limit)
+  }
+
+  async listVisitedIds(uid: string, limit: number): Promise<string[]> {
+    const s = await this.db.collection("users").doc(uid).collection("activityVisits").orderBy("visitedAt", "desc").limit(limit).get()
+    return s.docs.map((d) => d.id)
+  }
+
   async markVisited(uid: string, activityId: string): Promise<{ changed: boolean }> {
     const activity = this.collection.doc(activityId)
     const ref = activity.collection("visits").doc(uid)
     return this.db.runTransaction(async (tx) => {
       if ((await tx.get(ref)).exists) return { changed: false }
       tx.set(ref, { visitedAt: FieldValue.serverTimestamp() })
+      tx.set(this.db.collection("users").doc(uid).collection("activityVisits").doc(activityId), { visitedAt: FieldValue.serverTimestamp() }) // para "Mis planes"
       tx.update(activity, { "analytics.visits": FieldValue.increment(1) })
       return { changed: true }
     })

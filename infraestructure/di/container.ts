@@ -51,6 +51,7 @@ import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
+import { ActivityPlansService } from "@/application/services/activities/ActivityPlansService";
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
@@ -273,6 +274,17 @@ export const createServerContainer = () => {
     legalVersion: LEGAL_VERSION,
   });
 
+  // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
+  const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
+  const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
+  const activityPlansService = new ActivityPlansService({
+    savedIds: (uid, n) => activityEngagementRepo.listSavedIds(uid, n),
+    visitedIds: (uid, n) => activityEngagementRepo.listVisitedIds(uid, n),
+    joins: (uid) => activityJoinRepo.listByUser(uid, 300),
+    getPublic: (id) => activityService.getPublicById(id),
+    clock: () => new Date(),
+  });
+
   // configuración editable por el administrador (festivos; luego rutas de bus)
   const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
   const transitRouteService = new TransitRouteService(new ConfigFirebaseRepository(getFirebaseFirestore()));
@@ -299,6 +311,7 @@ export const createServerContainer = () => {
     activityPublishService,
     activityEngagementService,
     activityJoinService,
+    activityPlansService,
     hostIdentityService,
     siteInteractionService,
     storageService,

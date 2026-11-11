@@ -30,7 +30,7 @@ class FakeRepo implements IActivityJoinRepository {
   }
   async counts(a: string, keys: string[]) { return Object.fromEntries(keys.map((key) => [key, this.taken(a, key)])) }
   async mine(a: string, uid: string, keys: string[]) { return Object.fromEntries(keys.flatMap((key) => { const r = this.rows.get(this.k(a, key, uid)); return r ? [[key, r.status] as const] : [] })) }
-  async listByUser(uid: string) { return [...this.rows.values()].filter((r) => r.uid === uid).map((r) => ({ activityId: r.activityId, key: r.key })) }
+  async listByUser(uid: string) { return [...this.rows.values()].filter((r) => r.uid === uid).map((r) => ({ activityId: r.activityId, key: r.key, status: r.status })) }
   async list(a: string) { return [...this.rows.values()].filter((r) => r.activityId === a) }
   closedCalls: [string, boolean][] = []
   async setClosed(a: string, closed: boolean) { this.closedCalls.push([a, closed]); return true }

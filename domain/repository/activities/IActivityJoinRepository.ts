@@ -31,7 +31,7 @@ export interface IActivityJoinRepository {
   /** De estas salidas, en cuáles está inscrita la persona y con qué estado. */
   mine(activityId: string, uid: string, keys: string[]): Promise<Record<string, JoinStatusValue>>
   /** Reservas de una persona (para borrar su cuenta). */
-  listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string }[]>
+  listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string; status: JoinStatusValue }[]>
   /** Lista del creador: inscripciones de la actividad (todas las salidas, todos los estados). */
   list(activityId: string, limit: number): Promise<JoinRow[]>
 }

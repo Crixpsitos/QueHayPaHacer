@@ -10,6 +10,10 @@ export interface IActivityEngagementRepository {
   /** `activities/{id}/visits/{uid}` + `analytics.visits`. Una por persona. */
   markVisited(uid: string, activityId: string): Promise<{ changed: boolean }>
   hasVisited(uid: string, activityId: string): Promise<boolean>
+  /** Ids de actividades guardadas por la persona, las más recientes primero. */
+  listSavedIds(uid: string, limit: number): Promise<string[]>
+  /** Ids de actividades donde marcó «Yo fui», las más recientes primero. */
+  listVisitedIds(uid: string, limit: number): Promise<string[]>
   /** Vista o acción medida desde el navegador (sin datos personales), con el canal de origen. */
   recordTrack(activityId: string, type: ActivityTrackType, day: string, source: TrafficSource): Promise<void>
 }

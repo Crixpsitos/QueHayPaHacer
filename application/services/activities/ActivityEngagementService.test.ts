@@ -23,6 +23,8 @@ class FakeRepo implements IActivityEngagementRepository {
     return { changed: true }
   }
   async hasVisited(uid: string, id: string) { return this.visited.has(`${uid}|${id}`) }
+  async listSavedIds(uid: string) { return [...this.saved].filter((k) => k.startsWith(`${uid}|`)).map((k) => k.split("|")[1]) }
+  async listVisitedIds(uid: string) { return [...this.visited].filter((k) => k.startsWith(`${uid}|`)).map((k) => k.split("|")[1]) }
   async recordTrack() {}
 }
 
