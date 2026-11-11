@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Suspense } from "react"
-import { Check, Clock, ExternalLink, Gauge, Info, MapPin, Users } from "lucide-react"
+import { Check, Clock, ExternalLink, Gauge, Info, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { SectionsAccordion } from "@/presentation/sites/components/detail/SectionsAccordion"
 import type { ActivityPageData } from "@/presentation/activities/data/fetchers"
@@ -9,6 +9,7 @@ import { isSparse } from "@/presentation/activities/lib/sparse"
 import { HowItWorks } from "./HowItWorks"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
+import { ActivityPlace } from "./ActivityPlace"
 import { MoreToDo } from "./MoreToDo"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
@@ -103,17 +104,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             ) : null}
           </section>
 
-          {d.kind === "global" ? (
-            <section aria-labelledby="encuentro" className="grid gap-3">
-              <h2 id="encuentro" className={h2}>Dónde nos encontramos</h2>
-              <div className="flex gap-4 rounded-3xl bg-foreground p-5 text-background">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#FFB703] text-foreground"><MapPin className="size-6" aria-hidden /></span>
-                <div className="grid content-center gap-0.5 leading-snug">
-                  {d.meeting.note ? <p className="text-lg font-semibold">{d.meeting.note}</p> : <><p className="font-heading text-xl font-bold">{d.meeting.text}</p>{d.meeting.references ? <p className="text-sm text-background/75">{d.meeting.references}</p> : null}</>}
-                </div>
-              </div>
-            </section>
-          ) : null}
+          <ActivityPlace d={d} />
 
           {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
 

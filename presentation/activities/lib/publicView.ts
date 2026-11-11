@@ -40,6 +40,8 @@ export interface ActivityPublicView {
   prices: { label: string; amount: string; amountCop: number; unit: string; includes: string[]; note: string }[]
   extras: { label: string; amount: string; unit: string; note: string }[]
   meeting: { mode: "fixed" | "sharedAfterJoining" | "varies"; text: string; references: string; note: string | null }
+  /** Coordenadas del punto de encuentro: solo si el punto es fijo (si se dice en el grupo, no se publica ningún pin). */
+  meetingGeo: { latitude: number; longitude: number } | null
   sections: SiteSection[]
   cta: { kind: CtaKind; label: string; href: string } | null
 }
@@ -93,6 +95,7 @@ export function toPublicView(a: Activity): ActivityPublicView {
     prices: a.priceOptions.map((p) => ({ label: p.label, amount: formatCop(p.amountCop), amountCop: p.amountCop, unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),
     meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode] },
+    meetingGeo: mode === "fixed" && a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : null,
     sections: a.sections,
     cta: a.cta ? { kind: a.cta.kind, label: ctaButtonLabel(a.cta), href: ctaHref(a.cta) } : null,
   }
