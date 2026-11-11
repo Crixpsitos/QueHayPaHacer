@@ -10,7 +10,7 @@ Estado inicial: todas sin marcar.
 
 ## Fase 0 — Verificaciones previas (solo lectura)
 
-- [ ] **A0 Verificaciones y correcciones de spec (S)** — sin código de la app.
+- [x] **A0 Verificaciones y correcciones de spec (S)** — sin código de la app.
   - Aceptación: (1) confirmar el nombre exacto del método de `UserService` que pasa a `creator` y cómo lo llama `publish-site.action.ts`; (2) confirmar el campo del autor del sitio en dominio, DTO y Firestore (`author.id`/`authorId`); (3) localizar cómo se implementa hoy la búsqueda por tokens (`exploreFetchers`, repositorios) y qué índices usa; (4) listar los índices actuales relevantes en `firebase/firestore.indexes.json` y cómo se aplican; (5) abrir `optimizeMedia`, `optimizeImages` y `optimizeSessions` en `../functions` y anotar qué carpetas/tipos atienden hoy; (6) leer en `node_modules/next/dist/docs/` lo necesario para rutas dinámicas con Cache Components; (7) **corregir la spec** 8.2 punto 1 (gestión fuera de `/studio` por ser Premium) y las rutas de almacenamiento de 8.4; (8) documentar los hallazgos en `tasks/plan-actividades.md`.
   - Verifica: relectura del plan; `git diff` solo en `SPEC-actividades.md` y `tasks/plan-actividades.md`.
   - Archivos: `SPEC-actividades.md`, `tasks/plan-actividades.md`.
@@ -39,10 +39,10 @@ Estado inicial: todas sin marcar.
   - Verifica: `pnpm test` (casos de ataque: `javascript:alert(1)`, `//evil.com`, `https://user:pass@x.com`).
   - Archivos: `domain/entities/activities/value-objects/Price.ts`, `Cta.ts` (+ tests).
 
-- [ ] **A5 Slug y tokens de búsqueda (S)**
-  - Aceptación: `slugifyActivity(title)` (minúsculas, sin tildes, guiones, máx. 60) y `uniqueSlug(base, exists)`; `buildSearchTokens({title,tagline,category,siteName})` (minúsculas, sin tildes, sin palabras vacías, deduplicado, tope razonable); reutiliza helpers existentes si los hay (A0).
+- [ ] **A5 Slug y normalización de la consulta de búsqueda (S)**
+  - Aceptación: `slugifyActivity(title)` (minúsculas, sin tildes, guiones, máx. 60) y `uniqueSlug(base, exists)`; `normalizeSearchQuery(q)` (recorte, longitud máxima, sin caracteres de control); **no hay `searchTokens`**: la búsqueda usa el índice de texto de Firestore Enterprise (A0).
   - Verifica: `pnpm test`.
-  - Archivos: `domain/entities/activities/slug.ts`, `searchTokens.ts` (+ tests).
+  - Archivos: `domain/entities/activities/slug.ts`, `searchQuery.ts` (+ tests).
 
 - [ ] **A6 Entidad `Activity`, visibilidad, confianza y permisos (M)** — TDD.
   - Aceptación: clase `Activity` con invariantes de la spec 5.1; `isPubliclyVisible(activity, site?)` (6 casos de 6.1 + sitio despublicado/inactivo); `isTrustedHost(history, now)` con `TRUST_MIN_APPROVED = 3`; `canCreateForSite(uid, site, isAdmin)`; `needsReReview(prev, next, trusted)` (cambia `title/description/media` y no es de confianza → true); tabla de permisos de la spec 7 como funciones puras.
@@ -50,7 +50,7 @@ Estado inicial: todas sin marcar.
   - Archivos: `domain/entities/activities/Activity.ts`, `visibility.ts`, `trust.ts`, `permissions.ts` (+ tests).
 
 - [ ] **A7 DTO valibot, modelo Firestore y mapeadores (M)**
-  - Aceptación: `ActivityDto` (límites y mensajes en español, tú) reutilizando el normalizador de `sections`; DTO Firestore (`FirebaseActivityDto`) con `searchTokens`, `occursWeekdays`, `nextOccurrenceAt`, `rating`, `analytics`; mapeadores `toDto`/`toViewModel` con **round-trip** (no pierden campos al re-guardar).
+  - Aceptación: `ActivityDto` (límites y mensajes en español, tú) reutilizando el normalizador de `sections`; DTO Firestore (`FirebaseActivityDto`, con `media[]` **plano** como sitios) con `occursWeekdays`, `nextOccurrenceAt`, `rating`, `analytics`; mapeadores `toDto`/`toViewModel` con **round-trip** (no pierden campos al re-guardar).
   - Verifica: `pnpm test` (round-trip; valores fuera de límite rechazados con mensaje claro; ausente = aceptado donde es opcional).
   - Archivos: `application/dto/activities/ActivityDto.ts`, `infraestructure/firebase/dto/activities/FirebaseActivityDto.ts`, `infraestructure/firebase/mappers/activities/ActivityFirebaseMapper.ts` (+ tests).
 
@@ -197,7 +197,7 @@ Estado inicial: todas sin marcar.
   - Archivos: `domain/entities/activities/dailyPicks.ts` (+ test), `presentation/activities/components/ActivityHomeBlock.tsx`, `app/(home)/page.tsx`.
 
 - [ ] **B2 Búsqueda (M)**
-  - Aceptación: integrar `activities` en `ExploreSearchBar`/`HomeSearchBar` y `/explorar` con `content=activities`; consulta por `searchTokens` (`array-contains-any`), **nunca** substring/prefijo; resultados mezclados con etiqueta "Actividad".
+  - Aceptación: integrar `activities` en `ExploreSearchBar`/`HomeSearchBar` y `/explorar` con `content=activities`; consulta con el **índice de texto** de Firestore Enterprise (`documentMatches`, como `sites`/`events`), **nunca** substring/prefijo; **índice nuevo en `firebase/firestore.indexes.json` = preguntar antes**; resultados mezclados con etiqueta "Actividad".
   - Verifica: búsqueda "senderismo" encuentra la actividad; confirmado que no hay TableScan (plan de consulta o log); índice aprobado.
   - Archivos: `exploreFetchers`, `app/explorar/page.tsx`, componentes de búsqueda.
 
@@ -268,7 +268,7 @@ Estado inicial: todas sin marcar.
   - Archivos: `app/(home)/terminos/page.tsx`, `app/(home)/privacidad/page.tsx`, `app/lib/legal/version.ts`, docs.
 
 - [ ] **C1 Dominio de reseñas (M)** — TDD.
-  - Aceptación: `ActivityReview` (spec 5.9), validaciones (rating 1–5; texto 0 o 10–1500; sin URLs, correos ni teléfonos; fecha de visita ≤hoy y ≥24 meses), `applyReviewToRating(rating, review, op)` para crear/editar/borrar/remover y `ratingSummary`; estados `published|flagged|removed|pendingMedia`; reglas: autor = id del documento, creador y dueño del sitio no reseñan.
+  - Aceptación: `ActivityReview` (spec 5.9; colección de primer nivel `activityReviews/{activityId}_{uid}` con `media[]` plano), validaciones (rating 1–5; texto 0 o 10–1500; sin URLs, correos ni teléfonos; fecha de visita ≤hoy y ≥24 meses), `applyReviewToRating(rating, review, op)` para crear/editar/borrar/remover y `ratingSummary`; estados `published|flagged|removed|pendingMedia`; reglas: autor = id del documento, creador y dueño del sitio no reseñan.
   - Verifica: `pnpm test` (agregados correctos tras crear, editar de 5 a 2, borrar, remover; patrones de teléfono/URL).
   - Archivos: `domain/entities/activities/review/*` (+ tests).
 
@@ -278,9 +278,9 @@ Estado inicial: todas sin marcar.
   - Archivos: `application/services/activities/ReviewService.ts`, `app/actions/activities/review*.action.ts` (≤2), DTO.
 
 - [ ] **C3 `../functions`: procesar medios de actividades y reseñas (M)** — **repo hermano; preguntar antes**
-  - Aceptación: añadir `ACTIVITIES` y `ACTIVITY_REVIEWS` a `OPTIMIZABLE_FOLDERS`; el trigger de video acepta `public/activities/{id}/videos/` y `public/activity-reviews/{activityId}_{uid}/videos/`; `patch` equivalente a `patchEventMedia` para actividad y reseña (estado `processing → ready`, miniatura, ancho/alto/duración); recomprime (reuso de `processVideo`), borra el original; tope de origen 200 MB y 3 min; imágenes por el optimizador existente; compatible hacia atrás. **Entregable adicional: cifras de peor caso de costo** (cómputo + egreso) con precios vigentes antes de activar el interruptor.
+  - Aceptación: añadir `ACTIVITIES: "activities"` y `ACTIVITY_REVIEWS: "activityReviews"` a `OPTIMIZABLE_FOLDERS` en `../functions/src/triggers/storage/config/storageOptimization.config.ts` (el optimizador genérico `optimizeMedia` ya hace el resto: ruta `public/{coleccion}/{docId}/{images|videos}/…`, parche del `media[]` plano, recompresión con `processVideo`, miniatura); **resolver el borrado del original** (el optimizador no lo borra): cambio en el trigger o **regla de ciclo de vida del bucket**; tope de origen 200 MB y 3 min; imágenes por el optimizador existente; compatible hacia atrás. **Entregable adicional: cifras de peor caso de costo** (cómputo + egreso) con precios vigentes antes de activar el interruptor.
   - Verifica: pruebas unitarias del `patch`; prueba en develop subiendo un video de QA; el original desaparece; el resultado carga con `faststart`.
-  - Archivos (repo `../functions`): `src/triggers/storage/config/storageOptimization.config.ts`, `onObjectFinalized.optimizeVideos.ts`, helper de patch, README. **Empujar su rama junto al despliegue.**
+  - Archivos (repo `../functions`): `src/triggers/storage/config/storageOptimization.config.ts`, y si hace falta `onObjectFinalized.optimizeMedia.ts` (borrado del original), README. **Empujar su rama junto al despliegue.**
 
 - [ ] **P3 Prototipo (Artifact): reseñas (S)**
   - Aceptación: encabezado (promedio, distribución, "N personas fueron"), tarjetas **polaroid**, historia abierta (drawer/diálogo), formulario con Google y subida, estado **"En verificación"** en rojo suave (icono + texto, contraste AA), "Verificada por QHPA", flujo de cuestionar y de apelar, estado vacío. Tokens reales (sin `brand-violet`, que no está definido).
