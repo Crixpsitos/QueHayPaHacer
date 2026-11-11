@@ -4,6 +4,7 @@ import type { ActivityFilters } from "@/domain/entities/activities/filters"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
 import { buildAgenda } from "@/domain/entities/activities/agenda"
 import { countsByDay, dayRange, whenRange } from "@/domain/entities/activities/when"
+import { moreToDo, type LevelKey, type MoreItem } from "@/domain/entities/activities/moreToDo"
 import { chooseHomeBlock } from "@/presentation/activities/lib/homeBlock"
 import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
 
@@ -150,4 +151,28 @@ export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayVi
   const byId = new Map(items.map((a) => [a.id, a]))
   const days = buildAgenda(items.map((a) => ({ id: a.id, schedule: a.schedule })), range, new Date())
   return days.map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: toCardView(byId.get(e.id)!), hhmm: e.hhmm })) }))
+}
+
+export interface MoreRow extends ActivityCardView { meters: number | null }
+export interface MoreLevelView { key: LevelKey; total: number; rows: MoreRow[] }
+
+/**
+ * «Más para hacer» de la ficha: aquí mismo / del grupo → cerca / parecidas → hoy en Ibagué.
+ * La distancia sale de las coordenadas de la actividad (punto de encuentro o sitio): no depende de quien mira, por eso se cachea.
+ */
+export const fetchMoreToDo = async (id: string): Promise<MoreLevelView[]> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list", `activity-${id}`)
+  const c = createServerContainer()
+  const [current, pool] = await Promise.all([c.activityService.getPublicById(id), c.activityService.listPublic(60)])
+  if (!current) return []
+  const sites = new Map<string, Awaited<ReturnType<typeof c.sitesService.getActivityLinkSnapshot>>>()
+  for (const siteId of new Set([current, ...pool].map((a) => a.siteId).filter((x): x is string => !!x))) sites.set(siteId, await c.sitesService.getActivityLinkSnapshot(siteId))
+  const item = (a: (typeof pool)[number]): MoreItem => ({
+    id: a.id, siteId: a.siteId, hostId: a.host.id, category: a.category,
+    geo: a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : ((a.siteId && sites.get(a.siteId)?.geo) || null),
+  })
+  const byId = new Map(pool.map((a) => [a.id, a]))
+  return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => ({ ...toCardView(byId.get(i.id)!), meters: i.meters })) }))
 }

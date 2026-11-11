@@ -7,7 +7,7 @@ import type { ActivityPageData } from "@/presentation/activities/data/fetchers"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
-import { ActivityMore } from "./ActivityMore"
+import { MoreToDo } from "./MoreToDo"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
@@ -136,7 +136,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
       {preview ? null : (
         <Suspense fallback={null}>
-          <ActivityMore id={d.id} categorySlug={d.categorySlug} siteId={d.siteId} siteName={d.site?.name ?? null} />
+          <MoreToDo id={d.id} />
         </Suspense>
       )}
 
