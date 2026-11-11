@@ -76,6 +76,8 @@ export class ActivityJoinService {
     const k = resolveOccurrenceKey(a.schedule, requestedDate, this.d.clock())
     if (!k.ok) return k
     const join = a.join
+    if (!this.shownRows(a).some((r) => r.key === k.key)) return { ok: false, error: "Esa salida todavía no está disponible para reservar." }
+    if ((await this.d.repo.mine(activityId, uid, [k.key]))[k.key] === "noShow") return { ok: false, error: "Esa reserva se liberó por falta de pago. Escríbele a quien organiza." }
     const paid = isPaidActivity(a.priceOptions)
     let phone: string | null = null
     if (paid) {
@@ -98,17 +100,22 @@ export class ActivityJoinService {
     return { ok: true, key: k.key }
   }
 
+  /** Borrar cuenta: se eliminan todas sus reservas (y el WhatsApp guardado) liberando los cupos. */
+  async eraseUser(uid: string): Promise<number> {
+    if (!uid?.trim()) return 0
+    const mine = await this.d.repo.listByUser(uid, 1000)
+    for (const m of mine) await this.d.repo.cancel({ ...m, uid })
+    return mine.length
+  }
+
   async cancel(uid: string, activityId: string, key: string): Promise<Result> {
     if (!uid?.trim() || !ID.test(activityId) || !KEY.test(key)) return { ok: false, error: "Datos inválidos." }
     await this.d.repo.cancel({ activityId, key, uid })
     return { ok: true }
   }
 
-  /** Lo que muestra la ficha: próximas salidas con cupos y si la persona ya está dentro. null = actividad no pública. */
-  async status(uid: string | null, activityId: string): Promise<JoinStatus | null> {
-    const a = await this.d.getPublic(activityId)
-    if (!a) return null
-    if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [] }
+  /** Las próximas salidas que se ofrecen (máx. SHOWN): también son las únicas reservables, así nadie acapara todo el calendario. */
+  private shownRows(a: Activity): { key: string; date: string | null }[] {
     const now = this.d.clock()
     const today = bogotaDateIso(now)
     const dated = a.schedule.rules.some((r) => r.kind !== "always" && r.kind !== "byAppointment")
@@ -127,6 +134,15 @@ export class ActivityJoinService {
         if (rows.length >= SHOWN) break
       }
     }
+    return rows
+  }
+
+  /** Lo que muestra la ficha: próximas salidas con cupos y si la persona ya está dentro. null = actividad no pública. */
+  async status(uid: string | null, activityId: string): Promise<JoinStatus | null> {
+    const a = await this.d.getPublic(activityId)
+    if (!a) return null
+    if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [] }
+    const rows = this.shownRows(a)
     const keys = rows.map((r) => r.key)
     const [counts, mine] = await Promise.all([this.d.repo.counts(activityId, keys), uid ? this.d.repo.mine(activityId, uid, keys) : Promise.resolve({} as Record<string, JoinStatusValue>)])
     return {
@@ -145,7 +161,7 @@ export class ActivityJoinService {
   async listForManager(viewer: Viewer, activityId: string): Promise<JoinRow[] | null> {
     const a = await this.d.getForManager(activityId, viewer)
     if (!a) return null
-    return this.d.repo.list(activityId, 500)
+    return this.d.repo.list(activityId, 2000)
   }
 
   /** Todo lo que ve el organizador en "Reservas": datos de la actividad, métricas y la lista. null = no es suya (o no existe). */
@@ -153,7 +169,7 @@ export class ActivityJoinService {
     if (!ID.test(activityId)) return null
     const a = await this.d.getForManager(activityId, viewer)
     if (!a) return null
-    const rows = a.join ? await this.d.repo.list(activityId, 500) : []
+    const rows = a.join ? await this.d.repo.list(activityId, 2000) : []
     return { id: a.id, title: a.title, slug: a.slug, join: a.join, paid: isPaidActivity(a.priceOptions), views: a.analytics.views, visits: a.analytics.visits, rows }
   }
 

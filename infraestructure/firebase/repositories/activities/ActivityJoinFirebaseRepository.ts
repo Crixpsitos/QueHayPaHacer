@@ -98,6 +98,11 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     return Object.fromEntries(keys.flatMap((k, n) => (snaps[n].exists ? [[k, statusOf(snaps[n].get("status"))] as const] : [])))
   }
 
+  async listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string }[]> {
+    const s = await this.collection.where("uid", "==", uid).limit(limit).get()
+    return s.docs.map((d) => ({ activityId: String(d.get("activityId")), key: String(d.get("key")) }))
+  }
+
   async list(activityId: string, limit: number): Promise<JoinRow[]> {
     // ponytail: una sola igualdad (sin índice compuesto); el volumen por actividad es pequeño y se ordena en memoria.
     const s = await this.collection.where("activityId", "==", activityId).limit(limit).get()

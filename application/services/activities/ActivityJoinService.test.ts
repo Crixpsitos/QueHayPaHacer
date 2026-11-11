@@ -30,6 +30,7 @@ class FakeRepo implements IActivityJoinRepository {
   }
   async counts(a: string, keys: string[]) { return Object.fromEntries(keys.map((key) => [key, this.taken(a, key)])) }
   async mine(a: string, uid: string, keys: string[]) { return Object.fromEntries(keys.flatMap((key) => { const r = this.rows.get(this.k(a, key, uid)); return r ? [[key, r.status] as const] : [] })) }
+  async listByUser(uid: string) { return [...this.rows.values()].filter((r) => r.uid === uid).map((r) => ({ activityId: r.activityId, key: r.key })) }
   async list(a: string) { return [...this.rows.values()].filter((r) => r.activityId === a) }
   closedCalls: [string, boolean][] = []
   async setClosed(a: string, closed: boolean) { this.closedCalls.push([a, closed]); return true }
@@ -209,4 +210,28 @@ test("vista del organizador: reservas, cupo y métricas; nadie más la ve (IDOR)
   assert.equal(await svc.managerView({ uid: "otro", isAdmin: false }, "a1"), null)
   assert.equal(await svc.managerView({ uid: null, isAdmin: false }, "a1"), null)
   assert.equal(await svc.managerView({ uid: "owner", isAdmin: false }, "../x"), null)
+})
+
+test("solo se reservan las próximas salidas que se ofrecen (no todo el calendario)", async () => {
+  const { svc, repo } = setup({ join: { capacity: null, closed: false } })
+  assert.equal((await svc.join("u1", "a1", "2026-12-06")).ok, true) // 4.ª salida
+  assert.equal((await svc.join("u1", "a1", "2026-12-13")).ok, false) // 5.ª: aún no se ofrece
+  assert.equal(repo.rows.size, 1)
+})
+
+test("quien quedó como 'No pagó' no recibe un falso éxito al volver a reservar", async () => {
+  const { svc } = setup(paidOver)
+  await svc.join("u1", "a1", null, contact)
+  await svc.setStatus({ uid: "owner", isAdmin: false }, "a1", "2026-11-15", "u1", "noShow")
+  const r = await svc.join("u1", "a1", null, contact)
+  assert.equal(r.ok, false)
+})
+
+test("borrar cuenta: elimina todas las reservas de la persona y libera sus cupos", async () => {
+  const { svc, repo } = setup({ join: { capacity: 1, closed: false } })
+  await svc.join("u1", "a1", "2026-11-15")
+  await svc.join("u2", "a1", "2026-11-22")
+  assert.equal(await svc.eraseUser("u1"), 1)
+  assert.deepEqual([...repo.rows.values()].map((r) => r.uid), ["u2"])
+  assert.equal((await svc.join("u3", "a1", "2026-11-15")).ok, true)
 })

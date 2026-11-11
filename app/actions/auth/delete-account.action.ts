@@ -34,6 +34,13 @@ export async function deleteAccountAction(
       // Continuamos incluso si falla la eliminación de BD, ya que el objetivo es eliminar la cuenta
     }
 
+    // Reservas de actividades (incluye el WhatsApp autorizado): se borran y se liberan los cupos.
+    try {
+      await createServerContainer().activityJoinService.eraseUser(uid);
+    } catch (joinError) {
+      console.error("[DELETE USER JOINS ERROR]", joinError);
+    }
+
     // Eliminar el usuario de Firebase Auth
     await getFirebaseAdminAuth().deleteUser(uid);
     // Sin esto la cookie de sesión sigue viva hasta expirar.
