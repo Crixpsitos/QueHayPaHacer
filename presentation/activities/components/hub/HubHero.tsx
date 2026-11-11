@@ -30,7 +30,7 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
             const on = selected === d.date
             return (
               <Link key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} scroll={false} aria-current={on ? "date" : undefined} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
-                className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-foreground" : "border-white/15 bg-white/6 text-white hover:bg-white/12")}>
+                className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-[#5C0011]" : "border-white/15 bg-white/6 text-white hover:bg-white/12")}>
                 <span className={cn("text-xs font-medium", on ? "text-foreground/80" : "text-white/70")}>{i === 0 ? "Hoy" : wd}</span>
                 <span className="font-heading text-[1.75rem] font-bold leading-none">{n}</span>
                 <span className={cn("mt-1.5 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold", on ? "bg-primary-dark text-[#FFB703]" : "bg-white/15")}>{d.count}</span>

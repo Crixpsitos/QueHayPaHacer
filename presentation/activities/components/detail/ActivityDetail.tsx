@@ -11,6 +11,7 @@ import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { ActivityPlace } from "./ActivityPlace"
 import { MoreToDo } from "./MoreToDo"
+import { UpcomingDates } from "./UpcomingDates"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
@@ -71,6 +72,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           <div className="lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} /></div>
 
           {facts.length ? <ul className="grid gap-2.5 sm:grid-cols-2" aria-label="Datos rápidos">{facts.map((f) => <Fact key={f.label} {...f} />)}</ul> : null}
+
+          <UpcomingDates schedule={d.schedule} />
 
           <section aria-labelledby="sobre" className="grid gap-3">
             <h2 id="sobre" className={h2}>Sobre la actividad</h2>

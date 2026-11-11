@@ -60,7 +60,7 @@ export function HubMap({ data }: { data: HubMapData }) {
           })}
         </div>
         <div className="flex justify-between text-[0.6875rem] text-white/65" aria-hidden><span>{hourLabel(CLOCK_FIRST_HOUR)}</span><span>12 m.</span><span>6 p. m.</span><span>{hourLabel(CLOCK_LAST_HOUR)}</span></div>
-        {isToday ? <div><button type="button" onClick={() => { setHour(clampClockHour(bogotaHour())); setSelected(null) }} className={cn("min-h-9 rounded-full px-4 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#FFB703]", onNow ? "bg-white text-foreground" : "bg-white/12")}>Ahora</button></div> : null}
+        {isToday ? <div><button type="button" onClick={() => { setHour(clampClockHour(bogotaHour())); setSelected(null) }} className={cn("min-h-9 rounded-full px-4 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#FFB703]", onNow ? "bg-white text-[#5C0011]" : "bg-white/12")}>Ahora</button></div> : null}
       </div>
 
       <div className="relative h-[26rem] sm:h-[30rem]">

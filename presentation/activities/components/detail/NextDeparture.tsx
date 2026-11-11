@@ -38,7 +38,7 @@ export function NextDeparture({ schedule, scheduleText, requiresReservation }: {
       <div className="grid content-center gap-1.5 p-5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[0.8125rem] font-medium text-white/70">Próxima salida</span>
-          {label ? <span className="rounded-full bg-[#FFB703] px-2.5 py-0.5 text-xs font-bold text-foreground">{label.relative}</span> : null}
+          {label ? <span className="rounded-full bg-[#FFB703] px-2.5 py-0.5 text-xs font-bold text-[#5C0011]">{label.relative}</span> : null}
         </div>
         {label ? (
           <>
