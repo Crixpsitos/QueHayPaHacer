@@ -9,6 +9,8 @@ import { getEventCollectionBySlug } from "@/presentation/events/lib/eventCollect
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "@/app/lib/site";
 import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
+import { CollectionActivitiesSection } from "@/presentation/activities/components/CollectionActivitiesSection";
+import { TodayGuide } from "@/presentation/events/components/TodayGuide";
 import { MapPin } from "lucide-react";
 import { fetchTodayLabel } from "@/presentation/events/data/collectionFetchers";
 
@@ -115,6 +117,12 @@ async function CollectionLanding({ params }: PageProps) {
       <Suspense fallback={<CollectionSkeleton kind={def.kind} />}>
         <CollectionEventsSection def={def} />
       </Suspense>
+      {def.kind === "today" || def.kind === "weekend" ? (
+        <Suspense fallback={null}>
+          <CollectionActivitiesSection kind={def.kind} />
+        </Suspense>
+      ) : null}
+      {def.kind === "today" ? <TodayGuide /> : null}
     </>
   );
 }
