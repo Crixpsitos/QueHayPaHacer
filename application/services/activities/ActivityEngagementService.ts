@@ -1,3 +1,5 @@
+import type { ActivityTrackType } from "@/domain/entities/analytics/trackTypes"
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { IActivityEngagementRepository } from "@/domain/repository/activities/IActivityEngagementRepository"
 
 const NOT_FOUND = "Esa actividad no existe."
@@ -28,6 +30,10 @@ export class ActivityEngagementService {
     ActivityEngagementService.ids(uid, activityId)
     if (!(await this.isPublic(activityId))) throw new Error(NOT_FOUND)
     await this.repo.markVisited(uid, activityId)
+  }
+
+  recordTrack(activityId: string, type: ActivityTrackType, day: string, source: TrafficSource): Promise<void> {
+    return this.repo.recordTrack(activityId, type, day, source)
   }
 
   async hasVisited(uid: string, activityId: string): Promise<boolean> {

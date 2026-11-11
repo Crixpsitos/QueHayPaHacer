@@ -156,7 +156,7 @@ Estado inicial: todas sin marcar.
   - Verifica: prueba de **IDOR** (un creador no ve inscritos ajenos); guion manual.
   - Archivos: componentes + `app/actividades/[id]/inscritos`.
 
-- [ ] **A24 Medición mínima (M)** — movida desde D4.
+- [x] **A24 Medición mínima (M)** — movida desde D4.
   - Aceptación: `POST /api/activities/[id]/track` con `beaconGuard`, `ipRateLimit`, `dailyDedupe`; tipos `view|directions|cta|share|save|visit|join`; `stats/{día}` y `analytics.*` con **canal de origen**; sin datos personales; mismo presupuesto de escrituras que eventos.
   - Verifica: tests de la ruta (sin same-origin → 204 y 0 escrituras; repetido = 1).
   - Archivos: ruta, hook de cliente, repositorio.

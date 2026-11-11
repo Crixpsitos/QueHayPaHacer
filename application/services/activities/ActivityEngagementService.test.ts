@@ -23,6 +23,7 @@ class FakeRepo implements IActivityEngagementRepository {
     return { changed: true }
   }
   async hasVisited(uid: string, id: string) { return this.visited.has(`${uid}|${id}`) }
+  async recordTrack() {}
 }
 
 const make = (publicIds: string[] = ["a1"]) => {

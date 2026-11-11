@@ -1,4 +1,7 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore"
+import { buildTrackWrites } from "@/domain/entities/analytics/trackWrites"
+import type { ActivityTrackType } from "@/domain/entities/analytics/trackTypes"
+import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { IActivityEngagementRepository } from "@/domain/repository/activities/IActivityEngagementRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 
@@ -49,6 +52,22 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
       tx.update(activity, { "analytics.visits": FieldValue.increment(1) })
       return { changed: true }
     })
+  }
+
+  /** Conteo de vista/acción (misma forma que eventos): `analytics.views|clicks` + doc diario con origen. */
+  async recordTrack(activityId: string, type: ActivityTrackType, day: string, source: TrafficSource): Promise<void> {
+    const ref = this.collection.doc(activityId)
+    const w = buildTrackWrites(type, day, source, (n) => FieldValue.increment(n))
+    const batch = this.db.batch()
+    // update() (no set): no crea actividades inventadas; NOT_FOUND se ignora (el batch es atómico).
+    batch.update(ref, w.event)
+    batch.set(ref.collection("stats").doc(day), w.stats, { merge: true })
+    try {
+      await batch.commit()
+    } catch (e) {
+      if ((e as { code?: number }).code === 5) return
+      throw e
+    }
   }
 
   async hasVisited(uid: string, activityId: string): Promise<boolean> {

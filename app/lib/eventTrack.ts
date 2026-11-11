@@ -1,11 +1,19 @@
-import type { EventTrackType } from "@/domain/entities/analytics/trackTypes"
+import type { ActivityTrackType, EventTrackType } from "@/domain/entities/analytics/trackTypes"
 import { SOURCES, trafficSource, type TrafficSource } from "@/domain/entities/analytics/trafficSource"
 
 type Store = Pick<Storage, "getItem" | "setItem">
 
 /** Envía una vista o acción de un evento sin bloquear la navegación (sendBeacon; fetch keepalive de respaldo). */
 export function trackEvent(eventId: string, type: EventTrackType, src?: TrafficSource) {
-  const url = `/api/events/${encodeURIComponent(eventId)}/track`
+  sendTrack(`/api/events/${encodeURIComponent(eventId)}/track`, type, src)
+}
+
+/** Igual para la ficha de una actividad (view/directions/cta/share). */
+export function trackActivity(activityId: string, type: ActivityTrackType, src?: TrafficSource) {
+  sendTrack(`/api/activities/${encodeURIComponent(activityId)}/track`, type, src)
+}
+
+function sendTrack(url: string, type: string, src?: TrafficSource) {
   const body = JSON.stringify(src && src !== "direct" ? { type, src } : { type })
   try {
     if (navigator.sendBeacon?.(url, new Blob([body], { type: "application/json" }))) return

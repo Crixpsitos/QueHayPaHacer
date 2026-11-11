@@ -8,6 +8,8 @@ import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
 import { ActivityEngagement } from "./ActivityEngagement"
+import { TrackedCta } from "./TrackedCta"
+import { EventViewTracker } from "@/app/components/analytics/EventViewTracker"
 
 const chip = "inline-flex min-h-9 items-center rounded-full border border-border bg-card px-3.5 text-sm font-medium"
 const initials = (name: string) => name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
@@ -17,6 +19,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
   const chips = [d.difficulty, d.duration, ...d.companions, d.ageNote || null].filter(Boolean) as string[]
   return (
     <article className="mx-auto grid w-full max-w-6xl gap-6 px-4 pb-32 pt-4 sm:px-6 lg:pb-12">
+      {preview ? null : <EventViewTracker eventId={d.id} kind="activity" />}
       {preview ? <p role="status" className="rounded-2xl border border-[#F6DDA0] bg-accent px-4 py-3 text-sm font-medium text-[#7a5200]">Vista previa: {preview}</p> : null}
 
       <nav aria-label="Migas de pan" className="flex flex-wrap gap-1.5 text-sm text-muted-foreground">
@@ -92,15 +95,15 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
         <aside className="hidden gap-3 lg:sticky lg:top-24 lg:grid">
           <NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} />
           <div className="grid gap-2">
-            {d.cta ? <Button asChild size="lg" className="h-12 text-base"><a href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</a></Button> : null}
-            <ShareButton title={d.title} className="h-11 w-full" />
+            {d.cta ? <Button asChild size="lg" className="h-12 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</TrackedCta></Button> : null}
+            <ShareButton title={d.title} activityId={d.id} className="h-11 w-full" />
           </div>
         </aside>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
-        <ShareButton title={d.title} className="h-12 shrink-0" />
-        {d.cta ? <Button asChild size="lg" className="h-12 flex-1 text-base"><a href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</a></Button> : null}
+        <ShareButton title={d.title} activityId={d.id} className="h-12 shrink-0" />
+        {d.cta ? <Button asChild size="lg" className="h-12 flex-1 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</TrackedCta></Button> : null}
       </div>
     </article>
   )
