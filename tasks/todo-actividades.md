@@ -19,42 +19,42 @@ Estado inicial: todas sin marcar.
 
 ## Fase 1 — `activity-core` (dominio puro)
 
-- [ ] **A1 Categorías, "con quién" y bandas de presupuesto (S)**
+- [x] **A1 Categorías, "con quién" y bandas de presupuesto (S)**
   - Aceptación: constante `ACTIVITY_CATEGORIES` (16 slugs de la spec 5.3, con nombre y ejemplos), tipo `ActivityCategory`; `COMPANIONS` (`solo,pareja,familia,amigos,ninos,mascotas`); `budgetBand(priceFromCop)` devuelve `gratis|hasta-20000|hasta-50000|hasta-100000|mas-de-100000`; `isActivityCategory(x)`. `otros` marcado como "siempre a revisión".
   - Verifica: `pnpm test` (límites de cada banda: 0, 1, 20000, 20001, 50000, 100000, 100001).
   - Archivos: `domain/entities/activities/value-objects/ActivityCategory.ts`, `Budget.ts` (+ tests).
 
-- [ ] **A2 Motor de recurrencia: reglas y texto legible (M)** — TDD.
+- [x] **A2 Motor de recurrencia: reglas y texto legible (M)** — TDD.
   - Aceptación: tipos `ScheduleRule` (`weekly`, `everyNWeeks`, `monthlyNth`, `monthlyDay`, `dates`, `always`, `byAppointment`) y `ActivitySchedule`; `validateSchedule` (horas HH:mm, `end>start`, `n` 2–8, `weekdays` sin repetidos, máx. 7 reglas, `skipDates` ≤60, `dates` ≤52, vigencia coherente); `describeSchedule(schedule)` devuelve texto en español ("Todos los domingos · 6:00 a. m.", "Cada 2 semanas, sábados · 7:00 a. m.", "El último viernes de cada mes").
   - Verifica: `pnpm test` con casos válidos e inválidos y todas las variantes de texto.
   - Archivos: `domain/entities/activities/value-objects/ActivitySchedule.ts`, `describeSchedule.ts` (+ tests).
 
-- [ ] **A3 Motor de recurrencia: ocurrencias (M)** — TDD, la pieza más delicada.
+- [x] **A3 Motor de recurrencia: ocurrencias (M)** — TDD, la pieza más delicada.
   - Aceptación: `occurrencesBetween(schedule, from, to)`, `nextOccurrence(schedule, from)`, `occursOn(schedule, date)`, `occursWeekdays(schedule)`; semanal, cada N semanas (ancla, cruce de mes y de año), n-ésimo del mes incluido "último", día del mes 29–31 (se salta meses cortos), fechas sueltas, `skipDates`, `validFrom/validUntil`, `always` (hereda horario del sitio o propio), `byAppointment` (no genera ocurrencias), cruce de medianoche, hora **America/Bogota** sin horario de verano.
   - Verifica: `pnpm test` con fechas fijas simuladas (nunca `Date.now()` directo; reloj inyectado).
   - Archivos: `domain/entities/activities/value-objects/occurrences.ts` (+ test).
 
-- [ ] **A4 Precios, extras y CTA (S)** — TDD.
+- [x] **A4 Precios, extras y CTA (S)** — TDD.
   - Aceptación: `PriceOption`/`Extra` con límites (≤8 y ≤10, etiquetas ≤40, `amountCop` entero ≥0, `unit` válida, `includes` ≤6); `priceFromCop`; formato `$40.000`; `normalizeCta({kind,value})`: WhatsApp colombiano → `https://wa.me/57…`, `whatsappGroup` solo `https://chat.whatsapp.com/…`, `website/reserveLink/buyLink/instagram` solo `https://`, rechazo de `javascript:`, `data:`, `http:`, credenciales en la URL; `kind:"checkout"` **rechazado** hoy.
   - Verifica: `pnpm test` (casos de ataque: `javascript:alert(1)`, `//evil.com`, `https://user:pass@x.com`).
   - Archivos: `domain/entities/activities/value-objects/Price.ts`, `Cta.ts` (+ tests).
 
-- [ ] **A5 Slug y normalización de la consulta de búsqueda (S)**
+- [x] **A5 Slug y normalización de la consulta de búsqueda (S)**
   - Aceptación: `slugifyActivity(title)` (minúsculas, sin tildes, guiones, máx. 60) y `uniqueSlug(base, exists)`; `normalizeSearchQuery(q)` (recorte, longitud máxima, sin caracteres de control); **no hay `searchTokens`**: la búsqueda usa el índice de texto de Firestore Enterprise (A0).
   - Verifica: `pnpm test`.
   - Archivos: `domain/entities/activities/slug.ts`, `searchQuery.ts` (+ tests).
 
-- [ ] **A6 Entidad `Activity`, visibilidad, confianza y permisos (M)** — TDD.
+- [x] **A6 Entidad `Activity`, visibilidad, confianza y permisos (M)** — TDD.
   - Aceptación: clase `Activity` con invariantes de la spec 5.1; `isPubliclyVisible(activity, site?)` (6 casos de 6.1 + sitio despublicado/inactivo); `isTrustedHost(history, now)` con `TRUST_MIN_APPROVED = 3`; `canCreateForSite(uid, site, isAdmin)`; `needsReReview(prev, next, trusted)` (cambia `title/description/media` y no es de confianza → true); tabla de permisos de la spec 7 como funciones puras.
   - Verifica: `pnpm test`; sin nombres prohibidos (`organizer`, `business`, …; se usa `host`).
   - Archivos: `domain/entities/activities/Activity.ts`, `visibility.ts`, `trust.ts`, `permissions.ts` (+ tests).
 
-- [ ] **A7 DTO valibot, modelo Firestore y mapeadores (M)**
+- [x] **A7 DTO valibot, modelo Firestore y mapeadores (M)**
   - Aceptación: `ActivityDto` (límites y mensajes en español, tú) reutilizando el normalizador de `sections`; DTO Firestore (`FirebaseActivityDto`, con `media[]` **plano** como sitios) con `occursWeekdays`, `nextOccurrenceAt`, `rating`, `analytics`; mapeadores `toDto`/`toViewModel` con **round-trip** (no pierden campos al re-guardar).
   - Verifica: `pnpm test` (round-trip; valores fuera de límite rechazados con mensaje claro; ausente = aceptado donde es opcional).
   - Archivos: `application/dto/activities/ActivityDto.ts`, `infraestructure/firebase/dto/activities/FirebaseActivityDto.ts`, `infraestructure/firebase/mappers/activities/ActivityFirebaseMapper.ts` (+ tests).
 
-- [ ] **A8 Repositorio, adaptador, servicio base e inyección (M)**
+- [x] **A8 Repositorio, adaptador, servicio base e inyección (M)**
   - Aceptación: interfaz en `domain/repository/activities`, implementación Firebase (Admin SDK) y adaptador; `ActivityService` con `create`, `update`, `getBySlug`, `listPublic`, `setActive`; registro en `createServerContainer()`; **ninguna consulta sin índice**: se listan las consultas y los índices necesarios en el plan y se **piden al dueño** (preguntar antes).
   - Verifica: tests del servicio con repositorio fake; `pnpm typecheck`.
   - Archivos: `domain/repository/activities/IActivityRepository.ts`, repo Firebase, adaptador, `application/services/activities/ActivityService.ts`, `infraestructure/di/container.ts`.
@@ -63,34 +63,34 @@ Estado inicial: todas sin marcar.
 
 ## Fase 1 — `activity-publish`
 
-- [ ] **A9 Registro de oferentes, Ley 1480 art. 53 (M)** — TDD.
+- [x] **A9 Registro de oferentes, Ley 1480 art. 53 (M)** — TDD.
   - Aceptación: entidad `HostIdentity` (persona natural: nombre completo, tipo y número de documento, dirección física, correo, teléfonos; persona jurídica: razón social, NIT, representante, dirección, correo, teléfonos) en `hostIdentities/{uid}` (solo Admin SDK); validación; fecha, `LEGAL_VERSION` y autorización de datos; acción `saveHostIdentityAction` (uid del token); `requireHostIdentity` impide publicar sin registro; reconfirmación a los 12 meses; **consulta para quejas** con sesión y límite (`getHostIdentityForComplaintAction`, con bitácora de quién consultó); `scripts/export-host-identity.ts` (dry-run, bitácora de exportación).
   - Verifica: `pnpm test`; sin sesión no consulta; consulta registra bitácora; ningún dato en HTML público.
   - Archivos: `domain/entities/activities/HostIdentity.ts`, DTO, repo, acciones, script (+ tests).
 
-- [ ] **A10 Antispam de actividades (S)** — extiende `spamGuard`.
+- [x] **A10 Antispam de actividades (S)** — extiende `spamGuard`.
   - Aceptación: `SPAM_LIMITS` gana `activitiesPerDay: 3`, `activitiesPendingMax: 3`, y `spamGuardError` soporta `kind: "activity"` (cooldown 30 s, duplicado 7 días, antigüedad mínima 10 min) **sin cambiar** el comportamiento de `suggestion`/`claim` (tests existentes siguen verdes).
   - Verifica: `pnpm test` (tests nuevos + los de `spamGuard` existentes).
   - Archivos: `domain/entities/spamGuard/spamGuard.ts` (+ test).
 
-- [ ] **A11 Acciones de servidor: crear, editar, pausar (M)**
+- [x] **A11 Acciones de servidor: crear, editar, pausar (M)**
   - Aceptación: `createActivityAction`, `updateActivityAction`, `setActivityActiveAction` con uid **solo del token**; comprueban propiedad del sitio (`canCreateForSite`) antes de aceptar `siteId`; exigen registro de oferentes (A9) y declaración (`contentDeclarations/activity_{id}` con `LEGAL_VERSION`); aplican antispam (A10); decide `pending` vs `approved` por `isTrustedHost` (admin siempre aprobada); `otros` siempre `pending`; al **publicar la primera** pasa la cuenta a `creator` con el método de `UserService` (D37, `try/catch` que solo registra como en sitios); emite log `alert=qhpa_new_activity` si queda `pending`; invalida con `updateTag`/`cacheTag`.
   - Verifica: tests de servicio: **IDOR** (otra cuenta intenta colgar actividad en sitio ajeno → error), `consumer` pasa a `creator`, tope de pendientes, edición de cuenta sin confianza con cambio de título → `pending`.
   - Archivos: `app/actions/activities/*.action.ts` (≤3) + `application/services/activities/ActivityService.ts`.
 
-- [ ] **A12 Moderación y administración por scripts (M)**
+- [x] **A12 Moderación y administración por scripts (M)**
   - Aceptación: servicio `approve`/`reject` con transacción sobre `activityAccounts/{uid}` (`approvedCount`); notificaciones `activity_moderation` (agregar tipo a `NOTIFICATION_TYPES`, textos en `messages.ts`); `scripts/list-activities.ts` (dry-run por defecto; `--approve <id>`, `--reject <id> --reason "..."`, `--apply`; lista título, creador, URL local, antigüedad en horas).
   - Verifica: `pnpm test`; dry-run no modifica; con `--apply` en develop aprueba y notifica.
   - Archivos: `application/services/activities/ActivityModerationService.ts`, `domain/entities/notification/*`, `scripts/list-activities.ts`.
 
-- [ ] **A13 Transferencia por reclamo y visibilidad por sitio (S)**
+- [x] **A13 Transferencia por reclamo y visibilidad por sitio (S)**
   - Aceptación: al aprobar un reclamo, las actividades de ese sitio pasan al nuevo autor y el anterior recibe `activity_transferred`; una actividad de sitio deja de ser pública si el sitio se despublica o desactiva (visibilidad derivada, ya cubierta en A6; se agrega el cableado/consulta).
   - Verifica: `pnpm test` del script de reclamos ampliado; prueba manual en develop con sitio de QA.
   - Archivos: `scripts/list-site-claims.ts`, `application/services/siteClaim/*` (si aplica) (+ test).
 
 ### Checkpoint CP-1 — dominio y servicio
-- [ ] `pnpm test`, `pnpm typecheck`, `pnpm build` verdes.
-- [ ] Una actividad se crea por servicio de prueba, queda `pending`, no es pública y un script la aprueba.
+- [x] `pnpm test` (741 pruebas), `pnpm typecheck` y `pnpm build` verdes (2026-11-10).
+- [x] Cubierto con pruebas de servicio (fakes): se crea, queda `pending`, no es pública y `list-activities.ts` la aprueba. **Sin probar contra Firestore real** (no se escribió ningún dato).
 - [ ] Índices necesarios listados y **aprobados por el dueño** antes de crear consultas reales.
 - [ ] Revisión con el dueño antes de abrir interfaz.
 
