@@ -39,3 +39,12 @@ export function activityModerationNotification(i: { title: string; slug: string;
     ? { type: "activity_moderation", title: `Aprobaron tu actividad "${i.title}"`, body: "Ya aparece en Qué Hay Pa Hacer.", href: `/actividades/${i.slug}` }
     : { type: "activity_moderation", title: `No aprobaron tu actividad "${i.title}"`, body: i.reason?.trim() || undefined, href: "/actividades/mis" };
 }
+
+export function activityTransferredNotification(i: { title: string; siteName: string }): NewNotification {
+  return {
+    type: "activity_transferred",
+    title: `Tu actividad "${i.title}" cambió de responsable`,
+    body: i.siteName ? `Se aprobó un reclamo del sitio "${i.siteName}": la actividad pasó a su nuevo responsable.` : "Se aprobó un reclamo del sitio: la actividad pasó a su nuevo responsable.",
+    href: "/actividades/mis",
+  };
+}
