@@ -63,3 +63,19 @@ export function normalizeCta(input: { kind: unknown; value: unknown; label?: unk
   if (k === "instagram" && !(u.hostname === "instagram.com" || u.hostname.endsWith(".instagram.com"))) return fail("El enlace debe ser de instagram.com.")
   return withLabel(k, u.toString())
 }
+
+const DEFAULT_LABELS: Record<CtaKind, string> = {
+  whatsapp: "Escribir por WhatsApp",
+  whatsappGroup: "Unirme al grupo",
+  website: "Ver más",
+  instagram: "Ver en Instagram",
+  phone: "Llamar",
+  reserveLink: "Reservar",
+  buyLink: "Comprar",
+}
+
+/** Texto del botón: el que escribió el creador o el de su tipo. */
+export const ctaButtonLabel = (c: Pick<Cta, "kind" | "label"> & Partial<Pick<Cta, "value">>): string => c.label?.trim() || DEFAULT_LABELS[c.kind]
+
+/** Enlace del botón. El teléfono se abre con `tel:`; todo lo demás ya es https. */
+export const ctaHref = (c: Pick<Cta, "kind" | "value">): string => (c.kind === "phone" ? `tel:${c.value}` : c.value)

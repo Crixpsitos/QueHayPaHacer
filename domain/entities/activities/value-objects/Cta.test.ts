@@ -61,3 +61,12 @@ test("etiqueta opcional máx. 30 y valor máx. 300", () => {
   assert.equal(r.ok, false)
   err("website", "https://x.com/" + "a".repeat(300))
 })
+
+import { ctaButtonLabel, ctaHref } from "./Cta"
+test("texto y enlace del botón: etiqueta propia o la de su tipo; teléfono como tel:", () => {
+  assert.equal(ctaButtonLabel({ kind: "whatsappGroup", value: "https://chat.whatsapp.com/x" }), "Unirme al grupo")
+  assert.equal(ctaButtonLabel({ kind: "whatsapp", value: "https://wa.me/573001234567", label: "Escríbeme" }), "Escríbeme")
+  assert.equal(ctaButtonLabel({ kind: "buyLink", value: "https://x.com" }), "Comprar")
+  assert.equal(ctaHref({ kind: "phone", value: "+573001234567" }), "tel:+573001234567")
+  assert.equal(ctaHref({ kind: "website", value: "https://x.com/a" }), "https://x.com/a")
+})
