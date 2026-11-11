@@ -32,3 +32,20 @@ export function firstOccurrenceIn(s: ActivitySchedule, r: DayRange, now: Date): 
   }
   return null
 }
+
+/** Día suelto de la URL (`dia=YYYY-MM-DD`): solo hoy y los 13 días siguientes. */
+export function parseDay(v: unknown, now: Date): string | undefined {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined
+  const today = bogotaDateIso(now)
+  return v >= today && v <= add(today, 13) ? v : undefined
+}
+export const dayRange = (day: string): DayRange => ({ from: day, to: day })
+
+/** Cuántas actividades salen cada uno de los próximos `days` días (hoy cuenta solo lo que no terminó). */
+export function countsByDay(schedules: readonly ActivitySchedule[], now: Date, days = 7): { date: string; count: number }[] {
+  const today = bogotaDateIso(now)
+  return Array.from({ length: days }, (_, i) => {
+    const date = add(today, i)
+    return { date, count: schedules.filter((s) => firstOccurrenceIn(s, { from: date, to: date }, now) !== null).length }
+  })
+}

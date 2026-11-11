@@ -104,6 +104,7 @@ export interface ActivityCardView {
   slug: string
   title: string
   hostName: string
+  categorySlug: string
   categoryName: string
   coverUrl: string | null
   coverAlt: string
@@ -123,6 +124,7 @@ export function toCardView(a: Activity): ActivityCardView {
     slug: a.slug,
     title: a.title,
     hostName: a.host.displayName,
+    categorySlug: a.category,
     categoryName: ACTIVITY_CATEGORIES.find((c) => c.slug === a.category)?.name ?? "",
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
     coverAlt: cover?.alt || a.title,

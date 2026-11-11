@@ -89,9 +89,9 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
   const phoneOk = /^\+?[\d\s().-]{10,16}$/.test(phone.trim())
 
   return (
-    <section id="reservar" aria-labelledby="reservar-t" className="grid scroll-mt-24 gap-3 rounded-3xl border border-border bg-card p-4 shadow-sm">
+    <section id="reservar" aria-labelledby="reservar-t" className="grid scroll-mt-24 gap-4 rounded-[2rem] border-2 border-foreground bg-card p-5 shadow-card">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="reservar-t" className="font-heading text-xl font-semibold">{status.paid ? "Reserva tu cupo" : "Únete"}</h2>
+        <h2 id="reservar-t" className="font-heading text-2xl font-extrabold tracking-tight">{status.paid ? "Reserva tu cupo" : "Únete"}</h2>
         <span className="text-sm text-muted-foreground">{status.paid ? "Reservar es gratis" : "Gratis"}</span>
       </div>
 
@@ -138,7 +138,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
             const p = pill(o)
             const on = picked.includes(o.key)
             return (
-              <label key={o.key} className={cn("flex min-h-14 items-center gap-3 rounded-2xl border-2 px-3.5 py-2 transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/30", o.full ? "border-border bg-muted text-muted-foreground" : on ? "cursor-pointer border-primary bg-primary-light" : "cursor-pointer border-border bg-card hover:bg-muted/50")}>
+              <label key={o.key} className={cn("flex min-h-14 items-center gap-3 rounded-2xl border-2 px-3.5 py-2 transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/30", o.full ? "border-border bg-muted text-muted-foreground" : on ? "cursor-pointer border-foreground bg-[#FFF3CC]" : "cursor-pointer border-border bg-card hover:bg-muted/50")}>
                 <input type="checkbox" className="size-5 accent-[#D42F3C]" checked={on} disabled={o.full} onChange={() => toggle(o.key)} />
                 <span className="font-semibold">{cap(dateLabel(o))}</span>
                 {p ? <span className={cn("ml-auto whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold", p.cls)}>{p.text}</span> : null}

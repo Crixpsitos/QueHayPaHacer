@@ -20,3 +20,9 @@ test("cuándo, presupuesto y con quién viajan en la dirección; un toque en el 
   assert.equal(filterHref({ when: "hoy", budget: "gratis", companion: "familia" }, { when: undefined }), "/actividades?presupuesto=gratis&con=familia")
   assert.equal(filterHref({ category: "aire-libre", when: "esta-semana" }, { companion: "pareja" }), "/actividades?categoria=aire-libre&cuando=esta-semana&con=pareja")
 })
+
+test("un día concreto reemplaza a «cuándo» y al revés", () => {
+  assert.equal(filterHref({ when: "hoy" }, { day: "2026-11-13" }), "/actividades?dia=2026-11-13")
+  assert.equal(filterHref({ day: "2026-11-13" }, { when: "esta-semana" }), "/actividades?cuando=esta-semana")
+  assert.equal(filterHref({ day: "2026-11-13", budget: "gratis" }, { day: undefined }), "/actividades?presupuesto=gratis")
+})

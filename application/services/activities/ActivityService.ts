@@ -2,7 +2,7 @@ import type { Activity } from "@/domain/entities/activities/Activity"
 import { nextOccurrence } from "@/domain/entities/activities/value-objects/occurrences"
 import { canManageActivity, canViewActivity } from "@/domain/entities/activities/permissions"
 import { isPubliclyVisible, type LinkedSite } from "@/domain/entities/activities/visibility"
-import { firstOccurrenceIn, whenRange } from "@/domain/entities/activities/when"
+import { dayRange, firstOccurrenceIn, whenRange } from "@/domain/entities/activities/when"
 import { matchesFilters, type ActivityFilters } from "@/domain/entities/activities/filters"
 import type { IActivityRepository } from "@/domain/repository/activities/IActivityRepository"
 
@@ -75,8 +75,8 @@ export class ActivityService {
     const now = new Date()
     const all = (await this.listPublic(LISTABLE_CAP)).filter((a) => matchesFilters(a, filters, now))
     // con "cuándo": lo que sale primero va primero (sin hora = al final del día)
-    if (filters.when) {
-      const range = whenRange(filters.when, now)
+    if (filters.when || filters.day) {
+      const range = filters.when ? whenRange(filters.when, now) : dayRange(filters.day!)
       const key = (a: Activity) => { const o = firstOccurrenceIn(a.schedule, range, now); return o ? `${o.date}|${o.startsAt ? o.startsAt.toISOString() : "~"}` : "~" }
       all.sort((x, y) => key(x).localeCompare(key(y)))
     }

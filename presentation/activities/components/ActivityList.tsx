@@ -8,7 +8,7 @@ import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { ActivityCard } from "./ActivityCard"
 
 /** Lista del hub con "Ver más" (12 por página). La primera página llega ya renderizada desde el servidor. */
-export function ActivityList({ first, filters }: { first: ActivityPage; filters: { category?: string; kind?: string; siteId?: string; cuando?: string; presupuesto?: string; con?: string } }) {
+export function ActivityList({ first, filters }: { first: ActivityPage; filters: { category?: string; kind?: string; siteId?: string; cuando?: string; dia?: string; presupuesto?: string; con?: string } }) {
   const [items, setItems] = useState<ActivityCardView[]>(first.items)
   const [next, setNext] = useState<number | null>(first.nextOffset)
   const [busy, setBusy] = useState(false)

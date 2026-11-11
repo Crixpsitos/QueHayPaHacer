@@ -2,6 +2,8 @@ import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
+import { buildAgenda } from "@/domain/entities/activities/agenda"
+import { countsByDay, dayRange, whenRange } from "@/domain/entities/activities/when"
 import { chooseHomeBlock } from "@/presentation/activities/lib/homeBlock"
 import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
 
@@ -119,4 +121,33 @@ export const fetchRelatedActivities = async (id: string, categorySlug: string, s
     similarTitle = "También esta semana"
   }
   return { sameSite: sameSite.map(toCardView), similar: similar.map(toCardView), similarTitle }
+}
+
+export interface HubMeta { days: { date: string; count: number }[]; categories: Record<string, number>; total: number }
+
+/** Lo que necesita la cabecera del hub: cuántas actividades salen cada día de la semana y por categoría. */
+export const fetchHubMeta = async (): Promise<HubMeta> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list")
+  const all = await createServerContainer().activityService.listPublic(500)
+  const categories: Record<string, number> = {}
+  for (const a of all) categories[a.category] = (categories[a.category] ?? 0) + 1
+  return { days: countsByDay(all.map((a) => a.schedule), new Date(), 7), categories, total: all.length }
+}
+
+export interface AgendaDayView { date: string; entries: { card: ActivityCardView; hhmm: string | null }[] }
+
+/** Agenda por día para un «cuándo» o un día suelto (con los demás filtros aplicados). */
+export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayView[]> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list")
+  const range = filters.day ? dayRange(filters.day) : filters.when ? whenRange(filters.when, new Date()) : null
+  if (!range) return []
+  const svc = createServerContainer().activityService
+  const { items } = await svc.search(filters, 0, 200)
+  const byId = new Map(items.map((a) => [a.id, a]))
+  const days = buildAgenda(items.map((a) => ({ id: a.id, schedule: a.schedule })), range, new Date())
+  return days.map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: toCardView(byId.get(e.id)!), hhmm: e.hhmm })) }))
 }

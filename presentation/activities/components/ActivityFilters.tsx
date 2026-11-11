@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ACTIVITY_CATEGORIES, COMPANIONS, type Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import type { BudgetBand } from "@/domain/entities/activities/value-objects/Budget"
-import { WHEN_VALUES, type When } from "@/domain/entities/activities/when"
+import type { When } from "@/domain/entities/activities/when"
 import type { UrlFilters } from "@/domain/entities/activities/filters"
 import { filterHref } from "@/presentation/activities/lib/filterHref"
 import { cn } from "@/app/lib/utils/cn"
@@ -35,6 +35,7 @@ function Chip({ current, patch, active, children }: { current: UrlFilters; patch
 export function ActivityFilters({ current }: { current: UrlFilters }) {
   const active: { label: string; href: string }[] = [
     ...(current.when ? [{ label: WHEN_LABELS[current.when], href: filterHref(current, { when: undefined }) }] : []),
+    ...(current.day ? [{ label: new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${current.day}T12:00:00Z`)), href: filterHref(current, { day: undefined }) }] : []),
     ...(current.budget ? [{ label: BUDGET_LABELS[current.budget], href: filterHref(current, { budget: undefined }) }] : []),
     ...(current.companion ? [{ label: COMPANION_LABELS[current.companion], href: filterHref(current, { companion: undefined }) }] : []),
     ...(current.category ? [{ label: ACTIVITY_CATEGORIES.find((c) => c.slug === current.category)?.name ?? "", href: filterHref(current, { category: undefined }) }] : []),
@@ -43,10 +44,6 @@ export function ActivityFilters({ current }: { current: UrlFilters }) {
   const more = [current.budget, current.companion, current.category, current.kind].filter(Boolean).length
   return (
     <div className="grid gap-4">
-      <Group label="Cuándo">
-        {WHEN_VALUES.map((w) => <Chip key={w} current={current} patch={{ when: w }} active={current.when === w}>{WHEN_LABELS[w]}</Chip>)}
-        <Chip current={current} patch={{ when: undefined }} active={!current.when}>Cualquier día</Chip>
-      </Group>
       {/* Lo secundario va plegado: en el móvil lo primero que se ve debe ser el resultado. Nativo, sin JavaScript. */}
       <details open={more > 0} className="group/more rounded-2xl border border-border bg-card px-4 py-1">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40 [&::-webkit-details-marker]:hidden">

@@ -42,3 +42,24 @@ test("sin fecha fija ('todos los días') aparece hoy; 'con cita' no", () => {
   assert.ok(firstOccurrenceIn(always, whenRange("hoy", now), now))
   assert.equal(firstOccurrenceIn(appt, whenRange("hoy", now), now), null)
 })
+
+import { countsByDay, dayRange, parseDay } from "./when"
+
+test("día suelto: solo acepta fechas de los próximos 14 días", () => {
+  const now = at("2026-11-11T15:00:00Z")
+  assert.equal(parseDay("2026-11-13", now), "2026-11-13")
+  assert.equal(parseDay("2026-11-10", now), undefined) // ayer
+  assert.equal(parseDay("2026-12-30", now), undefined) // muy lejos
+  assert.equal(parseDay("hoy", now), undefined)
+  assert.deepEqual(dayRange("2026-11-13"), { from: "2026-11-13", to: "2026-11-13" })
+})
+test("conteo por día: la semana de 7 días con cuántas actividades sale cada uno", () => {
+  const now = at("2026-11-11T15:00:00Z") // miércoles 11
+  const sunday = sundays6 // domingo 15 de 6 a 10
+  const wed: ActivitySchedule = { rules: [{ kind: "weekly", weekdays: [3], start: "18:00" }], skipDates: [], requiresReservation: false }
+  const c = countsByDay([sunday, wed], now, 7)
+  assert.equal(c.length, 7)
+  assert.deepEqual([c[0].date, c[0].count], ["2026-11-11", 1]) // hoy: la de las 6 p. m. todavía no sale
+  assert.deepEqual([c[4].date, c[4].count], ["2026-11-15", 1])
+  assert.equal(c[1].count, 0)
+})
