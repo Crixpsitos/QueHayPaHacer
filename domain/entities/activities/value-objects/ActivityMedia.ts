@@ -36,3 +36,22 @@ export function mediaError(media: ActivityMedia[]): string | null {
   if (covers[0].status === "error") return "La portada no se pudo procesar: sube otra imagen."
   return null
 }
+
+const STORAGE_HOSTS = ["https://storage.googleapis.com/", "https://firebasestorage.googleapis.com/"]
+
+/**
+ * Los medios llegan del cliente: solo valen los que viven bajo `public/activities/{id}/{images|videos}/` y
+ * se sirven desde Storage. Evita que alguien cuelgue medios de otro recurso o enlaces externos.
+ */
+export function mediaOwnershipError(activityId: string, media: ActivityMedia[]): string | null {
+  if (!Array.isArray(media)) return "Fotos inválidas."
+  const prefix = `public/activities/${activityId}/`
+  for (const m of media) {
+    const folder = m.type === "image" ? "images" : m.type === "video" ? "videos" : null
+    if (!folder || typeof m.path !== "string" || !m.path.startsWith(`${prefix}${folder}/`) || m.path.slice(prefix.length + folder.length + 1).includes("/") || m.path.includes(".."))
+      return "Una de las fotos o videos no es válida. Súbela de nuevo."
+    if (typeof m.url !== "string" || !STORAGE_HOSTS.some((h) => m.url.startsWith(h))) return "Una de las fotos o videos no es válida. Súbela de nuevo."
+    if (typeof m.id !== "string" || !m.id) return "Una de las fotos o videos no es válida. Súbela de nuevo."
+  }
+  return null
+}
