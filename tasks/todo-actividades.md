@@ -111,27 +111,27 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de lógica pura; guion de prueba manual numerado; Playwright si está disponible.
   - Archivos: ≤5 por commit, bajo `presentation/activities/components/wizard/` y `app/actividades/`.
 
-- [ ] **A15 "Mis actividades" (M)**
+- [x] **A15 "Mis actividades" (M)**
   - Aceptación: `app/actividades/mis`: lista propia con estado (en revisión, publicada, rechazada con motivo, pausada), acciones (editar, pausar, vista previa), vista previa para actividades `pending`; sin Premium; vacío con invitación a crear.
   - Verifica: prueba manual con cuenta `creator` y con `consumer`.
   - Archivos: `app/actividades/mis/page.tsx`, `presentation/activities/components/MyActivities*.tsx`.
 
-- [ ] **A16 Ficha pública `/actividades/[slug]` (M)**
+- [x] **A16 Ficha pública `/actividades/[slug]` (M)**
   - Aceptación: contenido y orden de la spec 8.3 (galería, "Próxima salida", precio desglosado, CTA principal y secundarias con el comportamiento de `meetingPoint`, anfitrión, descripción + acordeón `sections` reutilizando `SectionsAccordion`, relacionadas, enlace "Datos de quien ofrece / Presentar una queja"); `params` dentro de `Suspense` y sin `generateStaticParams`+`notFound()` en el shell (memoria E22); no pública → 404; sin reseñas aún.
   - Verifica: build de producción local en :3100; actividad `pending` → 404 público y vista previa solo para el creador; Lighthouse en móvil.
   - Archivos: `app/actividades/[slug]/page.tsx`, `presentation/activities/components/detail/*`, `presentation/activities/data/fetchers.ts`.
 
-- [ ] **A17 Tarjeta y hub `/actividades` con filtros básicos (M)**
+- [x] **A17 Tarjeta y hub `/actividades` con filtros básicos (M)**
   - Aceptación: `ActivityCard` (portada, título, categoría, "Próxima salida", precio "desde", chips); hub con listado infinito de 12 (patrón `InfiniteExploreSearch`), filtros de categoría y tipo; sin bloque vacío; orden = próxima salida más cercana.
   - Verifica: `pnpm build`; prueba manual con 6+ actividades de QA.
   - Archivos: `app/actividades/page.tsx`, `presentation/activities/components/ActivityCard.tsx`, `ActivityList.tsx`, `data`.
 
-- [ ] **A18 Bloque "¿Qué se puede hacer aquí?" en la ficha del sitio (S)**
+- [x] **A18 Bloque "¿Qué se puede hacer aquí?" en la ficha del sitio (S)**
   - Aceptación: en `SiteDetailContainer`, tarjetas (máx. 6) de actividades públicas del sitio con "ver todas" → `/actividades?sitio=<slug>`; **no se renderiza** si no hay; orden estable; `cacheTag("site-<id>-activities")`.
   - Verifica: sitio con y sin actividades; invalidación al aprobar/pausar.
   - Archivos: `presentation/sites/components/detail/SiteDetailContainer.tsx`, `SiteActivitiesBlock.tsx`.
 
-- [ ] **A19 SEO básico de F1 (M)**
+- [x] **A19 SEO básico de F1 (M)**
   - Aceptación: `generateMetadata` de la ficha (título, descripción ≤155, canonical), Open Graph JPEG `app/og/actividad/[slug]`, JSON-LD `Service`/`TouristAttraction` con `offers` (sin `AggregateRating` todavía), sitemap con detalle de actividades y `cacheTag("activity-list")`.
   - Verifica: Prueba de resultados enriquecidos sin errores críticos; sitemap solo con URLs públicas; HTML con metadatos correctos.
   - Archivos: `app/actividades/[slug]/page.tsx` (metadata), `app/og/actividad/[slug]/route.tsx`, `app/sitemap.ts`, `presentation/activities/lib/activityJsonLd.ts` (+ test).
