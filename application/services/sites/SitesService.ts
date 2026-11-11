@@ -7,7 +7,7 @@ import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 import type { SiteEventState } from "@/domain/entities/sites/siteEventCount"
-import type { SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
+import { isLinkableSite, type SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
 import { pickDiscoverIds } from "@/domain/entities/sites/siteDiscovery"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
@@ -201,7 +201,7 @@ export class SitesService {
   }
 
   /** Datos mínimos para vincular y mostrar actividades de un sitio: autor, y si el sitio es público y está activo. */
-  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean } | null> {
+  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean } | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null
     return {
@@ -210,6 +210,7 @@ export class SitesService {
       authorId: authorIdOf(dto) ?? null,
       published: dto.publicationStatus === "published" && dto.moderationStatus === "approved",
       active: dto.isActive === true,
+      linkable: isLinkableSite(dto),
     }
   }
 

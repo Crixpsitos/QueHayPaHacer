@@ -64,7 +64,7 @@ function setup(opts: { history?: AccountHistory; sites?: Record<string, SiteLink
 const mediaFor = (id: string) => [makeImage("m1", true, { path: `public/activities/${id}/images/m1.jpg`, url: `https://storage.googleapis.com/b/public/activities/${id}/images/m1.jpg` })]
 const user = { uid: "u1", isAdmin: false, accountCreatedAt: NOW.getTime() - 86_400_000 }
 const admin = { uid: "admin", isAdmin: true }
-const own = { s1: { name: "Nebraska", slug: "nebraska", authorId: "u1", published: true, active: true } }
+const own = { s1: { name: "Nebraska", slug: "nebraska", authorId: "u1", published: true, active: true, linkable: true } }
 
 test("borrador: se guarda sin declaración, sin registro de oferente y sin pasar a creator", async () => {
   const { svc, repo, calls } = setup({ gateOk: false })
@@ -149,6 +149,13 @@ test("D12: solo el autor del sitio (o QHPA) crea actividades de ese sitio; error
   assert.equal(ajeno.repo.items.length, 0)
   assert.equal((await ajeno.svc.save(admin, { input: input({ siteId: "s1" }), media: [], publish: false, declaration: false })).ok, true)
   assert.equal((await setup().svc.save(user, { input: input({ siteId: "no-existe" }), media: [], publish: false, declaration: false })).ok, false)
+})
+
+test("un sitio del usuario que no es 'de verdad propio' (propuesto o sin aprobar) no admite actividades, salvo QHPA", async () => {
+  const sites = { s1: { ...own.s1, linkable: false } }
+  const s = setup({ sites })
+  assert.deepEqual(await s.svc.save(user, { input: input({ siteId: "s1" }), media: [], publish: false, declaration: false }), { ok: false, error: "No se pudo guardar la actividad." })
+  assert.equal((await setup({ sites }).svc.save(admin, { input: input({ siteId: "s1" }), media: [], publish: false, declaration: false })).ok, true)
 })
 
 test("antispam: con 3 actividades en revisión no deja crear otra", async () => {

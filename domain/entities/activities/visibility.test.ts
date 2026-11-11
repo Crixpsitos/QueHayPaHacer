@@ -27,8 +27,10 @@ test("de sitio: pública solo si el sitio sigue publicado y activo", () => {
 })
 
 test("D12: solo el autor del sitio (o QHPA) crea actividades de ese sitio", () => {
-  const base = { uid: "u1", siteAuthorUid: "u1", siteExists: true, isAdmin: false }
+  const base = { uid: "u1", siteAuthorUid: "u1", siteExists: true, siteLinkable: true, isAdmin: false }
   assert.equal(canCreateForSite(base), true)
+  assert.equal(canCreateForSite({ ...base, siteLinkable: false }), false) // sitio propuesto por la comunidad o sin aprobar
+  assert.equal(canCreateForSite({ ...base, siteLinkable: false, isAdmin: true }), true)
   assert.equal(canCreateForSite({ ...base, siteAuthorUid: "otro" }), false)
   assert.equal(canCreateForSite({ ...base, siteAuthorUid: "otro", isAdmin: true }), true)
   assert.equal(canCreateForSite({ ...base, uid: null }), false)

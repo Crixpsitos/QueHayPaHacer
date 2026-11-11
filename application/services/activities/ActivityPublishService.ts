@@ -18,6 +18,8 @@ export interface SiteLinkSnapshot {
   authorId: string | null
   published: boolean
   active: boolean
+  /** Publicado como dueño y aprobado (`isLinkableSite`): condición para vincularle actividades. */
+  linkable: boolean
 }
 
 /** Identidad de quien actúa: SIEMPRE sale de la sesión del servidor, nunca del cliente. */
@@ -73,7 +75,7 @@ export class ActivityPublishService {
     // D12: solo el autor del sitio (o QHPA) vincula actividades a ese sitio. Error genérico: no revelar si el sitio existe.
     if (req.input.siteId) {
       const site = await this.d.siteSnapshot(req.input.siteId)
-      if (!site || !canCreateForSite({ uid: ctx.uid, siteAuthorUid: site.authorId, siteExists: true, isAdmin: ctx.isAdmin })) return fail(GENERIC)
+      if (!site || !canCreateForSite({ uid: ctx.uid, siteAuthorUid: site.authorId, siteExists: true, siteLinkable: site.linkable, isAdmin: ctx.isAdmin })) return fail(GENERIC)
     }
     if (existing) {
       const mediaErr = mediaOwnershipError(existing.id, req.media)
