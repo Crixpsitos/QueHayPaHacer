@@ -2,6 +2,7 @@ import type { Activity, Difficulty } from "@/domain/entities/activities/Activity
 import { ACTIVITY_CATEGORIES, type Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import { describeSchedule, type ActivitySchedule } from "@/domain/entities/activities/value-objects/ActivitySchedule"
 import { ctaButtonLabel, ctaHref, type CtaKind } from "@/domain/entities/activities/value-objects/Cta"
+import { isPaidActivity } from "@/domain/entities/activities/activityJoin"
 import { formatCop, priceFromCop } from "@/domain/entities/activities/value-objects/Price"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 
@@ -31,6 +32,10 @@ export interface ActivityPublicView {
   requiresReservation: boolean
   /** Para calcular "Próxima salida" en el navegador (el HTML se cachea por horas). */
   schedule: ActivitySchedule
+  /** Recibe reservas en QHPA (el detalle de cupos se pide aparte: la ficha se cachea por horas). */
+  joinEnabled: boolean
+  /** Todas las opciones cuestan: reservar pide WhatsApp. */
+  paid: boolean
   priceFrom: string
   prices: { label: string; amount: string; amountCop: number; unit: string; includes: string[]; note: string }[]
   extras: { label: string; amount: string; unit: string; note: string }[]
@@ -82,6 +87,8 @@ export function toPublicView(a: Activity): ActivityPublicView {
     scheduleNote: a.schedule.note ?? "",
     requiresReservation: a.schedule.requiresReservation,
     schedule: a.schedule,
+    joinEnabled: a.join !== null,
+    paid: isPaidActivity(a.priceOptions),
     priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
     prices: a.priceOptions.map((p) => ({ label: p.label, amount: formatCop(p.amountCop), amountCop: p.amountCop, unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),

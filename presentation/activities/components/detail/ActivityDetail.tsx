@@ -8,6 +8,7 @@ import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
 import { ActivityEngagement } from "./ActivityEngagement"
+import { ActivityJoin } from "./ActivityJoin"
 import { TrackedCta } from "./TrackedCta"
 import { EventViewTracker } from "@/app/components/analytics/EventViewTracker"
 
@@ -86,6 +87,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             <p className="max-w-2xl whitespace-pre-line text-base leading-relaxed">{d.description}</p>
           </section>
 
+          {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
+
           {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
 
           <SectionsAccordion sections={d.sections} />
@@ -103,7 +106,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
         <ShareButton title={d.title} activityId={d.id} className="h-12 shrink-0" />
-        {d.cta ? <Button asChild size="lg" className="h-12 flex-1 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</TrackedCta></Button> : null}
+        {d.joinEnabled && !preview ? <Button asChild size="lg" className="h-12 flex-1 text-base"><a href="#reservar">{d.paid ? `Reservar cupo · ${d.priceFrom.replace("Desde ", "")}` : "Unirme"}</a></Button> : null}
+        {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 flex-1 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</TrackedCta></Button> : null}
       </div>
     </article>
   )

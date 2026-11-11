@@ -78,3 +78,11 @@ test("'N personas fueron' solo desde 10 visitas", () => {
   assert.equal(label(10), "10 personas fueron")
   assert.equal(label(1234), "1.234 personas fueron")
 })
+
+test("vista pública: indica si recibe reservas y si cuesta, sin exponer cómo se paga", () => {
+  const v = toPublicView(makeActivity({ join: { capacity: 10, closed: false, payInstructions: "Nequi 300 765 4321" } }))
+  assert.deepEqual([v.joinEnabled, v.paid], [true, true])
+  assert.ok(!JSON.stringify(v).includes("Nequi"))
+  const none = toPublicView(makeActivity({ join: null }))
+  assert.deepEqual([none.joinEnabled, none.paid], [false, true])
+})
