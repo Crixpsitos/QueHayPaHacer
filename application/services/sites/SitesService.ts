@@ -200,6 +200,19 @@ export class SitesService {
     }
   }
 
+  /** Datos mínimos para vincular y mostrar actividades de un sitio: autor, y si el sitio es público y está activo. */
+  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean } | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    return {
+      name: dto.name,
+      slug: dto.slug ?? "",
+      authorId: authorIdOf(dto) ?? null,
+      published: dto.publicationStatus === "published" && dto.moderationStatus === "approved",
+      active: dto.isActive === true,
+    }
+  }
+
   async getClaimSnapshot(id: string): Promise<ClaimSiteSnapshot | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null

@@ -48,6 +48,8 @@ import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFir
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
+import { ActivityService } from "@/application/services/activities/ActivityService";
+import { ActivityFirebaseRepository } from "../firebase/repositories/activities/ActivityFirebaseRepository";
 import { DailyStatsFirebaseRepository } from "@/infraestructure/firebase/repositories/analytics/DailyStatsFirebaseRepository";
 import { LinksService } from "@/application/services/links/LinksService";
 import { LinksFirebaseRepository } from "@/infraestructure/firebase/repositories/links/LinksFirebaseRepository";
@@ -159,6 +161,12 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
 
+  // actividades (el estado del sitio vinculado decide la visibilidad de las actividades de sitio)
+  const activityService = new ActivityService(new ActivityFirebaseRepository(getFirebaseFirestore()), async (siteId) => {
+    const s = await sitesService.getActivityLinkSnapshot(siteId);
+    return s ? { published: s.published, active: s.active } : null;
+  });
+
   // estadísticas diarias por ficha (solo lectura)
   const dailyStatsRepository = new DailyStatsFirebaseRepository(getFirebaseFirestore());
 
@@ -235,6 +243,7 @@ export const createServerContainer = () => {
     eventFeed,
     userPreferencesService,
     sitesService,
+    activityService,
     siteInteractionService,
     storageService,
     profileService,

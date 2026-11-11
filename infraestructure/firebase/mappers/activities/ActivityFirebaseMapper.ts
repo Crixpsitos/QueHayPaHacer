@@ -63,6 +63,7 @@ export class ActivityFirebaseMapper {
     void _id
     return stripUndefined({
       ...rest,
+      listable: a.publicationStatus === "published" && a.moderationStatus === "approved" && a.isActive,
       occursWeekdays: occursWeekdays(a.schedule),
       nextOccurrenceAt: nextOccurrence(a.schedule, now)?.startsAt ?? null,
     }) as unknown as FirebaseActivityDto

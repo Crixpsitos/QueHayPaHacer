@@ -35,6 +35,8 @@ export interface FirebaseActivityDto {
   publicationStatus: ActivityPublicationStatus
   moderationStatus: ActivityModerationStatus
   isActive: boolean
+  /** Derivado: publicada ∧ aprobada ∧ activa. Índice de campo simple para listar sin índice compuesto (la visibilidad del sitio se decide al leer). */
+  listable: boolean
   /** Derivados para consultas "hoy" y "próxima salida" sin escanear la colección (los refresca la escritura y el barrido). */
   occursWeekdays: number[]
   nextOccurrenceAt: Timestamp | Date | null

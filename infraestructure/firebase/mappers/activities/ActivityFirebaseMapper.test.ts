@@ -53,3 +53,10 @@ test("toDomain acepta fechas como Date o como Timestamp", () => {
   const dto = mapper.toFirebase(a)
   assert.deepEqual(mapper.toDomain("a1", { ...dto, createdAt: a.createdAt, updatedAt: a.updatedAt, publishedAt: null, reviewedAt: null, rejectedAt: null } as never).createdAt, a.createdAt)
 })
+
+test("toFirebase marca `listable` solo si está publicada, aprobada y activa", () => {
+  assert.equal(mapper.toFirebase(makeActivity()).listable, true)
+  assert.equal(mapper.toFirebase(makeActivity({ moderationStatus: "pending" })).listable, false)
+  assert.equal(mapper.toFirebase(makeActivity({ publicationStatus: "draft" })).listable, false)
+  assert.equal(mapper.toFirebase(makeActivity({ isActive: false })).listable, false)
+})
