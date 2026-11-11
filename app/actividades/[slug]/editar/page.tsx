@@ -7,15 +7,16 @@ import { ActivityWizard } from "@/presentation/activities/components/wizard/Acti
 
 export const metadata: Metadata = { title: "Editar actividad", robots: { index: false, follow: false } }
 
-async function EditLoader({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+async function EditLoader({ params }: { params: Promise<{ slug: string }> }) {
+  // el segmento se llama [slug] por la ficha pública; aquí su valor es el id de la actividad
+  const { slug: id } = await params
   const [context, initial] = await Promise.all([getActivityWizardContextAction(), getActivityForEditAction(id)])
   if (!context) redirect(`/login?redirect_to=${encodeURIComponent(`/actividades/${id}/editar`)}`)
   if (!initial) notFound()
   return <ActivityWizard context={context} initial={initial} />
 }
 
-export default function EditarActividadPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditarActividadPage({ params }: { params: Promise<{ slug: string }> }) {
   return (
     <Container className="py-4">
       <Suspense fallback={<div className="mx-auto h-96 w-full max-w-xl animate-pulse rounded-3xl bg-muted" aria-busy="true" />}>
