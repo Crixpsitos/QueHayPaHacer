@@ -5,7 +5,8 @@ import { getSessionUid } from "@/app/actions/_session"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { fetchActivityPreview, fetchPublicActivity } from "@/presentation/activities/data/fetchers"
 import { ActivityDetail } from "@/presentation/activities/components/detail/ActivityDetail"
-import { SITE_NAME } from "@/app/lib/site"
+import { SITE_NAME, SITE_URL } from "@/app/lib/site"
+import { activityJsonLdHtml } from "@/presentation/activities/lib/activityJsonLd"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -22,8 +23,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${a.title} en Ibagué`,
     description,
     alternates: { canonical: url },
-    openGraph: { title: a.title, description, url, type: "website", siteName: SITE_NAME, locale: "es_CO" },
-    twitter: { card: "summary_large_image", title: a.title, description },
+    // JPEG ligero de la portada (WebP/PNG pesados no se ven en WhatsApp): ver app/og/actividad/[slug].
+    openGraph: { title: a.title, description, url, type: "website", siteName: SITE_NAME, locale: "es_CO", images: [{ url: `/og/actividad/${a.slug}`, width: 1200, height: 630, alt: a.title }] },
+    twitter: { card: "summary_large_image", title: a.title, description, images: [`/og/actividad/${a.slug}`] },
   }
 }
 
@@ -38,7 +40,14 @@ const PREVIEW_TEXT = {
 async function ActivityPage({ params }: PageProps) {
   const { slug } = await params
   const pub = await fetchPublicActivity(slug)
-  if (pub) return <ActivityDetail data={pub} />
+  if (pub) {
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: activityJsonLdHtml(pub, SITE_URL) }} />
+        <ActivityDetail data={pub} />
+      </>
+    )
+  }
 
   // No es pública: solo su dueño o QHPA pueden verla (vista previa). Para cualquier otro, 404 (no se revela que existe).
   const uid = await getSessionUid()

@@ -129,3 +129,12 @@ test("search: filtra por categoría/tipo/sitio, ordena por próxima salida y pag
   const p2 = await s.search({}, p1.nextOffset!, 3)
   assert.deepEqual([p2.items.map((a) => a.id), p2.nextOffset], [["d"], null])
 })
+
+test("sitemapEntries: solo públicas, con slug y última edición", async () => {
+  const s = svc([
+    makeActivity({ id: "a", slug: "a", updatedAt: new Date("2026-11-05T00:00:00Z") }),
+    makeActivity({ id: "b", slug: "b", moderationStatus: "pending" }),
+    makeActivity({ id: "c", slug: "c", kind: "site", siteId: "s9" }),
+  ], { s9: { published: false, active: true } })
+  assert.deepEqual(await s.sitemapEntries(), [{ slug: "a", updatedAt: new Date("2026-11-05T00:00:00Z") }])
+})

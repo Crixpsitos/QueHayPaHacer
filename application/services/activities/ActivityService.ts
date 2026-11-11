@@ -77,6 +77,11 @@ export class ActivityService {
     return { items: all.slice(start, end), total: all.length, nextOffset: end < all.length ? end : null }
   }
 
+  /** Para el sitemap: solo lo público (slug + última edición). */
+  async sitemapEntries(): Promise<{ slug: string; updatedAt: Date }[]> {
+    return (await this.listPublic(LISTABLE_CAP)).map((a) => ({ slug: a.slug, updatedAt: a.updatedAt }))
+  }
+
   async listForSite(siteId: string): Promise<Activity[]> {
     return this.keepVisible(await this.repo.findBySite(siteId))
   }

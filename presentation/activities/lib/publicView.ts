@@ -30,7 +30,7 @@ export interface ActivityPublicView {
   /** Para calcular "Próxima salida" en el navegador (el HTML se cachea por horas). */
   schedule: ActivitySchedule
   priceFrom: string
-  prices: { label: string; amount: string; unit: string; includes: string[]; note: string }[]
+  prices: { label: string; amount: string; amountCop: number; unit: string; includes: string[]; note: string }[]
   extras: { label: string; amount: string; unit: string; note: string }[]
   meeting: { mode: "fixed" | "sharedAfterJoining" | "varies"; text: string; references: string; note: string | null }
   sections: SiteSection[]
@@ -80,7 +80,7 @@ export function toPublicView(a: Activity): ActivityPublicView {
     requiresReservation: a.schedule.requiresReservation,
     schedule: a.schedule,
     priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
-    prices: a.priceOptions.map((p) => ({ label: p.label, amount: formatCop(p.amountCop), unit: p.unit, includes: p.includes, note: p.note ?? "" })),
+    prices: a.priceOptions.map((p) => ({ label: p.label, amount: formatCop(p.amountCop), amountCop: p.amountCop, unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),
     meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode] },
     sections: a.sections,

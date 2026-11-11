@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
   cacheLife("hours");
   // Se refresca con las mismas invalidaciones de los listados (alta/baja de sitios y eventos).
-  cacheTag("sitemap", "site-list", "event-list");
+  cacheTag("sitemap", "site-list", "event-list", "activity-list");
 
   const collections = await getEventCollections();
   const now = new Date();
@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/eventos`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/donde-ir`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL}/actividades`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/explorar`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/contactanos`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/premium`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
@@ -44,12 +45,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let details: MetadataRoute.Sitemap = [];
   let sessionEntries: MetadataRoute.Sitemap = [];
   try {
-    const { sitesService, eventsService } = createServerContainer();
-    const [sites, events] = await Promise.all([sitesService.getSitemapEntries(), eventsService.getSitemapEntries()]);
+    const { sitesService, eventsService, activityService } = createServerContainer();
+    const [sites, events, activities] = await Promise.all([sitesService.getSitemapEntries(), eventsService.getSitemapEntries(), activityService.sitemapEntries()]);
     details = [
       ...sites.filter((s) => s.slug).map((s) => ({
         url: `${SITE_URL}/donde-ir/${s.slug}`,
         lastModified: s.updatedAt ?? undefined,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      })),
+      ...activities.map((a) => ({
+        url: `${SITE_URL}/actividades/${a.slug}`,
+        lastModified: a.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.7,
       })),
