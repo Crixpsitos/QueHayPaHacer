@@ -7,6 +7,7 @@ import { ActivityGallery } from "./ActivityGallery"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
+import { ActivityEngagement } from "./ActivityEngagement"
 
 const chip = "inline-flex min-h-9 items-center rounded-full border border-border bg-card px-3.5 text-sm font-medium"
 const initials = (name: string) => name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
@@ -81,6 +82,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             <h2 id="sobre" className="font-heading text-xl font-semibold">Sobre la actividad</h2>
             <p className="max-w-2xl whitespace-pre-line text-base leading-relaxed">{d.description}</p>
           </section>
+
+          {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
 
           <SectionsAccordion sections={d.sections} />
           <ComplaintInfo activityId={d.id} />

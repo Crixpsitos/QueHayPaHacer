@@ -16,7 +16,7 @@ function stripUndefined<T>(x: T): T {
 }
 
 const EMPTY_RATING = { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] } as Activity["rating"]
-const EMPTY_ANALYTICS = { views: 0, clicks: 0, visits: 0, reviews: 0 }
+const EMPTY_ANALYTICS = { views: 0, clicks: 0, visits: 0, reviews: 0, saves: 0 }
 
 export class ActivityFirebaseMapper {
   toDomain(id: string, dto: FirebaseActivityDto): Activity {
@@ -43,7 +43,7 @@ export class ActivityFirebaseMapper {
       cta: dto.cta ?? null,
       media: dto.media ?? [],
       rating: dto.rating ?? EMPTY_RATING,
-      analytics: dto.analytics ?? EMPTY_ANALYTICS,
+      analytics: { ...EMPTY_ANALYTICS, ...dto.analytics },
       publicationStatus: dto.publicationStatus,
       moderationStatus: dto.moderationStatus,
       isActive: dto.isActive,

@@ -8,6 +8,8 @@ import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSect
 /** Lo que muestra la ficha pública: solo datos públicos, textos ya legibles y nada que no sea serializable (se cachea). */
 export interface ActivityPublicView {
   id: string
+  /** "N personas fueron": solo desde 10 (con menos, el número desanima). */
+  visitedLabel: string | null
   slug: string
   title: string
   tagline: string
@@ -75,6 +77,7 @@ export function toPublicView(a: Activity): ActivityPublicView {
     gallery: ordered.map(pic),
     video: video ? { url: video.url, thumbnailUrl: video.thumbnailUrl ?? null } : null,
     host: { displayName: a.host.displayName, photoURL: a.host.photoURL },
+    visitedLabel: a.analytics.visits >= 10 ? `${a.analytics.visits.toLocaleString("es-CO")} personas fueron` : null,
     scheduleText: describeSchedule(a.schedule),
     scheduleNote: a.schedule.note ?? "",
     requiresReservation: a.schedule.requiresReservation,

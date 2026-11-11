@@ -51,6 +51,8 @@ import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
+import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
+import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
 import { HostIdentityFirebaseRepository } from "../firebase/repositories/activities/HostIdentityFirebaseRepository";
 import { createIpLimiter } from "@/app/api/_lib/ipRateLimit";
@@ -234,6 +236,12 @@ export const createServerContainer = () => {
     log: (entry) => console.log(JSON.stringify(entry)),
   });
 
+  // guardar y "Yo fui" de actividades (solo sobre públicas)
+  const activityEngagementService = new ActivityEngagementService(
+    new ActivityEngagementFirebaseRepository(getFirebaseFirestore()),
+    async (id) => (await activityService.getPublicById(id)) !== null,
+  );
+
   // reclamos de sitios (dueños que piden verificación)
   const siteClaimService = new SiteClaimService(
     new SiteClaimFirebaseRepository(getFirebaseFirestore()),
@@ -275,6 +283,7 @@ export const createServerContainer = () => {
     sitesService,
     activityService,
     activityPublishService,
+    activityEngagementService,
     hostIdentityService,
     siteInteractionService,
     storageService,

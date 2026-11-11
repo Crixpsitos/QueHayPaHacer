@@ -45,7 +45,7 @@ test("toDomain tolera campos opcionales ausentes (documentos viejos o parciales)
   const back = mapper.toDomain("a1", sparse as never)
   assert.deepEqual([back.sections, back.extras, back.companions, back.media, back.cta], [[], [], [], [], null])
   assert.deepEqual(back.rating, { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] })
-  assert.deepEqual(back.analytics, { views: 0, clicks: 0, visits: 0, reviews: 0 })
+  assert.deepEqual(back.analytics, { views: 0, clicks: 0, visits: 0, reviews: 0, saves: 0 })
 })
 
 test("toDomain acepta fechas como Date o como Timestamp", () => {

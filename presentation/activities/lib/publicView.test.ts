@@ -70,3 +70,11 @@ test("insignia de la tarjeta: en el sitio, gratis o con cita", () => {
   assert.equal(toCardView(makeActivity()).coverUrl, "https://x.test/m1.jpg")
   assert.equal(toCardView(makeActivity({ media: [] })).coverUrl, null)
 })
+
+test("'N personas fueron' solo desde 10 visitas", () => {
+  const label = (visits: number) => toPublicView(makeActivity({ analytics: { views: 0, clicks: 0, visits, reviews: 0, saves: 0 } })).visitedLabel
+  assert.equal(label(0), null)
+  assert.equal(label(9), null)
+  assert.equal(label(10), "10 personas fueron")
+  assert.equal(label(1234), "1.234 personas fueron")
+})

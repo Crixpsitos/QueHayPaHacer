@@ -136,12 +136,12 @@ Estado inicial: todas sin marcar.
   - Verifica: Prueba de resultados enriquecidos sin errores críticos; sitemap solo con URLs públicas; HTML con metadatos correctos.
   - Archivos: `app/actividades/[slug]/page.tsx` (metadata), `app/og/actividad/[slug]/route.tsx`, `app/sitemap.ts`, `presentation/activities/lib/activityJsonLd.ts` (+ test).
 
-- [ ] **A20 "Guardar" (M)** — `activity-engagement`; **un solo mecanismo** para actividades, eventos y sitios; coordinar con `intent` de `analytics-v2` (T12) y **no duplicarlo** (si T12 ya existe, se extiende).
+- [x] **A20 "Guardar" (M)** — `activity-engagement`; **un solo mecanismo** para actividades, eventos y sitios; coordinar con `intent` de `analytics-v2` (T12) y **no duplicarlo** (si T12 ya existe, se extiende).
   - Aceptación: un toque con cuenta, privado, con deshacer; `users/{uid}/saved/{tipo_id}`; contador agregado; sin sesión pide Google y vuelve; no se expone quién guardó.
   - Verifica: `pnpm test` (idempotente; doble toque = 1); prueba manual con cuenta nueva (<10 s).
   - Archivos: dominio, servicio, acción, botón `SaveButton`, ficha de actividad.
 
-- [ ] **A21 "Yo fui" (S)** — movida desde C5.
+- [x] **A21 "Yo fui" (S)** — movida desde C5.
   - Aceptación: `visits/{uid}`, `analytics.visits`, "N personas fueron" desde 10, idempotente; una por persona.
   - Verifica: tests de servicio; doble clic = 1.
   - Archivos: servicio, acción, componente.

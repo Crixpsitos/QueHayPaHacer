@@ -39,6 +39,8 @@ export interface ActivityAnalytics {
   clicks: number
   visits: number
   reviews: number
+  /** Guardados (privado: nunca se muestra al público). */
+  saves: number
 }
 
 export interface Activity {

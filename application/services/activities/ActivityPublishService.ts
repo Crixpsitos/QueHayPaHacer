@@ -193,7 +193,7 @@ export class ActivityPublishService {
       companions: [], difficulty: null, durationMinutes: null, ageNote: "", meetingPoint: input.meetingPoint, schedule: input.schedule,
       priceOptions: [], extras: [], sections: [], cta: null, media: [],
       rating: { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] },
-      analytics: { views: 0, clicks: 0, visits: 0, reviews: 0 },
+      analytics: { views: 0, clicks: 0, visits: 0, reviews: 0, saves: 0 },
       publicationStatus: "draft", moderationStatus: "pending", isActive: true,
       reviewedAt: null, reviewedBy: null, rejectedAt: null, rejectionReason: null,
       createdAt: now, updatedAt: now, publishedAt: null,
