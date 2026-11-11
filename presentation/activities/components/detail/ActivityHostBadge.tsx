@@ -15,12 +15,12 @@ export function ActivityHostBadge({ host, site }: { host: Person; site: { name: 
   const owner = site?.owner ?? null
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-subtle">
         <AvatarGroup>
           {owner ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Avatar tabIndex={0} className="relative z-10 size-10 cursor-default ring-2 ring-background">
+                <Avatar tabIndex={0} className="relative z-10 size-14 cursor-default ring-2 ring-background">
                   {owner.photoURL ? <AvatarImage src={owner.photoURL} alt={owner.displayName} /> : null}
                   <AvatarFallback>{getInitials(owner.displayName)}</AvatarFallback>
                 </Avatar>
@@ -30,7 +30,7 @@ export function ActivityHostBadge({ host, site }: { host: Person; site: { name: 
           ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Avatar tabIndex={0} className="size-10 cursor-default ring-2 ring-background">
+              <Avatar tabIndex={0} className="size-14 cursor-default ring-2 ring-background">
                 {host.photoURL ? <AvatarImage src={host.photoURL} alt={host.displayName} /> : null}
                 <AvatarFallback>{getInitials(host.displayName)}</AvatarFallback>
               </Avatar>
@@ -38,7 +38,7 @@ export function ActivityHostBadge({ host, site }: { host: Person; site: { name: 
             <TooltipContent>{owner ? "Publicada por" : "Organiza"} {host.displayName}</TooltipContent>
           </Tooltip>
         </AvatarGroup>
-        <span className="grid gap-0.5 leading-snug">
+        <span className="grid min-w-0 gap-0.5 text-[0.9375rem] leading-snug">
           {site ? (
             <span>En <Link href={`/donde-ir/${site.slug}`} className="font-semibold text-foreground underline underline-offset-4">{site.name}</Link></span>
           ) : null}

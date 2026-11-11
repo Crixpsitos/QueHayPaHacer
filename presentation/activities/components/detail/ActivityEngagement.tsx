@@ -9,7 +9,7 @@ import { getMyActivityEngagementAction, markActivityVisitedAction, setActivitySa
  * Guardar (privado) y "Yo fui". La ficha se cachea por horas, así que lo de cada persona se pide aquí, tras montar.
  * Sin sesión: el primer toque lleva a iniciar sesión y vuelve a esta misma página.
  */
-export function ActivityEngagement({ activityId, visitedLabel, className }: { activityId: string; visitedLabel: string | null; className?: string }) {
+export function ActivityEngagement({ activityId, visitedLabel, className, variant = "full" }: { activityId: string; visitedLabel: string | null; className?: string; variant?: "full" | "icon" }) {
   const [state, setState] = useState({ saved: false, visited: false })
   const [error, setError] = useState<string | null>(null)
   const busy = useRef(false) // un toque a la vez: un doble toque rápido no debe mandar dos cambios iguales
@@ -44,6 +44,14 @@ export function ActivityEngagement({ activityId, visitedLabel, className }: { ac
       setState((s) => ({ ...s, visited: false }))
       if (r.authRequired) goLogin(); else setError(r.error)
     }
+  }
+
+  if (variant === "icon") {
+    return (
+      <button type="button" aria-pressed={state.saved} aria-label={state.saved ? "Quitar de Mis planes" : "Guardar en Mis planes"} onClick={() => void toggleSaved()} className={className ?? "grid size-12 shrink-0 place-items-center rounded-full border border-border bg-card outline-none focus-visible:ring-3 focus-visible:ring-ring/40"}>
+        <Bookmark className={state.saved ? "size-5 fill-current text-primary-dark" : "size-5"} aria-hidden />
+      </button>
+    )
   }
 
   return (

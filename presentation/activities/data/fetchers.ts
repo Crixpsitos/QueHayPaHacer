@@ -101,3 +101,22 @@ export const fetchHomeActivities = async (): Promise<HomeBlockData | null> => {
   const dateLabel = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bogota" }).format(now)
   return { mode: r.mode, dateLabel, items: r.ids.map((id) => toCardView(pool.get(id)!)) }
 }
+
+export interface RelatedData { sameSite: ActivityCardView[]; similar: ActivityCardView[]; similarTitle: string }
+
+/** Cierre de la ficha: más actividades del mismo sitio y parecidas (misma categoría; si no hay, lo de esta semana). */
+export const fetchRelatedActivities = async (id: string, categorySlug: string, siteId: string | null): Promise<RelatedData> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("activity-list")
+  const svc = createServerContainer().activityService
+  const sameSite = siteId ? (await svc.listForSite(siteId)).filter((a) => a.id !== id).slice(0, 6) : []
+  const taken = new Set([id, ...sameSite.map((a) => a.id)])
+  let similar = (await svc.search({ category: categorySlug as ActivityFilters["category"] }, 0, 12)).items.filter((a) => !taken.has(a.id)).slice(0, 6)
+  let similarTitle = "Parecidas"
+  if (similar.length < 2) {
+    similar = (await svc.search({ when: "esta-semana" }, 0, 12)).items.filter((a) => !taken.has(a.id)).slice(0, 6)
+    similarTitle = "También esta semana"
+  }
+  return { sameSite: sameSite.map(toCardView), similar: similar.map(toCardView), similarTitle }
+}
