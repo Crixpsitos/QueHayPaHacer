@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bookmark, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { getMyActivityEngagementAction, markActivityVisitedAction, setActivitySavedAction } from "@/app/actions/activities/engagement.action"
@@ -12,6 +12,7 @@ import { getMyActivityEngagementAction, markActivityVisitedAction, setActivitySa
 export function ActivityEngagement({ activityId, visitedLabel, className }: { activityId: string; visitedLabel: string | null; className?: string }) {
   const [state, setState] = useState({ saved: false, visited: false })
   const [error, setError] = useState<string | null>(null)
+  const busy = useRef(false) // un toque a la vez: un doble toque rápido no debe mandar dos cambios iguales
 
   useEffect(() => {
     let live = true
@@ -22,10 +23,13 @@ export function ActivityEngagement({ activityId, visitedLabel, className }: { ac
   const goLogin = () => { window.location.assign(`/login?redirect_to=${encodeURIComponent(window.location.pathname)}`) }
 
   const toggleSaved = async () => {
+    if (busy.current) return
+    busy.current = true
     const next = !state.saved
     setState((s) => ({ ...s, saved: next })) // optimista: deshacer = un toque más
     setError(null)
     const r = await setActivitySavedAction(activityId, next)
+    busy.current = false
     if (!r.success) {
       setState((s) => ({ ...s, saved: !next }))
       if (r.authRequired) goLogin(); else setError(r.error)
