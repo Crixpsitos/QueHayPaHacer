@@ -151,7 +151,7 @@ Estado inicial: todas sin marcar.
   - Verifica: `pnpm test` (carrera de dos inscripciones al último cupo; lleno; cancelar libera el cupo).
   - Archivos: `domain/entities/activities/ActivityJoin.ts`, servicio, repo, acciones (≤2).
 
-- [ ] **A23 Unirme / reservar cupo: interfaz y lista del creador (M)** — antes: prototipo en P1.
+- [x] **A23 Unirme / reservar cupo: interfaz y lista del creador (M)** — antes: prototipo en P1.
   - Aceptación: botón "Unirme" con selector de ocurrencia, estado "Estás dentro", cupos restantes ("quedan 4"); el creador ve la **lista de inscritos** de **su** actividad (nombre y contacto autorizado) y puede cerrar cupos; fuera de `/studio`.
   - Verifica: prueba de **IDOR** (un creador no ve inscritos ajenos); guion manual.
   - Archivos: componentes + `app/actividades/[id]/inscritos`.

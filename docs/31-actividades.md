@@ -42,3 +42,12 @@ Crear de sitio: autor del sitio "de verdad propio" (`isLinkableSite`) o QHPA. Ed
 - A23 interfaz de "Unirme" y lista del creador (`/actividades/[slug]/inscritos`) + campo de cupo en el asistente: **requieren prototipo aprobado**.
 - "Yo fui" es autodeclarado (una por cuenta): con cuentas desechables se puede inflar "N personas fueron" (auditoría B4); mitigación futura: antigüedad mínima de cuenta.
 - Guardar usa mecanismo propio para actividades; unificar con los "me gusta" de eventos/sitios es la tarea T12 de analytics-v2.
+
+## Reservas (A23)
+
+- Reservar un cupo **no se paga en QHPA**. Gratis: queda `confirmed` al instante y no se guarda teléfono. De pago (todas las opciones cuestan): se pide WhatsApp + consentimiento explícito; queda `pending` y quien organiza cobra afuera (`join.payInstructions`).
+- Estados de `activityJoins/{act}_{salida}_{uid}`: `pending | confirmed | noShow`. Los registros viejos sin `status` cuentan como `confirmed`. `noShow` libera el cupo (el contador `joinCounts` solo cuenta pending+confirmed); «Devolver el cupo» lo pide de nuevo y respeta el tope.
+- La persona puede reservar varias salidas de una misma actividad en una sola vez (una inscripción por salida); entre actividades distintas cada reserva es independiente.
+- `phone` + `consentVersion` (LEGAL_VERSION vigente) solo se guardan en actividades de pago. El organizador (dueño o QHPA) los ve en `/actividades/[id]/inscritos`; nadie más.
+- Embudo: Vieron/Fueron = toda la actividad (`analytics.views/visits`); Reservaron/Por confirmar/Confirmadas = de la salida elegida. Porcentajes desde 10 reservas. **Pendiente:** origen de las reservas por canal (no se atribuye el `join` al canal todavía).
+- Pendiente legal (preguntar antes): texto de la Política de privacidad sobre el WhatsApp compartido y posible subida de `LEGAL_VERSION`.
