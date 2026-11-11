@@ -239,7 +239,8 @@ export function stepError(step: number, f: ActivityForm, ctx: StepContext = {}):
       if (f.kind === "global" && f.meetingMode === "fixed" && f.meetingText.trim().length < 3) return "Escribe el punto de encuentro (o elige que se dice en el grupo)."
       return plainTextError("El punto de encuentro", `${f.meetingText} ${f.meetingReferences}`)
     case 6:
-      return ctx.coverCount === undefined || ctx.coverCount === 1 ? null : "Elige una foto de portada."
+      if (ctx.coverCount === undefined || ctx.coverCount === 1) return null
+      return ctx.coverCount === 0 ? "Sube al menos una foto: será la portada." : "Elige una sola foto de portada."
     case 7: {
       if (!f.ctaKind || !f.ctaValue.trim()) return null
       const r = normalizeCta({ kind: f.ctaKind, value: f.ctaValue, label: f.ctaLabel })

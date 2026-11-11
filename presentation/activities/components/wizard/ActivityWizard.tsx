@@ -11,6 +11,9 @@ import type { ActivityMedia } from "@/domain/entities/activities/value-objects/A
 import { StepKind } from "./StepKind"
 import { StepBasics } from "./StepBasics"
 import { StepSchedule } from "./StepSchedule"
+import { StepPrice } from "./StepPrice"
+import { StepMeeting } from "./StepMeeting"
+import { StepMedia } from "./StepMedia"
 
 const TITLES: Record<number, { title: string; lead: string }> = {
   1: { title: "¿Qué tipo de actividad es?", lead: "Elige si depende de un lugar o no." },
@@ -36,7 +39,7 @@ interface Props {
 export function ActivityWizard({ context, initial }: Props) {
   const router = useRouter()
   const [form, setForm] = useState<ActivityForm>(initial?.form ?? emptyForm())
-  const [media] = useState<ActivityMedia[]>(initial?.media ?? []) // el paso 6 (fotos) los modifica en la siguiente entrega
+  const [media, setMedia] = useState<ActivityMedia[]>(initial?.media ?? [])
   const [activityId, setActivityId] = useState<string | undefined>(initial?.id)
   const [step, setStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
@@ -76,10 +79,10 @@ export function ActivityWizard({ context, initial }: Props) {
   }
 
   /** Guarda como borrador (o edita) y devuelve el id. null si falló (ya mostró el error). */
-  const persist = useCallback(async (): Promise<string | null> => {
+  const persist = useCallback(async (mediaOverride?: ActivityMedia[]): Promise<string | null> => {
     setSaving(true)
     try {
-      const r = await saveActivityAction(toRawInput(form), media, { id: activityId, publish: false, declaration: false })
+      const r = await saveActivityAction(toRawInput(form), mediaOverride ?? media, { id: activityId, publish: false, declaration: false })
       if (!r.success) {
         fail(r.error)
         return null
@@ -118,6 +121,15 @@ export function ActivityWizard({ context, initial }: Props) {
     case 1: body = <StepKind form={form} patch={patch} context={context} />; break
     case 2: body = <StepBasics form={form} patch={patch} context={context} />; break
     case 3: body = <StepSchedule form={form} patch={patch} context={context} />; break
+    case 4: body = <StepPrice form={form} patch={patch} context={context} />; break
+    case 5: body = <StepMeeting form={form} patch={patch} context={context} />; break
+    case 6:
+      body = activityId ? (
+        <StepMedia activityId={activityId} media={media} setMedia={setMedia} persist={async (m) => (await persist(m)) !== null} onError={fail} />
+      ) : (
+        <p className="text-sm text-muted-foreground">Guardando tu borrador…</p>
+      )
+      break
     default: body = <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">Este paso se habilita en la siguiente entrega.</p>
   }
 

@@ -91,6 +91,10 @@ test("validación por paso", () => {
   assert.match(stepError(5, filled({ meetingMode: "fixed", meetingText: "" }))!, /punto de encuentro/i)
   assert.equal(stepError(5, filled({ meetingMode: "sharedAfterJoining" })), null)
   assert.equal(stepError(5, filled({ kind: "site", siteId: "s1", meetingMode: "fixed", meetingText: "" })), null) // el sitio pone el lugar
+  assert.equal(stepError(6, filled()), null) // sin contexto de medios no se evalúa
+  assert.match(stepError(6, filled(), { coverCount: 0 })!, /al menos una foto/i)
+  assert.match(stepError(6, filled(), { coverCount: 2 })!, /una sola/i)
+  assert.equal(stepError(6, filled(), { coverCount: 1 }), null)
   assert.equal(stepError(7, filled()), null)
   assert.match(stepError(7, filled({ ctaKind: "website", ctaValue: "javascript:alert(1)" }))!, /https/i)
 })

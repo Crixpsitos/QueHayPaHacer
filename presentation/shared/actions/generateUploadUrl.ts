@@ -6,9 +6,9 @@ import { createServerContainer } from "@/infraestructure/di/container";
 
 type UploadVisibility = "public" | "private";
 
-// Callers reales: profile/support (carpeta del propio uid), events/sessions/sites (ids pueden ser borradores aún sin doc).
+// Callers reales: profile/support (carpeta del propio uid), events/sessions/sites/activities (ids pueden ser borradores aún sin doc).
 const OWN_UID_ENTITIES = new Set(["profile", "support"]);
-const ENTITIES = new Set([...OWN_UID_ENTITIES, "events", "sessions", "sites"]);
+const ENTITIES = new Set([...OWN_UID_ENTITIES, "events", "sessions", "sites", "activities"]);
 const SUBFOLDERS = new Set(["", "images", "videos", "avatar", "banner", "media", "attachments"]);
 // svg excluido: bucket público y puede ejecutar scripts.
 const CONTENT_TYPE = /^(image\/(?!svg)[a-z0-9.+-]+|video\/[a-z0-9.+-]+)$/;
