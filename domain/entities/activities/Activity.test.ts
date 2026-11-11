@@ -1,8 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { ImageMedia } from "@/domain/entities/sites/value-objects/ImageMedia"
 import { activityPublishError, plainTextError } from "./Activity"
-import { makeActivity } from "./activity.fixture"
+import { makeActivity, makeImage } from "./activity.fixture"
 
 test("una actividad completa se puede publicar", () => {
   assert.equal(activityPublishError(makeActivity()), null)
@@ -38,9 +37,9 @@ test("punto de encuentro: fijo exige texto; compartido o variable no", () => {
 
 test("exactamente una portada", () => {
   assert.match(activityPublishError(makeActivity({ media: [] }))!, /portada/i)
-  const a = new ImageMedia("a", "https://x.test/a.jpg", 10, 10, "", "m", true)
-  const b = new ImageMedia("b", "https://x.test/b.jpg", 10, 10, "", "m", true)
-  assert.match(activityPublishError(makeActivity({ media: [a, b] }))!, /portada/i)
+  assert.match(activityPublishError(makeActivity({ media: [makeImage("a", true), makeImage("b", true)] }))!, /portada/i)
+  assert.match(activityPublishError(makeActivity({ media: [makeImage("a", false)] }))!, /portada/i)
+  assert.match(activityPublishError(makeActivity({ media: [makeImage("a", true, { status: "error" })] }))!, /procesar/i)
 })
 
 test("categoría, con quién, dificultad y duración", () => {
@@ -54,4 +53,13 @@ test("categoría, con quién, dificultad y duración", () => {
 test("propaga los errores de horario y precio", () => {
   assert.match(activityPublishError(makeActivity({ schedule: { rules: [], skipDates: [], requiresReservation: false } }))!, /regla/i)
   assert.match(activityPublishError(makeActivity({ priceOptions: [] }))!, /precio/i)
+})
+
+test("fotos: máximo 9, un solo video y texto alternativo corto", () => {
+  const diez = Array.from({ length: 10 }, (_, i) => makeImage(`i${i}`, i === 0))
+  assert.match(activityPublishError(makeActivity({ media: diez }))!, /máximo 9/i)
+  const video = (id: string) => ({ ...makeImage(id, false), type: "video" as const })
+  assert.match(activityPublishError(makeActivity({ media: [makeImage("c", true), video("v1"), video("v2")] }))!, /un video/i)
+  assert.equal(activityPublishError(makeActivity({ media: [makeImage("c", true), video("v1")] })), null)
+  assert.match(activityPublishError(makeActivity({ media: [makeImage("c", true, { alt: "x".repeat(126) })] }))!, /alternativo/i)
 })

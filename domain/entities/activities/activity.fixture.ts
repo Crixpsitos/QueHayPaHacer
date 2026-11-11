@@ -1,5 +1,18 @@
-import { ImageMedia } from "@/domain/entities/sites/value-objects/ImageMedia"
 import type { Activity } from "./Activity"
+import type { ActivityMedia } from "./value-objects/ActivityMedia"
+
+export const makeImage = (id = "m1", isCover = true, p: Partial<ActivityMedia> = {}): ActivityMedia => ({
+  id,
+  type: "image",
+  path: `public/activities/a1/images/${id}.jpg`,
+  url: `https://x.test/${id}.jpg`,
+  width: 800,
+  height: 600,
+  alt: "",
+  isCover,
+  status: "ready",
+  ...p,
+})
 
 /** Actividad válida y completa para pruebas; cada prueba cambia solo lo que le interesa. */
 export function makeActivity(p: Partial<Activity> = {}): Activity {
@@ -24,7 +37,7 @@ export function makeActivity(p: Partial<Activity> = {}): Activity {
     extras: [],
     sections: [],
     cta: null,
-    media: [new ImageMedia("m1", "https://x.test/1.jpg", 800, 600, "", "https://x.test/m.jpg", true)],
+    media: [makeImage("m1", true)],
     rating: { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] },
     analytics: { views: 0, clicks: 0, visits: 0, reviews: 0 },
     publicationStatus: "published",

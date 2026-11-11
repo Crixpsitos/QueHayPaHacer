@@ -1,9 +1,9 @@
-import type { SiteMedia } from "@/domain/entities/sites/value-objects/SiteMedia"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 import { isActivityCategory, isCompanion, COMPANIONS_MAX, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
 import { validateSchedule, type ActivitySchedule } from "./value-objects/ActivitySchedule"
 import { validateExtras, validatePriceOptions, type Extra, type PriceOption } from "./value-objects/Price"
 import type { Cta } from "./value-objects/Cta"
+import { mediaError, type ActivityMedia } from "./value-objects/ActivityMedia"
 
 export type ActivityKind = "global" | "site"
 export type ActivityPublicationStatus = "draft" | "published"
@@ -63,7 +63,7 @@ export interface Activity {
   sections: SiteSection[]
   cta: Cta | null
   /** Arreglo plano (como sitios): lo parchea el optimizador de `../functions`. */
-  media: SiteMedia[]
+  media: ActivityMedia[]
   rating: ActivityRating
   analytics: ActivityAnalytics
   publicationStatus: ActivityPublicationStatus
@@ -120,7 +120,5 @@ export function activityPublishError(a: Activity): string | null {
   const meeting = plainTextError("El punto de encuentro", `${a.meetingPoint.text} ${a.meetingPoint.references}`)
   if (meeting) return meeting
 
-  const covers = a.media.filter((m) => m.type === "image" && m.isCover)
-  if (covers.length !== 1) return "Debe haber exactamente una imagen de portada."
-  return validateSchedule(a.schedule) ?? validatePriceOptions(a.priceOptions) ?? validateExtras(a.extras)
+  return mediaError(a.media) ?? validateSchedule(a.schedule) ?? validatePriceOptions(a.priceOptions) ?? validateExtras(a.extras)
 }

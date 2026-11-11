@@ -16,7 +16,7 @@ export function isTrustedHost(h: AccountHistory, now: number): boolean {
   return h.approvedCount >= TRUST_MIN_APPROVED && h.activeSanctions === 0
 }
 
-const mediaKey = (m: Activity["media"][number]) => `${m.type}:${m.id}:${m.url}`
+const mediaKey = (m: Activity["media"][number]) => `${m.type}:${m.id}`
 
 /**
  * Una cuenta sin confianza que cambia título, descripción o fotos/video de una actividad ya aprobada
