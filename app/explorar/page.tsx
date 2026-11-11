@@ -20,6 +20,8 @@ import {
   CATEGORY_COLOR_MAP,
   CATEGORY_FALLBACK_COLOR,
 } from "@/presentation/categories/lib/categoryIconMap";
+import { ActivityCard } from "@/presentation/activities/components/ActivityCard";
+import type { ActivityCardView } from "@/presentation/activities/lib/publicView";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
 import type { SiteCategory } from "@/presentation/sites/view-models/SiteFormViewModel";
 import { format } from "date-fns";
@@ -70,6 +72,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
     maxPrice: sp.maxPrice ? parseInt(sp.maxPrice, 10) : undefined,
     onlyEvents: sp.content === "events",
     onlySites: sp.content === "sites",
+    onlyActivities: sp.content === "activities",
   };
   const isSearch = Boolean(q || from || filters.free || filters.promoted || filters.multiDate || filters.maxPrice);
 
@@ -80,10 +83,12 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
   let siteSections: ExploreBrowseSiteSection[] = browseData.siteSections;
   let searchTotal = 0;
   let hasMoreEvents = false;
+  let activities: ActivityCardView[] = [];
 
   if (isSearch) {
     const data = await fetchExploreResults(q, from, to, 0, filters);
     searchTotal = data.total;
+    activities = data.activities;
     hasMoreEvents = data.hasMoreEvents;
 
     // Una sola sección plana: la paginación por offset trae resultados de todas las
@@ -125,8 +130,9 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
   }
 
   // Content-type chips filter the sections regardless of search mode
-  if (filters.onlyEvents) siteSections = [];
-  if (filters.onlySites) eventSections = [];
+  if (filters.onlyEvents) { siteSections = []; activities = []; }
+  if (filters.onlySites) { eventSections = []; activities = []; }
+  if (filters.onlyActivities) { eventSections = []; siteSections = []; }
 
   return (
     <Section spacing="sm" className="mt-6 min-h-[60vh]">
@@ -183,6 +189,20 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
               hasMoreEvents={hasMoreEvents}
             />
           ))}
+        </div>
+      )}
+
+      {/* Actividades (solo con búsqueda de texto) */}
+      {activities.length > 0 && (
+        <div className="mt-12">
+          <div className="mb-4 flex items-center gap-3">
+            <h2 className="text-xl font-bold">Actividades</h2>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{activities.length}</span>
+          </div>
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {activities.map((a) => <ActivityCard key={a.id} a={a} />)}
+          </ul>
+          <Separator className="mt-12" />
         </div>
       )}
 

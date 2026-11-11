@@ -143,7 +143,7 @@ export function ExploreSearchBar({
         <h2 className="text-2xl font-bold text-[#09090B]" style={{ fontFamily: 'var(--font-heading)' }}>
           ¿Qué hay pa&apos; hacer hoy?
         </h2>
-        <p className="mt-0.5 text-sm text-[#71717A]">Eventos, sitios y planes en Ibagué.</p>
+        <p className="mt-0.5 text-sm text-[#71717A]">Eventos, sitios, actividades y planes en Ibagué.</p>
       </div>
       {/* Fila principal: input + fechas + buscar */}
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
@@ -153,7 +153,7 @@ export function ExploreSearchBar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder="Buscar eventos, sitios, artistas…"
+            placeholder="Buscar eventos, sitios, actividades…"
             className="h-12 w-full rounded-xl border border-[#E4E4E7] bg-[#FAFAFC] pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
