@@ -97,12 +97,12 @@ export function StepPublish({ context, onPublish, onError }: Props) {
       <div className="grid gap-4 rounded-2xl border border-border bg-card p-4">
         {needsIdentity ? (
           <label className="flex items-start gap-3 text-sm leading-relaxed">
-            <input type="checkbox" checked={authorized} onChange={(e) => setAuthorized(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#D42F3C]" />
+            <input type="checkbox" checked={authorized} onChange={(e) => setAuthorized(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#9B0A26]" />
             Autorizo a Qué Hay Pa Hacer a guardar y tratar estos datos para cumplir con la ley y atender quejas. <a href="/privacidad" target="_blank" rel="noreferrer" className="font-semibold text-primary-dark underline">Política de datos</a>
           </label>
         ) : null}
         <label className="flex items-start gap-3 text-sm leading-relaxed">
-          <input type="checkbox" checked={declared} onChange={(e) => setDeclared(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#D42F3C]" />
+          <input type="checkbox" checked={declared} onChange={(e) => setDeclared(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#9B0A26]" />
           Declaro que tengo derecho a usar los textos y las fotos, que lo publicado es verdadero y que respondo por mi actividad.
         </label>
       </div>

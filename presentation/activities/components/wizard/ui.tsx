@@ -39,7 +39,7 @@ export function ToggleChip({ pressed, onClick, children, className }: { pressed:
 export function RadioCard({ name, checked, onChange, title, description }: { name: string; checked: boolean; onChange: () => void; title: string; description?: string }) {
   return (
     <label className={cn("flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/30", checked ? "border-primary bg-primary-light" : "border-border bg-card hover:bg-muted/50")}>
-      <input type="radio" name={name} checked={checked} onChange={onChange} className="mt-1 size-5 accent-[#D42F3C]" />
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="mt-1 size-5 accent-[#9B0A26]" />
       <span className="grid gap-0.5">
         <span className="font-semibold">{title}</span>
         {description ? <span className="text-sm text-muted-foreground">{description}</span> : null}

@@ -144,7 +144,7 @@ export function StepSchedule({ form, patch }: StepProps) {
       <div className="grid gap-1 rounded-2xl border border-border bg-card px-4">
         <label className="flex min-h-14 items-center justify-between gap-3 border-b border-muted text-sm">
           Solo en una temporada
-          <input type="checkbox" className="size-5 accent-[#D42F3C]" checked={season} onChange={(e) => { setSeason(e.target.checked); if (!e.target.checked) patch({ validFrom: "", validUntil: "" }) }} />
+          <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={season} onChange={(e) => { setSeason(e.target.checked); if (!e.target.checked) patch({ validFrom: "", validUntil: "" }) }} />
         </label>
         {season ? (
           <div className="grid grid-cols-2 gap-3 pb-3">
@@ -154,12 +154,12 @@ export function StepSchedule({ form, patch }: StepProps) {
         ) : null}
         <label className="flex min-h-14 items-center justify-between gap-3 border-b border-muted text-sm">
           Hay días que no hay actividad
-          <input type="checkbox" className="size-5 accent-[#D42F3C]" checked={skips} onChange={(e) => { setSkips(e.target.checked); if (!e.target.checked) patch({ skipDates: [] }) }} />
+          <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={skips} onChange={(e) => { setSkips(e.target.checked); if (!e.target.checked) patch({ skipDates: [] }) }} />
         </label>
         {skips ? <div className="pb-3"><DateList dates={form.skipDates} max={SCHEDULE_SKIP_MAX} onChange={(skipDates) => patch({ skipDates })} label="Día sin actividad" /></div> : null}
         <label className="flex min-h-14 items-center justify-between gap-3 text-sm">
           Hay que reservar antes
-          <input type="checkbox" className="size-5 accent-[#D42F3C]" checked={form.requiresReservation} onChange={(e) => patch({ requiresReservation: e.target.checked })} />
+          <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={form.requiresReservation} onChange={(e) => patch({ requiresReservation: e.target.checked })} />
         </label>
       </div>
 

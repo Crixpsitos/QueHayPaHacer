@@ -1,11 +1,11 @@
 import Link from "next/link"
 
-/** Invitación a publicar: cierre de la ficha y del hub. Rojo de marca con el dorado como acento. */
+/** Invitación a publicar: cierre de la ficha y del hub. Vinotinto de marca con el dorado como acento. */
 export function PublishBand({ title = "¿Organizas algo en Ibagué?", text = "Publica tu actividad gratis. Se repite sola cada semana y la gente reserva su cupo." }: { title?: string; text?: string }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-[2rem] bg-[#D42F3C] p-7 text-white sm:p-10">
+    <section className="relative isolate overflow-hidden rounded-[2rem] bg-primary-dark p-7 text-white sm:p-10">
       <span className="absolute -right-12 -top-12 -z-10 size-44 rounded-full bg-[#FFB703]" aria-hidden />
-      <span className="absolute -bottom-16 -left-10 -z-10 size-40 rounded-full bg-[#9B0A26]" aria-hidden />
+      <span className="absolute -bottom-16 -left-10 -z-10 size-40 rounded-full bg-[#6E0A1D]" aria-hidden />
       <h2 className="max-w-xs font-heading text-3xl font-extrabold leading-[1.05] tracking-tight sm:max-w-md sm:text-4xl">{title}</h2>
       <p className="mt-3 max-w-sm text-base leading-relaxed text-white/90">{text}</p>
       <div className="mt-5 flex flex-wrap items-center gap-3">

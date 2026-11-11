@@ -34,10 +34,10 @@ export function ActivityPlace({ d }: { d: ActivityPageData }) {
         </Link>
       ) : null}
       {d.kind === "site" && d.meeting.mode === "fixed" && !d.meeting.references ? null : (
-      <div className="flex gap-4 rounded-3xl bg-primary-dark p-5 text-white">
+      <div className="flex gap-4 rounded-3xl border border-[#F6DDA0] bg-accent p-5 text-foreground">
         <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#FFB703] text-[#5C0011]"><MapPin className="size-6" aria-hidden /></span>
         <div className="grid content-center gap-0.5 leading-snug">
-          {d.meeting.note ? <p className="text-lg font-semibold">{d.meeting.note}</p> : d.meeting.text ? <><p className="font-heading text-xl font-bold">{d.meeting.text}</p>{d.meeting.references ? <p className="text-sm text-white/75">{d.meeting.references}</p> : null}</> : <p className="text-lg font-semibold">Nos vemos en {where}.</p>}
+          {d.meeting.note ? <p className="text-lg font-semibold">{d.meeting.note}</p> : d.meeting.text ? <><p className="font-heading text-xl font-bold">{d.meeting.text}</p>{d.meeting.references ? <p className="text-sm text-muted-foreground">{d.meeting.references}</p> : null}</> : <p className="text-lg font-semibold">Nos vemos en {where}.</p>}
         </div>
       </div>
       )}

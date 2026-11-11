@@ -139,7 +139,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
             const on = picked.includes(o.key)
             return (
               <label key={o.key} className={cn("flex min-h-14 items-center gap-3 rounded-2xl border-2 px-3.5 py-2 transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/30", o.full ? "border-border bg-muted text-muted-foreground" : on ? "cursor-pointer border-primary-dark bg-[#FFF3CC]" : "cursor-pointer border-border bg-card hover:bg-muted/50")}>
-                <input type="checkbox" className="size-5 accent-[#D42F3C]" checked={on} disabled={o.full} onChange={() => toggle(o.key)} />
+                <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={on} disabled={o.full} onChange={() => toggle(o.key)} />
                 <span className="font-semibold">{cap(dateLabel(o))}</span>
                 {p ? <span className={cn("ml-auto whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold", p.cls)}>{p.text}</span> : null}
               </label>
@@ -155,7 +155,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
                 <Input type="tel" inputMode="tel" autoComplete="tel" maxLength={20} value={phone} placeholder="300 123 4567" onChange={(e) => setPhone(e.target.value)} />
               </label>
               <label className="flex items-start gap-3 text-sm leading-snug">
-                <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#D42F3C]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#9B0A26]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
                 <span>Autorizo que Qué Hay Pa Hacer comparta mi nombre y mi WhatsApp con {hostName} solo para esta reserva. <a href="/privacidad" className="text-primary-dark underline" target="_blank" rel="noopener">Política de datos</a></span>
               </label>
               <div className="flex gap-2">
