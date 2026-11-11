@@ -4,6 +4,8 @@ import { SITE_URL } from "@/app/lib/site";
 import { getEventCollections } from "@/presentation/events/lib/eventCollections";
 import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
 import { createServerContainer } from "@/infraestructure/di/container";
+import { ACTIVITY_COLLECTIONS } from "@/presentation/activities/lib/activityCollections";
+import { isIndexableCollection } from "@/domain/entities/activities/collectionRule";
 import { fetchEventSessions } from "@/presentation/events/data/eventDetailFetchers";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -20,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/eventos`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/donde-ir`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/actividades`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL}/cosas-para-hacer-en-ibague`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/explorar`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/contactanos`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/premium`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
@@ -40,6 +43,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.8,
   }));
+
+  // Landings de actividades: solo las que cumplen la regla de fundamento (texto propio + 3 o más actividades públicas).
+  let activityLandings: MetadataRoute.Sitemap = [];
+  try {
+    const svc = createServerContainer().activityService;
+    const totals = await Promise.all(ACTIVITY_COLLECTIONS.map(async (c) => ({ c, total: (await svc.search(c.filters, 0, 1)).total })));
+    activityLandings = totals
+      .filter(({ c, total }) => isIndexableCollection(c.intro.join(" "), total))
+      .map(({ c }) => ({ url: `${SITE_URL}/${c.slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.8 }));
+  } catch { /* el sitemap sale igual sin ellas */ }
 
   // Fichas individuales (lo que más conviene indexar). Si Firestore falla, el sitemap sale igual con las fijas.
   let details: MetadataRoute.Sitemap = [];
@@ -93,5 +106,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] no se pudieron leer las fichas", error);
   }
 
-  return [...staticRoutes, ...eventLandings, ...siteLandings, ...details, ...sessionEntries];
+  return [...staticRoutes, ...eventLandings, ...siteLandings, ...activityLandings, ...details, ...sessionEntries];
 }
