@@ -171,7 +171,7 @@ Estado inicial: todas sin marcar.
   - Verifica: aparecen en hub, ficha de sitio y sitemap.
   - Archivos: ninguno (datos).
 
-- [ ] **G0 Material de acercamiento a comunidades (S)** — doc, no código.
+- [x] **G0 Material de acercamiento a comunidades (S)** — doc, no código.
   - Aceptación: `docs/33-acercamiento-comunidades.md` con guion de 30 s, mensaje de WhatsApp, oferta (página con QR/afiche, inscripción con cupos, gratis), lo que se pide (permiso, fotos, horario, precios) y plantilla de seguimiento; tuteo, sin voseo; sin prometer visitas.
   - Verifica: el dueño lo lee y lo ajusta.
   - Archivos: `docs/33-acercamiento-comunidades.md`.
