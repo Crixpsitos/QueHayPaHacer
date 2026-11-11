@@ -25,12 +25,12 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 async function Hub({ searchParams }: PageProps) {
   const f = parseFilters(await searchParams)
   const siteId = f.siteSlug ? await resolveSiteId(f.siteSlug) : undefined
-  const page = f.siteSlug && !siteId ? { items: [], total: 0, nextOffset: null } : await fetchActivityPage(f.category, f.kind, siteId ?? undefined, 0)
+  const page = f.siteSlug && !siteId ? { items: [], total: 0, nextOffset: null } : await fetchActivityPage({ category: f.category, kind: f.kind, siteId: siteId ?? undefined, when: f.when, budget: f.budget, companion: f.companion }, 0)
   return (
     <div className="grid gap-6">
       <ActivityFilters current={f} />
       {page.items.length ? (
-        <ActivityList key={JSON.stringify(f)} first={page} filters={{ category: f.category, kind: f.kind, siteId: siteId ?? undefined }} />
+        <ActivityList key={JSON.stringify(f)} first={page} filters={{ category: f.category, kind: f.kind, siteId: siteId ?? undefined, cuando: f.when, presupuesto: f.budget, con: f.companion }} />
       ) : (
         <div className="grid gap-3 rounded-3xl border border-dashed border-border bg-card p-8 text-center">
           <h2 className="font-heading text-xl font-semibold">Todavía no hay actividades aquí</h2>

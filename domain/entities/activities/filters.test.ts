@@ -25,3 +25,25 @@ test("parseFilters descarta valores desconocidos y limpia la entrada de la URL",
   assert.deepEqual(parseFilters({ categoria: ["aire-libre", "otros"] }), {}) // parámetro repetido: se ignora
   assert.deepEqual(parseFilters({}), {})
 })
+
+import { priceFromCop } from "./value-objects/Price"
+const NOW = new Date("2026-11-10T15:00:00Z") // martes 10; el fixture sale los domingos
+
+test("cuándo: el domingo aparece en 'este fin de semana' y en 'esta semana', no en 'hoy' (martes)", () => {
+  const a = makeActivity()
+  assert.equal(matchesFilters(a, { when: "este-fin-de-semana" }, NOW), true)
+  assert.equal(matchesFilters(a, { when: "esta-semana" }, NOW), true)
+  assert.equal(matchesFilters(a, { when: "hoy" }, NOW), false)
+})
+test("presupuesto y con quién", () => {
+  const a = makeActivity({ priceOptions: [{ label: "x", amountCop: 40000, unit: "persona", includes: [] }], companions: ["pareja", "amigos"] })
+  assert.equal(priceFromCop(a.priceOptions), 40000)
+  assert.equal(matchesFilters(a, { budget: "hasta-50000" }), true)
+  assert.equal(matchesFilters(a, { budget: "gratis" }), false)
+  assert.equal(matchesFilters(a, { companion: "pareja" }), true)
+  assert.equal(matchesFilters(a, { companion: "familia" }), false)
+})
+test("parseFilters: cuando, presupuesto y con", () => {
+  assert.deepEqual(parseFilters({ cuando: "hoy", presupuesto: "gratis", con: "familia" }), { when: "hoy", budget: "gratis", companion: "familia" })
+  assert.deepEqual(parseFilters({ cuando: "ayer", presupuesto: "caro", con: "extraterrestres" }), {})
+})

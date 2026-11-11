@@ -52,12 +52,11 @@ export interface ActivityPage {
  * Página del hub. Caché corta: las aprobaciones por script no invalidan tags; las acciones de la app sí (`activity-list`).
  * `siteId` ya viene resuelto (los parámetros primitivos son la clave de caché).
  */
-export const fetchActivityPage = async (category: string | undefined, kind: string | undefined, siteId: string | undefined, offset: number): Promise<ActivityPage> => {
+export const fetchActivityPage = async (filters: ActivityFilters, offset: number, pageSize: number = HUB_PAGE_SIZE): Promise<ActivityPage> => {
   "use cache"
   cacheLife("minutes")
   cacheTag("activity-list")
-  const filters: ActivityFilters = { category: category as ActivityFilters["category"], kind: kind as ActivityFilters["kind"], siteId }
-  const r = await createServerContainer().activityService.search(filters, offset, HUB_PAGE_SIZE)
+  const r = await createServerContainer().activityService.search(filters, offset, pageSize)
   return { items: r.items.map(toCardView), total: r.total, nextOffset: r.nextOffset }
 }
 
