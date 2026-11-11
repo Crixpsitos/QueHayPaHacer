@@ -27,8 +27,10 @@ export default function PrivacidadPage() {
         <ul>
           <li><strong>Cuenta:</strong> nombre, apellido, nombre de usuario, correo electrónico, teléfono y contraseña (cifrada por nuestro proveedor de autenticación). Si entras con Google, recibimos tu nombre, correo y foto de esa cuenta.</li>
           <li><strong>Perfil:</strong> foto, portada, biografía, sitio web y redes sociales que decidas agregar.</li>
-          <li><strong>Contenido que publicas:</strong> eventos, sitios, imágenes, descripciones y colaboradores que acreditas.</li>
+          <li><strong>Contenido que publicas:</strong> eventos, sitios, actividades, imágenes, descripciones y colaboradores que acreditas.</li>
           <li><strong>Inscripciones:</strong> los eventos en los que te inscribes y las respuestas a los formularios que el creador del evento solicite.</li>
+          <li><strong>Reservas en actividades:</strong> las actividades en las que reservas un cupo y su estado (por pagar, confirmada). Solo si la actividad tiene costo, el WhatsApp que escribes al reservar y la versión de esta política que viste cuando lo autorizaste.</li>
+          <li><strong>Guardados y «Yo fui»:</strong> las actividades que guardas o marcas como hechas. Son privadas: solo las ves tú.</li>
           <li><strong>Actividad:</strong> vistas, me gusta y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
           <li><strong>Contacto y soporte:</strong> el correo, teléfono y mensaje que nos envías.</li>
           <li><strong>Aceptaciones y reportes:</strong> la fecha y la versión de los términos y de esta política que aceptaste, las declaraciones que haces al publicar, los reportes que envías o recibes y las decisiones de moderación.</li>
@@ -65,6 +67,20 @@ export default function PrivacidadPage() {
           inscripción para gestionar la asistencia. Ese creador es el responsable de tratar esos datos conforme a la
           ley; nosotros solo ponemos la herramienta. No respondas preguntas sobre datos sensibles (como salud) si no
           estás de acuerdo.
+        </p>
+      </section>
+
+      <section>
+        <h2>Tu WhatsApp en las reservas de actividades</h2>
+        <p>
+          Cuando reservas un cupo en una actividad con costo, te pedimos tu WhatsApp únicamente para que quien la organiza
+          te escriba, coordine el pago (que se hace fuera de Qué Hay Pa Hacer) y te confirme el cupo. Solo lo compartimos
+          con esa persona, solo para esa reserva y solo si marcas la casilla de autorización. En las actividades gratis no
+          pedimos teléfono. Quien organiza solo debe usarlo para coordinar esa actividad.
+        </p>
+        <p>
+          Puedes retirar tu autorización cancelando la reserva: se borra la inscripción y el número guardado. También se
+          borran al eliminar tu cuenta. Si quien organiza usa tu número para otra cosa, escríbenos desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link>.
         </p>
       </section>
 
