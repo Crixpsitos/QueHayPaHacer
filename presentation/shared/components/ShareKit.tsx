@@ -13,7 +13,7 @@ import { CopyButton } from "./CopyButton";
 export interface ShareKitProps {
   open: boolean;
   onClose: () => void;
-  kind: "event" | "site";
+  kind: "event" | "site" | "activity";
   id: string;
   title: string;
   /** Cuándo y dónde (aparece en el afiche y en el mensaje). */
@@ -33,7 +33,7 @@ export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl
   const [busy, setBusy] = useState<PosterFormat | null>(null);
   const link = (ch: (typeof AUTO_CHANNELS)[number]["id"]) => `${SITE_URL}${autoLinkHref(kind, id, ch)}`;
   const message = shareMessage({ title, when, where, url: link("wa") });
-  const noun = kind === "event" ? "evento" : "sitio";
+  const noun = kind === "event" ? "evento" : kind === "activity" ? "actividad" : "sitio";
   const subtitle = [when, where].filter(Boolean).join(" · ");
 
   const make = (format: PosterFormat) =>

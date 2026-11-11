@@ -161,7 +161,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de la ruta (sin same-origin → 204 y 0 escrituras; repetido = 1).
   - Archivos: ruta, hook de cliente, repositorio.
 
-- [ ] **A25 Kit de compartir con QR y afiche para actividades (M)** — reutiliza `ShareKit` y los enlaces `/r/` de `analytics-v2`.
+- [x] **A25 Kit de compartir con QR y afiche para actividades (M)** — reutiliza `ShareKit` y los enlaces `/r/` de `analytics-v2`.
   - Aceptación: enlaces automáticos por canal, QR, afiche PNG (formato feed e historia), mensaje de WhatsApp; se abre al publicar y desde "Mis actividades"; atribución por `ch` visible en la medición mínima (A24).
   - Verifica: prueba manual de descarga del afiche; la visita por QR suma al canal.
   - Archivos: extensión del kit existente, `/r/` para actividades.

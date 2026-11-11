@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Pencil, Plus } from "lucide-react"
+import { Pencil, Plus, Share2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { setActivityActiveAction } from "@/app/actions/activities/set-activity-active.action"
 import { cn } from "@/app/lib/utils/cn"
+import { ShareKit } from "@/presentation/shared/components/ShareKit"
 import type { MyActivitySummary, StatusKey } from "@/presentation/activities/lib/activityStatus"
 
 const CHIP: Record<StatusKey, string> = {
@@ -21,6 +22,7 @@ function Row({ a }: { a: MyActivitySummary }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [kit, setKit] = useState(false)
 
   const toggle = async () => {
     setBusy(true)
@@ -50,9 +52,11 @@ function Row({ a }: { a: MyActivitySummary }) {
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild variant="outline" size="lg" className="h-11"><Link href={`/actividades/${a.id}/editar`}><Pencil aria-hidden /> Editar</Link></Button>
           {a.status.key !== "draft" ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.slug}`}>{a.status.key === "live" ? "Ver" : "Vista previa"}</Link></Button> : null}
+          {a.status.key === "live" || a.status.key === "review" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setKit(true)}><Share2 aria-hidden /> Compartir</Button> : null}
           {a.canToggleActive ? <Button type="button" variant="ghost" size="lg" className="h-11" disabled={busy} onClick={() => void toggle()}>{a.isActive ? "Pausar" : "Reactivar"}</Button> : null}
         </div>
       </div>
+      {kit ? <ShareKit open kind="activity" id={a.id} title={a.title} where={a.schedule} imageUrl={a.coverUrl ?? undefined} pendingReview={a.status.key === "review"} onClose={() => setKit(false)} /> : null}
     </li>
   )
 }

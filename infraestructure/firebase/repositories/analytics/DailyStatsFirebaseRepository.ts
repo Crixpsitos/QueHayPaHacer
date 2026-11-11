@@ -10,7 +10,7 @@ export class DailyStatsFirebaseRepository {
 
   /** Docs diarios desde `sinceDay`, cada uno con su día (el id del doc). */
   async readDays(collection: "events" | "sites", id: string, sinceDay: string): Promise<DailyStatsDoc[]> {
-    if ((collection !== "events" && collection !== "sites") || !ID.test(id)) throw new Error("Consulta de estadísticas inválida.")
+    if ((collection !== "events" && collection !== "sites" && collection !== "activities") || !ID.test(id)) throw new Error("Consulta de estadísticas inválida.")
     const snap = await this.db.collection(collection).doc(id).collection("stats").where(FieldPath.documentId(), ">=", sinceDay).get()
     return snap.docs.map((d) => ({ ...(d.data() as DailyStatsDoc), day: d.id }))
   }
@@ -20,7 +20,7 @@ export class DailyStatsFirebaseRepository {
   }
 
   /** Clic en el enlace corto automático de un canal: `linkClicks.<canal>` +1 en el doc del día. No crea la ficha (la ruta ya comprobó que existe). */
-  async recordLinkClick(collection: "events" | "sites", id: string, channel: Channel, day: string): Promise<void> {
+  async recordLinkClick(collection: "events" | "sites" | "activities", id: string, channel: Channel, day: string): Promise<void> {
     if ((collection !== "events" && collection !== "sites") || !ID.test(id) || !isChannel(channel)) throw new Error("Clic de enlace inválido.")
     await this.db.collection(collection).doc(id).collection("stats").doc(day).set({ day, linkClicks: { [channel]: FieldValue.increment(1) } }, { merge: true })
   }

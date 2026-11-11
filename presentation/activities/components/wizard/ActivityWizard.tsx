@@ -134,7 +134,7 @@ export function ActivityWizard({ context, initial }: Props) {
     else setStep((s) => s - 1)
   }
 
-  if (done) return <Submitted title={form.title} slug={done.slug} moderationStatus={done.moderationStatus} />
+  if (done) return <Submitted id={activityId!} title={form.title} slug={done.slug} coverUrl={media.find((m) => m.type === "image" && m.isCover)?.url} moderationStatus={done.moderationStatus} />
 
   const head = TITLES[step]
   let body: ReactNode

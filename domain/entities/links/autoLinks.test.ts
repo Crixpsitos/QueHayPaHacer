@@ -25,3 +25,9 @@ test("canal desconocido, tipo desconocido o id vacío → null (nada del request
   assert.equal(autoLandingPath("event", "", "ig"), null);
   assert.equal(autoLandingPath("event", "ev1", "__proto__"), null);
 });
+
+test("actividades: ruta corta por id y aterrizaje en la ficha por slug", () => {
+  assert.equal(autoLinkHref("activity", "a1", "wa"), "/r/a/a1/wa");
+  assert.equal(autoLandingPath("activity", "senderismo-los-domingos", "wa"), "/actividades/senderismo-los-domingos?ch=wa&utm_source=whatsapp&utm_medium=share&utm_campaign=auto");
+  assert.equal(autoLandingPath("activity", "", "wa"), null);
+});
