@@ -35,7 +35,7 @@ test("toFirebase no deja campos undefined (Firestore los rechaza)", () => {
 test("toFirebase agrega los campos derivados para consultas: días de la semana y próxima salida", () => {
   const dto = mapper.toFirebase(makeActivity(), new Date("2026-11-08T10:00:00Z"))
   assert.deepEqual(dto.occursWeekdays, [0])
-  assert.equal(dto.nextOccurrenceAt?.toISOString(), "2026-11-08T11:00:00.000Z")
+  assert.equal((dto.nextOccurrenceAt as Date | null)?.toISOString(), "2026-11-08T11:00:00.000Z")
 })
 
 test("toDomain tolera campos opcionales ausentes (documentos viejos o parciales)", () => {
