@@ -66,3 +66,14 @@ export async function resolveSiteId(slug: string): Promise<string | null> {
   const site = await createServerContainer().sitesService.getSiteDetailBySlug(slug)
   return site?.id ?? null
 }
+
+export const SITE_BLOCK_MAX = 6
+
+/** Actividades públicas de un sitio para su ficha (máx. 6). Se invalida con `site-<id>-activities` o `activity-list`. */
+export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardView[]> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(`site-${siteId}-activities`, "activity-list")
+  const list = await createServerContainer().activityService.listForSite(siteId)
+  return list.slice(0, SITE_BLOCK_MAX).map(toCardView)
+}
