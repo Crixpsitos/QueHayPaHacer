@@ -54,7 +54,7 @@ export function HubMap({ data }: { data: HubMapData }) {
             return (
               <button key={h} type="button" aria-pressed={on} aria-label={`${hourLabel(h)}: ${n} ${n === 1 ? "actividad" : "actividades"}`} onClick={() => { setHour(h); setSelected(null) }}
                 className="group flex h-full min-w-0 flex-1 items-end outline-none focus-visible:ring-2 focus-visible:ring-[#FFB703]">
-                <span className={cn("w-full rounded-t-sm transition-colors", on ? "bg-[#FFB703]" : n ? "bg-white/35 group-hover:bg-white/55" : "bg-white/12")} style={{ height: `${Math.max(8, (n / max) * 100)}%` }} />
+                <span className={cn("w-full rounded-t-sm transition-colors", on ? "bg-[#FFB703]" : n ? "bg-white/70 group-hover:bg-white" : "bg-white/15")} style={{ height: `${Math.max(8, (n / max) * 100)}%` }} />
               </button>
             )
           })}
