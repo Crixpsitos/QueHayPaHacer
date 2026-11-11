@@ -50,3 +50,29 @@ test("cuenta muy nueva; sin dato no se comprueba", () => {
   assert.equal(sug([], { accountCreatedAt: now - L.minAccountAgeMs }), null);
   assert.equal(sug([], {}), null);
 });
+
+// ── actividades (A10) ──
+const act = (recent: ReturnType<typeof ago>[], extra = {}) => spamGuardError({ kind: "activity", recent, now, ...extra });
+
+test("actividades: sin historial pasa; cuenta nueva, enfriamiento y pendientes bloquean", () => {
+  assert.equal(act([]), null);
+  assert.match(act([], { accountCreatedAt: now - 1000 })!, /Tu cuenta es muy reciente. Podrás crear actividades/);
+  assert.match(act([ago(1000)])!, /Espera unos segundos antes de crear otra actividad/);
+  assert.match(act([], { pendingCount: L.activitiesPendingMax })!, /en revisión/);
+  assert.equal(act([], { pendingCount: L.activitiesPendingMax - 1 }), null);
+});
+
+test("actividades: tope por día y texto duplicado en 7 días", () => {
+  assert.equal(L.activitiesPerDay, 3);
+  const day = Array.from({ length: L.activitiesPerDay }, (_, i) => ago(2 * 3_600_000 + 60_000 * i));
+  assert.match(act(day)!, /por día/);
+  assert.equal(act(day.slice(1)), null);
+  const t = normalizeText("Senderismo los domingos con almuerzo");
+  assert.match(act([ago(3 * 86_400_000, t)], { text: "  SENDERISMO los   domingos con almuerzo " })!, /misma actividad|igual/i);
+  assert.equal(act([ago(8 * 86_400_000, t)], { text: "Senderismo los domingos con almuerzo" }), null);
+});
+
+test("los mensajes de sugerencias y reclamos no cambian", () => {
+  assert.match(sug([ago(1000)])!, /Espera unos segundos antes de enviar otra sugerencia/);
+  assert.match(spamGuardError({ kind: "claim", recent: [], now, accountCreatedAt: now - 1000 })!, /Podrás enviar reclamos/);
+});
