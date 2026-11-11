@@ -9,8 +9,9 @@ import { setActivitySavedAction } from "@/app/actions/activities/engagement.acti
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
+import { WeekPlan } from "./WeekPlan"
 
-type Tab = "upcoming" | "saved" | "done"
+type Tab = "week" | "upcoming" | "saved" | "done"
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function Thumb({ a }: { a: ActivityCardView }) {
@@ -48,7 +49,7 @@ function Empty({ title, text, cta }: { title: string; text: string; cta: { href:
 
 /** «Mis planes»: lo que reservé (próximo), lo que guardé y lo que ya hice. Todo es de mi cuenta. */
 export function MyPlans({ initial }: { initial: MyPlansView }) {
-  const [tab, setTab] = useState<Tab>(initial.upcoming.length ? "upcoming" : initial.saved.length ? "saved" : "upcoming")
+  const [tab, setTab] = useState<Tab>(initial.upcoming.length || initial.saved.length ? "week" : "upcoming")
   const [removed, setRemoved] = useState<string[]>([])
   const [savedGone, setSavedGone] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -61,7 +62,9 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
     if (r.success) onDone(); else setError(r.error ?? "No se pudo quitar. Intenta de nuevo.")
   }
 
+  const weekCards = [...initial.upcoming.map((u) => u.card), ...saved].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i)
   const tabs: { id: Tab; label: string; n: number }[] = [
+    { id: "week", label: "Semana", n: weekCards.length },
     { id: "upcoming", label: "Próximo", n: initial.upcoming.length },
     { id: "saved", label: "Guardado", n: saved.length + gone.length },
     { id: "done", label: "Hecho", n: initial.done.length },
@@ -79,6 +82,8 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="grid gap-3">
+        {tab === "week" ? <WeekPlan cards={weekCards} /> : null}
+
         {tab === "upcoming" ? (
           initial.upcoming.length ? (
             <>
