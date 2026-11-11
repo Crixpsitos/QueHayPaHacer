@@ -13,6 +13,7 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { CreatorVerificationBanner } from "@/app/components/feature/home/CreatorVerificationBanner";
 import { ContributionBanner } from "@/app/components/feature/home/ContributionBanner";
 import { VerifiedCreatorsSection } from "@/app/components/feature/home/VerifiedCreatorsSection";
+import { ActivityHomeBlock } from "@/presentation/activities/components/ActivityHomeBlock";
 import { PremiumBanner } from "@/app/components/feature/home/PremiumBanner";
 
 export const metadata: Metadata = {
@@ -49,6 +50,9 @@ export default function HomePage() {
           ))}
         </nav>
       </Section>
+      <Suspense fallback={null}>
+        <ActivityHomeBlock />
+      </Suspense>
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
       </Suspense>

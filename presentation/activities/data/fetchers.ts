@@ -1,6 +1,8 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
+import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
+import { chooseHomeBlock } from "@/presentation/activities/lib/homeBlock"
 import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
 
 export interface ActivityPageData extends ActivityPublicView {
@@ -75,4 +77,27 @@ export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardV
   cacheTag(`site-${siteId}-activities`, "activity-list")
   const list = await createServerContainer().activityService.listForSite(siteId)
   return list.slice(0, SITE_BLOCK_MAX).map(toCardView)
+}
+
+export interface HomeBlockData {
+  mode: "today" | "week"
+  /** "miércoles 11 de noviembre", ya formateado (la caché es de horas: no depende de la hora del lector). */
+  dateLabel: string
+  items: ActivityCardView[]
+}
+
+/** Bloque "Actividades de hoy" de la portada. Caché de horas; se invalida con `activity-list`. null = no dibujar. */
+export const fetchHomeActivities = async (): Promise<HomeBlockData | null> => {
+  "use cache"
+  cacheLife("hours")
+  cacheTag("activity-list")
+  const svc = createServerContainer().activityService
+  const now = new Date()
+  const [today, week] = await Promise.all([svc.search({ when: "hoy" }, 0, 100), svc.search({ when: "esta-semana" }, 0, 100)])
+  const key = (a: { id: string; ownerUid: string }) => ({ id: a.id, host: a.ownerUid })
+  const r = chooseHomeBlock(today.items.map(key), week.items.map(key), bogotaDateIso(now))
+  if (!r.ids.length) return null
+  const pool = new Map([...week.items, ...today.items].map((a) => [a.id, a]))
+  const dateLabel = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bogota" }).format(now)
+  return { mode: r.mode, dateLabel, items: r.ids.map((id) => toCardView(pool.get(id)!)) }
 }
