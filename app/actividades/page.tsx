@@ -44,9 +44,9 @@ async function Hub({ searchParams }: PageProps) {
     <>
       <HubHero current={f} meta={meta} />
       <div className="grid gap-10 py-8">
-        <ActivityFilters current={f} />
-
         {mapData && (mapData.pins.length || mapData.withoutPlace) ? <HubMapLazy data={mapData} /> : null}
+
+        <ActivityFilters current={f} />
 
         {!filtered ? <CategoryTiles counts={meta.categories} current={f} /> : null}
 

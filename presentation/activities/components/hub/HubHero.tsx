@@ -21,8 +21,8 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
     <header className="-mx-4 rounded-b-[2rem] bg-foreground px-4 pb-6 pt-8 text-background sm:mx-0 sm:rounded-[2rem] sm:px-8 sm:pb-8 sm:pt-10">
       <div className="grid gap-5">
         <div className="grid gap-2">
-          <h1 className="font-heading text-[2.75rem] font-extrabold leading-[1.02] tracking-tight sm:text-6xl">La semana<br />en Ibagué</h1>
-          <p className="max-w-lg text-base leading-relaxed text-background/75">Lo que se repite cada semana: caminatas, clubes, talleres y planes en sitios. Elige un día y mira la agenda.</p>
+          <h1 className="font-heading text-[2.25rem] font-extrabold leading-[1.04] tracking-tight sm:text-5xl">La semana en Ibagué</h1>
+          <p className="max-w-lg text-base leading-relaxed text-background/75">Lo que se repite cada semana: caminatas, clubes, talleres y planes en sitios. Elige un día, mueve la hora en el mapa y mira qué hay.</p>
         </div>
         <nav aria-label="Días de la semana" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
           {meta.days.map((d, i) => {
