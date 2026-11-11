@@ -7,13 +7,13 @@ import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicVie
 
 export interface ActivityPageData extends ActivityPublicView {
   /** Sitio vinculado (nombre y slug para el enlace), o null en actividades globales. */
-  site: { name: string; slug: string } | null
+  site: { name: string; slug: string; owner: { displayName: string; photoURL: string } | null } | null
 }
 
 async function withSite(view: ActivityPublicView): Promise<ActivityPageData> {
   if (!view.siteId) return { ...view, site: null }
   const s = await createServerContainer().sitesService.getActivityLinkSnapshot(view.siteId)
-  return { ...view, site: s ? { name: s.name, slug: s.slug } : null }
+  return { ...view, site: s ? { name: s.name, slug: s.slug, owner: s.owner } : null }
 }
 
 /**

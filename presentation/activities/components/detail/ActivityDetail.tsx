@@ -8,12 +8,12 @@ import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
 import { ActivityEngagement } from "./ActivityEngagement"
+import { ActivityHostBadge } from "./ActivityHostBadge"
 import { ActivityJoin } from "./ActivityJoin"
 import { TrackedCta } from "./TrackedCta"
 import { EventViewTracker } from "@/app/components/analytics/EventViewTracker"
 
 const chip = "inline-flex min-h-9 items-center rounded-full border border-border bg-card px-3.5 text-sm font-medium"
-const initials = (name: string) => name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
 
 /** Ficha pública de una actividad (server component: todo lo que depende de la hora va en `NextDeparture`). */
 export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; preview?: string }) {
@@ -38,10 +38,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             </div>
             <h1 className="font-heading text-3xl font-bold leading-tight sm:text-4xl">{d.title}</h1>
             {d.tagline ? <p className="text-lg text-muted-foreground">{d.tagline}</p> : null}
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="grid size-10 place-items-center rounded-full bg-primary-light text-sm font-semibold text-primary-dark" aria-hidden>{initials(d.host.displayName)}</span>
-              <span>Organiza <strong className="font-semibold text-foreground">{d.host.displayName}</strong>{d.site ? <> · en <Link href={`/donde-ir/${d.site.slug}`} className="font-semibold text-foreground underline underline-offset-4">{d.site.name}</Link></> : null}</span>
-            </div>
+            <ActivityHostBadge host={d.host} site={d.site} />
           </header>
 
           <div className="lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} /></div>

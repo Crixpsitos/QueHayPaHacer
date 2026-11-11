@@ -201,7 +201,7 @@ export class SitesService {
   }
 
   /** Datos mínimos para vincular y mostrar actividades de un sitio: autor, y si el sitio es público y está activo. */
-  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean } | null> {
+  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean; owner: { displayName: string; photoURL: string } | null } | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null
     return {
@@ -211,6 +211,7 @@ export class SitesService {
       published: dto.publicationStatus === "published" && dto.moderationStatus === "approved",
       active: dto.isActive === true,
       linkable: isLinkableSite(dto),
+      owner: dto.owner ? { displayName: dto.owner.displayName, photoURL: dto.owner.photoURL } : null,
     }
   }
 
