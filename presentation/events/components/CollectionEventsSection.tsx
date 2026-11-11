@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Section } from "@/app/components/layout/shared/Section";
 import { ContentSection } from "@/app/components/layout/shared/ContentSection";
 import { EventCardInteractive } from "@/presentation/events/components/card/EventCardInteractive";
@@ -17,6 +18,16 @@ const EMPTY_INFO = {
     "Estamos sumando planes nuevos constantemente. Mientras tanto, revisa la agenda completa.",
   action: { href: "/eventos", label: "Ver todos los eventos" },
 };
+
+function NoEventsNote({ text }: { text: string }) {
+  return (
+    <Section spacing="sm" className="mt-2">
+      <p className="text-sm text-muted-foreground">
+        {text} <Link href="/eventos" className="font-medium text-primary-dark underline-offset-2 hover:underline">Ver la agenda completa</Link>
+      </p>
+    </Section>
+  );
+}
 
 /** ItemList JSON-LD → elegibilidad para carrusel de eventos en Google (URLs absolutas). */
 function ItemListJsonLd({ events }: { events: Events[] }) {
@@ -79,19 +90,8 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
   if (def.kind === "today") {
     const { events, fallback } = await fetchTodayEvents();
     if (events.length === 0) {
-      return (
-        <Section spacing="sm" className="mt-4">
-          <EventCardInteractive
-            events={[]}
-            info={{
-              title: "Hoy no hay eventos publicados",
-              description: "Mira la agenda completa o los planes de este fin de semana.",
-              action: { href: "/eventos", label: "Ver todos los eventos" },
-            }}
-            variant="vertical"
-          />
-        </Section>
-      );
+      // Sin eventos hoy: aviso corto (las actividades de hoy van justo debajo y son lo importante).
+      return <NoEventsNote text="Hoy no hay eventos publicados." />;
     }
     return (
       <>
@@ -113,11 +113,7 @@ export async function CollectionEventsSection({ def }: { def: CollectionDef }) {
   const groups = groupEventsByCategory(events, collections);
 
   if (groups.length === 0) {
-    return (
-      <Section spacing="sm" className="mt-4">
-        <EventCardInteractive events={[]} info={EMPTY_INFO} variant="vertical" />
-      </Section>
-    );
+    return <NoEventsNote text="Todavía no hay eventos publicados para esta fecha." />;
   }
 
   return (

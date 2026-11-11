@@ -40,27 +40,37 @@ export function ActivityFilters({ current }: { current: UrlFilters }) {
     ...(current.category ? [{ label: ACTIVITY_CATEGORIES.find((c) => c.slug === current.category)?.name ?? "", href: filterHref(current, { category: undefined }) }] : []),
     ...(current.kind ? [{ label: current.kind === "global" ? "Globales" : "De sitios", href: filterHref(current, { kind: undefined }) }] : []),
   ]
+  const more = [current.budget, current.companion, current.category, current.kind].filter(Boolean).length
   return (
     <div className="grid gap-4">
       <Group label="Cuándo">
         {WHEN_VALUES.map((w) => <Chip key={w} current={current} patch={{ when: w }} active={current.when === w}>{WHEN_LABELS[w]}</Chip>)}
         <Chip current={current} patch={{ when: undefined }} active={!current.when}>Cualquier día</Chip>
       </Group>
-      <Group label="Presupuesto">
-        {BUDGET_SHOWN.map((b) => <Chip key={b} current={current} patch={{ budget: b }} active={current.budget === b}>{BUDGET_LABELS[b]}</Chip>)}
-      </Group>
-      <Group label="Con quién">
-        {COMPANIONS.map((c) => <Chip key={c} current={current} patch={{ companion: c }} active={current.companion === c}>{COMPANION_LABELS[c]}</Chip>)}
-      </Group>
-      <Group label="Categoría">
-        <Chip current={current} patch={{ category: undefined }} active={!current.category}>Todas</Chip>
-        {ACTIVITY_CATEGORIES.map((c) => <Chip key={c.slug} current={current} patch={{ category: c.slug }} active={current.category === c.slug}>{c.name}</Chip>)}
-      </Group>
-      <Group label="Tipo">
-        {([[undefined, "Todas"], ["global", "Globales"], ["site", "De sitios"]] as const).map(([k, label]) => (
-          <Chip key={label} current={current} patch={{ kind: k }} active={current.kind === k}>{label}</Chip>
-        ))}
-      </Group>
+      {/* Lo secundario va plegado: en el móvil lo primero que se ve debe ser el resultado. Nativo, sin JavaScript. */}
+      <details open={more > 0} className="group/more rounded-2xl border border-border bg-card px-4 py-1">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40 [&::-webkit-details-marker]:hidden">
+          <span>Más filtros{more > 0 ? ` (${more})` : ""}</span>
+          <span aria-hidden className="text-muted-foreground transition-transform group-open/more:rotate-180">⌄</span>
+        </summary>
+        <div className="grid gap-4 pb-3 pt-2">
+        <Group label="Presupuesto">
+          {BUDGET_SHOWN.map((b) => <Chip key={b} current={current} patch={{ budget: b }} active={current.budget === b}>{BUDGET_LABELS[b]}</Chip>)}
+        </Group>
+        <Group label="Con quién">
+          {COMPANIONS.map((c) => <Chip key={c} current={current} patch={{ companion: c }} active={current.companion === c}>{COMPANION_LABELS[c]}</Chip>)}
+        </Group>
+        <Group label="Categoría">
+          <Chip current={current} patch={{ category: undefined }} active={!current.category}>Todas</Chip>
+          {ACTIVITY_CATEGORIES.map((c) => <Chip key={c.slug} current={current} patch={{ category: c.slug }} active={current.category === c.slug}>{c.name}</Chip>)}
+        </Group>
+        <Group label="Tipo">
+          {([[undefined, "Todas"], ["global", "Globales"], ["site", "De sitios"]] as const).map(([k, label]) => (
+            <Chip key={label} current={current} patch={{ kind: k }} active={current.kind === k}>{label}</Chip>
+          ))}
+        </Group>
+        </div>
+      </details>
       {active.length ? (
         <div className="flex flex-wrap items-center gap-2" aria-label="Filtros activos">
           {active.map((a) => <Link key={a.label} href={a.href} scroll={false} aria-label={`Quitar filtro ${a.label}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary-light px-3 text-[0.8125rem] font-semibold text-primary-dark outline-none focus-visible:ring-3 focus-visible:ring-ring/40">{a.label} <span aria-hidden>✕</span></Link>)}
