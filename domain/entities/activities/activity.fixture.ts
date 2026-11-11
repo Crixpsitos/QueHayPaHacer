@@ -37,6 +37,7 @@ export function makeActivity(p: Partial<Activity> = {}): Activity {
     extras: [],
     sections: [],
     cta: null,
+    join: null,
     media: [makeImage("m1", true)],
     rating: { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] },
     analytics: { views: 0, clicks: 0, visits: 0, reviews: 0, saves: 0 },

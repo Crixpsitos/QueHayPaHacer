@@ -126,6 +126,7 @@ export class ActivityPublishService {
       extras: req.input.extras,
       sections: req.input.sections,
       cta: req.input.cta,
+      join: req.input.join ? { capacity: req.input.join.capacity, closed: existing?.join?.closed ?? false } : null,
       // El optimizador de ../functions también escribe `media[]`: se combina con lo guardado en vez de pisarlo.
       media: existing ? mergeMedia(existing.media, req.media) : [],
       publicationStatus: publication,
@@ -191,7 +192,7 @@ export class ActivityPublishService {
       slug: await uniqueSlug(slugifyActivity(input.title), (s) => this.d.repo.slugExists(s)),
       title: "", tagline: "", description: "", kind: "global", siteId: null, host, ownerUid: ctx.uid, category: input.category,
       companions: [], difficulty: null, durationMinutes: null, ageNote: "", meetingPoint: input.meetingPoint, schedule: input.schedule,
-      priceOptions: [], extras: [], sections: [], cta: null, media: [],
+      priceOptions: [], extras: [], sections: [], cta: null, join: null, media: [],
       rating: { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] },
       analytics: { views: 0, clicks: 0, visits: 0, reviews: 0, saves: 0 },
       publicationStatus: "draft", moderationStatus: "pending", isActive: true,

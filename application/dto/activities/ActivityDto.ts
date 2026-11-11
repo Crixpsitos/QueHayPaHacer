@@ -4,6 +4,7 @@ import { validateSchedule, type ActivitySchedule, type ScheduleRule, SCHEDULE_NO
 import { EXTRA_UNITS, PRICE_UNITS, validateExtras, validatePriceOptions, type Extra, type PriceOption } from "@/domain/entities/activities/value-objects/Price"
 import { normalizeCta, type Cta } from "@/domain/entities/activities/value-objects/Cta"
 import { AGE_NOTE_MAX, DESCRIPTION_MAX, DESCRIPTION_MIN, DURATION_MAX, DURATION_MIN, MEETING_REFERENCES_MAX, MEETING_TEXT_MAX, TAGLINE_MAX, TITLE_MAX, TITLE_MIN, plainTextError, type Difficulty, type MeetingPoint } from "@/domain/entities/activities/Activity"
+import { JOIN_CAPACITY_MAX } from "@/domain/entities/activities/activityJoin"
 import { normalizeSections, type SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 
 const text = (max: number, label: string) => v.pipe(v.string(`${label} inválido`), v.maxLength(max, `${label}: máximo ${max} caracteres`))
@@ -58,6 +59,7 @@ const ActivityInputSchema = v.object({
   extras: v.optional(v.array(v.object({ label: v.string("Nombre inválido."), amountCop: Money, unit: v.picklist(EXTRA_UNITS, "Unidad de extra inválida."), note: v.optional(v.string()) }), "Extras inválidos."), []),
   sections: v.optional(v.array(v.unknown()), []),
   cta: v.optional(v.nullable(v.object({ kind: v.string(), value: v.string(), label: v.optional(v.string()) })), null),
+  join: v.optional(v.nullable(v.object({ capacity: v.nullable(v.pipe(v.number("El cupo debe ser un número."), v.integer("El cupo debe ser un número entero."), v.minValue(1, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`), v.maxValue(JOIN_CAPACITY_MAX, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`))) }, "Los datos de inscripción son inválidos.")), null),
 })
 
 /** Lo que el asistente envía para crear o editar (sin id, dueño, estado ni medios: eso lo pone el servidor). */
@@ -77,6 +79,8 @@ export interface ActivityInput {
   extras: Extra[]
   sections: SiteSection[]
   cta: Cta | null
+  /** Cupo por salida (null = sin tope). `join: null` = la actividad no recibe inscripciones. */
+  join: { capacity: number | null } | null
 }
 
 export type ParseResult = { ok: true; value: ActivityInput } | { ok: false; error: string }
@@ -117,6 +121,7 @@ export function parseActivityInput(raw: unknown): ParseResult {
       extras,
       sections: normalizeSections(d.sections),
       cta,
+      join: d.join ? { capacity: d.join.capacity } : null,
     },
   }
 }

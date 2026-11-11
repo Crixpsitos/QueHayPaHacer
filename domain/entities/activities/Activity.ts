@@ -1,3 +1,4 @@
+import type { JoinSettings } from "./activityJoin"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 import { isActivityCategory, isCompanion, COMPANIONS_MAX, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
 import { validateSchedule, type ActivitySchedule } from "./value-objects/ActivitySchedule"
@@ -64,6 +65,8 @@ export interface Activity {
   extras: Extra[]
   sections: SiteSection[]
   cta: Cta | null
+  /** "Unirme" con cuenta: null = no recibe inscripciones. */
+  join: JoinSettings | null
   /** Arreglo plano (como sitios): lo parchea el optimizador de `../functions`. */
   media: ActivityMedia[]
   rating: ActivityRating

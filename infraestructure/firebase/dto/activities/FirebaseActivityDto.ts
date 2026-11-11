@@ -1,3 +1,4 @@
+import type { JoinSettings } from "@/domain/entities/activities/activityJoin"
 import type { Timestamp } from "firebase-admin/firestore"
 import type { Activity, ActivityAnalytics, ActivityHost, ActivityKind, ActivityModerationStatus, ActivityPublicationStatus, ActivityRating, Difficulty, MeetingPoint } from "@/domain/entities/activities/Activity"
 import type { ActivityCategory, Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
@@ -28,6 +29,7 @@ export interface FirebaseActivityDto {
   extras?: Extra[]
   sections?: SiteSection[]
   cta?: Cta | null
+  join?: JoinSettings | null
   /** Arreglo plano: lo parchea el optimizador de ../functions buscando por `path`. */
   media?: ActivityMedia[]
   rating?: ActivityRating

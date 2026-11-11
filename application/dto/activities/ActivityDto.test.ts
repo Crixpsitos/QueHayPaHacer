@@ -85,3 +85,14 @@ test("campos desconocidos (uid, estado de moderación) se ignoran: no se pueden 
   if (!r.ok) return
   for (const k of ["ownerUid", "moderationStatus", "rating", "isActive"]) assert.equal(k in r.value, false)
 })
+
+test("inscripciones: cupo opcional entre 1 y 500; sin 'join' = no recibe inscripciones", () => {
+  const ok = (join: unknown) => parseActivityInput({ ...valid(), join })
+  const none = ok(undefined)
+  assert.ok(none.ok && none.value.join === null)
+  const open = ok({ capacity: null })
+  assert.ok(open.ok && open.value.join?.capacity === null)
+  const cap = ok({ capacity: 12 })
+  assert.ok(cap.ok && cap.value.join?.capacity === 12)
+  for (const capacity of [0, -1, 501, 2.5, "10"]) assert.equal(ok({ capacity }).ok, false, String(capacity))
+})

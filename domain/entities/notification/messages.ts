@@ -48,3 +48,11 @@ export function activityTransferredNotification(i: { title: string; siteName: st
     href: "/actividades/mis",
   };
 }
+
+export function activityJoinNotification(i: { title: string; activityId: string; who: string; dateLabel: string | null }): NewNotification {
+  return { type: "activity_join", title: `${i.who} se unió a "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : undefined, href: `/actividades/${i.activityId}/inscritos` };
+}
+
+export function activityJoinConfirmedNotification(i: { title: string; slug: string; dateLabel: string | null }): NewNotification {
+  return { type: "activity_join_confirmed", title: `Estás dentro: "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : "Te esperan. Si no puedes ir, cancela desde la actividad.", href: `/actividades/${i.slug}` };
+}

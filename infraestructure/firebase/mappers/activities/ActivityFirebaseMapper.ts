@@ -41,6 +41,7 @@ export class ActivityFirebaseMapper {
       extras: dto.extras ?? [],
       sections: dto.sections ?? [],
       cta: dto.cta ?? null,
+      join: dto.join ?? null,
       media: dto.media ?? [],
       rating: dto.rating ?? EMPTY_RATING,
       analytics: { ...EMPTY_ANALYTICS, ...dto.analytics },

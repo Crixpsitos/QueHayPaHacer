@@ -38,6 +38,7 @@ const input = (p: Partial<ActivityInput> = {}): ActivityInput => ({
   extras: [],
   sections: [],
   cta: null,
+  join: null,
   ...p,
 })
 
@@ -218,4 +219,16 @@ test("pausar y reactivar: solo el dueño o QHPA", async () => {
   assert.equal(s.repo.items[0].isActive, false)
   assert.deepEqual(await s.svc.setActive(admin, "x", true), { ok: true })
   assert.equal(s.repo.items[0].isActive, true)
+})
+
+test("editar conserva el cierre manual de inscripciones y cambia el cupo", async () => {
+  const { svc, repo } = setup()
+  await svc.save(user, { input: input({ join: { capacity: 10 } }), media: [], publish: false, declaration: false })
+  const id = repo.items[0].id
+  assert.deepEqual(repo.items[0].join, { capacity: 10, closed: false })
+  repo.items[0] = { ...repo.items[0], join: { capacity: 10, closed: true } }
+  await svc.save(user, { id, input: input({ join: { capacity: 20 } }), media: [], publish: false, declaration: false })
+  assert.deepEqual(repo.items[0].join, { capacity: 20, closed: true })
+  await svc.save(user, { id, input: input({ join: null }), media: [], publish: false, declaration: false })
+  assert.equal(repo.items[0].join, null)
 })

@@ -51,6 +51,8 @@ import { SitesService } from "@/application/services/sites/SitesService";
 import { ActivityService } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
+import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
+import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
@@ -259,6 +261,17 @@ export const createServerContainer = () => {
     new NotificationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // unirse a una salida (cupo opcional) con avisos por la campanita
+  const activityJoinService = new ActivityJoinService({
+    repo: new ActivityJoinFirebaseRepository(getFirebaseFirestore()),
+    getPublic: (id) => activityService.getPublicById(id),
+    getForManager: (id, viewer) => activityService.getForManager(id, viewer),
+    saveActivity: (a) => activityRepository.save(a),
+    displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
+    notify: (uid, n) => notificationService.notify(uid, n),
+    clock: () => new Date(),
+  });
+
   // configuración editable por el administrador (festivos; luego rutas de bus)
   const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
   const transitRouteService = new TransitRouteService(new ConfigFirebaseRepository(getFirebaseFirestore()));
@@ -284,6 +297,7 @@ export const createServerContainer = () => {
     activityService,
     activityPublishService,
     activityEngagementService,
+    activityJoinService,
     hostIdentityService,
     siteInteractionService,
     storageService,

@@ -31,6 +31,8 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   event_at_site: CalendarPlus,
   activity_moderation: Compass,
   activity_transferred: ArrowRightLeft,
+  activity_join: UserPlus,
+  activity_join_confirmed: UserCheck,
 };
 
 const TITLE = "Notificaciones";

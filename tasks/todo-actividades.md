@@ -146,7 +146,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de servicio; doble clic = 1.
   - Archivos: servicio, acción, componente.
 
-- [ ] **A22 Unirme / reservar cupo: dominio y servicio (M)** — TDD; reutiliza patrones de `EventRegistration`.
+- [x] **A22 Unirme / reservar cupo: dominio y servicio (M)** — TDD; reutiliza patrones de `EventRegistration`.
   - Aceptación: entidad `ActivityJoin` (por persona y **por ocurrencia** en salidas recurrentes); cupo opcional con máximo, cierre manual; una inscripción por persona y ocurrencia (idempotente, transacción); cupo lleno → error claro; cancelar propia inscripción; notificación al creador y confirmación al usuario.
   - Verifica: `pnpm test` (carrera de dos inscripciones al último cupo; lleno; cancelar libera el cupo).
   - Archivos: `domain/entities/activities/ActivityJoin.ts`, servicio, repo, acciones (≤2).
