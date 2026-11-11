@@ -26,7 +26,7 @@ export function ToggleChip({ pressed, onClick, children, className }: { pressed:
       onClick={onClick}
       className={cn(
         "min-h-11 rounded-full border px-4 text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/30",
-        pressed ? "border-transparent bg-foreground text-background" : "border-border bg-card hover:bg-muted",
+        pressed ? "border-transparent bg-primary-dark text-white" : "border-border bg-card hover:bg-muted",
         className,
       )}
     >

@@ -59,7 +59,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
         <header className="relative -mt-9 grid gap-3 rounded-t-[2rem] bg-background px-0 pt-7 sm:mt-6 sm:rounded-none sm:pt-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold" style={{ background: cat.bg, color: cat.ink }}><cat.Icon className="size-4" aria-hidden /> {d.categoryName}</span>
-            {d.requiresReservation ? <span className="rounded-full bg-foreground px-3 py-1.5 text-[0.8125rem] font-semibold text-background">Con reserva</span> : null}
+            {d.requiresReservation ? <span className="rounded-full bg-primary-dark px-3 py-1.5 text-[0.8125rem] font-semibold text-white">Con reserva</span> : null}
           </div>
           <h1 className="font-heading text-[2.5rem] font-extrabold leading-[1.02] tracking-tight sm:text-5xl">{d.title}</h1>
           {d.tagline ? <p className="max-w-xl text-lg leading-snug text-muted-foreground">{d.tagline}</p> : null}

@@ -42,10 +42,10 @@ export function HubMap({ data }: { data: HubMapData }) {
   const onNow = isToday && hour === clampClockHour(bogotaHour())
   return (
     <section aria-label="Mapa del día" className="grid overflow-hidden rounded-[2rem] border border-border bg-card shadow-card">
-      <div className="grid gap-3 rounded-b-[1.5rem] bg-foreground px-4 pb-4 pt-5 text-background sm:px-6">
+      <div className="grid gap-3 rounded-b-[1.5rem] bg-primary-dark px-4 pb-4 pt-5 text-white sm:px-6">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4">
           <h2 className="font-heading text-2xl font-extrabold">{hour === null ? "El día en el mapa" : `${onNow ? "Ahora · " : ""}${hourLabel(hour)}`}</h2>
-          <p className="text-sm text-background/70" aria-live="polite">{hour === null ? "" : `${activeIds.size} ${activeIds.size === 1 ? "pasando" : "pasando"} a esta hora`}</p>
+          <p className="text-sm text-white/70" aria-live="polite">{hour === null ? "" : `${activeIds.size} ${activeIds.size === 1 ? "pasando" : "pasando"} a esta hora`}</p>
         </div>
         <div role="group" aria-label="Hora del día" className="flex h-14 items-end gap-0.75">
           {counts.map((n, i) => {
@@ -59,7 +59,7 @@ export function HubMap({ data }: { data: HubMapData }) {
             )
           })}
         </div>
-        <div className="flex justify-between text-[0.6875rem] text-background/65" aria-hidden><span>{hourLabel(CLOCK_FIRST_HOUR)}</span><span>12 m.</span><span>6 p. m.</span><span>{hourLabel(CLOCK_LAST_HOUR)}</span></div>
+        <div className="flex justify-between text-[0.6875rem] text-white/65" aria-hidden><span>{hourLabel(CLOCK_FIRST_HOUR)}</span><span>12 m.</span><span>6 p. m.</span><span>{hourLabel(CLOCK_LAST_HOUR)}</span></div>
         {isToday ? <div><button type="button" onClick={() => { setHour(clampClockHour(bogotaHour())); setSelected(null) }} className={cn("min-h-9 rounded-full px-4 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#FFB703]", onNow ? "bg-white text-foreground" : "bg-white/12")}>Ahora</button></div> : null}
       </div>
 

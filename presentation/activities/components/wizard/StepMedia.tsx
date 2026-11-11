@@ -119,7 +119,7 @@ export function StepMedia({ activityId, media, setMedia, persist, onError }: Pro
               <div className="grid content-start gap-2">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className={cn("rounded-full px-2.5 py-1 font-semibold", m.status === "error" ? "bg-destructive/10 text-destructive" : m.status === "ready" ? "bg-[#E4F5E8] text-[#14532D]" : "bg-accent text-[#7a5200]")}>{STATUS_LABEL[m.status ?? "processing"]}</span>
-                  {m.isCover ? <span className="rounded-full bg-foreground px-2.5 py-1 font-semibold text-background">Portada</span> : null}
+                  {m.isCover ? <span className="rounded-full bg-primary-dark px-2.5 py-1 font-semibold text-white">Portada</span> : null}
                 </div>
                 {m.type === "image" ? (
                   <Input value={m.alt} maxLength={MEDIA_ALT_MAX} placeholder="Describe la foto (opcional)" aria-label="Descripción de la foto" onChange={(e) => setMedia(setAlt(media, m.id, e.target.value))} onBlur={() => void persist(mediaRef.current)} />

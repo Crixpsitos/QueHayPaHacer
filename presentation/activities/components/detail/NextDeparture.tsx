@@ -23,12 +23,12 @@ export function NextDeparture({ schedule, scheduleText, requiresReservation }: {
   const day = m?.[2]
   const month = m?.[3]?.slice(0, 3)
   return (
-    <section aria-label="Próxima salida" className="relative grid grid-cols-[6.25rem_1fr] overflow-hidden rounded-3xl bg-foreground text-background shadow-card">
+    <section aria-label="Próxima salida" className="relative grid grid-cols-[6.25rem_1fr] overflow-hidden rounded-3xl bg-primary-dark text-white shadow-card">
       {/* talón del boleto: número grande en dorado */}
       <div className="grid place-items-center border-r border-dashed border-background/25 px-3 py-5 text-center">
         {day ? (
           <div className="grid leading-none">
-            <span className="text-sm font-medium text-background/70">{month}</span>
+            <span className="text-sm font-medium text-white/70">{month}</span>
             <span className="font-heading text-5xl font-extrabold tracking-tight text-[#FFB703]">{day}</span>
           </div>
         ) : (
@@ -37,13 +37,13 @@ export function NextDeparture({ schedule, scheduleText, requiresReservation }: {
       </div>
       <div className="grid content-center gap-1.5 p-5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[0.8125rem] font-medium text-background/70">Próxima salida</span>
+          <span className="text-[0.8125rem] font-medium text-white/70">Próxima salida</span>
           {label ? <span className="rounded-full bg-[#FFB703] px-2.5 py-0.5 text-xs font-bold text-foreground">{label.relative}</span> : null}
         </div>
         {label ? (
           <>
             <div className="font-heading text-2xl font-bold leading-tight">{weekday}{label.timeLabel ? ` · ${label.timeLabel}` : ""}</div>
-            <div className="text-sm text-background/75">{scheduleText.split(" · ")[0]}</div>
+            <div className="text-sm text-white/75">{scheduleText.split(" · ")[0]}</div>
           </>
         ) : (
           <div className="font-heading text-xl font-bold leading-tight">{scheduleText}</div>

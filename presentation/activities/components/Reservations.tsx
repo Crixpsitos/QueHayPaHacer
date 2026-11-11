@@ -77,7 +77,7 @@ export function Reservations({ initial }: { initial: ManagerView }) {
             {departures.length ? (
               <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Salidas">
                 {departures.map((d) => (
-                  <button key={d.key} type="button" role="tab" aria-selected={d.key === key} onClick={() => setKey(d.key)} className={cn(chip, d.key === key ? "border-foreground bg-foreground text-background" : "border-border bg-card")}>
+                  <button key={d.key} type="button" role="tab" aria-selected={d.key === key} onClick={() => setKey(d.key)} className={cn(chip, d.key === key ? "border-primary-dark bg-primary-dark text-white" : "border-border bg-card")}>
                     {shortDate(d.key)}<small className="text-[11px] font-medium opacity-70">{d.capacity ? `${d.taken} de ${d.capacity}` : `${d.taken} reservas`}</small>
                   </button>
                 ))}
@@ -124,7 +124,7 @@ export function Reservations({ initial }: { initial: ManagerView }) {
               <section className="grid gap-2" aria-label="Lista de reservas">
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {FILTERS.filter((f) => view.paid || f.v === "all" || f.v === "confirmed").map((f) => (
-                    <button key={f.v} type="button" aria-pressed={filter === f.v} onClick={() => setFilter(f.v)} className={cn(chip, "min-h-10", filter === f.v ? "border-foreground bg-foreground text-background" : "border-border bg-card")}>
+                    <button key={f.v} type="button" aria-pressed={filter === f.v} onClick={() => setFilter(f.v)} className={cn(chip, "min-h-10", filter === f.v ? "border-primary-dark bg-primary-dark text-white" : "border-border bg-card")}>
                       {f.label}<small className="text-[11px] font-medium opacity-70">{count(f.v)}</small>
                     </button>
                   ))}

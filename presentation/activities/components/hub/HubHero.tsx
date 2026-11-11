@@ -18,11 +18,11 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
   const selected = current.day ?? (current.when === "hoy" ? meta.days[0]?.date : undefined)
   const toggle = <K extends "when" | "budget" | "companion">(key: K, value: NonNullable<UrlFilters[K]>) => filterHref(current, { [key]: current[key] === value ? undefined : value })
   return (
-    <header className="-mx-4 rounded-b-[2rem] bg-foreground px-4 pb-6 pt-8 text-background sm:mx-0 sm:rounded-[2rem] sm:px-8 sm:pb-8 sm:pt-10">
+    <header className="-mx-4 rounded-b-[2rem] bg-primary-dark px-4 pb-6 pt-8 text-white sm:mx-0 sm:rounded-[2rem] sm:px-8 sm:pb-8 sm:pt-10">
       <div className="grid gap-5">
         <div className="grid gap-2">
           <h1 className="font-heading text-[2.25rem] font-extrabold leading-[1.04] tracking-tight sm:text-5xl">La semana en Ibagué</h1>
-          <p className="max-w-lg text-base leading-relaxed text-background/75">Lo que se repite cada semana: caminatas, clubes, talleres y planes en sitios. Elige un día, mueve la hora en el mapa y mira qué hay.</p>
+          <p className="max-w-lg text-base leading-relaxed text-white/75">Lo que se repite cada semana: caminatas, clubes, talleres y planes en sitios. Elige un día, mueve la hora en el mapa y mira qué hay.</p>
         </div>
         <nav aria-label="Días de la semana" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
           {meta.days.map((d, i) => {
@@ -30,10 +30,10 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
             const on = selected === d.date
             return (
               <Link key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} scroll={false} aria-current={on ? "date" : undefined} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
-                className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-foreground" : "border-white/15 bg-white/6 text-background hover:bg-white/12")}>
-                <span className={cn("text-xs font-medium", on ? "text-foreground/80" : "text-background/70")}>{i === 0 ? "Hoy" : wd}</span>
+                className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-foreground" : "border-white/15 bg-white/6 text-white hover:bg-white/12")}>
+                <span className={cn("text-xs font-medium", on ? "text-foreground/80" : "text-white/70")}>{i === 0 ? "Hoy" : wd}</span>
                 <span className="font-heading text-[1.75rem] font-bold leading-none">{n}</span>
-                <span className={cn("mt-1.5 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold", on ? "bg-foreground text-[#FFB703]" : "bg-white/15")}>{d.count}</span>
+                <span className={cn("mt-1.5 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold", on ? "bg-primary-dark text-[#FFB703]" : "bg-white/15")}>{d.count}</span>
               </Link>
             )
           })}

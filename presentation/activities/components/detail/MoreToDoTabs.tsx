@@ -16,7 +16,7 @@ export function MoreToDoTabs({ tabs }: { tabs: MoreTab[] }) {
       <div role="tablist" aria-label="Más para hacer" className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:hidden">
         {tabs.map((t) => (
           <button key={t.key} role="tab" id={`more-tab-${t.key}`} aria-selected={active === t.key} aria-controls={`more-${t.key}`} type="button" onClick={() => setActive(t.key)}
-            className={cn("min-h-11 shrink-0 rounded-full border-[1.5px] px-4 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40", active === t.key ? "border-foreground bg-foreground text-background" : "border-border bg-card")}>
+            className={cn("min-h-11 shrink-0 rounded-full border-[1.5px] px-4 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40", active === t.key ? "border-primary-dark bg-primary-dark text-white" : "border-border bg-card")}>
             {t.label} · {t.count}
           </button>
         ))}

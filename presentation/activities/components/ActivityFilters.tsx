@@ -7,7 +7,7 @@ import { filterHref } from "@/presentation/activities/lib/filterHref"
 import { cn } from "@/app/lib/utils/cn"
 
 const pill = "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40"
-const on = "border-transparent bg-foreground text-background"
+const on = "border-transparent bg-primary-dark text-white"
 const off = "border-border bg-card hover:bg-muted"
 
 export const WHEN_LABELS: Record<When, string> = { hoy: "Hoy", "este-fin-de-semana": "Este fin de semana", "esta-semana": "Esta semana" }
