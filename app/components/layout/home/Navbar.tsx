@@ -48,6 +48,7 @@ export const Navbar = () => {
   const routes = [
     { name: "Inicio", href: "/" },
     { name: "Eventos", href: "/eventos" },
+    { name: "Actividades", href: "/actividades" },
     { name: "¿Dónde ir?", href: "/donde-ir" },
     { name: "Contáctanos", href: "/contactanos" },
   ];

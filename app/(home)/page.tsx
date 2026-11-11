@@ -38,6 +38,7 @@ export default function HomePage() {
           {[
             { href: "/que-hay-hoy-ibague", label: "Qué hacer hoy" },
             { href: "/eventos-este-fin-de-semana-ibague", label: "Este fin de semana" },
+            { href: "/actividades", label: "Actividades" },
             { href: "/donde-ir", label: "Dónde ir" },
           ].map((l) => (
             <Link

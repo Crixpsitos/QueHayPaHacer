@@ -8,6 +8,7 @@ import { CookiePreferencesButton } from "@/app/components/analytics/CookiePrefer
 
 const LINKS = [
   { href: "/eventos", label: "Eventos" },
+  { href: "/actividades", label: "Actividades" },
   { href: "/donde-ir", label: "¿Dónde ir?" },
   { href: "/eventos/create", label: "Crear evento" },
   { href: "/premium", label: "Premium" },

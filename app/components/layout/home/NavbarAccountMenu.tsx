@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, Bookmark, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
+import { BadgeCheck, Bookmark, CalendarDays, Compass, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
 import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.action";
 import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
@@ -219,6 +219,12 @@ export function NavbarAccountMenu({
               <Link href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
                 <Ticket className="size-4" aria-hidden="true" />
                 Mis inscripciones
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/actividades/mis" className={cn("flex items-center gap-2")}>
+                <Compass className="size-4" aria-hidden="true" />
+                Mis actividades
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
