@@ -1,3 +1,4 @@
+import { CONFIRM_LABELS } from "@/domain/entities/activities/value-objects/MeetingConfirm"
 import type { Activity, Difficulty } from "@/domain/entities/activities/Activity"
 import { ACTIVITY_CATEGORIES, type Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import { describeSchedule, type ActivitySchedule } from "@/domain/entities/activities/value-objects/ActivitySchedule"
@@ -40,7 +41,7 @@ export interface ActivityPublicView {
   priceFrom: string
   prices: { label: string; amount: string; amountCop: number; onRequest: boolean; unit: string; includes: string[]; note: string }[]
   extras: { label: string; amount: string; unit: string; note: string }[]
-  meeting: { mode: "fixed" | "sharedAfterJoining" | "varies"; text: string; references: string; note: string | null }
+  meeting: { mode: "fixed" | "sharedAfterJoining" | "varies"; text: string; references: string; note: string | null; /** Dónde se confirma el punto cuando cambia cada vez. */ confirm: { label: string; url: string } | null }
   /** Coordenadas del punto de encuentro: solo si el punto es fijo (si se dice en el grupo, no se publica ningún pin). */
   meetingGeo: { latitude: number; longitude: number } | null
   sections: SiteSection[]
@@ -61,7 +62,7 @@ export function formatDuration(minutes: number): string {
   return m === 0 ? hours : `${h} h ${m} min`
 }
 
-const MEETING_NOTES = { sharedAfterJoining: "El punto de encuentro se comparte en el grupo cuando te unes.", varies: "El punto cambia: se avisa antes de cada salida." } as const
+const MEETING_NOTES = { sharedAfterJoining: "El punto de encuentro se comparte en el grupo cuando te unes.", varies: "El punto cambia cada vez: se confirma antes de cada salida." } as const
 
 export function toPublicView(a: Activity): ActivityPublicView {
   const images = a.media.filter((m) => m.type === "image" && m.status !== "error")
@@ -98,7 +99,7 @@ export function toPublicView(a: Activity): ActivityPublicView {
     priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
     prices: a.priceOptions.map((p) => ({ label: p.label, amount: isOnRequest(p) ? "Consultar" : formatCop(p.amountCop), amountCop: p.amountCop, onRequest: isOnRequest(p), unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),
-    meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode] },
+    meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode], confirm: a.meetingPoint.confirm ? { label: CONFIRM_LABELS[a.meetingPoint.confirm.channel], url: a.meetingPoint.confirm.url } : null },
     meetingGeo: mode === "fixed" && a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : null,
     sections: a.sections,
     promotions: a.promotions.filter((p) => !p.paused).map((p) => ({ id: p.id, title: p.title, description: p.description, rule: promoRuleLabel(p.rule), label: promoScheduleLabel(p), validUntil: p.validUntil, termsNote: p.termsNote, promo: p })),

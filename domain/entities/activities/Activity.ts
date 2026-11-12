@@ -1,3 +1,4 @@
+import type { MeetingConfirm } from "./value-objects/MeetingConfirm"
 import type { JoinSettings } from "./activityJoin"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 import { isActivityCategory, isCompanion, COMPANIONS_MAX, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
@@ -27,6 +28,8 @@ export interface MeetingPoint {
   text: string
   references: string
   geo: { lat: number; lng: number } | null
+  /** Solo en `varies`: dónde se confirma el punto antes de cada salida (grupo o perfil) y su enlace. */
+  confirm?: MeetingConfirm | null
 }
 
 export interface ActivityRating {

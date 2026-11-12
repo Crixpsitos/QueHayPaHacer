@@ -41,7 +41,9 @@ test("galería: portada primero, sin los medios con error, y el video aparte", (
 
 test("punto de encuentro según el modo y sin botón cuando no hay", () => {
   assert.equal(toPublicView(makeActivity({ meetingPoint: { mode: "sharedAfterJoining", text: "", references: "", geo: null } })).meeting.note, "El punto de encuentro se comparte en el grupo cuando te unes.")
-  assert.equal(toPublicView(makeActivity({ meetingPoint: { mode: "varies", text: "", references: "", geo: null } })).meeting.note, "El punto cambia: se avisa antes de cada salida.")
+  assert.equal(toPublicView(makeActivity({ meetingPoint: { mode: "varies", text: "", references: "", geo: null } })).meeting.note, "El punto cambia cada vez: se confirma antes de cada salida.")
+  const withLink = toPublicView(makeActivity({ meetingPoint: { mode: "varies", text: "", references: "", geo: null, confirm: { channel: "telegram", url: "https://t.me/mi_grupo" } } }))
+  assert.deepEqual(withLink.meeting.confirm, { label: "Telegram", url: "https://t.me/mi_grupo" })
   const fixed = toPublicView(makeActivity({ meetingPoint: { mode: "fixed", text: "Parque Murillo Toro", references: "Frente a la catedral", geo: null } }))
   assert.deepEqual([fixed.meeting.note, fixed.meeting.text, fixed.meeting.references], [null, "Parque Murillo Toro", "Frente a la catedral"])
   assert.equal(toPublicView(makeActivity()).cta, null)

@@ -1,3 +1,4 @@
+import { normalizeConfirm, type MeetingConfirm } from "@/domain/entities/activities/value-objects/MeetingConfirm"
 import * as v from "valibot"
 import { ACTIVITY_CATEGORIES, COMPANIONS, COMPANIONS_MAX, type ActivityCategory, type Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import { validateSchedule, type ActivitySchedule, type ScheduleRule, SCHEDULE_NOTE_MAX } from "@/domain/entities/activities/value-objects/ActivitySchedule"
@@ -53,6 +54,7 @@ const ActivityInputSchema = v.object({
       mode: v.picklist(["fixed", "sharedAfterJoining", "varies"], "El punto de encuentro tiene un modo inválido."),
       text: v.optional(text(MEETING_TEXT_MAX, "El punto de encuentro"), ""),
       references: v.optional(text(MEETING_REFERENCES_MAX, "Las referencias del punto de encuentro"), ""),
+      confirm: v.optional(v.nullable(v.object({ channel: v.string("Elige por dónde se confirma."), url: v.string("Pega el enlace.") })), null),
       geo: v.optional(v.nullable(v.object({ lat: v.pipe(v.number(GEO_MSG), v.minValue(-90, GEO_MSG), v.maxValue(90, GEO_MSG)), lng: v.pipe(v.number(GEO_MSG), v.minValue(-180, GEO_MSG), v.maxValue(180, GEO_MSG)) }, GEO_MSG)), null),
     },
     "El punto de encuentro es obligatorio.",
@@ -101,6 +103,13 @@ export function parseActivityInput(raw: unknown): ParseResult {
   const d = parsed.output
   const text = plainTextError("El título", d.title) ?? plainTextError("El gancho", d.tagline) ?? plainTextError("La descripción", d.description) ?? plainTextError("El punto de encuentro", `${d.meetingPoint.text} ${d.meetingPoint.references}`)
   if (text) return { ok: false, error: text }
+  // «Cambia cada vez» exige decir dónde se confirma y con qué enlace; en los demás modos no se guarda.
+  let confirm: MeetingConfirm | null = null
+  if (d.meetingPoint.mode === "varies") {
+    const c = normalizeConfirm(d.meetingPoint.confirm ?? { channel: "", url: "" })
+    if (!c.ok) return { ok: false, error: c.error }
+    confirm = c.confirm
+  }
   const schedule = { ...d.schedule, rules: d.schedule.rules as ScheduleRule[] } as ActivitySchedule
   const priceOptions = d.priceOptions.map((p) => ({ ...p, label: p.label.trim() })) as PriceOption[]
   const extras = d.extras.map((x) => ({ ...x, label: x.label.trim() })) as Extra[]
@@ -130,7 +139,7 @@ export function parseActivityInput(raw: unknown): ParseResult {
       difficulty: d.difficulty,
       durationMinutes: d.durationMinutes,
       ageNote: d.ageNote.trim(),
-      meetingPoint: { mode: d.meetingPoint.mode, text: d.meetingPoint.text.trim(), references: d.meetingPoint.references.trim(), geo: d.meetingPoint.geo },
+      meetingPoint: { mode: d.meetingPoint.mode, text: d.meetingPoint.text.trim(), references: d.meetingPoint.references.trim(), geo: d.meetingPoint.mode === "fixed" ? d.meetingPoint.geo : null, confirm },
       schedule,
       priceOptions,
       extras,
