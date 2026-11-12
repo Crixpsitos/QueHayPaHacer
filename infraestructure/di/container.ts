@@ -67,6 +67,8 @@ import { ReviewModerationService } from "@/application/services/activities/Revie
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { RateLimitFirebaseRepository } from "../firebase/repositories/rateLimit/RateLimitFirebaseRepository";
 import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
+import { NotificationPrefsService } from "@/application/services/notificationPrefs/NotificationPrefsService";
+import { NotificationPrefsFirebaseRepository } from "../firebase/repositories/notificationPrefs/NotificationPrefsFirebaseRepository";
 import { ActivityStampService } from "@/application/services/activities/ActivityStampService";
 import { ActivityStampFirebaseRepository } from "../firebase/repositories/activities/ActivityStampFirebaseRepository";
 import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
@@ -352,6 +354,9 @@ export const createServerContainer = () => {
     rateLimit: rateLimitRepo,
   });
 
+  // preferencias de avisos (correo y push): por defecto todo apagado salvo lo transaccional propio
+  const notificationPrefsService = new NotificationPrefsService(new NotificationPrefsFirebaseRepository(getFirebaseFirestore()), LEGAL_VERSION);
+
   // pasaporte: sellos por el QR del local (visita verificada)
   const activityStampService = new ActivityStampService({
     repo: new ActivityStampFirebaseRepository(getFirebaseFirestore()),
@@ -445,6 +450,7 @@ export const createServerContainer = () => {
     appConfigRepo,
     activityStampService,
     rateLimitRepo,
+    notificationPrefsService,
   };
 };
 

@@ -4,7 +4,7 @@ import { authMiddleware } from "next-firebase-auth-edge";
 import { removeCookies } from "next-firebase-auth-edge/next/cookies";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
-const PRIVATE_PATHS = ["/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/actividades/crear", "/actividades/mis", "/mis-planes", "/resumen-semanal", "/sello"];
+const PRIVATE_PATHS = ["/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/actividades/crear", "/actividades/mis", "/mis-planes", "/resumen-semanal", "/sello", "/avisos"];
 // Editor y gestor de sesiones. /eventos/:id/sessions/:sessionId es público (detalle).
 const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
 // Editor y reservas de actividades. /actividades/:slug (ficha) es público.
