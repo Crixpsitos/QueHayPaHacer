@@ -12,7 +12,7 @@ export const AUTO_CHANNELS: readonly { id: Channel; label: string }[] = [
 
 // utm que acompaña a cada canal (Google Analytics lo lee: fuente y medio).
 const UTM: Record<Channel, [source: string, medium: string]> = {
-  ig: ["instagram", "bio"], ig_h: ["instagram", "stories"], wa: ["whatsapp", "share"], wc: ["whatsapp", "channel"], fb: ["facebook", "share"],
+  ig: ["instagram", "bio"], ig_h: ["instagram", "stories"], wa: ["whatsapp", "share"], wc: ["whatsapp", "channel"], em: ["email", "auto"], fb: ["facebook", "share"],
   x: ["x", "share"], tt: ["tiktok", "bio"], qr: ["qr", "print"],
 }
 

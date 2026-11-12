@@ -67,6 +67,9 @@ import { ReviewModerationService } from "@/application/services/activities/Revie
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { RateLimitFirebaseRepository } from "../firebase/repositories/rateLimit/RateLimitFirebaseRepository";
 import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
+import { TransactionalEmailBridge } from "@/application/services/email/TransactionalEmailBridge";
+import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner";
+import { buildPool } from "@/domain/entities/email/selection";
 import { EmailQueueService } from "@/application/services/email/EmailQueueService";
 import { EmailOutboxFirebaseRepository } from "../firebase/repositories/email/EmailOutboxFirebaseRepository";
 import { ResendEmailService } from "../email/ResendEmailService";
@@ -275,6 +278,7 @@ export const createServerContainer = () => {
 
   // guardar y "Yo fui" de actividades (solo sobre públicas)
   const engagementRepoForBadges = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
+  const activityEngagementRepoForBadges = () => engagementRepoForBadges;
   const activityEngagementService = new ActivityEngagementService(
     engagementRepoForBadges,
     async (id) => (await activityService.getPublicById(id)) !== null,
@@ -302,13 +306,28 @@ export const createServerContainer = () => {
     new NotificationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // correo transaccional de una reserva: el mismo aviso de la campanita, por correo, solo si la persona no lo apagó
+  const siteUrlForEmail = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const transactionalEmailBridge = new TransactionalEmailBridge({
+    allows: (uid) => notificationPrefsService.allows(uid, "email", "transactional"),
+    getEmail: async (uid) => (await userService.getUserById(uid))?.email ?? null,
+    enqueue: (item) => emailQueueService.enqueue(item),
+    siteUrl: siteUrlForEmail,
+    secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
+    clock: () => new Date(),
+  });
+  const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
+    await notificationService.notify(uid, n, id);
+    await transactionalEmailBridge.fromNotification(uid, n, id);
+  };
+
   // unirse a una salida (cupo opcional) con avisos por la campanita
   const activityJoinService = new ActivityJoinService({
     repo: new ActivityJoinFirebaseRepository(getFirebaseFirestore()),
     getPublic: (id) => activityService.getPublicById(id),
     getForManager: (id, viewer) => activityService.getForManager(id, viewer),
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
-    notify: (uid, n, id) => notificationService.notify(uid, n, id),
+    notify: (uid, n, id) => notifyAndEmail(uid, n, id),
     clock: () => new Date(),
     legalVersion: LEGAL_VERSION,
   });
@@ -371,6 +390,24 @@ export const createServerContainer = () => {
     log: (m) => console.warn(`[email] ${m}`),
   });
 
+  // correos de valor («Para ti» diario y resumen semanal), solo a quien los autorizó
+  const valueEmailRunner = new ValueEmailRunner({
+    optIns: (kind) => notificationPrefsService.uidsWith(kind),
+    allows: (uid, kind) => notificationPrefsService.allows(uid, "email", kind),
+    getEmail: async (uid) => (await userService.getUserById(uid))?.email ?? null,
+    signals: async (uid) => {
+      const [saved, visited] = await Promise.all([engagementRepoForBadges.listSavedIds(uid, 50), engagementRepoForBadges.listVisitedIds(uid, 50)]);
+      const ids = [...new Set([...saved, ...visited])];
+      const byId = new Map((await activityService.listPublic(500)).map((a) => [a.id, a.category]));
+      return { categories: ids.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => !!c), excludeIds: ids };
+    },
+    pool: async () => buildPool(await activityService.listPublic(300), new Date()),
+    enqueue: (item) => emailQueueService.enqueue(item),
+    siteUrl: siteUrlForEmail,
+    secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
+    clock: () => new Date(),
+  });
+
   // pasaporte: sellos por el QR del local (visita verificada)
   const activityStampService = new ActivityStampService({
     repo: new ActivityStampFirebaseRepository(getFirebaseFirestore()),
@@ -408,7 +445,7 @@ export const createServerContainer = () => {
     reservedFor: async (id, key) => (await activityJoinRepo.list(id, 2000)).filter((r) => r.key === key && holdsSpot(r.status)).map((r) => r.uid),
     taken: async (id, key) => (await activityJoinRepo.counts(id, [key]))[key] ?? 0,
     savers: (id) => activityEngagementRepo.listSaverIds(id, 2000),
-    notify: (uid, n, id) => notificationService.notify(uid, n, id),
+    notify: (uid, n, id) => notifyAndEmail(uid, n, id),
     clock: () => new Date(),
   });
 
@@ -467,6 +504,7 @@ export const createServerContainer = () => {
     notificationPrefsService,
     emailService,
     emailQueueService,
+    valueEmailRunner,
   };
 };
 
