@@ -57,6 +57,8 @@ import { ActivityPlansService } from "@/application/services/activities/Activity
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
+import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
+import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
@@ -97,6 +99,9 @@ import { SiteInteractionService } from "@/application/services/sites/SiteInterac
 
 /** Consultas de datos de oferentes para quejas: 5 por minuto por persona, en memoria de la instancia. */
 const complaintLimiter = createIpLimiter(5);
+
+// Cooldown de reseñas por persona: a nivel de módulo (createServerContainer se ejecuta en cada llamada).
+const REVIEW_LAST_SUBMIT = new Map<string, number>();
 
 export const createServerContainer = () => {
 
@@ -276,6 +281,25 @@ export const createServerContainer = () => {
     legalVersion: LEGAL_VERSION,
   });
 
+  // reseñas de actividades (una por persona, agregado en la misma transacción)
+  const activityReviewService = new ActivityReviewService({
+    repo: new ActivityReviewFirebaseRepository(getFirebaseFirestore()),
+    getActivity: async (id) => {
+      const a = await activityService.getPublicById(id);
+      if (!a) return null;
+      const site = a.siteId ? await sitesService.getActivityLinkSnapshot(a.siteId) : null;
+      return { id: a.id, slug: a.slug, title: a.title, ownerUid: a.ownerUid, siteOwnerUid: site?.authorId ?? null };
+    },
+    getAccount: async (uid) => {
+      const u = await userService.getUserById(uid);
+      return u ? { displayName: u.displayName ?? "", photoURL: u.photoURL ?? "", createdAt: u.createdAt instanceof Date ? u.createdAt : new Date(0) } : null;
+    },
+    notify: (uid, n, id) => notificationService.notify(uid, n, id),
+    clock: () => new Date(),
+    legalVersion: LEGAL_VERSION,
+    lastSubmit: REVIEW_LAST_SUBMIT,
+  });
+
   // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
   const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
   const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
@@ -322,6 +346,7 @@ export const createServerContainer = () => {
     activityService,
     activityPublishService,
     activityEngagementService,
+    activityReviewService,
     activityJoinService,
     activityPlansService,
     activityReminderService,

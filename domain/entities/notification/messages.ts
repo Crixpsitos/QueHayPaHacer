@@ -57,3 +57,7 @@ export function activityJoinConfirmedNotification(i: { title: string; slug: stri
   if (i.pending) return { type: "activity_join_confirmed", title: `Cupo reservado: "${i.title}"`, body: `${i.dateLabel ? `Salida: ${i.dateLabel}. ` : ""}Quien organiza te escribirá por WhatsApp para coordinar el pago.`, href: `/actividades/${i.slug}` };
   return { type: "activity_join_confirmed", title: `Estás dentro: "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : "Te esperan. Si no puedes ir, cancela desde la actividad.", href: `/actividades/${i.slug}` };
 }
+
+export function reviewReceivedNotification(i: { title: string; slug: string; rating: number; who: string }): NewNotification {
+  return { type: "review_received", title: `${i.who} reseñó "${i.title}"`, body: `${"★".repeat(i.rating)}${"☆".repeat(5 - i.rating)}`, href: `/actividades/${i.slug}#resenas` };
+}

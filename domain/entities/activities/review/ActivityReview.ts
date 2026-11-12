@@ -1,4 +1,5 @@
 import type { ActivityRating } from "../Activity"
+import type { ActivityMedia } from "../value-objects/ActivityMedia"
 
 export const REVIEW_TITLE_MAX = 80
 export const REVIEW_BODY_MIN = 10
@@ -97,3 +98,29 @@ export function canReview(a: { ownerUid: string; siteOwnerUid: string | null }, 
   if (a.siteOwnerUid && uid === a.siteOwnerUid) return "No puedes reseñar una actividad de tu propio sitio."
   return null
 }
+
+export interface ReviewFlag { by: string; reason: string; note: string; at: Date; resolution?: "upheld" | "removed"; resolvedAt?: Date; resolvedBy?: string }
+
+/** Reseña guardada (`activityReviews/{activityId}_{uid}`). El correo nunca se guarda aquí. */
+export interface ActivityReview {
+  /** `{activityId}_{uid}` */
+  id: string
+  activityId: string
+  uid: string
+  rating: number
+  title: string
+  body: string
+  visitedAt: string
+  media: ActivityMedia[]
+  coverIndex: number
+  author: { uid: string; displayName: string; photoURL: string }
+  status: ReviewStatus
+  flag: ReviewFlag | null
+  ownerReply: { text: string; at: Date } | null
+  createdAt: Date
+  updatedAt: Date
+  editedAt: Date | null
+  declarationVersion: string
+}
+
+export const reviewId = (activityId: string, uid: string) => `${activityId}_${uid}`
