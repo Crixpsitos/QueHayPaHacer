@@ -5,7 +5,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/app/components/ui/button/button"
 import { cn } from "@/app/lib/utils/cn"
-import { setActivitySavedAction } from "@/app/actions/activities/engagement.action"
+import { setActivitySavedAction, setActivityPlanSlotAction } from "@/app/actions/activities/engagement.action"
+import type { PlanSlot } from "@/domain/entities/activities/weekPlan"
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
@@ -55,6 +56,13 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
   const [removed, setRemoved] = useState<string[]>([])
   const [savedGone, setSavedGone] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [slots, setSlots] = useState<Record<string, PlanSlot>>(initial.slots)
+  const setSlot = async (id: string, slot: PlanSlot | null): Promise<string | null> => {
+    const r = await setActivityPlanSlotAction(id, slot)
+    if (!r.success) return r.error
+    setSlots((p) => { const n = { ...p }; if (slot) n[id] = slot; else delete n[id]; return n })
+    return null
+  }
 
   const gone = initial.removedSaved.filter((id) => !removed.includes(id))
   const saved = initial.saved.filter((a) => !savedGone.includes(a.id))
@@ -86,7 +94,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="grid gap-3">
-        {tab === "week" ? <WeekPlan cards={weekCards} removableIds={saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id)} onRemove={(id) => void unsave(id, () => setSavedGone((x) => [...x, id]))} /> : null}
+        {tab === "week" ? <WeekPlan cards={weekCards} slots={slots} onSlot={setSlot} removableIds={saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id)} onRemove={(id) => void unsave(id, () => setSavedGone((x) => [...x, id]))} /> : null}
         {tab === "passport" ? <PassportTab /> : null}
 
         {tab === "upcoming" ? (

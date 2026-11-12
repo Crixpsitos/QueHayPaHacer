@@ -29,6 +29,27 @@ export async function setActivitySavedAction(activityId: string, saved: boolean)
   }
 }
 
+/** Elegir el día y la hora a la que voy (o quitarlos). Solo de lo que ya guardé. */
+export async function setActivityPlanSlotAction(activityId: string, slot: { date: string; time: string | null } | null): Promise<Result> {
+  const uid = await getSessionUid()
+  if (!uid) return { success: false, authRequired: true, error: "Inicia sesión." }
+  if (!validId(activityId)) return { success: false, error: "Actividad inválida." }
+  try {
+    const today = new Date(Date.now() - 5 * 3_600_000).toISOString().slice(0, 10)
+    const ok = await createServerContainer().activityEngagementService.setPlanSlot(uid, activityId, slot, today)
+    return ok ? { success: true } : { success: false, error: "Primero guarda esta actividad en tu plan." }
+  } catch (e) {
+    return { success: false, error: e instanceof Error && /Elige|hora/.test(e.message) ? e.message : "No se pudo guardar. Intenta de nuevo." }
+  }
+}
+
+/** De estas actividades, cuáles ya están en mi plan (para no dejarme agregarlas dos veces). */
+export async function getMySavedAmongAction(ids: string[]): Promise<string[]> {
+  const uid = await getSessionUid()
+  if (!uid || !Array.isArray(ids)) return []
+  return createServerContainer().activityEngagementService.savedAmong(uid, ids.filter(validId).slice(0, 20))
+}
+
 /** "Yo fui": una vez por persona. */
 export async function markActivityVisitedAction(activityId: string): Promise<Result> {
   const uid = await getSessionUid()

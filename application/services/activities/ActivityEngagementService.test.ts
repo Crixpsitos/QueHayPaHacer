@@ -7,6 +7,9 @@ class FakeRepo implements IActivityEngagementRepository {
   saved = new Set<string>()
   visited = new Set<string>()
   saves: Record<string, number> = {}
+  slots: Record<string, { date: string; time: string | null }> = {}
+  async setPlanSlot(uid: string, id: string, slot: { date: string; time: string | null } | null) { if (!this.saved.has(`${uid}|${id}`)) return false; if (slot) this.slots[id] = slot; else delete this.slots[id]; return true }
+  async listPlanSlots() { return this.slots }
   visits: Record<string, number> = {}
   async setSaved(uid: string, id: string, saved: boolean) {
     const k = `${uid}|${id}`
@@ -81,4 +84,16 @@ test("'Yo fui' cuenta una vez por persona y solo en actividades públicas", asyn
   await assert.rejects(svc.markVisited("u1", "pend"), /no existe/i)
   assert.equal(await svc.hasVisited("u1", "a1"), true)
   assert.equal(await svc.hasVisited("u3", "a1"), false)
+})
+
+test("elegir día y hora: solo de lo guardado, dentro de la semana y con hora válida", async () => {
+  const repo = new FakeRepo()
+  const svc = new ActivityEngagementService(repo, async () => true)
+  await svc.setSaved("u1", "a1", true)
+  assert.equal(await svc.setPlanSlot("u1", "a1", { date: "2026-11-14", time: "16:30" }, "2026-11-12"), true)
+  assert.deepEqual(await svc.planSlots("u1"), { a1: { date: "2026-11-14", time: "16:30" } })
+  assert.equal(await svc.setPlanSlot("u1", "no-guardada", { date: "2026-11-14", time: null }, "2026-11-12"), false)
+  await assert.rejects(() => svc.setPlanSlot("u1", "a1", { date: "2026-11-30", time: null }, "2026-11-12"), /semana/)
+  await assert.rejects(() => svc.setPlanSlot("u1", "a1", { date: "2026-11-14", time: "25:99" }, "2026-11-12"), /hora/)
+  assert.equal(await svc.setPlanSlot("u1", "a1", null, "2026-11-12"), true)
 })

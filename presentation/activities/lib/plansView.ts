@@ -6,6 +6,7 @@ export interface MyPlansView {
   saved: ActivityCardView[]
   removedSaved: string[]
   done: ActivityCardView[]
+  slots: Record<string, { date: string; time: string | null }>
 }
 
 /** «domingo 15 de noviembre»; salida sin fecha fija → null. */

@@ -15,6 +15,7 @@ function setup(data: { saved?: string[]; visited?: string[]; joins?: { activityI
   const calls: string[] = []
   const svc = new ActivityPlansService({
     savedIds: async (uid, n) => { calls.push(`saved:${uid}:${n}`); return data.saved ?? [] },
+    slots: async () => ({}),
     visitedIds: async (uid, n) => { calls.push(`visited:${uid}:${n}`); return data.visited ?? [] },
     joins: async (uid) => { calls.push(`joins:${uid}`); return data.joins ?? [] },
     getPublic: async (id) => acts[id] ?? null,
@@ -49,6 +50,6 @@ test("solo lee datos de la cuenta que pide; sin sesión no lee nada", async () =
   await svc.mine("u1")
   assert.ok(calls.every((c) => c.includes("u1")))
   const empty = await svc.mine("")
-  assert.deepEqual(empty, { upcoming: [], saved: [], removedSaved: [], done: [] })
+  assert.deepEqual(empty, { upcoming: [], saved: [], removedSaved: [], done: [], slots: {} })
   assert.equal(calls.length, 3)
 })

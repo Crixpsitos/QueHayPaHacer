@@ -7,6 +7,10 @@ export interface IActivityEngagementRepository {
   setSaved(uid: string, activityId: string, saved: boolean): Promise<{ changed: boolean }>
   /** Cuáles de estos ids tiene guardados la persona. */
   savedAmong(uid: string, activityIds: string[]): Promise<string[]>
+  /** Día y hora elegidos para ir a una actividad guardada (null = quitar). false si no está guardada. */
+  setPlanSlot(uid: string, activityId: string, slot: { date: string; time: string | null } | null): Promise<boolean>
+  /** Día y hora elegidos de TODAS las actividades guardadas de la persona. */
+  listPlanSlots(uid: string): Promise<Record<string, { date: string; time: string | null }>>
   /** `activities/{id}/visits/{uid}` + `analytics.visits`. Una por persona. */
   markVisited(uid: string, activityId: string): Promise<{ changed: boolean }>
   hasVisited(uid: string, activityId: string): Promise<boolean>

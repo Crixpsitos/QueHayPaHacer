@@ -44,3 +44,11 @@ test("texto para WhatsApp: con enlace por actividad y cierre", () => {
   assert.match(t, /https:\/\/x\.co\/a/)
   assert.match(t, /Arma la tuya$/)
 })
+
+test("día y hora elegidos: ese es el plan (aunque la actividad no tenga hora fija)", () => {
+  const always = { rules: [{ kind: "always" }], skipDates: [] } as never
+  const w = buildWeekPlan([{ id: "cine", title: "Cine", schedule: always, slot: { date: "2026-11-14", time: "16:30" } }], "2026-11-11", NOW)
+  const blocks = w.flatMap((d) => d.blocks.map((b) => [d.date, b.startMin]))
+  assert.deepEqual(blocks, [["2026-11-14", 990]])
+  assert.deepEqual(buildWeekPlan([{ id: "cine", title: "Cine", schedule: always, slot: { date: "2026-12-30", time: null } }], "2026-11-11", NOW).flatMap((d) => d.blocks), [])
+})
