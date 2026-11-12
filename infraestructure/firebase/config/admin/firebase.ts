@@ -51,7 +51,7 @@ export const authConfig = {
 const ADMIN_APP_NAME = "firebase-admin-server";
 let enterpriseFirestoreInstance: EnterpriseFirestore | null = null;
 
-const getAdminApp = () => {
+export const getAdminApp = () => {
   const existing = getApps().find((app) => app.name === ADMIN_APP_NAME);
   if (existing) return existing;
   const serviceAccount = getServiceAccount();

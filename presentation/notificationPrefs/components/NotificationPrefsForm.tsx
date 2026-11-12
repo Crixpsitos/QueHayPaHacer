@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/app/components/ui/button/button"
+import { enablePushDevice } from "@/presentation/notificationPrefs/lib/pushClient"
 import { getMyPrefsAction, saveMyPrefsAction, type PrefsView } from "@/app/actions/notificationPrefs/prefs.action"
 
 const Row = ({ id, title, text, checked, onChange }: { id: string; title: string; text: string; checked: boolean; onChange: (v: boolean) => void }) => (
@@ -27,7 +28,12 @@ export function NotificationPrefsForm() {
     const r = await saveMyPrefsAction({ email: p.email, push: p.push }, authorized)
     setBusy(false)
     if (!r.success) return setMsg({ ok: false, text: r.error })
-    setP(r.prefs); setMsg({ ok: true, text: "Listo, guardamos tus avisos." })
+    setP(r.prefs)
+    if (r.prefs.push.enabled) {
+      const d = await enablePushDevice()
+      return setMsg(d.ok ? { ok: true, text: "Listo: guardamos tus avisos y activamos este dispositivo." } : { ok: false, text: `Guardamos tus avisos. ${d.error}` })
+    }
+    setMsg({ ok: true, text: "Listo, guardamos tus avisos." })
   }
   return (
     <form className="grid gap-5" onSubmit={(e) => { e.preventDefault(); void save() }}>

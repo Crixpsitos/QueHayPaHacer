@@ -67,6 +67,9 @@ import { ReviewModerationService } from "@/application/services/activities/Revie
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { RateLimitFirebaseRepository } from "../firebase/repositories/rateLimit/RateLimitFirebaseRepository";
 import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
+import { PushService } from "@/application/services/push/PushService";
+import { PushTokenFirebaseRepository } from "../firebase/repositories/push/PushTokenFirebaseRepository";
+import { FcmPushSender } from "../push/FcmPushSender";
 import { TransactionalEmailBridge } from "@/application/services/email/TransactionalEmailBridge";
 import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner";
 import { buildPool } from "@/domain/entities/email/selection";
@@ -306,6 +309,9 @@ export const createServerContainer = () => {
     new NotificationFirebaseRepository(getFirebaseFirestore()),
   );
 
+  // límites compartidos entre instancias (cooldowns y cuotas diarias), en la base
+  const rateLimitRepo = new RateLimitFirebaseRepository(getFirebaseFirestore());
+
   // correo transaccional de una reserva: el mismo aviso de la campanita, por correo, solo si la persona no lo apagó
   const siteUrlForEmail = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const transactionalEmailBridge = new TransactionalEmailBridge({
@@ -316,9 +322,20 @@ export const createServerContainer = () => {
     secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
     clock: () => new Date(),
   });
+  // push web (FCM): solo con la clave VAPID pública configurada; a quien lo autorizó, con tope diario
+  const pushService = new PushService({
+    tokens: new PushTokenFirebaseRepository(getFirebaseFirestore()),
+    sender: new FcmPushSender(),
+    rateLimit: rateLimitRepo,
+    allows: (uid) => notificationPrefsService.allows(uid, "push", "transactional"),
+    clock: () => new Date(),
+    enabled: Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
+  });
+  const PUSHED = new Set(["activity_join_confirmed", "activity_reminder", "activity_last_spot"]);
   const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
     await notificationService.notify(uid, n, id);
     await transactionalEmailBridge.fromNotification(uid, n, id);
+    if (PUSHED.has(n.type)) await pushService.notify(uid, { title: n.title, body: n.body ?? "", href: n.href ?? "/" });
   };
 
   // unirse a una salida (cupo opcional) con avisos por la campanita
@@ -332,8 +349,6 @@ export const createServerContainer = () => {
     legalVersion: LEGAL_VERSION,
   });
 
-  // límites compartidos entre instancias (cooldowns y cuotas diarias), en la base
-  const rateLimitRepo = new RateLimitFirebaseRepository(getFirebaseFirestore());
   // reseñas de actividades (una por persona, agregado en la misma transacción)
   const sanctionRepo = new ActivitySanctionFirebaseRepository(getFirebaseFirestore());
   const activityReviewService = new ActivityReviewService({
@@ -505,6 +520,7 @@ export const createServerContainer = () => {
     emailService,
     emailQueueService,
     valueEmailRunner,
+    pushService,
   };
 };
 

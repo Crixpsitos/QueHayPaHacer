@@ -76,3 +76,16 @@ env:
   #   value: "AA:BB:...:FF"   # SHA-256 de Play App Signing; varias separadas por coma
   #   availability:
   #     - RUNTIME
+
+# ── Correo (Resend) y push: ver docs/36-correo-y-push-pasos.md. Descomentar SOLO cuando los secretos existan (si no, falla el despliegue).
+# - variable: RESEND_API_KEY
+#   secret: resendApiKey
+# - variable: EMAIL_UNSUBSCRIBE_SECRET
+#   secret: emailUnsubscribeSecret
+# - variable: EMAIL_FROM
+#   value: "Qué Hay Pa Hacer <avisos@yquehaypahacer.com>"
+# - variable: EMAIL_DAILY_CAP
+#   value: "100"
+# - variable: NEXT_PUBLIC_FIREBASE_VAPID_KEY
+#   value: "PEGA_AQUI_LA_CLAVE_PUBLICA_VAPID"
+#   availability: [BUILD, RUNTIME]
