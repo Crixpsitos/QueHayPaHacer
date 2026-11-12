@@ -42,9 +42,7 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
         <div className="flex flex-wrap gap-2">
           <Link href={toggle("when", "este-fin-de-semana")} scroll={false} aria-current={current.when === "este-fin-de-semana" ? "true" : undefined} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</Link>
           <Link href={toggle("when", "esta-semana")} scroll={false} aria-current={current.when === "esta-semana" ? "true" : undefined} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</Link>
-          <Link href={toggle("budget", "gratis")} scroll={false} aria-current={current.budget === "gratis" ? "true" : undefined} className={cn(ghost, current.budget === "gratis" && ghostOn)}>Gratis</Link>
           <Link href={promoHref} scroll={false} aria-current={current.promo ? "true" : undefined} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</Link>
-          <Link href={toggle("companion", "familia")} scroll={false} aria-current={current.companion === "familia" ? "true" : undefined} className={cn(ghost, current.companion === "familia" && ghostOn)}>En familia</Link>
         </div>
       </div>
     </header>
