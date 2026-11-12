@@ -40,7 +40,7 @@ export function NotificationPrefsForm() {
       <div className="grid gap-3">
         <h2 className="font-heading text-lg font-bold">Correo</h2>
         <Row id="tr" title="Sobre mis reservas" text="Confirmación de tu cupo, «mañana sale…» y último cupo. Solo de actividades donde te apuntaste." checked={p.email.transactional} onChange={(v) => set({ transactional: v })} />
-        <Row id="fy" title="Para ti" text="Actividades y sitios que te pueden interesar, según lo que guardas y marcas «Yo fui». Máximo uno al día." checked={p.email.forYou} onChange={(v) => set({ forYou: v })} />
+        <Row id="fy" title="Para ti" text="Actividades y sitios que te pueden interesar, según lo que guardas y marcas «Yo fui». Los martes y viernes, solo si hay algo para ti." checked={p.email.forYou} onChange={(v) => set({ forYou: v })} />
         <Row id="wk" title="Qué hacer esta semana" text="Un resumen semanal de eventos y actividades en Ibagué." checked={p.email.weekly} onChange={(v) => set({ weekly: v })} />
       </div>
       <div className="grid gap-3">

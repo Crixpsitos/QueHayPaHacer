@@ -68,6 +68,7 @@ import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { NewVersionNotice } from "@/app/components/feature/NewVersionNotice";
 import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
+import { AvisosPrompt } from "@/presentation/notificationPrefs/components/AvisosPrompt";
 import { ServiceWorkerRegister } from "@/app/components/pwa/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -122,6 +123,9 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         <Suspense fallback={null}>
           <InstallBanner />
+        </Suspense>
+        <Suspense fallback={null}>
+          <AvisosPrompt />
         </Suspense>
       </body>
     </html>
