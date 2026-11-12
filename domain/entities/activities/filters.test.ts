@@ -47,3 +47,14 @@ test("parseFilters: cuando, presupuesto y con", () => {
   assert.deepEqual(parseFilters({ cuando: "hoy", presupuesto: "gratis", con: "familia" }), { when: "hoy", budget: "gratis", companion: "familia" })
   assert.deepEqual(parseFilters({ cuando: "ayer", presupuesto: "caro", con: "extraterrestres" }), {})
 })
+
+test("filtro «Promos hoy»: solo con una promoción que aplica ahora; vencida o pausada no cuenta", () => {
+  const now = new Date("2026-11-11T21:00:00Z") // miércoles 4 p. m. Bogotá
+  const promo = { id: "p", title: "Tardes felices", description: "", rule: { kind: "twoForOne" as const }, weekdays: [3], start: "15:00", end: "18:00", validFrom: "2026-11-01", validUntil: "2026-12-01", termsNote: "", paused: false }
+  const base = { category: "comida-y-bebida" as const, kind: "site" as const, siteId: "s", schedule: { rules: [{ kind: "always" as const }], skipDates: [], requiresReservation: false }, priceOptions: [], companions: [] }
+  assert.equal(matchesFilters({ ...base, promotions: [promo] }, { promo: true }, now), true)
+  assert.equal(matchesFilters({ ...base, promotions: [] }, { promo: true }, now), false)
+  assert.equal(matchesFilters({ ...base, promotions: [{ ...promo, validUntil: "2026-11-10" }] }, { promo: true }, now), false)
+  assert.equal(matchesFilters({ ...base, promotions: [{ ...promo, paused: true }] }, { promo: true }, now), false)
+  assert.equal(matchesFilters({ ...base, promotions: [promo] }, {}, now), true)
+})

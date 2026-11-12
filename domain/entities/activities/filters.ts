@@ -2,6 +2,7 @@ import type { Activity, ActivityKind } from "./Activity"
 import { isActivityCategory, isCompanion, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
 import { BUDGET_BANDS, budgetBand, type BudgetBand } from "./value-objects/Budget"
 import { priceFromCop } from "./value-objects/Price"
+import { isPromoLive } from "./value-objects/Promotion"
 import { dayRange, firstOccurrenceIn, parseDay, parseWhen, whenRange, type When } from "./when"
 
 /** Filtros públicos del hub. Los de "cuándo", presupuesto y "con quién" se suman en la fase 2. */
@@ -14,16 +15,19 @@ export interface ActivityFilters {
   day?: string
   budget?: BudgetBand
   companion?: Companion
+  /** Solo actividades con una promoción que aplica en este momento. */
+  promo?: boolean
 }
 
-export const matchesFilters = (a: Pick<Activity, "category" | "kind" | "siteId" | "schedule" | "priceOptions" | "companions">, f: ActivityFilters, now: Date = new Date()): boolean =>
+export const matchesFilters = (a: Pick<Activity, "category" | "kind" | "siteId" | "schedule" | "priceOptions" | "companions"> & { promotions?: Activity["promotions"] }, f: ActivityFilters, now: Date = new Date()): boolean =>
   (!f.category || a.category === f.category) &&
   (!f.kind || a.kind === f.kind) &&
   (!f.siteId || a.siteId === f.siteId) &&
   (!f.when || firstOccurrenceIn(a.schedule, whenRange(f.when, now), now) !== null) &&
   (!f.day || firstOccurrenceIn(a.schedule, dayRange(f.day), now) !== null) &&
   (!f.budget || budgetBand(priceFromCop(a.priceOptions)) === f.budget) &&
-  (!f.companion || a.companions.includes(f.companion))
+  (!f.companion || a.companions.includes(f.companion)) &&
+  (!f.promo || (a.promotions ?? []).some((p) => isPromoLive(p, now)))
 
 export interface UrlFilters {
   category?: ActivityCategory
@@ -33,6 +37,7 @@ export interface UrlFilters {
   day?: string
   budget?: BudgetBand
   companion?: Companion
+  promo?: boolean
 }
 
 const one = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined)
@@ -55,5 +60,6 @@ export function parseFilters(q: Record<string, string | string[] | undefined>, n
   if (b && (BUDGET_BANDS as readonly string[]).includes(b)) out.budget = b as BudgetBand
   const c2 = one(q.con)
   if (c2 && isCompanion(c2)) out.companion = c2
+  if (one(q.promos) === "hoy") out.promo = true
   return out
 }

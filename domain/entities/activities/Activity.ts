@@ -4,6 +4,7 @@ import { isActivityCategory, isCompanion, COMPANIONS_MAX, type ActivityCategory,
 import { validateSchedule, type ActivitySchedule } from "./value-objects/ActivitySchedule"
 import { validateExtras, validatePriceOptions, type Extra, type PriceOption } from "./value-objects/Price"
 import { validateOfferings, validateSpaces, type Offering, type Space } from "./value-objects/Offerings"
+import { validatePromotions, type Promotion } from "./value-objects/Promotion"
 import type { Cta } from "./value-objects/Cta"
 import { mediaError, type ActivityMedia } from "./value-objects/ActivityMedia"
 
@@ -68,6 +69,8 @@ export interface Activity {
   /** Menú/productos y espacios reservables: SOLO actividades de sitio (spec 8.7). */
   offerings: Offering[]
   spaces: Space[]
+  /** Promociones de sitio (máx. 5, caducan solas). */
+  promotions: Promotion[]
   cta: Cta | null
   /** "Unirme" con cuenta: null = no recibe inscripciones. */
   join: JoinSettings | null
@@ -129,6 +132,6 @@ export function activityPublishError(a: Activity): string | null {
   const meeting = plainTextError("El punto de encuentro", `${a.meetingPoint.text} ${a.meetingPoint.references}`)
   if (meeting) return meeting
 
-  if (a.kind === "global" && (a.offerings.length || a.spaces.length)) return "El menú y los espacios solo van en actividades de un sitio."
-  return validateOfferings(a.offerings) ?? validateSpaces(a.spaces) ?? mediaError(a.media) ?? validateSchedule(a.schedule) ?? validatePriceOptions(a.priceOptions) ?? validateExtras(a.extras)
+  if (a.kind === "global" && (a.offerings.length || a.spaces.length || a.promotions.length)) return "El menú, los espacios y las promociones solo van en actividades de un sitio."
+  return validateOfferings(a.offerings) ?? validateSpaces(a.spaces) ?? validatePromotions(a.promotions) ?? mediaError(a.media) ?? validateSchedule(a.schedule) ?? validatePriceOptions(a.priceOptions) ?? validateExtras(a.extras)
 }

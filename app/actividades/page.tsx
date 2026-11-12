@@ -30,7 +30,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 async function Hub({ searchParams }: PageProps) {
   const f = parseFilters(await searchParams)
   const [meta, siteId] = await Promise.all([fetchHubMeta(), f.siteSlug ? resolveSiteId(f.siteSlug) : Promise.resolve(undefined)])
-  const filters: Filters = { category: f.category, kind: f.kind, siteId: siteId ?? undefined, when: f.when, day: f.day, budget: f.budget, companion: f.companion }
+  const filters: Filters = { category: f.category, kind: f.kind, siteId: siteId ?? undefined, when: f.when, day: f.day, budget: f.budget, companion: f.companion, promo: f.promo }
   const noSite = Boolean(f.siteSlug && !siteId)
   const agendaMode = Boolean(f.when || f.day)
   const filtered = Object.keys(f).length > 0
@@ -63,7 +63,7 @@ async function Hub({ searchParams }: PageProps) {
         {!agendaMode && !empty ? (
           <section aria-label="Actividades" className="grid gap-5">
             {filtered ? <p className="text-sm text-muted-foreground"><strong className="text-foreground">{page.total} {page.total === 1 ? "actividad" : "actividades"}</strong></p> : <h2 className="font-heading text-2xl font-extrabold tracking-tight">Todas las actividades</h2>}
-            <ActivityList key={JSON.stringify(f)} first={page} filters={{ category: f.category, kind: f.kind, siteId: siteId ?? undefined, cuando: f.when, dia: f.day, presupuesto: f.budget, con: f.companion }} />
+            <ActivityList key={JSON.stringify(f)} first={page} filters={{ category: f.category, kind: f.kind, siteId: siteId ?? undefined, cuando: f.when, dia: f.day, presupuesto: f.budget, con: f.companion, promos: f.promo ? "hoy" : undefined }} />
           </section>
         ) : null}
 

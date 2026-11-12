@@ -5,9 +5,10 @@ import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
 import { Textarea } from "@/app/components/ui/textarea"
 import { OFFERINGS_MAX, OFFERING_DESC_MAX, OFFERING_NAME_MAX, PRICES_DISCLAIMER, SPACES_MAX, SPACE_RULES_MAX } from "@/domain/entities/activities/value-objects/Offerings"
-import { blankOffering, blankSpace, type FormOffering, type FormSpace } from "@/presentation/activities/lib/activityForm"
+import { PROMOTIONS_MAX, PROMO_DESC_MAX, PROMO_TERMS_MAX, PROMO_TITLE_MAX } from "@/domain/entities/activities/value-objects/Promotion"
+import { blankOffering, blankPromotion, blankSpace, toggleWeekday, type FormOffering, type FormPromotion, type FormSpace } from "@/presentation/activities/lib/activityForm"
 import type { StepProps } from "./StepKind"
-import { Field } from "./ui"
+import { Field, ToggleChip } from "./ui"
 
 const UNITS = [["hora", "por hora"], ["dia", "por día"], ["persona", "por persona"], ["evento", "por evento"]] as const
 const upd = <T,>(list: T[], i: number, patch: Partial<T>): T[] => list.map((x, j) => (j === i ? { ...x, ...patch } : x))
@@ -15,7 +16,7 @@ const upd = <T,>(list: T[], i: number, patch: Partial<T>): T[] => list.map((x, j
 /** Menú/productos y espacios reservables del sitio. El botón de comprar o reservar es el de acción del paso «Cómo se apuntan». */
 export function StepOfferings({ form, patch }: StepProps) {
   if (form.kind !== "site") return null
-  const o = form.offerings, s = form.spaces
+  const o = form.offerings, s = form.spaces, pr = form.promotions
   return (
     <div className="grid gap-8">
       <section className="grid gap-4" aria-labelledby="menu-t">
@@ -53,6 +54,33 @@ export function StepOfferings({ form, patch }: StepProps) {
           </div>
         ))}
         {s.length < SPACES_MAX ? <Button type="button" variant="outline" size="lg" className="h-12 w-fit" onClick={() => patch({ spaces: [...s, blankSpace()] })}><Plus aria-hidden /> Agregar espacio</Button> : null}
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="promo-t">
+        <div className="grid gap-1"><h3 id="promo-t" className="font-heading text-lg font-bold">Promociones (opcional)</h3><p className="text-sm text-muted-foreground">Hasta {PROMOTIONS_MAX}, como «Tardes felices» o «Black Sunday». Toda promoción tiene fecha final: cuando pasa, desaparece sola.</p></div>
+        {pr.map((x: FormPromotion, i) => (
+          <div key={i} className="grid gap-3 rounded-2xl border border-border bg-card p-4">
+            <Field label="Nombre de la promoción">{(id) => <Input id={id} value={x.title} maxLength={PROMO_TITLE_MAX} onChange={(e) => patch({ promotions: upd(pr, i, { title: e.target.value }) })} />}</Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Tipo">{(id) => <select id={id} value={x.ruleKind} onChange={(e) => patch({ promotions: upd(pr, i, { ruleKind: e.target.value as FormPromotion["ruleKind"] }) })} className="h-11 rounded-2xl border border-transparent bg-input/50 px-3 text-base"><option value="twoForOne">2x1</option><option value="percent">Descuento en %</option><option value="freeItem">Producto gratis</option><option value="fixedPrice">Precio especial</option><option value="other">Otra</option></select>}</Field>
+              {x.ruleKind === "percent" || x.ruleKind === "fixedPrice" ? <Field label={x.ruleKind === "percent" ? "Porcentaje" : "Precio (COP)"}>{(id) => <Input id={id} inputMode="numeric" value={x.ruleValue} onChange={(e) => patch({ promotions: upd(pr, i, { ruleValue: e.target.value }) })} />}</Field> : null}
+            </div>
+            <Field label="Descripción" optional>{(id) => <Textarea id={id} rows={2} value={x.description} maxLength={PROMO_DESC_MAX} onChange={(e) => patch({ promotions: upd(pr, i, { description: e.target.value }) })} />}</Field>
+            <div className="grid gap-1.5"><span className="text-sm font-semibold">Días <span className="font-normal text-muted-foreground">(sin marcar = todos)</span></span><div className="flex flex-wrap gap-2">{[["D", 0], ["L", 1], ["M", 2], ["X", 3], ["J", 4], ["V", 5], ["S", 6]].map(([l, d]) => <ToggleChip key={d} pressed={x.weekdays.includes(d as number)} onClick={() => patch({ promotions: upd(pr, i, { weekdays: toggleWeekday(x.weekdays, d as number) }) })} className="min-w-11 px-0">{l}</ToggleChip>)}</div></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Desde las" optional>{(id) => <Input id={id} type="time" value={x.start} onChange={(e) => patch({ promotions: upd(pr, i, { start: e.target.value }) })} />}</Field>
+              <Field label="Hasta las" optional>{(id) => <Input id={id} type="time" value={x.end} onChange={(e) => patch({ promotions: upd(pr, i, { end: e.target.value }) })} />}</Field>
+              <Field label="Vale desde">{(id) => <Input id={id} type="date" value={x.validFrom} onChange={(e) => patch({ promotions: upd(pr, i, { validFrom: e.target.value }) })} />}</Field>
+              <Field label="Vale hasta (obligatorio)">{(id) => <Input id={id} type="date" value={x.validUntil} onChange={(e) => patch({ promotions: upd(pr, i, { validUntil: e.target.value }) })} />}</Field>
+            </div>
+            <Field label="Condiciones" optional hint="Por ejemplo: hasta agotar existencias.">{(id) => <Input id={id} value={x.termsNote} maxLength={PROMO_TERMS_MAX} onChange={(e) => patch({ promotions: upd(pr, i, { termsNote: e.target.value }) })} />}</Field>
+            <div className="flex flex-wrap gap-2">
+              <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-5 accent-[#9B0A26]" checked={x.paused} onChange={(e) => patch({ promotions: upd(pr, i, { paused: e.target.checked }) })} />Pausada</label>
+              <Button type="button" variant="ghost" className="h-11" onClick={() => patch({ promotions: pr.filter((_, j) => j !== i) })}><Trash2 aria-hidden /> Quitar promoción</Button>
+            </div>
+          </div>
+        ))}
+        {pr.length < PROMOTIONS_MAX ? <Button type="button" variant="outline" size="lg" className="h-12 w-fit" onClick={() => patch({ promotions: [...pr, blankPromotion()] })}><Plus aria-hidden /> Agregar promoción</Button> : null}
       </section>
     </div>
   )

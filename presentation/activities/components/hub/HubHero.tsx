@@ -16,6 +16,7 @@ const ghostOn = "border-transparent bg-white text-foreground hover:bg-white"
  */
 export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta }) {
   const selected = current.day ?? (current.when === "hoy" ? meta.days[0]?.date : undefined)
+  const promoHref = filterHref(current, { promo: current.promo ? undefined : "1" })
   const toggle = <K extends "when" | "budget" | "companion">(key: K, value: NonNullable<UrlFilters[K]>) => filterHref(current, { [key]: current[key] === value ? undefined : value })
   return (
     <header className="-mx-4 rounded-b-[2rem] bg-primary-dark px-4 pb-6 pt-8 text-white sm:mx-0 sm:rounded-[2rem] sm:px-8 sm:pb-8 sm:pt-10">
@@ -42,6 +43,7 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
           <Link href={toggle("when", "este-fin-de-semana")} scroll={false} aria-current={current.when === "este-fin-de-semana" ? "true" : undefined} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</Link>
           <Link href={toggle("when", "esta-semana")} scroll={false} aria-current={current.when === "esta-semana" ? "true" : undefined} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</Link>
           <Link href={toggle("budget", "gratis")} scroll={false} aria-current={current.budget === "gratis" ? "true" : undefined} className={cn(ghost, current.budget === "gratis" && ghostOn)}>Gratis</Link>
+          <Link href={promoHref} scroll={false} aria-current={current.promo ? "true" : undefined} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</Link>
           <Link href={toggle("companion", "familia")} scroll={false} aria-current={current.companion === "familia" ? "true" : undefined} className={cn(ghost, current.companion === "familia" && ghostOn)}>En familia</Link>
         </div>
       </div>

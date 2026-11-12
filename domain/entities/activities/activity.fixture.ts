@@ -38,6 +38,7 @@ export function makeActivity(p: Partial<Activity> = {}): Activity {
     sections: [],
     offerings: [],
     spaces: [],
+    promotions: [],
     cta: null,
     join: null,
     media: [makeImage("m1", true)],

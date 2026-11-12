@@ -73,6 +73,15 @@ export async function resolveSiteId(slug: string): Promise<string | null> {
 
 export const SITE_BLOCK_MAX = 6
 
+/** Promociones de las actividades de un sitio (sin vencer por fecha; el navegador vuelve a filtrar). */
+export const fetchSitePromos = async (siteId: string): Promise<{ activityTitle: string; slug: string; promotions: ActivityPublicView["promotions"] }[]> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(`site-${siteId}-activities`, "activity-list")
+  const list = await createServerContainer().activityService.listForSite(siteId)
+  return list.map((a) => ({ activityTitle: a.title, slug: a.slug, promotions: toPublicView(a).promotions })).filter((x) => x.promotions.length)
+}
+
 /** Actividades públicas de un sitio para su ficha (máx. 6). Se invalida con `site-<id>-activities` o `activity-list`. */
 export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardView[]> => {
   "use cache"

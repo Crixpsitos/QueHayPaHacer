@@ -42,6 +42,7 @@ export class ActivityFirebaseMapper {
       sections: dto.sections ?? [],
       offerings: dto.offerings ?? [],
       spaces: dto.spaces ?? [],
+      promotions: dto.promotions ?? [],
       cta: dto.cta ?? null,
       join: dto.join ?? null,
       media: dto.media ?? [],

@@ -11,6 +11,7 @@ import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { ActivityPlace } from "./ActivityPlace"
 import { OfferingsList } from "./OfferingsList"
+import { PromoCards } from "./PromoCards"
 import { SpacesList } from "./SpacesList"
 import { MoreToDo } from "./MoreToDo"
 import { ReviewsSection } from "@/presentation/activities/components/reviews/ReviewsSection"
@@ -110,6 +111,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             ) : null}
           </section>
 
+          <PromoCards promotions={d.promotions} />
           <OfferingsList items={d.offerings} />
           <SpacesList items={d.spaces} />
 
