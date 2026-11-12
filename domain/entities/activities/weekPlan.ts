@@ -41,7 +41,10 @@ const hourText = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; ret
 const dayText = (iso: string) => new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`))
 
 /** Mensaje de WhatsApp con el plan: un renglón por plan, solo los días que tienen algo. */
-export function weekPlanText(week: readonly WeekDay[], title: string): string {
-  const lines = week.filter((d) => d.blocks.length).flatMap((d) => [`${dayText(d.date)}`, ...d.blocks.map((b) => `• ${b.startMin === null ? "Todo el día" : hourText(b.startMin)} ${b.title}`)])
-  return [title, ...lines].join("\n")
+export function weekPlanText(week: readonly WeekDay[], title: string, o: { link?: (id: string) => string; footer?: string } = {}): string {
+  const days = week.filter((d) => d.blocks.length).map((d) => [
+    `📅 ${dayText(d.date)}`,
+    ...d.blocks.flatMap((b) => [`• ${b.startMin === null ? "Todo el día" : hourText(b.startMin)} · ${b.title}`, ...(o.link ? [`   ${o.link(b.id)}`] : [])]),
+  ].join("\n"))
+  return [`🗓️ ${title}`, ...days, ...(o.footer ? [o.footer] : [])].join("\n\n")
 }

@@ -32,8 +32,15 @@ test("sin hora de fin se asume 1 h; sin hora fija va aparte y nunca cruza", () =
 test("texto para WhatsApp: un renglón por plan, solo días con planes", () => {
   const w = buildWeekPlan([{ id: "a", title: "Trote", schedule: weekly([3], "17:30", "18:30") }], "2026-11-11", NOW)
   const t = weekPlanText(w, "Mi semana en Ibagué")
-  assert.match(t, /^Mi semana en Ibagué/)
+  assert.match(t, /^🗓️ Mi semana en Ibagué/)
   assert.match(t, /Trote/)
   assert.match(t, /5:30 p\. m\./)
   assert.ok(!/jueves/i.test(t))
+})
+
+test("texto para WhatsApp: con enlace por actividad y cierre", () => {
+  const w = buildWeekPlan([{ id: "a", title: "Trote", schedule: weekly([3], "17:30", "18:30") }], "2026-11-11", NOW)
+  const t = weekPlanText(w, "Mi semana", { link: (id) => `https://x.co/${id}`, footer: "Arma la tuya" })
+  assert.match(t, /https:\/\/x\.co\/a/)
+  assert.match(t, /Arma la tuya$/)
 })
