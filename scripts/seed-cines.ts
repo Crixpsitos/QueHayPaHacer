@@ -46,7 +46,7 @@ async function main() {
       schedule: { rules: [{ kind: "always" }], skipDates: [], requiresReservation: false, note: "Funciones todos los días; los horarios los fija el cine cada semana." },
       priceOptions: [{ label: "Boleta (varía según día y formato)", amountCop: 0, unit: "consultar", includes: [] }], extras: [],
       sections: [{ title: "Cartelera y horarios", body: `La cartelera cambia cada semana: consúltala siempre en el sitio oficial de ${c.chain}. Datos de la sala (dirección y cadena) verificados el ${VERIFIED} en directorios públicos; los horarios y precios los confirma el cine.` }],
-      offerings: [], spaces: [], promotions: [], join: null,
+      spaces: [], join: null,
       cta: { kind: "website", value: c.url, label: "Ver la cartelera" }, media: [],
       publicationStatus: "published", moderationStatus: "approved", isActive: true,
       createdAt: new Date(), updatedAt: new Date(), publishedAt: new Date(), reviewedAt: new Date(), reviewedBy: "script:seed-cines",

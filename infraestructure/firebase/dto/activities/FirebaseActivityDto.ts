@@ -1,5 +1,4 @@
-import type { Offering, Space } from "@/domain/entities/activities/value-objects/Offerings"
-import type { Promotion } from "@/domain/entities/activities/value-objects/Promotion"
+import type { Space } from "@/domain/entities/activities/value-objects/Offerings"
 import type { JoinSettings } from "@/domain/entities/activities/activityJoin"
 import type { Timestamp } from "firebase-admin/firestore"
 import type { Activity, ActivityAnalytics, ActivityHost, ActivityKind, ActivityModerationStatus, ActivityPublicationStatus, ActivityRating, Difficulty, MeetingPoint } from "@/domain/entities/activities/Activity"
@@ -30,9 +29,7 @@ export interface FirebaseActivityDto {
   priceOptions: PriceOption[]
   extras?: Extra[]
   sections?: SiteSection[]
-  offerings?: Offering[]
   spaces?: Space[]
-  promotions?: Promotion[]
   cta?: Cta | null
   join?: JoinSettings | null
   /** Arreglo plano: lo parchea el optimizador de ../functions buscando por `path`. */

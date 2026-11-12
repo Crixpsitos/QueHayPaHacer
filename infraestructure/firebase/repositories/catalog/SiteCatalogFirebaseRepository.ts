@@ -13,6 +13,12 @@ export class SiteCatalogFirebaseRepository implements ISiteCatalogRepository {
     return { siteId, whatsapp: d.whatsapp ?? "", reservePhone: d.reservePhone ?? "", products: d.products ?? [], promotions: d.promotions ?? [] }
   }
 
+  async listWithPromotions(): Promise<SiteCatalog[]> {
+    // ponytail: lee todas las cartas (pocas) y filtra en memoria; con cientos de sitios, desnormalizar un `hasPromotions`.
+    const snap = await this.db.collection("siteCatalogs").select("promotions").limit(500).get()
+    return snap.docs.filter((d) => Array.isArray(d.get("promotions")) && d.get("promotions").length).map((d) => ({ siteId: d.id, whatsapp: "", reservePhone: "", products: [], promotions: d.get("promotions") }))
+  }
+
   async save(siteId: string, c: SiteCatalog, savedBy: string): Promise<void> {
     await this.doc(siteId).set({ whatsapp: c.whatsapp, reservePhone: c.reservePhone, products: c.products, promotions: c.promotions, savedBy, updatedAt: FieldValue.serverTimestamp() })
   }

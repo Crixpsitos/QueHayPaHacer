@@ -1,3 +1,4 @@
+import { isCatalogPromoCurrent } from "@/domain/entities/catalog/CatalogPromotion"
 import { emptyCatalog, normalizeCatalog, validateCatalog, type SiteCatalog } from "@/domain/entities/catalog/SiteCatalog"
 import type { ISiteCatalogRepository } from "@/domain/repository/catalog/ISiteCatalogRepository"
 
@@ -16,6 +17,14 @@ export class SiteCatalogService {
   /** Lectura pública (la carta vacía si el sitio no tiene). */
   async get(siteId: string): Promise<SiteCatalog> {
     return (await this.d.repo.get(siteId)) ?? emptyCatalog(siteId)
+  }
+
+  /** Ids de las actividades que alguna promoción vigente (sin pausar y dentro de sus fechas) eligió. */
+  async promoActivityIds(): Promise<string[]> {
+    const now = this.d.clock()
+    const ids = new Set<string>()
+    for (const c of await this.d.repo.listWithPromotions()) for (const x of c.promotions) if (isCatalogPromoCurrent(x, now)) x.activityIds.forEach((id) => ids.add(id))
+    return [...ids]
   }
 
   /** Para el panel del dueño. null si no es suyo. */

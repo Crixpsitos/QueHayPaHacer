@@ -60,7 +60,7 @@ export function CatalogManager({ siteId, siteName, initial, activities }: Props)
         <button role="tab" type="button" aria-selected={tab === "promos"} className={chip(tab === "promos")} onClick={() => setTab("promos")}>Promociones ({catalog.promotions.length})</button>
       </div>
       <div role="tabpanel">
-        {tab === "products" ? <ProductsTab siteId={siteId} catalog={catalog} save={save} /> : <PromotionsTab siteId={siteId} catalog={catalog} activities={activities} save={save} />}
+        {tab === "products" ? <ProductsTab siteId={siteId} catalog={catalog} save={save} /> : <PromotionsTab siteId={siteId} catalog={catalog} activities={activities} save={save} onNeedProducts={() => setTab("products")} />}
       </div>
     </div>
   );

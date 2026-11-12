@@ -4,6 +4,8 @@ import { updateTag } from "next/cache";
 import { getSessionUid } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
 import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog";
+import { ACTIVITY_CATEGORIES } from "@/domain/entities/activities/value-objects/ActivityCategory";
+import type { CatalogActivityOption } from "@/presentation/catalog/components/PromotionsTab";
 
 const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
@@ -12,6 +14,18 @@ export async function getMySiteCatalogAction(siteId: string): Promise<SiteCatalo
   const uid = await getSessionUid();
   if (!uid || !ID_RE.test(siteId ?? "")) return null;
   return createServerContainer().siteCatalogService.getForOwner(uid, siteId);
+}
+
+/** La carta y las actividades del sitio (para elegir en cuáles se ve cada promoción). Solo el dueño. */
+export async function getCatalogBundleAction(siteId: string): Promise<{ catalog: SiteCatalog; activities: CatalogActivityOption[] } | null> {
+  const uid = await getSessionUid();
+  if (!uid || !ID_RE.test(siteId ?? "")) return null;
+  const { siteCatalogService, activityService } = createServerContainer();
+  const catalog = await siteCatalogService.getForOwner(uid, siteId);
+  if (!catalog) return null;
+  const names = new Map<string, string>(ACTIVITY_CATEGORIES.map((c) => [c.slug, c.name]));
+  const activities = (await activityService.listForSite(siteId)).map((a) => ({ id: a.id, title: a.title, category: a.category, categoryName: names.get(a.category) ?? a.category }));
+  return { catalog, activities };
 }
 
 /** Guarda la carta completa (productos, promociones, contacto). Valida y normaliza en el servidor; solo el dueño. */
@@ -24,6 +38,7 @@ export async function saveSiteCatalogAction(siteId: string, input: SiteCatalog):
     if (!r.ok) return { success: false, error: r.error };
     updateTag(`site-catalog-${siteId}`);
     updateTag(`site-${siteId}`);
+    updateTag("promo-activity-ids");
     return { success: true, catalog: r.catalog };
   } catch (e) {
     console.error("[save-site-catalog]", e instanceof Error ? e.message : "error");

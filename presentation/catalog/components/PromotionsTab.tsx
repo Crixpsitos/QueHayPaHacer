@@ -12,19 +12,25 @@ import { uploadCatalogImage } from "@/presentation/catalog/lib/uploadImage";
 import { chip, field, hint, label, outlineBtn, primaryBtn } from "./ui";
 
 export interface CatalogActivityOption { id: string; title: string; category: ActivityCategory; categoryName: string }
-interface Props { siteId: string; catalog: SiteCatalog; activities: CatalogActivityOption[]; save: (c: SiteCatalog) => Promise<string | null> }
+interface Props {
+  siteId: string; catalog: SiteCatalog; activities: CatalogActivityOption[]; save: (c: SiteCatalog) => Promise<string | null>
+  /** Actividad desde la que se arma (formulario de actividades): la promoción nueva ya nace elegida para ella. */
+  focusActivityId?: string
+  /** Sin productos no se puede armar una promoción: lleva a agregarlos. */
+  onNeedProducts?: () => void
+}
 
 const DAYS = [["L", 1], ["M", 2], ["X", 3], ["J", 4], ["V", 5], ["S", 6], ["D", 0]] as const;
 const BENEFITS: { kind: BenefitKind; text: string }[] = [{ kind: "free", text: "Gratis" }, { kind: "percent", text: "% de descuento" }, { kind: "special", text: "Precio especial" }];
 
-const blank = (catalog: SiteCatalog): CatalogPromotion => {
+const blank = (catalog: SiteCatalog, focus?: CatalogActivityOption): CatalogPromotion => {
   const today = todayBogota(new Date());
   const end = new Date(Date.now() + 30 * 86_400_000 - 5 * 3_600_000).toISOString().slice(0, 10);
   const a = catalog.products[0]?.id ?? "";
-  return { id: crypto.randomUUID().slice(0, 12), title: "", imageUrl: "", buy: { productId: a, qty: 1 }, get: { productId: catalog.products[1]?.id ?? a, qty: 1 }, benefit: { kind: "percent", value: 50 }, weekdays: [], start: "", end: "", validFrom: today, validUntil: end, termsNote: "", paused: false, activityIds: [] };
+  return { id: crypto.randomUUID().slice(0, 12), title: "", imageUrl: "", buy: { productId: a, qty: 1 }, get: { productId: catalog.products[1]?.id ?? a, qty: 1 }, benefit: { kind: "percent", value: 50 }, weekdays: [], start: "", end: "", validFrom: today, validUntil: end, termsNote: "", paused: false, activityIds: focus && canShowPromotions(focus.category) ? [focus.id] : [] };
 };
 
-export function PromotionsTab({ siteId, catalog, activities, save }: Props) {
+export function PromotionsTab({ siteId, catalog, activities, save, focusActivityId, onNeedProducts }: Props) {
   const [editing, setEditing] = useState<{ promo: CatalogPromotion; isNew: boolean } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const now = new Date();
@@ -41,9 +47,14 @@ export function PromotionsTab({ siteId, catalog, activities, save }: Props) {
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{catalog.promotions.length} {catalog.promotions.length === 1 ? "promoción" : "promociones"}</p>
-        <button type="button" disabled={!canCreate} className={primaryBtn} onClick={() => setEditing({ promo: blank(catalog), isNew: true })}><Plus className="size-4" aria-hidden /> Armar promoción</button>
+        <button type="button" disabled={!canCreate} className={primaryBtn} onClick={() => setEditing({ promo: blank(catalog, activities.find((a) => a.id === focusActivityId)), isNew: true })}><Plus className="size-4" aria-hidden /> Armar promoción</button>
       </div>
-      {!canCreate && <p className="rounded-xl bg-[#FFF8E7] px-4 py-3 text-sm text-[#7a5200]">Primero agrega productos a tu carta: una promoción se arma con dos productos.</p>}
+      {!canCreate && (
+        <div className="grid justify-items-start gap-3 rounded-2xl bg-[#FFF8E7] p-4 text-sm text-[#7a5200]">
+          <p>Una promoción se arma con productos de tu carta, y tu carta todavía está vacía. Agrega primero tus productos y vuelve aquí.</p>
+          {onNeedProducts ? <button type="button" onClick={onNeedProducts} className={primaryBtn}>Agregar productos</button> : <a href={`/carta/${siteId}`} className={primaryBtn}>Ir a mi carta</a>}
+        </div>
+      )}
       {notice && <p role="status" className="rounded-xl bg-[#FFF8E7] px-4 py-3 text-sm text-[#7a5200]">{notice}</p>}
       <ul className="grid gap-3">
         {catalog.promotions.map((x) => {

@@ -152,7 +152,7 @@ export function ActivityWizard({ context, initial }: Props) {
       )
       break
     case 7: body = <StepCta form={form} patch={patch} context={context} />; break
-    case 8: body = <StepSections form={form} patch={patch} context={context} />; break
+    case 8: body = <StepSections form={form} patch={patch} context={context} activityId={activityId} />; break
     default: body = <StepPublish context={context} onPublish={publish} onError={fail} />
   }
 

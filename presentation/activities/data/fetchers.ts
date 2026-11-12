@@ -20,6 +20,19 @@ async function cardsOf(list: CardSource[]): Promise<ActivityCardView[]> {
   return list.map((a) => ({ ...toCardView(a), owner: a.siteId ? (owners.get(a.siteId) ?? null) : null }))
 }
 
+/** Actividades elegidas por alguna promoción vigente de la carta de su sitio (filtro «Promos hoy»). Caché corta; el panel de carta la invalida. */
+export const fetchPromoActivityIds = async (): Promise<string[]> => {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag("promo-activity-ids", "activity-list")
+  return createServerContainer().siteCatalogService.promoActivityIds()
+}
+
+/** Si el filtro pide promociones, le agrega los ids que las tienen (la carta vive aparte de las actividades). */
+async function withPromoIds(filters: ActivityFilters): Promise<ActivityFilters> {
+  return filters.promo ? { ...filters, promoActivityIds: await fetchPromoActivityIds() } : filters
+}
+
 export interface ActivityPageData extends ActivityPublicView {
   /** Sitio vinculado (nombre y slug para el enlace), o null en actividades globales. */
   site: { name: string; slug: string; address: string; geo: { latitude: number; longitude: number } | null; owner: { displayName: string; photoURL: string } | null } | null
@@ -73,7 +86,7 @@ export const fetchActivityPage = async (filters: ActivityFilters, offset: number
   "use cache"
   cacheLife("minutes")
   cacheTag("activity-list")
-  const r = await createServerContainer().activityService.search(filters, offset, pageSize)
+  const r = await createServerContainer().activityService.search(await withPromoIds(filters), offset, pageSize)
   return { items: await cardsOf(r.items), total: r.total, nextOffset: r.nextOffset }
 }
 
@@ -84,15 +97,6 @@ export const resolveSiteId = cache(async (slug: string): Promise<string | null> 
 })
 
 export const SITE_BLOCK_MAX = 6
-
-/** Promociones de las actividades de un sitio (sin vencer por fecha; el navegador vuelve a filtrar). */
-export const fetchSitePromos = async (siteId: string): Promise<{ activityTitle: string; slug: string; promotions: ActivityPublicView["promotions"] }[]> => {
-  "use cache"
-  cacheLife("minutes")
-  cacheTag(`site-${siteId}-activities`, "activity-list")
-  const list = await createServerContainer().activityService.listForSite(siteId)
-  return list.map((a) => ({ activityTitle: a.title, slug: a.slug, promotions: toPublicView(a).promotions })).filter((x) => x.promotions.length)
-}
 
 /** Actividades públicas de un sitio para su ficha (máx. 6). Se invalida con `site-<id>-activities` o `activity-list`. */
 export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardView[]> => {
@@ -180,7 +184,7 @@ export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayVi
   const range = filters.day ? dayRange(filters.day) : filters.when ? whenRange(filters.when, new Date()) : null
   if (!range) return []
   const svc = createServerContainer().activityService
-  const { items } = await svc.search(filters, 0, 200)
+  const { items } = await svc.search(await withPromoIds(filters), 0, 200)
   const byId = new Map(items.map((a) => [a.id, a]))
   const input = items.map((a) => ({ id: a.id, schedule: a.schedule }))
   const cards = new Map((await cardsOf(items)).map((c) => [c.id, c]))
@@ -223,7 +227,7 @@ export const fetchHubMap = async (day: string, filters: ActivityFilters): Promis
   cacheLife("minutes")
   cacheTag("activity-list")
   const c = createServerContainer()
-  const { items } = await c.activityService.search({ ...filters, when: undefined, day }, 0, 200)
+  const { items } = await c.activityService.search(await withPromoIds({ ...filters, when: undefined, day }), 0, 200)
   const hhmmOf = new Map(buildAgenda(items.map((a) => ({ id: a.id, schedule: a.schedule })), dayRange(day), new Date()).flatMap((d) => d.entries.map((e) => [e.id, e.hhmm] as const)))
   const sites = new Map<string, Awaited<ReturnType<typeof c.sitesService.getActivityLinkSnapshot>>>()
   for (const siteId of new Set(items.map((a) => a.siteId).filter((x): x is string => !!x))) sites.set(siteId, await c.sitesService.getActivityLinkSnapshot(siteId))
