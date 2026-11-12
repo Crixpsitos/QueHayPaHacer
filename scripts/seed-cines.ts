@@ -20,7 +20,7 @@ const VERIFIED = "12 de noviembre de 2026";
 
 const CINES = [
   { slug: "ir-al-cine-cinemark-multicentro", chain: "Cinemark", name: "Cinemark Multicentro", place: "Centro comercial Multicentro", address: "Carrera 5 No. 60-123, local 218", geo: { lat: 4.4363154, lng: -75.201573 }, url: "https://www.cinemark.com.co" },
-  { slug: "ir-al-cine-royal-films-acqua", chain: "Royal Films", name: "Royal Films Acqua", place: "Centro comercial Acqua", address: "Carrera 9 No. 57-2", geo: null, url: "https://www.royal-films.com" },
+  { slug: "ir-al-cine-royal-films-acqua", chain: "Royal Films", name: "Royal Films Acqua", place: "Centro comercial Acqua", address: "Carrera 9 No. 57-2", geo: { lat: 4.440383, lng: -75.204456 }, url: "https://www.royal-films.com" },
   { slug: "ir-al-cine-cine-colombia-la-estacion", chain: "Cine Colombia", name: "Cine Colombia La Estación", place: "Centro comercial La Estación", address: "Avenida Ambalá con calle 60", geo: { lat: 4.445518, lng: -75.204593 }, url: "https://www.cinecolombia.com" },
 ];
 
