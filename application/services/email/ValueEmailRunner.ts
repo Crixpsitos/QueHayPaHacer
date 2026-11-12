@@ -21,7 +21,7 @@ export interface RunnerDeps {
 
 const bogota = (d: Date) => new Date(d.getTime() - 5 * 3_600_000)
 
-/** Arma los correos de valor: «Para ti» (uno por persona y día) y «Qué hacer esta semana» (jueves, uno por semana). Solo a quien lo autorizó. */
+/** Arma los correos de valor: «Para ti» (martes y viernes) y «Qué hacer esta semana» (jueves, uno por semana). Solo a quien lo autorizó. */
 export class ValueEmailRunner {
   constructor(private readonly d: RunnerDeps) {}
 
@@ -30,7 +30,8 @@ export class ValueEmailRunner {
     const now = this.d.clock(), local = bogota(now), day = local.toISOString().slice(0, 10)
     let forYou = 0, weekly = 0
     const pool = await this.d.pool()
-    for (const uid of await this.d.optIns("forYou")) {
+    const forYouDay = [2, 5].includes(local.getUTCDay()) // martes y viernes: con pocos usuarios, 1 al día cansa
+    if (forYouDay) for (const uid of await this.d.optIns("forYou")) {
       if (!(await this.d.allows(uid, "forYou"))) continue
       const items = selectForYou(pool, await this.d.signals(uid))
       if (!items.length) continue

@@ -5,7 +5,7 @@ import {
   CalendarDays,
   ChevronRight,
   Eye,
-  Heart,
+  CalendarCheck,
   ImageIcon,
   Layers,
   Pencil,
@@ -68,8 +68,8 @@ export function MultiDateStatsPanel({ stats, viewerRole }: MultiDateStatsPanelPr
     { key: "views", label: "Vistas", icon: Eye, value: stats.totals.views },
     {
       key: "likes",
-      label: "Likes",
-      icon: Heart,
+      label: "Van a ir",
+      icon: CalendarCheck,
       // Likes solo del evento padre — sumar los de sesiones contaría doble
       value: stats.event.likes,
     },
@@ -179,7 +179,7 @@ export function MultiDateStatsPanel({ stats, viewerRole }: MultiDateStatsPanelPr
         {/* El like es del evento completo, no de una fecha: por eso va aparte. */}
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
           <span className="inline-flex items-center gap-1.5">
-            <Heart className="h-3.5 w-3.5 text-slate-400" />
+            <CalendarCheck className="h-3.5 w-3.5 text-slate-400" />
             <span className="font-semibold text-slate-900">
               {formatNumber(stats.event.likes)}
             </span>

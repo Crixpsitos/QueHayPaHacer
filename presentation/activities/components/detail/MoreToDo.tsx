@@ -51,12 +51,12 @@ export async function MoreToDo({ id }: { id: string }) {
   if (!levels.length) return null
   // Plan = esta actividad + lo más cercano (aquí mismo o cerca, si no el primer nivel): máximo 4 para que quepa en un día.
   const first = levels.find((l) => l.key === "here" || l.key === "group" || l.key === "near") ?? levels[0]
-  const planIds = [id, ...first.rows.map((r) => r.id)].slice(0, 4)
+  const plan = [{ id, title: "Esta actividad" }, ...first.rows.map((r) => ({ id: r.id, title: r.title, hint: r.scheduleText }))].slice(0, 4)
   return (
     <section aria-labelledby="mas" className="grid gap-4">
       <h2 id="mas" className="font-heading text-2xl font-extrabold tracking-tight">Más para hacer</h2>
       <MoreToDoTabs tabs={levels.map((l) => ({ key: l.key, label: TITLES[l.key].tab, count: l.total, content: <LevelCard level={l} /> }))} />
-      {planIds.length >= 2 ? <BuildPlanButton ids={planIds} /> : null}
+      {plan.length >= 2 ? <BuildPlanButton items={plan} /> : null}
     </section>
   )
 }

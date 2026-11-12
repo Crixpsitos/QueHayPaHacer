@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 interface MapZoneProps {
   cityCoords?: { latitude: number; longitude: number } | null;
   pointCoords?: { lat: number; lng: number } | null;
+  /** Se llama al arrastrar el marcador y también al tocar el mapa (el marcador salta ahí). */
   onMarkerDrag?: (lat: number, lng: number) => void; 
 }
 
@@ -50,6 +51,7 @@ export const MapZone = ({ cityCoords, pointCoords, onMarkerDrag }: MapZoneProps)
           zoom: 12,
         }}
         ref={mapRef}
+        onClick={(evt) => onMarkerDrag?.(evt.lngLat.lat, evt.lngLat.lng)}
         mapStyle="https://tiles.openfreemap.org/styles/bright"
         onLoad={(e) => {
           // Sustituye sprites desconocidos del estilo con un pixel transparente para silenciar los warnings.

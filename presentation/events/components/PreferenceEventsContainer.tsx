@@ -22,7 +22,7 @@ export function PreferenceEventsContainer() {
   return (
     <ContentSection title="Tus preferencias">
       <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Estas son las actividades que te gustaron en las que te interesan. ¡No te pierdas de nada!
+        Estas son las actividades que marcaste con «Voy a ir» y las que te interesan. ¡No te pierdas de nada!
       </p>
       <Separator className="my-6" />
       <EventCardInteractive

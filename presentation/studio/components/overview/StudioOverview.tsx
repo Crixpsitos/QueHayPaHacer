@@ -90,7 +90,7 @@ export function StudioOverview({ data }: StudioOverviewProps) {
         <Panel
           className="lg:col-span-8"
           title="¿Cómo interactúan con tus eventos?"
-          subtitle="Vistas, me gusta y compartidos acumulados de tus 6 eventos publicados con mejor puntuación, creados el mes pasado o este mes. Cada columna tiene su propia escala."
+          subtitle="Vistas, «voy a ir» y compartidos acumulados de tus 6 eventos publicados con mejor puntuación, creados el mes pasado o este mes. Cada columna tiene su propia escala."
         >
           <InteractivityTable data={data.interactivity} />
         </Panel>

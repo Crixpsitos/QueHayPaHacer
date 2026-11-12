@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, CalendarDays, Heart, MapPin } from "lucide-react";
+import { Award, CalendarCheck, CalendarDays, MapPin } from "lucide-react";
 import { fetchMyProfileData } from "@/app/lib/api/profile-fetcher";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { useCachedFetch } from "@/app/lib/clientCache/useCachedFetch";
@@ -20,7 +20,7 @@ import {
 const ACTIVITY_META = {
   event: { title: "Aportaste un evento", icon: CalendarDays },
   site: { title: "Aportaste un sitio", icon: MapPin },
-  like: { title: "Te gustó un evento", icon: Heart },
+  like: { title: "Vas a ir a un evento", icon: CalendarCheck },
   badge: { title: "Obtuviste una insignia", icon: Award },
 } satisfies Record<ProfileTimelineItem["type"], { title: string; icon: typeof CalendarDays }>;
 

@@ -5,6 +5,7 @@ import type { OutboxItem } from "@/domain/repository/email/IEmailOutboxRepositor
 import type { Digest } from "@/domain/entities/activities/weeklyDigest"
 
 const THU = new Date("2026-11-12T13:00:00Z") // jueves 8 a. m. Bogotá
+const TUE = new Date("2026-11-10T13:00:00Z")
 const FRI = new Date("2026-11-13T13:00:00Z")
 const digest: Digest = { title: "Qué hacer este fin de semana en Ibagué", days: [{ date: "2026-11-14", label: "sábado 14", items: [{ kind: "activity", title: "Mercado campesino", timeLabel: "7:00 a. m.", place: "Plaza", detail: "Gratis", url: "/actividades/mercado", sortMin: 420 }] }] }
 
@@ -20,14 +21,14 @@ function setup(o: { now?: Date; kinds?: Record<string, string[]>; email?: string
   return { runner, q }
 }
 
-test("«Para ti»: uno por persona y día (el segundo barrido del día no duplica)", async () => {
-  const s = setup({ kinds: { forYou: ["u1", "u2"] } })
+test("«Para ti» (martes y viernes): uno por persona y día (el segundo barrido del día no duplica)", async () => {
+  const s = setup({ now: TUE, kinds: { forYou: ["u1", "u2"] } })
   await s.runner.run(async () => digest); await s.runner.run(async () => digest)
   assert.equal(s.q.filter((i) => i.kind === "forYou").length, 2)
   assert.ok(s.q[0].text.includes("Trote") && s.q[0].headers!["List-Unsubscribe"])
 })
 test("«Para ti» sin nada vigente no se envía (no se manda un correo vacío)", async () => {
-  const s = setup({ kinds: { forYou: ["u1"] }, pool: false })
+  const s = setup({ now: TUE, kinds: { forYou: ["u1"] }, pool: false })
   await s.runner.run(async () => digest)
   assert.equal(s.q.length, 0)
 })
@@ -40,4 +41,12 @@ test("resumen semanal: solo los jueves, uno por semana", async () => {
 })
 test("sin permiso, sin correo o sin secreto de baja: nada", async () => {
   for (const o of [{ allow: false }, { email: null }]) { const s = setup({ kinds: { forYou: ["u1"], weekly: ["u1"] }, ...o }); await s.runner.run(async () => digest); assert.equal(s.q.length, 0) }
+})
+
+test("«Para ti» solo martes y viernes: el jueves y el lunes no sale", async () => {
+  for (const [now, expected] of [[THU, 0], [new Date("2026-11-09T13:00:00Z"), 0], [TUE, 1], [FRI, 1]] as const) {
+    const s = setup({ now, kinds: { forYou: ["u1"] } })
+    await s.runner.run(async () => digest)
+    assert.equal(s.q.filter((i) => i.kind === "forYou").length, expected, now.toISOString())
+  }
 })
