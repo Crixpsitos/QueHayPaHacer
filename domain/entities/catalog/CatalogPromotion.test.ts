@@ -54,3 +54,24 @@ test("descripción legible", () => {
   assert.equal(describePromo(promo({ benefit: { kind: "special", value: 4000 } }), products), "Compras 1 Waffle con helado y recibes 1 Sorbete de mora por $4.000.")
   assert.equal(describePromo(promo({ buy: { productId: "s", qty: 2 }, get: { productId: "s", qty: 1 }, benefit: { kind: "free" } }), products), "Llevas 2 Sorbete de mora y 1 más gratis.")
 })
+import { cartTotal } from "./CatalogPromotion"
+
+test("total aproximado: suma y descuenta las promociones que aplican ahora, las veces que caben", () => {
+  const live = new Date("2026-11-20T21:00:00Z") // viernes 4 p. m. en Bogotá: dentro de «Tardes felices»
+  const r = cartTotal([{ productId: "w", qty: 2 }, { productId: "s", qty: 3 }], [promo()], products, TODAY, live)
+  assert.equal(r.subtotal, 2 * 14000 + 3 * 7000)
+  assert.deepEqual(r.applied.map((a) => [a.id, a.times, a.saves]), [["p1", 2, 7000]])
+  assert.equal(r.total, 49000 - 7000)
+})
+test("total aproximado: fuera de horario o sin los dos productos no hay descuento", () => {
+  const fuera = new Date("2026-11-18T15:00:00Z") // miércoles
+  assert.equal(cartTotal([{ productId: "w", qty: 1 }, { productId: "s", qty: 1 }], [promo()], products, TODAY, fuera).total, 21000)
+  const live = new Date("2026-11-20T21:00:00Z")
+  assert.equal(cartTotal([{ productId: "w", qty: 1 }], [promo()], products, TODAY, live).total, 14000)
+})
+test("total aproximado: mismo producto (lleva 2, el 3.º gratis) aplica por cada grupo completo", () => {
+  const tres = promo({ buy: { productId: "s", qty: 2 }, get: { productId: "s", qty: 1 }, benefit: { kind: "free" }, weekdays: [], start: "", end: "" })
+  const live = new Date("2026-11-20T21:00:00Z")
+  assert.equal(cartTotal([{ productId: "s", qty: 6 }], [tres], products, TODAY, live).total, 6 * 7000 - 2 * 7000)
+  assert.equal(cartTotal([{ productId: "s", qty: 2 }], [tres], products, TODAY, live).total, 14000)
+})

@@ -33,6 +33,7 @@ import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { SectionsAccordion } from "./SectionsAccordion";
 import { SiteActivitiesBlock } from "@/presentation/activities/components/SiteActivitiesBlock";
+import { SiteCatalogBlock } from "@/presentation/catalog/components/CatalogBlocks";
 import { SiteReviewsSection } from "@/presentation/activities/components/reviews/SiteReviewsSection";
 import { FactsRow } from "./FactsRow";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
@@ -275,6 +276,10 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           )}
 
           {!!site!.sections?.length && <SectionsAccordion sections={site!.sections} />}
+
+          <Suspense fallback={null}>
+            <SiteCatalogBlock siteId={siteId} siteName={site!.name} siteSlug={site!.slug || ""} />
+          </Suspense>
 
           <Suspense fallback={null}>
             <SiteActivitiesBlock siteId={siteId} siteSlug={site!.slug || ""} />

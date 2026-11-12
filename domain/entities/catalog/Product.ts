@@ -101,4 +101,6 @@ export function groupBySection<T extends { section: string }>(list: T[]): { sect
   return map.has("") ? [...named, { section: "Otros", items: map.get("")! }] : named
 }
 
+export const PRICES_NOTE = "Precios sujetos a cambio: confirma con el lugar. Las etiquetas las declara el sitio."
+
 export const cop = (n: number): string => `$${Math.trunc(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`

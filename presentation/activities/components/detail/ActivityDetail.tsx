@@ -14,6 +14,8 @@ import { FollowChannel } from "@/presentation/shared/components/FollowChannel"
 import { OfferingsList } from "./OfferingsList"
 import { PromoCards } from "./PromoCards"
 import { SpacesList } from "./SpacesList"
+import { ActivityCatalogBlock } from "@/presentation/catalog/components/CatalogBlocks"
+import type { ActivityCategory } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import { MoreToDo } from "./MoreToDo"
 import { ReviewsSection } from "@/presentation/activities/components/reviews/ReviewsSection"
 import { UpcomingDates } from "./UpcomingDates"
@@ -131,6 +133,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           <PromoCards promotions={d.promotions} />
           <OfferingsList items={d.offerings} />
           <SpacesList items={d.spaces} />
+          {d.siteId ? <Suspense fallback={null}><ActivityCatalogBlock siteId={d.siteId} activity={{ id: d.id, title: d.title, slug: d.slug, category: d.categorySlug as ActivityCategory }} /></Suspense> : null}
 
           <ActivityPlace d={d} compact={sparse} />
 
