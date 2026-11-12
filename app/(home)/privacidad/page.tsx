@@ -31,7 +31,7 @@ export default function PrivacidadPage() {
           <li><strong>Inscripciones:</strong> los eventos en los que te inscribes y las respuestas a los formularios que el creador del evento solicite.</li>
           <li><strong>Reservas en actividades:</strong> las actividades en las que reservas un cupo y su estado (por pagar, confirmada). Solo si la actividad tiene costo, el WhatsApp que escribes al reservar y la versión de esta política que viste cuando lo autorizaste.</li>
           <li><strong>Guardados y «Yo fui»:</strong> las actividades que guardas o marcas como hechas. Son privadas: solo las ves tú.</li>
-          <li><strong>Actividad:</strong> vistas, me gusta y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
+          <li><strong>Actividad:</strong> vistas, «voy a ir» (o me gusta, en sitios) y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
           <li><strong>Contacto y soporte:</strong> el correo, teléfono y mensaje que nos envías.</li>
           <li><strong>Aceptaciones y reportes:</strong> la fecha y la versión de los términos y de esta política que aceptaste, las declaraciones que haces al publicar, los reportes que envías o recibes y las decisiones de moderación.</li>
           <li><strong>Datos de organizador:</strong> si organizas eventos con venta de entradas o servicios al público, podemos pedirte documento de identidad, dirección y teléfono.</li>

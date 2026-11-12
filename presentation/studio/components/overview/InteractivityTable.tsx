@@ -7,7 +7,7 @@ interface InteractivityTableProps {
 
 const METRICS = [
   { key: "views", label: "Vistas" },
-  { key: "likes", label: "Me gusta" },
+  { key: "likes", label: "Van a ir" },
   { key: "shares", label: "Compartidos" },
 ] as const;
 
@@ -25,7 +25,7 @@ export function InteractivityTable({ data }: InteractivityTableProps) {
   return (
     <div className="-mx-1 overflow-x-auto">
       <table className="w-full min-w-[520px] border-separate border-spacing-x-1 text-sm">
-        <caption className="sr-only">Vistas, me gusta y compartidos por evento</caption>
+        <caption className="sr-only">Vistas, «voy a ir» y compartidos por evento</caption>
         <thead>
           <tr className="text-left text-xs text-zinc-500">
             <th scope="col" className="pb-2 font-normal">Evento</th>

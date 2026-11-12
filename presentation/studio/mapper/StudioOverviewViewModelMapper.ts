@@ -23,7 +23,7 @@ export class StudioOverviewViewModelMapper {
           changePct: kpis.registrationsChangePct,
         },
         likes: {
-          label: "Likes de eventos creados este mes",
+          label: "Personas que van a tus eventos creados este mes",
           value: kpis.totalLikes,
           previousValue: kpis.previousMonthLikes,
           changePct: kpis.likesChangePct,

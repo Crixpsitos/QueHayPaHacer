@@ -135,7 +135,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                 type="button"
                 onClick={() => user && toggle()}
                 aria-pressed={liked}
-                aria-label={`${liked ? "Quitar like" : "Dar like"} — ${likes.toLocaleString("es-CO")} likes`}
+                aria-label={`${liked ? "Quitar «Voy a ir»" : "Voy a ir"} — ${likes.toLocaleString("es-CO")} likes`}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
                   liked

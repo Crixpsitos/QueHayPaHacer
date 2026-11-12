@@ -239,7 +239,7 @@ export const EventCard = ({
               {likes > 0 && (
                 <span className="inline-flex items-center gap-1">
                   <Heart className="size-3.5" aria-hidden="true" />
-                  <span className="sr-only">Me gusta:</span>
+                  <span className="sr-only">Van a ir:</span>
                   {compactCount(likes)}
                 </span>
               )}

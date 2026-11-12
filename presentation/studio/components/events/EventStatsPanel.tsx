@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Eye, Users, Heart, Share2, TrendingUp, Info, MousePointerClick } from "lucide-react";
+import { Eye, Users, CalendarCheck, Share2, TrendingUp, Info, MousePointerClick } from "lucide-react";
 import type { EventStatsViewModel } from "../../view-models/StudioEventsViewModel";
 import {
   Tooltip,
@@ -32,7 +32,7 @@ const SCORE_ITEM = {
 
 const VIEWS_ITEM = { key: "views", label: "Vistas", icon: Eye } as const;
 const REGISTRATIONS_ITEM = { key: "registrations", label: "Registros", icon: Users } as const;
-const LIKES_ITEM = { key: "likes", label: "Likes", icon: Heart } as const;
+const LIKES_ITEM = { key: "likes", label: "Van a ir", icon: CalendarCheck } as const;
 const SHARES_ITEM = { key: "shares", label: "Compartidos", icon: Share2 } as const;
 // En eventos externos no hay inscritos en la plataforma; el registro ocurre fuera.
 // Por eso, en lugar de "Registros" (siempre 0), mostramos los clics al botón externo.

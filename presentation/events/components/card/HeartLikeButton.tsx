@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils/cn";
-import { Heart } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { memo } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 
@@ -42,23 +42,23 @@ export const HeartLikeButton = memo(function HeartLikeButton({
           className={cn(
             "h-8 px-2.5 gap-1.5 text-xs font-normal transition-colors",
             liked
-              ? "text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              ? "text-primary-dark hover:text-primary-dark hover:bg-primary-light"
               : "text-muted-foreground hover:text-foreground",
             className,
           )}
           onClick={toggle}
-          aria-label={`${liked ? "Quitar like" : "Dar like"} — ${likes.toLocaleString("es-CO")} likes`}
+          aria-label={`${liked ? "Quitar «Voy a ir»" : "Voy a ir"} — ${likes.toLocaleString("es-CO")} ${likes === 1 ? "persona va" : "personas van"}`}
           aria-pressed={liked}
         >
-          <Heart
-            className={cn("size-4", liked && "fill-current")}
+          <CalendarCheck
+            className={cn("size-4", liked && "fill-current/20")}
             aria-hidden="true"
           />
-          <span>{likes.toLocaleString("es-CO")}</span>
+          <span>{liked ? "Vas a ir" : "Voy a ir"}{likes > 0 ? ` · ${likes.toLocaleString("es-CO")}` : ""}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
-        {liked ? "Quitar me gusta" : "Me gusta"}
+        {liked ? "Quitar «Voy a ir»" : "Voy a ir"}
       </TooltipContent>
     </Tooltip>
   );

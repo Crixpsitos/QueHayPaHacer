@@ -13,7 +13,7 @@ const EMPTY_OVERVIEW: StudioOverviewViewModel = {
   kpis: {
     views: { label: "Vistas de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
     registrations: { label: "Inscripciones de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
-    likes: { label: "Likes de eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
+    likes: { label: "Personas que van a tus eventos creados este mes", value: 0, previousValue: 0, changePct: 0 },
     activeEvents: { label: "Eventos activos", value: 0, previousValue: 0, changePct: 0 },
   },
   conversion: [],

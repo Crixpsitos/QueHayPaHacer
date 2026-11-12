@@ -27,7 +27,7 @@ interface InteractionsOverTimeChartProps {
 
 const SERIES = [
   { key: "clicks", name: "Clicks", color: CHART.primary },
-  { key: "likes", name: "Me gusta", color: CHART.ink },
+  { key: "likes", name: "Van a ir", color: CHART.ink },
   { key: "shares", name: "Compartidos", color: CHART.neutral },
 ] as const;
 

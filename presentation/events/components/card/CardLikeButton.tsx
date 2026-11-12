@@ -1,14 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Heart } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { SPRING_SNAPPY } from "@/app/components/motion/primitives";
 import { useState } from "react";
 
 const BURST = [0, 60, 120, 180, 240, 300];
 
-/** Corazón de la tarjeta: "pop" con resorte y una ráfaga corta al dar me gusta. Área táctil 44px. */
+/** Corazón de la tarjeta: "pop" con resorte y una ráfaga corta al marcar «Voy a ir». Área táctil 44px. */
 export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: () => void }) {
   const still = useReducedMotion();
   // La ráfaga solo se dispara por un clic del usuario, no cuando llega el estado inicial.
@@ -21,7 +21,7 @@ export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: 
         if (!liked) setBurstKey((k) => k + 1);
         onToggle();
       }}
-      aria-label={liked ? "Quitar me gusta" : "Me gusta"}
+      aria-label={liked ? "Quitar «Voy a ir»" : "Voy a ir"}
       aria-pressed={liked}
       className="absolute right-1.5 top-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C]"
     >
@@ -32,8 +32,8 @@ export function CardLikeButton({ liked, onToggle }: { liked: boolean; onToggle: 
           transition={liked ? { duration: 0.32, ease: "easeOut" } : SPRING_SNAPPY}
           whileTap={still ? undefined : { scale: 0.85 }}
         >
-          <Heart
-            className={cn("size-5 transition-colors duration-150", liked && "fill-[#D42F3C] text-[#D42F3C]")}
+          <CalendarCheck
+            className={cn("size-5 transition-colors duration-150", liked && "text-[#9B0A26]")}
             aria-hidden="true"
           />
         </motion.span>
