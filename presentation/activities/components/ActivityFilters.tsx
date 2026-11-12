@@ -28,7 +28,7 @@ function Chip({ current, patch, active, children }: { current: UrlFilters; patch
   // Un toque en el chip activo lo quita; en otro, lo cambia.
   const key = Object.keys(patch)[0] as keyof UrlFilters
   const href = active ? filterHref(current, { [key]: undefined }) : filterHref(current, patch)
-  return <Link href={href} scroll={false} aria-current={active ? "true" : undefined} className={cn(pill, active ? on : off)}>{children}</Link>
+  return <Link prefetch={false} href={href} scroll={false} aria-current={active ? "true" : undefined} className={cn(pill, active ? on : off)}>{children}</Link>
 }
 
 /** Filtros del hub como enlaces (funcionan sin JavaScript y se pueden compartir). Cada cambio vive en la dirección. */
@@ -43,7 +43,13 @@ export function ActivityFilters({ current }: { current: UrlFilters }) {
   ]
   const more = [current.budget, current.companion, current.category, current.kind].filter(Boolean).length
   return (
-    <div className="grid gap-4">
+    <div id="filtros" className="grid scroll-mt-4 gap-4">
+      {active.length ? (
+        <div className="flex flex-wrap items-center gap-2" aria-label="Filtros activos">
+          {active.map((a) => <Link prefetch={false} key={a.label} href={a.href} scroll={false} aria-label={`Quitar filtro ${a.label}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary-light px-3 text-[0.8125rem] font-semibold text-primary-dark outline-none focus-visible:ring-3 focus-visible:ring-ring/40">{a.label} <span aria-hidden>✕</span></Link>)}
+          <Link prefetch={false} href="/actividades#filtros" aria-label="Quitar todos los filtros" className="inline-flex min-h-9 items-center rounded-full border border-primary-dark px-3 text-[0.8125rem] font-semibold text-primary-dark hover:bg-primary-light">Quitar todo</Link>
+        </div>
+      ) : null}
       {/* Lo secundario va plegado: en el móvil lo primero que se ve debe ser el resultado. Nativo, sin JavaScript. */}
       <details open={more > 0} className="group/more rounded-2xl border border-border bg-card px-4 py-1">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40 [&::-webkit-details-marker]:hidden">
@@ -58,22 +64,15 @@ export function ActivityFilters({ current }: { current: UrlFilters }) {
           {COMPANIONS.map((c) => <Chip key={c} current={current} patch={{ companion: c }} active={current.companion === c}>{COMPANION_LABELS[c]}</Chip>)}
         </Group>
         <Group label="Categoría">
-          <Chip current={current} patch={{ category: undefined }} active={!current.category}>Todas</Chip>
           {ACTIVITY_CATEGORIES.map((c) => <Chip key={c.slug} current={current} patch={{ category: c.slug }} active={current.category === c.slug}>{c.name}</Chip>)}
         </Group>
         <Group label="Tipo">
-          {([[undefined, "Todas"], ["global", "Globales"], ["site", "De sitios"]] as const).map(([k, label]) => (
+          {([["global", "Globales"], ["site", "De sitios"]] as const).map(([k, label]) => (
             <Chip key={label} current={current} patch={{ kind: k }} active={current.kind === k}>{label}</Chip>
           ))}
         </Group>
         </div>
       </details>
-      {active.length ? (
-        <div className="flex flex-wrap items-center gap-2" aria-label="Filtros activos">
-          {active.map((a) => <Link key={a.label} href={a.href} scroll={false} aria-label={`Quitar filtro ${a.label}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary-light px-3 text-[0.8125rem] font-semibold text-primary-dark outline-none focus-visible:ring-3 focus-visible:ring-ring/40">{a.label} <span aria-hidden>✕</span></Link>)}
-          <Link href="/actividades" scroll={false} className="text-[0.8125rem] font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar todo</Link>
-        </div>
-      ) : null}
     </div>
   )
 }
