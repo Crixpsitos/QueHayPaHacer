@@ -11,6 +11,7 @@ import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { ActivityPlace } from "./ActivityPlace"
 import { MoreToDo } from "./MoreToDo"
+import { ReviewsSection } from "@/presentation/activities/components/reviews/ReviewsSection"
 import { UpcomingDates } from "./UpcomingDates"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
@@ -114,6 +115,8 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
 
           {sparse ? <HowItWorks joinEnabled={d.joinEnabled} /> : null}
+
+          {preview ? null : <Suspense fallback={null}><ReviewsSection activityId={d.id} categorySlug={d.categorySlug} visitedLabel={d.visitedLabel} /></Suspense>}
 
           <SectionsAccordion sections={d.sections} />
 

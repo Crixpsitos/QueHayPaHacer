@@ -88,6 +88,10 @@ export class ActivityReviewService {
     }
   }
 
+  getMine(uid: string, activityId: string): Promise<ActivityReview | null> {
+    return this.d.repo.get(activityId, uid)
+  }
+
   list(activityId: string, limit = 50): Promise<ActivityReview[]> {
     return this.d.repo.listByActivity(activityId, limit)
   }
