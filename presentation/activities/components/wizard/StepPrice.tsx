@@ -6,6 +6,7 @@ import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
 import { EXTRA_UNITS, INCLUDES_MAX, INCLUDE_ITEM_MAX, PRICE_LABEL_MAX, PRICE_UNITS, formatCop, type ExtraUnit, type PriceUnit } from "@/domain/entities/activities/value-objects/Price"
 import { addExtra, addInclude, addPrice, parseMoney, removeExtra, removeInclude, removePrice, updateExtra, updatePrice } from "@/presentation/activities/lib/activityForm"
+import { cn } from "@/app/lib/utils/cn"
 import { Field, selectClass } from "./ui"
 import type { StepProps } from "./StepKind"
 
@@ -56,12 +57,20 @@ export function StepPrice({ form, patch }: StepProps) {
               {prices.length > 1 ? <Button type="button" variant="ghost" size="icon-lg" aria-label={`Quitar la opción ${i + 1}`} onClick={() => patch({ priceOptions: removePrice(prices, i) })}><Trash2 aria-hidden /></Button> : null}
             </div>
             <div className="grid grid-cols-[1fr_8rem] gap-3">
-              <Field label="Precio (COP)" hint="Si es gratis, toca «Es gratis» (o escribe 0). Igual puedes recibir reservas.">{(id) => (
-                <div className="flex gap-2">
-                  <Input id={id} inputMode="numeric" value={p.amount} placeholder="40.000" onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { amount: moneyInput(e.target.value) }) })} />
-                  <Button type="button" variant={p.amount === "0" ? "default" : "outline"} className="shrink-0" aria-pressed={p.amount === "0"} onClick={() => patch({ priceOptions: updatePrice(prices, i, { amount: "0" }) })}>Es gratis</Button>
-                </div>
-              )}</Field>
+              <Field label="Precio (COP)">{(id) => {
+                const free = p.amount === "0" && p.unit !== "consultar"
+                const pick = (toFree: boolean) => patch({ priceOptions: updatePrice(prices, i, { amount: toFree ? "0" : free ? "" : p.amount }) })
+                return (
+                  <div className="grid gap-2">
+                    <div role="radiogroup" aria-label="Tipo de precio" className="inline-flex w-fit rounded-full bg-muted p-1">
+                      {([[false, "Con precio"], [true, "Gratis"]] as const).map(([toFree, label]) => (
+                        <button key={label} type="button" role="radio" aria-checked={free === toFree} onClick={() => pick(toFree)} className={cn("min-h-9 rounded-full px-4 text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40 motion-reduce:transition-none", free === toFree ? "bg-primary-dark text-white shadow-subtle" : "text-muted-foreground hover:text-foreground")}>{label}</button>
+                      ))}
+                    </div>
+                    {free ? <p className="text-sm text-muted-foreground">Sin costo para quien se une. Igual puedes recibir reservas.</p> : <Input id={id} inputMode="numeric" value={p.amount} placeholder="40.000" onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { amount: moneyInput(e.target.value) }) })} />}
+                  </div>
+                )
+              }}</Field>
               <Field label="Por">{(id) => <select id={id} className={selectClass} value={p.unit} onChange={(e) => patch({ priceOptions: updatePrice(prices, i, e.target.value === "consultar" ? { unit: "consultar", amount: "0" } : { unit: e.target.value as PriceUnit }) })}>{PRICE_UNITS.map((u) => <option key={u} value={u}>{UNIT_LABEL[u]}</option>)}</select>}</Field>
             </div>
             <IncludesEditor value={p.includes} onChange={(includes) => patch({ priceOptions: updatePrice(prices, i, { includes }) })} />

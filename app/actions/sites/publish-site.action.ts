@@ -1,6 +1,7 @@
 "use server"
 
 import { getTokens } from "next-firebase-auth-edge"
+import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { cookies } from "next/headers"
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase"
 import { createServerContainer } from "@/infraestructure/di/container"
@@ -49,13 +50,13 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
       // si no, un tercero podría pisar la evidencia de otro.
       if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo publicar el sitio" }
       await contentDeclarationService.record(uid, "site", siteId, evidence)
-      await sitesService.publishExisting(uid, siteId, input)
+      await sitesService.publishExisting(uid, siteId, input, isQhpaAdmin(uid) ? uid : undefined)
       await markContribution()
       revalidateSite(uid, siteId)
       return { success: true, siteId }
     }
     // Sin id previo el sitio se crea al publicar: evidencia después; si falla, se borra el sitio recién creado.
-    const newId = await sitesService.publish(input)
+    const newId = await sitesService.publish(input, isQhpaAdmin(uid) ? uid : undefined)
     try {
       await contentDeclarationService.record(uid, "site", newId, evidence)
     } catch (e) {
