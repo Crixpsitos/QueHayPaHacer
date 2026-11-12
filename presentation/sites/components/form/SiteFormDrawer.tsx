@@ -453,7 +453,7 @@ function MediaContent({
                   type="button"
                   onClick={() => onSetCover(m.id)}
                   title="Usar como portada"
-                  className="absolute left-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
+                  className="absolute left-1 top-1 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80 md:size-6 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                 >
                   <Star className="size-3" />
                 </button>
@@ -462,9 +462,9 @@ function MediaContent({
                 type="button"
                 onClick={() => onRemoveMedia(m.id)}
                 aria-label="Eliminar"
-                className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
+                className="absolute right-1 top-1 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80 md:size-6 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
               >
-                <Trash2 className="size-3" />
+                <Trash2 className="size-4 md:size-3" />
               </button>
             </div>
           ))}
@@ -816,10 +816,10 @@ function TemporarilyClosedContent({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">Cerrado temporalmente</p>
-          <p className="text-xs text-muted-foreground">Activa esto si tu sitio está cerrado por un tiempo (remodelación, vacaciones, etc.)</p>
+          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">Activa esto si tu sitio está cerrado por un tiempo (remodelación, vacaciones, etc.)</p>
         </div>
         <button
           type="button"
@@ -827,7 +827,7 @@ function TemporarilyClosedContent({
           aria-checked={value.isClosed}
           onClick={() => onChange({ ...value, isClosed: !value.isClosed })}
           className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+            "relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
             value.isClosed ? "bg-amber-500" : "bg-muted",
           )}
         >
