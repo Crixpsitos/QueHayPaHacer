@@ -4,6 +4,7 @@ import { fetchMoreToDo, type MoreLevelView, type MoreRow } from "@/presentation/
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { NextLine } from "@/presentation/activities/components/NextLine"
 import { MoreToDoTabs } from "./MoreToDoTabs"
+import { BuildPlanButton } from "./BuildPlanButton"
 
 const TITLES: Record<MoreLevelView["key"], { title: string; tab: string }> = {
   here: { title: "Aquí mismo", tab: "Aquí" },
@@ -48,10 +49,14 @@ function LevelCard({ level }: { level: MoreLevelView }) {
 export async function MoreToDo({ id }: { id: string }) {
   const levels = await fetchMoreToDo(id)
   if (!levels.length) return null
+  // Plan = esta actividad + lo más cercano (aquí mismo o cerca, si no el primer nivel): máximo 4 para que quepa en un día.
+  const first = levels.find((l) => l.key === "here" || l.key === "group" || l.key === "near") ?? levels[0]
+  const planIds = [id, ...first.rows.map((r) => r.id)].slice(0, 4)
   return (
     <section aria-labelledby="mas" className="grid gap-4">
       <h2 id="mas" className="font-heading text-2xl font-extrabold tracking-tight">Más para hacer</h2>
       <MoreToDoTabs tabs={levels.map((l) => ({ key: l.key, label: TITLES[l.key].tab, count: l.total, content: <LevelCard level={l} /> }))} />
+      {planIds.length >= 2 ? <BuildPlanButton ids={planIds} /> : null}
     </section>
   )
 }
