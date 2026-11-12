@@ -24,6 +24,7 @@ const IMAGE_HOSTS = ["firebasestorage.googleapis.com", "images.unsplash.com"];
 // Mantener en sincronía con proxy.ts (PRIVATE_PATHS / PRIVATE_EVENT_PATH / PUBLIC_PATHS).
 const NO_CACHE_PREFIXES = [
   "/api",
+  "/entrada",
   "/studio",
   "/mis-eventos",
   "/mis-inscripciones",

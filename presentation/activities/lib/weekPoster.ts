@@ -86,23 +86,33 @@ export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPost
   const msz = Math.max(20, Math.round(tsz * 0.68))
   i.plan.rows.forEach((r, k) => {
     g.fillStyle = CREAM; g.beginPath(); g.roundRect(64, y, W - 128, rh, 30); g.fill()
-    // foto (o bloque dorado con la inicial)
-    const tx = 74, ty = y + 10
+    // foto; sin foto, recuadro con el color y el nombre de la categoría (centrado)
+    const tx = 74, ty = y + (rh - th) / 2
     g.save(); g.beginPath(); g.roundRect(tx, ty, th, th, 22); g.clip()
     const pic = pics[k]
     if (pic) cover(g, pic, tx, ty, th)
-    else { const gg = g.createLinearGradient(tx, ty, tx + th, ty + th); gg.addColorStop(0, GOLD); gg.addColorStop(1, "#F08A00"); g.fillStyle = gg; g.fillRect(tx, ty, th, th); g.fillStyle = "#5C0011"; g.textAlign = "center"; g.font = `800 ${Math.round(th * 0.5)}px ${HEAD}`; g.fillText(r.title.charAt(0).toUpperCase(), tx + th / 2, ty + th / 2 + 2); g.textAlign = "left" }
+    else {
+      g.fillStyle = r.category?.bg ?? WINE; g.fillRect(tx, ty, th, th)
+      const label = r.category?.name ?? r.title
+      const lsz = Math.max(14, Math.round(th * 0.12))
+      g.fillStyle = r.category?.ink ?? "#FFFFFF"; g.font = `800 ${lsz}px ${HEAD}`; g.textAlign = "center"; g.textBaseline = "alphabetic"
+      const ws = label.split(" "), ls: string[] = [""]
+      for (const w of ws) { const t = ls[ls.length - 1] ? `${ls[ls.length - 1]} ${w}` : w; if (g.measureText(t).width <= th - 14 || !ls[ls.length - 1]) ls[ls.length - 1] = t; else ls.push(w) }
+      const shownL = ls.slice(0, 4)
+      shownL.forEach((l, n) => g.fillText(l, tx + th / 2, ty + th / 2 + (n - (shownL.length - 1) / 2) * lsz * 1.2 + lsz * 0.35))
+      g.textAlign = "left"
+    }
     g.restore()
-    // precio (píldora a la derecha, chica: lo importante es QUÉ es el plan)
+    // precio (píldora a la derecha, centrada en la tarjeta)
     const psz = Math.max(18, Math.round(msz * 0.85))
     g.font = `700 ${psz}px ${BODY}`
     const priceW = g.measureText(r.price).width + 28
     const free = r.price === "Gratis"
-    g.fillStyle = free ? "#E4F5E8" : WINE; g.beginPath(); g.roundRect(W - 64 - 20 - priceW, y + 18, priceW, psz * 1.9, psz); g.fill()
-    g.fillStyle = free ? "#14532D" : "#FFFFFF"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(r.price, W - 64 - 20 - priceW / 2, y + 18 + psz * 0.95 + 1); g.textAlign = "left"
+    g.fillStyle = free ? "#E4F5E8" : WINE; g.beginPath(); g.roundRect(W - 64 - 20 - priceW, y + rh / 2 - psz * 0.95, priceW, psz * 1.9, psz); g.fill()
+    g.fillStyle = free ? "#14532D" : "#FFFFFF"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(r.price, W - 64 - 20 - priceW / 2, y + rh / 2 + 1); g.textAlign = "left"
     // título (hasta 2 líneas: se lee completo) y cuándo
     const x = tx + th + 22
-    const maxW = W - 64 - 20 - x - 20
+    const maxW = W - 64 - 20 - x - 20 - priceW - 14
     g.font = `800 ${tsz}px ${HEAD}`
     const words = r.title.split(" "), lines: string[] = [""]
     for (const w of words) { const t = lines[lines.length - 1] ? `${lines[lines.length - 1]} ${w}` : w; if (g.measureText(t).width <= maxW || !lines[lines.length - 1]) lines[lines.length - 1] = t; else lines.push(w) }

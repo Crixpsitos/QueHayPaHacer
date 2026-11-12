@@ -1,7 +1,7 @@
 import { unsubscribeHeaders } from "@/domain/entities/email/unsubscribeToken"
 import { valueEmail, type EmailModel, type ValueItem } from "@/domain/entities/email/templates"
 import { selectForYou, type PoolItem } from "@/domain/entities/email/selection"
-import { selectWeeklyItems } from "@/domain/entities/email/weeklySelection"
+import { selectWeeklyItems, selectWeeklySites } from "@/domain/entities/email/weeklySelection"
 import type { Digest } from "@/domain/entities/activities/weeklyDigest"
 import type { EmailKind, OutboxItem } from "@/domain/repository/email/IEmailOutboxRepository"
 
@@ -44,13 +44,13 @@ export class ValueEmailRunner {
         if (!(await this.d.allows(uid, "weekly"))) continue
         // variado en cada envío y entre personas: el orden sale de la persona y la fecha
         const items = selectWeeklyItems(digest, `${uid}|${day}`)
-        if (items.length && (await this.queue(uid, "weekly", `wk_${uid}_${day}`, items, now, { anytime: (digest.anytime ?? []).map((a) => ({ title: a.title, path: a.url })) }))) weekly++
+        if (items.length && (await this.queue(uid, "weekly", `wk_${uid}_${day}`, items, now, { anytime: (digest.anytime ?? []).map((a) => ({ title: a.title, path: a.url })), sites: selectWeeklySites(digest, `${uid}|${day}`).map((s) => ({ title: s.title, path: s.url, place: s.place, imageUrl: s.imageUrl })) }))) weekly++
       }
     }
     return { forYou, weekly }
   }
 
-  private async queue(uid: string, kind: Exclude<EmailKind, "transactional">, id: string, items: ValueItem[], now: Date, extra: { anytime?: { title: string; path: string }[] } = {}): Promise<boolean> {
+  private async queue(uid: string, kind: Exclude<EmailKind, "transactional">, id: string, items: ValueItem[], now: Date, extra: { anytime?: { title: string; path: string }[]; sites?: { title: string; path: string; place: string; imageUrl?: string }[] } = {}): Promise<boolean> {
     const to = await this.d.getEmail(uid)
     if (!to || !this.d.secret) return false
     const u = unsubscribeHeaders(this.d.siteUrl, uid, this.d.secret)

@@ -105,7 +105,7 @@ export function EventPosterCard({ event, isPremium, priority = false }: EventPos
         <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 text-sm">
           <Metric label="Vistas" value={metric(views)} />
           <Metric label="Van a ir" value={metric(likes)} />
-          <Metric label="Inscritos" value={hasRegistrations ? metric(registrations) : "—"} />
+          <Metric label={event.registrationType === "external" ? "Interesados" : "Inscritos"} value={hasRegistrations ? metric(registrations) : "—"} />
           {rate && <Metric label="Conversión" value={rate} muted />}
         </dl>
 

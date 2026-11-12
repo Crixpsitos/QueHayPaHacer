@@ -20,5 +20,10 @@ export const fetchWeekendDigest = async (): Promise<Digest> => {
     const from = priceFromCop(a.priceOptions)
     return { id: a.id, title: a.title, schedule: a.schedule, priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`, place: (a.siteId && names.get(a.siteId)) || a.meetingPoint.text, url: `/actividades/${a.slug}`, imageUrl: a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")?.url }
   })
-  return buildWeekendDigest(events, activities, new Date())
+  const digest = buildWeekendDigest(events, activities, new Date())
+  // sitios para ir cuando quieras: los destacados y algunos al azar (el correo escoge unos pocos por persona y fecha)
+  const siteIds = [...new Set([...(await c.sitesService.getFeaturedSites().catch(() => [])), ...(await c.sitesService.getRandomSites(8).catch(() => []))])].slice(0, 12)
+  const sites = (await Promise.all(siteIds.map((id) => c.sitesService.getSiteDetailById(id).catch(() => null))))
+    .flatMap((s) => (s ? [{ title: s.name, url: `/donde-ir/${s.slug || s.id}`, place: s.address ?? "", imageUrl: s.coverUrl ?? s.mediaUrls?.[0] }] : []))
+  return { ...digest, ...(sites.length ? { sites } : {}) }
 }

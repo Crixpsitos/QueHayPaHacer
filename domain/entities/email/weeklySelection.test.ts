@@ -30,3 +30,15 @@ test("sin planes no hay correo; sin fotos no hay destacado", () => {
   const d: Digest = { title: "t", days: [{ date: "2026-11-13", label: "d0", items: [it(1, "activity")] }] }
   assert.equal(selectWeeklyItems(d, "s").filter((i) => i.star).length, 0)
 })
+
+test("un plan de varios días sale una vez, con su rango; los sitios cambian con la semilla", async () => {
+  const { selectWeeklySites } = await import("./weeklySelection")
+  const feria = (date: string, label: string): { date: string; label: string; items: DigestItem[] } => ({ date, label, items: [it(1, "event", { url: "/eventos/feria", title: "Feria", timeLabel: "10:00 a. m." })] })
+  const d: Digest = { title: "t", days: [feria("2026-11-14", "sábado 14"), feria("2026-11-15", "domingo 15")] }
+  const items = selectWeeklyItems(d, "s")
+  assert.equal(items.length, 1); assert.match(items[0].time!, /^sábado 14 al domingo 15 · 10:00 a\. m\.$/); assert.equal(items[0].day, "sábado 14")
+  const sites = Array.from({ length: 8 }, (_, i) => ({ title: `S${i}`, url: `/s/${i}`, place: "p", imageUrl: i < 6 ? "i.jpg" : undefined }))
+  const a = selectWeeklySites({ ...d, sites }, "u1|a").map((s) => s.url)
+  assert.equal(a.length, 3); assert.ok(a.every((u) => sites.find((s) => s.url === u)?.imageUrl))
+  assert.ok(["u1|b", "u2|a", "u3|a", "u4|a"].some((seed) => selectWeeklySites({ ...d, sites }, seed).map((s) => s.url).join() !== a.join()))
+})

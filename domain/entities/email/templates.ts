@@ -5,7 +5,7 @@
 export interface EmailCtx { siteUrl: string; unsubscribeUrl: string }
 export interface WeeklyCard { title: string; when: string; place: string; price: string; imageUrl: string | null; href: string }
 /** Correo semanal con portada: tira de días, plan destacado con foto y filas por día. */
-export interface WeeklyBlock { range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; anytime: { title: string; href: string }[]; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
+export interface WeeklyBlock { range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; anytime: { title: string; href: string }[]; sites: { title: string; href: string; place: string; imageUrl: string | null }[]; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
 export interface EmailModel {
   weekly?: WeeklyBlock
   heading: string
@@ -48,20 +48,20 @@ const VALUE: Record<"forYou" | "weekly", { subject: string; heading: string; rea
 }
 
 /** «Para ti» (máx. 1 al día) y «Qué hacer esta semana» (1 por semana): contenido vigente, y cada correo dice por qué se recibe. */
-export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: EmailCtx, extra: { anytime?: { title: string; path: string }[] } = {}): BuiltEmail {
+export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: EmailCtx, extra: { anytime?: { title: string; path: string }[]; sites?: { title: string; path: string; place: string; imageUrl?: string }[] } = {}): BuiltEmail {
   const v = VALUE[kind]
   const link = (p: string) => withEmailAttribution(`${c.siteUrl}${p}`, kind)
   const list = items.length ? items.map((i) => `• ${i.when} · ${i.title}\n  ${link(i.path)}`).join("\n") : v.empty
   const text = `${v.heading}\n\n${list}\n\n—\n${v.reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
   const base: EmailModel = { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl }
-  const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link, extra.anytime ?? []) : null
+  const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link, extra.anytime ?? [], extra.sites ?? []) : null
   return { subject: v.subject, text, model: weekly ? { ...base, items: [], weekly } : base }
 }
 
 /** Foto optimizada para correo: la misma ruta de imágenes de la web, a 640 px. */
 const emailImage = (siteUrl: string, url?: string) => (url ? `${siteUrl}/_next/image?url=${encodeURIComponent(url)}&w=640&q=75` : null)
 
-function weeklyBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => string, anytime: { title: string; path: string }[]): WeeklyBlock {
+function weeklyBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => string, anytime: { title: string; path: string }[], sites: { title: string; path: string; place: string; imageUrl?: string }[]): WeeklyBlock {
   const card = (i: ValueItem): WeeklyCard => ({ title: i.title, when: i.time ?? i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })
   // el destacado: el primero con foto (si ninguno la tiene, no hay destacado y todo va en filas)
   const star = items.find((i) => i.star) ?? items.find((i) => i.imageUrl)
@@ -73,6 +73,7 @@ function weeklyBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => strin
     days: days.map((d) => ({ label: cap(d), count: items.filter((i) => i.day === d).length })),
     featured: star ? card(star) : null,
     anytime: anytime.map((a) => ({ title: a.title, href: link(a.path) })),
+    sites: sites.map((s) => ({ title: s.title, href: link(s.path), place: s.place, imageUrl: emailImage(c.siteUrl, s.imageUrl) })),
     groups: days.map((d) => ({ title: cap(d), items: items.filter((i) => i.day === d && i !== star).map(card) })).filter((g) => g.items.length),
     allHref: link("/actividades"),
   }

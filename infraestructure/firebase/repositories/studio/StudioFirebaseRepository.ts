@@ -1342,7 +1342,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         tx.get(targetRef),
         tx.get(targetRef.collection("registrations").where("checkInCode", "==", code).limit(1)),
       ]);
-      if (target.get("requiresAttendance") !== true) return { result: "no_attendance" };
+      // Los eventos con enlace externo no llevan «control de asistencia» propio, pero SÍ confirman a sus interesados e invitados.
+      if (target.get("requiresAttendance") !== true && target.get("registrationType") !== "external") return { result: "no_attendance" };
       if (found.empty) return { result: "not_found" };
       const doc = found.docs[0];
       const entry = doc.data();

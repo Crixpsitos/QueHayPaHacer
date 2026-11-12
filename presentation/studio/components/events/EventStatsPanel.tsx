@@ -32,6 +32,7 @@ const SCORE_ITEM = {
 
 const VIEWS_ITEM = { key: "views", label: "Vistas", icon: Eye } as const;
 const REGISTRATIONS_ITEM = { key: "registrations", label: "Registros", icon: Users } as const;
+const INTERESTED_ITEM = { key: "registrations", label: "Interesados", icon: Users, hint: "Personas con sesión que pulsaron «inscribirme». Confírmalas en la lista cuando vayan o paguen." } as const;
 const LIKES_ITEM = { key: "likes", label: "Van a ir", icon: CalendarCheck } as const;
 const SHARES_ITEM = { key: "shares", label: "Compartidos", icon: Share2 } as const;
 // En eventos externos no hay inscritos en la plataforma; el registro ocurre fuera.
@@ -54,7 +55,7 @@ export function EventStatsPanel({ stats, hideLikes = false }: EventStatsPanelPro
   const isExternal = stats.registrationType === "external";
   const statItems = [
     VIEWS_ITEM,
-    isExternal ? CLICKS_ITEM : REGISTRATIONS_ITEM,
+    ...(isExternal ? [CLICKS_ITEM, INTERESTED_ITEM] : [REGISTRATIONS_ITEM]),
     ...(!hideLikes ? [LIKES_ITEM] : []),
     SHARES_ITEM,
     SCORE_ITEM,

@@ -24,6 +24,7 @@ export function AvisosPrompt() {
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
   const eligible = PATHS.includes(pathname) && (consent === "granted" || consent === "denied")
 
   useEffect(() => {
@@ -44,8 +45,9 @@ export function AvisosPrompt() {
     const d = await enablePushDevice()
     setBusy(false)
     snooze(3650)
+    setDone(true) // ya está: los botones desaparecen y no se puede volver a tocar
     setMsg(d.ok ? "Listo: te avisaremos." : `Activamos el correo. ${d.error}`)
-    setTimeout(() => setShow(false), 3500)
+    setTimeout(() => setShow(false), 2500)
   }
   const close = (days: number) => { snooze(days); setShow(false) }
   return (
@@ -60,11 +62,11 @@ export function AvisosPrompt() {
       </div>
       <p className="text-xs leading-snug text-muted-foreground">Al activar, autorizas estos avisos de Qué Hay Pa Hacer. Los cambias en <a href="/avisos" className="font-semibold text-primary-dark underline-offset-2 hover:underline">Mis avisos</a>.</p>
       {msg ? <p role="status" className="text-sm font-semibold text-[#14532D]">{msg}</p> : null}
-      <div className="flex flex-wrap gap-2">
+      {done ? null : <div className="flex flex-wrap gap-2">
         <Button type="button" size="lg" className="h-11" disabled={busy} onClick={() => void activate()}>{busy ? "Activando…" : "Activar avisos"}</Button>
         <Button type="button" variant="ghost" size="lg" className="h-11" disabled={busy} onClick={() => close(14)}>Ahora no</Button>
         <Button type="button" variant="ghost" size="lg" className="h-11 text-muted-foreground" disabled={busy} onClick={() => close(90)}>No, gracias</Button>
-      </div>
+      </div>}
     </div>
   )
 }
