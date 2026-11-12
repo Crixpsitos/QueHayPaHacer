@@ -17,7 +17,7 @@ const dayLabel = (iso: string) => new Intl.DateTimeFormat("es-CO", { weekday: "l
  * «Tu semana»: lo que reservaste o guardaste, acomodado por día y hora, con los cruces marcados.
  * Todo se calcula en el navegador con lo que ya hay en tu cuenta (no se guarda nada nuevo) y se puede mandar por WhatsApp.
  */
-export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
+export function WeekPlan({ cards, removableIds = [], onRemove }: { cards: ActivityCardView[]; /** Guardados que se pueden sacar del plan (las reservas se cancelan desde su actividad). */ removableIds?: string[]; onRemove?: (id: string) => void }) {
   const [week, setWeek] = useState<WeekDay[] | null>(null)
   useEffect(() => {
     const t = setTimeout(() => { const now = new Date(); setWeek(buildWeekPlan(cards.map((c) => ({ id: c.id, title: c.title, schedule: c.schedule })), bogotaDateIso(now), now)) }, 0)
@@ -26,6 +26,12 @@ export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
 
   if (!week) return <div className="h-40 animate-pulse rounded-3xl bg-muted" aria-hidden />
   const byId = new Map(cards.map((c) => [c.id, c]))
+  // Lo que está disponible todos los días sin hora (cines, «siempre abierto»): una sola vez, no repetido en cada jornada.
+  const daysOf = new Map<string, { n: number; timed: boolean }>()
+  for (const d of week) for (const b of d.blocks) { const x = daysOf.get(b.id) ?? { n: 0, timed: false }; x.n++; if (b.startMin !== null) x.timed = true; daysOf.set(b.id, x) }
+  const anytime = [...daysOf].filter(([, x]) => !x.timed && x.n >= 4).map(([id]) => id)
+  const canRemove = (id: string) => Boolean(onRemove) && removableIds.includes(id)
+  const removeBtn = (id: string, title: string) => canRemove(id) ? <button type="button" onClick={() => onRemove!(id)} aria-label={`Quitar ${title} de mi plan`} className="shrink-0 self-start rounded-full border border-current/40 px-2.5 py-1 text-xs font-semibold outline-none hover:bg-black/5 focus-visible:ring-2">Quitar</button> : null
   const total = week.reduce((n, d) => n + d.blocks.length, 0)
   if (!total) return (
     <div className="grid justify-items-start gap-2 rounded-3xl border border-border bg-card p-5">
@@ -38,7 +44,7 @@ export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
   return (
     <div className="grid gap-4">
       <ol className="grid gap-4">
-        {week.filter((d) => d.blocks.length).map((d) => (
+        {week.map((d) => ({ ...d, blocks: d.blocks.filter((b) => !anytime.includes(b.id)) })).filter((d) => d.blocks.length).map((d) => (
           <li key={d.date} className="grid gap-2">
             <h2 className="font-heading text-lg font-bold capitalize">{dayLabel(d.date)}</h2>
             <ul className="grid gap-2">
@@ -46,10 +52,13 @@ export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
                 const c = byId.get(b.id)!, st = categoryStyle(c.categorySlug)
                 return (
                   <li key={`${b.id}-${b.startMin}`} className="grid gap-1.5 rounded-2xl p-3" style={{ background: st.bg, color: st.ink }}>
-                    <Link href={`/actividades/${c.slug}`} className="flex items-baseline gap-3 outline-none focus-visible:underline">
-                      <span className="w-16 shrink-0 font-heading text-sm font-bold">{b.startMin === null ? "Todo el día" : hourText(b.startMin)}</span>
-                      <span className="font-heading font-semibold leading-snug">{c.title}</span>
-                    </Link>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <Link href={`/actividades/${c.slug}`} className="flex min-w-0 items-baseline gap-3 outline-none focus-visible:underline">
+                        <span className="w-16 shrink-0 font-heading text-sm font-bold">{b.startMin === null ? "Todo el día" : hourText(b.startMin)}</span>
+                        <span className="font-heading font-semibold leading-snug">{c.title}</span>
+                      </Link>
+                      {removeBtn(b.id, c.title)}
+                    </div>
                     {b.conflictsWith.length ? <p className="flex items-center gap-1.5 text-sm font-medium"><AlertTriangle className="size-4 shrink-0" aria-hidden />Se cruza con {b.conflictsWith.map((id) => byId.get(id)?.title).join(", ")}</p> : null}
                   </li>
                 )
@@ -58,6 +67,22 @@ export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
           </li>
         ))}
       </ol>
+      {anytime.length ? (
+        <section aria-label="Disponible toda la semana" className="grid gap-2">
+          <h2 className="font-heading text-lg font-bold">Cuando quieras esta semana</h2>
+          <ul className="grid gap-2">
+            {anytime.map((id) => {
+              const c = byId.get(id)!, st = categoryStyle(c.categorySlug)
+              return (
+                <li key={id} className="flex items-baseline justify-between gap-3 rounded-2xl p-3" style={{ background: st.bg, color: st.ink }}>
+                  <Link href={`/actividades/${c.slug}`} className="grid min-w-0 outline-none focus-visible:underline"><span className="font-heading font-semibold leading-snug">{c.title}</span><span className="text-sm opacity-80">Sin hora fija · todos los días</span></Link>
+                  {removeBtn(id, c.title)}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ) : null}
       <Button asChild variant="outline" className="h-12 w-full"><a href={share} target="_blank" rel="noopener noreferrer"><Share2 aria-hidden /> Enviar mi semana por WhatsApp</a></Button>
       <p className="text-xs text-muted-foreground">Incluye tus reservas y tus guardados de los próximos 7 días. El mensaje solo lleva títulos y horas.</p>
     </div>

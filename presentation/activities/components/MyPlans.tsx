@@ -86,7 +86,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="grid gap-3">
-        {tab === "week" ? <WeekPlan cards={weekCards} /> : null}
+        {tab === "week" ? <WeekPlan cards={weekCards} removableIds={saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id)} onRemove={(id) => void unsave(id, () => setSavedGone((x) => [...x, id]))} /> : null}
         {tab === "passport" ? <PassportTab /> : null}
 
         {tab === "upcoming" ? (
