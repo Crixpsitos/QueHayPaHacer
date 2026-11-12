@@ -8,11 +8,12 @@ import {
 import { FormEventDto } from "@/application/dto/events/EventDto";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
 import { SitePickerWidget } from "../ui/SitePickerWidget";
+import { reverseGeocode } from "@/presentation/sites/lib/geocoding";
 
 interface Step4Props {
   form: UseFormReturn<FormEventDto>;
@@ -54,6 +55,19 @@ export const Step4Location = ({ form }: Step4Props) => {
       form.setValue("location.city", IBAGUE_CITY);
     }
   }, [form]);
+
+  // Geocodificación inversa: al mover el marcador (o tocar el mapa) la dirección se completa sola con la del punto.
+  const [findingAddress, setFindingAddress] = useState(false);
+  const pinSeq = useRef(0);
+  const fillAddressFromPin = async (lat: number, lng: number) => {
+    const mine = ++pinSeq.current;
+    setFindingAddress(true);
+    try {
+      const address = await reverseGeocode(lat, lng, "default");
+      if (mine === pinSeq.current && address) form.setValue("location.address", address, { shouldValidate: true, shouldDirty: true });
+    } catch { /* sin red: la dirección queda como estaba y se puede escribir */ }
+    finally { if (mine === pinSeq.current) setFindingAddress(false); }
+  };
 
   const handleSiteSelect = (site: { siteId: string; venue: string; address: string; coordinates: { lat: number; lng: number } }) => {
     form.setValue("location.venue", site.venue, { shouldValidate: true });
@@ -168,7 +182,7 @@ export const Step4Location = ({ form }: Step4Props) => {
       <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
         <div className="mb-3">
           <p className="text-sm font-semibold text-[#09090B]">Ubicación exacta en el mapa</p>
-          <p className="text-xs text-[#71717A] mt-0.5">Arrastra el marcador para ajustar la ubicación exacta.</p>
+          <p className="text-xs text-[#71717A] mt-0.5">Toca el mapa o arrastra el marcador: la dirección se completa sola y puedes corregirla. {findingAddress ? <span className="font-medium text-[#9B0A26]">Buscando dirección…</span> : null}</p>
         </div>
         <Controller
           name="location.coordinates"
@@ -180,7 +194,8 @@ export const Step4Location = ({ form }: Step4Props) => {
                   cityCoords={IBAGUE_CITY_COORDS}
                   pointCoords={watchedCoordinates}
                   onMarkerDrag={(lat, lng) => {
-                    form.setValue("location.coordinates", { lat, lng });
+                    form.setValue("location.coordinates", { lat, lng }, { shouldValidate: true });
+                    void fillAddressFromPin(lat, lng);
                   }}
                 />
               </div>

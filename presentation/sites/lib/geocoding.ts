@@ -37,8 +37,8 @@ export async function forwardGeocode(query: string): Promise<GeocodingResult[]> 
   })
 }
 
-export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  const res = await fetch(`${PHOTON}/reverse?lat=${lat}&lon=${lng}&lang=en`)
+export async function reverseGeocode(lat: number, lng: number, lang: "en" | "default" = "en"): Promise<string | null> {
+  const res = await fetch(`${PHOTON}/reverse?lat=${lat}&lon=${lng}&lang=${lang}`)
   if (!res.ok) return null
   const data = await res.json()
   const f = data.features?.[0]
