@@ -206,7 +206,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests con fechas simuladas (domingo 6 a. m. aparece el domingo, no el lunes; `skipDates` lo excluye); guion de prueba.
   - Archivos: `ActivityFilters.tsx`, `data/fetchers.ts`, `domain/entities/activities/filters.ts` (+ test).
 
-- [ ] **B4 Landings y página pilar con regla de fundamento (M)**
+- [x] **B4 Landings y página pilar con regla de fundamento (M)**
   - Aceptación: prefijo `actividades-` en `app/(landings)/[coleccion]` sin alterar `donde-ir-` ni eventos; colecciones iniciales (hoy, fin de semana, gratis + 3 categorías con más contenido); **regla**: indexables solo con intención distinta + texto introductorio propio + ≥3 actividades públicas, si no `noindex` y fuera del sitemap; página pilar `/cosas-para-hacer-en-ibague` que une eventos de hoy, sitios y actividades, con `ItemList` y `BreadcrumbList`; textos propios redactados con el dueño (no plantilla).
   - Verifica: Prueba de resultados enriquecidos; landing con 2 actividades → `noindex`; sitemap correcto.
   - Archivos: `app/(landings)/[coleccion]/page.tsx`, `presentation/activities/lib/activityCollections.ts`, `app/cosas-para-hacer-en-ibague/page.tsx`, `app/sitemap.ts`.
@@ -221,7 +221,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests del programador (tope diario, no repetir); prueba en develop con cuentas de QA.
   - Archivos: `Notification.ts`, `messages.ts`, servicio de avisos, barrido (el plan confirma dónde corre).
 
-- [ ] **B7 Resumen semanal automático (M)**
+- [x] **B7 Resumen semanal automático (M)**
   - Aceptación: función pura que arma "Qué hacer este fin de semana en Ibagué" desde eventos y actividades reales y vigentes; salida de **texto** para el Canal de WhatsApp y **imagen** para Instagram (con `sharp`/`/og`); publicación **manual** al inicio; nada vencido.
   - Verifica: tests con fechas simuladas; el dueño revisa un ejemplo real.
   - Archivos: dominio, ruta/imagen, página de administración simple o script.
@@ -262,27 +262,27 @@ Estado inicial: todas sin marcar.
 
 ## Fase 3 — Reseñas y moderación
 
-- [ ] **C0 Legal y privacidad (M)** — `legal-privacy`
+- [~] **C0 Legal y privacidad (M)** — `legal-privacy`
   - Aceptación: borrador de **Términos** (reglas de reseñas, licencia sobre textos/fotos/videos, reglas de "cuestionar" y sanciones, responsabilidad del autor, aviso y retiro, no verificamos asistencia) y de **Privacidad** (datos de reseñadores y anfitriones, finalidad y publicidad del nombre, conservación, derechos, Ley 1581, transmisión a Google); casilla de **autorización separada**; actualizar `docs/14-legal-y-cumplimiento.md` (art. 53 pasa a "implementado") y `docs/16`; **`LEGAL_VERSION` solo con OK del dueño** (preguntar antes).
   - Verifica: el dueño aprueba los textos; versión subida; declaración guarda la versión.
   - Archivos: `app/(home)/terminos/page.tsx`, `app/(home)/privacidad/page.tsx`, `app/lib/legal/version.ts`, docs.
 
-- [ ] **C1 Dominio de reseñas (M)** — TDD.
+- [x] **C1 Dominio de reseñas (M)** — TDD.
   - Aceptación: `ActivityReview` (spec 5.9; colección de primer nivel `activityReviews/{activityId}_{uid}` con `media[]` plano), validaciones (rating 1–5; texto 0 o 10–1500; sin URLs, correos ni teléfonos; fecha de visita ≤hoy y ≥24 meses), `applyReviewToRating(rating, review, op)` para crear/editar/borrar/remover y `ratingSummary`; estados `published|flagged|removed|pendingMedia`; reglas: autor = id del documento, creador y dueño del sitio no reseñan.
   - Verifica: `pnpm test` (agregados correctos tras crear, editar de 5 a 2, borrar, remover; patrones de teléfono/URL).
   - Archivos: `domain/entities/activities/review/*` (+ tests).
 
-- [ ] **C2 Servicio y acciones de reseña (M)**
+- [x] **C2 Servicio y acciones de reseña (M)**
   - Aceptación: `createOrUpdateReviewAction`, `deleteReviewAction` (no si `flagged`), identidad solo del token, una por persona (doc id = uid, transacción que actualiza `rating`), antispam de reseñas (cooldown 30 s, 10/día, duplicado 7 días, antigüedad 10 min), declaración con `LEGAL_VERSION`, notificación `review_received`; nombre público = primer nombre + inicial.
   - Verifica: tests de servicio, incluida **carrera simulada** de dos envíos; creador no reseña; no se filtra email/uid.
   - Archivos: `application/services/activities/ReviewService.ts`, `app/actions/activities/review*.action.ts` (≤2), DTO.
 
-- [ ] **C3 `../functions`: procesar medios de actividades y reseñas (M)** — **repo hermano; preguntar antes**
+- [~] **C3 `../functions`: procesar medios de actividades y reseñas (M)** — **repo hermano; preguntar antes**
   - Aceptación: añadir `ACTIVITIES: "activities"` y `ACTIVITY_REVIEWS: "activityReviews"` a `OPTIMIZABLE_FOLDERS` en `../functions/src/triggers/storage/config/storageOptimization.config.ts` (el optimizador genérico `optimizeMedia` ya hace el resto: ruta `public/{coleccion}/{docId}/{images|videos}/…`, parche del `media[]` plano, recompresión con `processVideo`, miniatura); **resolver el borrado del original** (el optimizador no lo borra): cambio en el trigger o **regla de ciclo de vida del bucket**; tope de origen 200 MB y 3 min; imágenes por el optimizador existente; compatible hacia atrás. **Entregable adicional: cifras de peor caso de costo** (cómputo + egreso) con precios vigentes antes de activar el interruptor.
   - Verifica: pruebas unitarias del `patch`; prueba en develop subiendo un video de QA; el original desaparece; el resultado carga con `faststart`.
   - Archivos (repo `../functions`): `src/triggers/storage/config/storageOptimization.config.ts`, y si hace falta `onObjectFinalized.optimizeMedia.ts` (borrado del original), README. **Empujar su rama junto al despliegue.**
 
-- [ ] **P3 Prototipo (Artifact): reseñas (S)**
+- [x] **P3 Prototipo (Artifact): reseñas (S)**
   - Aceptación: encabezado (promedio, distribución, "N personas fueron"), tarjetas **polaroid**, historia abierta (drawer/diálogo), formulario con Google y subida, estado **"En verificación"** en rojo suave (icono + texto, contraste AA), "Verificada por QHPA", flujo de cuestionar y de apelar, estado vacío. Tokens reales (sin `brand-violet`, que no está definido).
   - Verifica: aprobado por el dueño antes de C4/C8.
 
