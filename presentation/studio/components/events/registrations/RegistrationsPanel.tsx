@@ -3,6 +3,9 @@ import type { RegistrationSortBy } from "@/domain/entities/studio/Studio";
 import { RegistrationsTable } from "./RegistrationsTable";
 import { ExternalClicksPanel } from "./ExternalClicksPanel";
 import { EmptyRegistrations } from "./EmptyRegistrations";
+import { UserPlus } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import { EventAttendeesDialog } from "@/presentation/events/components/EventAttendeesDialog";
 
 interface RegistrationsPanelProps {
   data: EventRegistrationsViewModel;
@@ -29,6 +32,16 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
       return (
         <div className="space-y-6">
           <ExternalClicksPanel clicks={data.externalClicks ?? 0} url={data.externalUrl} />
+          {/* Personas sin cuenta: se agregan aquí, con su entrada QR (el diálogo lista, confirma y agrega). */}
+          <EventAttendeesDialog
+            eventId={data.eventId}
+            eventTitle="Evento"
+            trigger={
+              <Button type="button">
+                <UserPlus className="h-4 w-4" aria-hidden /> Agregar persona sin cuenta
+              </Button>
+            }
+          />
           {data.rows.length ? (
             <RegistrationsTable
               eventId={data.eventId}
