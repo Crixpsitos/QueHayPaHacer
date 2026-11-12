@@ -84,6 +84,22 @@ export default function PrivacidadPage() {
         </p>
       </section>
 
+      <section id="resenas">
+        <h2>Reseñas y datos de quien organiza</h2>
+        <p>
+          De quien reseña tratamos: nombre público (primer nombre e inicial del apellido), foto de perfil, calificación,
+          texto, fotos y video que subas, mes de la visita y fecha de publicación. Tu correo y el identificador de tu cuenta no
+          se muestran. De quien organiza: los datos del registro de oferentes (Ley 1480, art. 53) que ya se informan en la
+          ficha y la respuesta que escriba a una reseña.
+        </p>
+        <ul>
+          <li><strong>Finalidad:</strong> mostrar opiniones públicas que ayuden a decidir, calcular el promedio, moderar reseñas cuestionadas y prevenir abuso. No las usamos para perfiles publicitarios.</li>
+          <li><strong>Publicidad:</strong> tu nombre público, foto y reseña los ve cualquier visitante. Si no quieres que se vea tu nombre, no publiques reseñas.</li>
+          <li><strong>Conservación:</strong> mientras tu reseña esté publicada y tu cuenta exista. Al borrarla se elimina de la plataforma; al eliminar tu cuenta se borran tus reseñas y medios. Los registros de moderación (motivo y decisión, sin el contenido) se conservan hasta 12 meses para atender apelaciones y detectar reincidencia.</li>
+          <li><strong>Autorización:</strong> al reseñar marcas una casilla separada para publicar tu nombre público, foto y reseña y tratar esos datos para moderarla; guardamos la versión de estos textos que aceptaste.</li>
+        </ul>
+      </section>
+
       <section>
         <h2>Con quién los compartimos</h2>
         <ul>

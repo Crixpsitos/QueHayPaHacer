@@ -1,6 +1,6 @@
 # BORRADOR legal: reseñas, cuestionar y sanciones (C0)
 
-**Estado:** borrador escrito por Claude el 2026-11-11. **No está en las páginas públicas** ni sube `LEGAL_VERSION`: se publica cuando el dueño lo apruebe y, de preferencia, un abogado lo revise (esto no es asesoría legal). Cuando se apruebe: pegar en `app/(home)/terminos/page.tsx` y `app/(home)/privacidad/page.tsx`, subir `app/lib/legal/version.ts` y agregar una casilla de autorización **separada** en el formulario de reseña.
+**Estado: APROBADO por el dueño el 2026-11-11 y PUBLICADO en develop (secciones «Reseñas…» de Términos y Privacidad; `LEGAL_VERSION` = 2026-11-12). Pendiente: revisión de abogado antes de producción. Texto original del borrador: se publica cuando el dueño lo apruebe y, de preferencia, un abogado lo revise (esto no es asesoría legal). Cuando se apruebe: pegar en `app/(home)/terminos/page.tsx` y `app/(home)/privacidad/page.tsx`, subir `app/lib/legal/version.ts` y agregar una casilla de autorización **separada** en el formulario de reseña.
 
 ## A. Términos y condiciones — sección «Reseñas de actividades»
 
