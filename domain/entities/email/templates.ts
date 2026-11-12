@@ -1,19 +1,24 @@
-/** Plantillas de correo (texto + HTML), en español de Colombia con tú. Todo lo que viene de personas se escapa. */
+/**
+ * Plantillas de correo en español de Colombia con tú. El dominio arma el MODELO (qué dice) y el texto plano;
+ * el HTML lo dibuja el componente React de `infraestructure/email` (react-email), que escapa todo lo que viene de personas.
+ */
 export interface EmailCtx { siteUrl: string; unsubscribeUrl: string }
-export interface BuiltEmail { subject: string; text: string; html: string }
+export interface EmailModel {
+  heading: string
+  paragraphs: string[]
+  items: { title: string; when: string; href: string }[]
+  cta: { label: string; href: string } | null
+  reason: string
+  unsubscribeUrl: string
+}
+export interface BuiltEmail { subject: string; text: string; model: EmailModel }
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-
-/** El enlace lleva el canal «em» (y utm) para que la medición sepa que la visita vino de un correo. */
+/** El enlace del correo lleva el canal «em» (y utm) para que la medición sepa que la visita vino de un correo. */
 export function withEmailAttribution(url: string, medium: string): string {
   const [base, hash] = url.split("#")
   const q = `ch=em&utm_source=email&utm_medium=${medium}&utm_campaign=auto`
   return `${base}${base.includes("?") ? "&" : "?"}${q}${hash ? `#${hash}` : ""}`
 }
-
-const wrap = (title: string, bodyHtml: string, footerHtml: string) =>
-  `<!doctype html><html lang="es-CO"><body style="margin:0;background:#FAFAFC;font-family:Arial,Helvetica,sans-serif;color:#27272A"><div style="max-width:520px;margin:0 auto;padding:24px"><p style="margin:0 0 16px;font-weight:700;color:#9B0A26">Qué Hay Pa Hacer</p><h1 style="margin:0 0 12px;font-size:22px;line-height:1.25">${esc(title)}</h1>${bodyHtml}<hr style="border:0;border-top:1px solid #E4E4E7;margin:24px 0"><p style="margin:0;font-size:12px;line-height:1.5;color:#71717A">${footerHtml}</p></div></body></html>`
-const button = (href: string, label: string) => `<p style="margin:20px 0"><a href="${esc(href)}" style="background:#9B0A26;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:700;display:inline-block">${esc(label)}</a></p>`
 
 const REASON: Record<string, string> = {
   activity_join_confirmed: "Recibes este correo porque reservaste un cupo en una actividad de Qué Hay Pa Hacer.",
@@ -28,8 +33,7 @@ export function transactionalEmailFor(n: { type: string; title: string; body?: s
   const link = n.href ? withEmailAttribution(`${c.siteUrl}${n.href}`, "transactional") : c.siteUrl
   const body = n.body ?? ""
   const text = `${n.title}\n\n${body ? `${body}\n\n` : ""}Míralo aquí: ${link}\n\n—\n${reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  const html = wrap(n.title, `${body ? `<p style="margin:0 0 8px;font-size:16px;line-height:1.5">${esc(body)}</p>` : ""}${button(link, "Ver la actividad")}`, `${esc(reason)}<br><a href="${esc(c.unsubscribeUrl)}" style="color:#9B0A26">Dejar de recibir correos</a>`)
-  return { subject: n.title.replace(/["“”]/g, ""), text, html }
+  return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl } }
 }
 
 export interface ValueItem { title: string; when: string; path: string }
@@ -44,6 +48,5 @@ export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: Ema
   const link = (p: string) => withEmailAttribution(`${c.siteUrl}${p}`, kind)
   const list = items.length ? items.map((i) => `• ${i.when} · ${i.title}\n  ${link(i.path)}`).join("\n") : v.empty
   const text = `${v.heading}\n\n${list}\n\n—\n${v.reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  const rows = items.length ? `<ul style="margin:0;padding:0;list-style:none">${items.map((i) => `<li style="margin:0 0 14px"><a href="${esc(link(i.path))}" style="color:#9B0A26;font-weight:700;text-decoration:none;font-size:16px">${esc(i.title)}</a><br><span style="font-size:14px;color:#52525B">${esc(i.when)}</span></li>`).join("")}</ul>` : `<p>${esc(v.empty)}</p>`
-  return { subject: v.subject, text, html: wrap(v.heading, rows, `${esc(v.reason)}<br><a href="${esc(c.unsubscribeUrl)}" style="color:#9B0A26">Dejar de recibir correos</a>`) }
+  return { subject: v.subject, text, model: { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl } }
 }

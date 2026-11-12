@@ -15,7 +15,7 @@ function setup(o: { now?: Date; kinds?: Record<string, string[]>; email?: string
     signals: async () => ({ categories: ["aire-libre"], excludeIds: [] }),
     pool: async () => (o.pool === false ? [] : [{ id: "a", title: "Trote", path: "/actividades/trote", category: "aire-libre", when: "Hoy · 5:30 p. m." }]),
     enqueue: async (i) => { if (q.some((x) => x.id === i.id)) return false; q.push(i); return true },
-    siteUrl: "https://x.co", secret: "s3", clock: () => o.now ?? THU,
+    siteUrl: "https://x.co", secret: "s3", clock: () => o.now ?? THU, render: async (m) => `<p>${m.heading}</p>`,
   })
   return { runner, q }
 }

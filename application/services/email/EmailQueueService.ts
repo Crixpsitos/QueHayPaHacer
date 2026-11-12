@@ -2,6 +2,8 @@ import type { EmailKind, IEmailOutboxRepository, OutboxItem } from "@/domain/rep
 import type { IRateLimitRepository } from "@/domain/repository/rateLimit/IRateLimitRepository"
 import type { IEmailService } from "@/domain/services/IEmailService"
 
+const BATCH = 100
+
 const MAX_ATTEMPTS = 3
 const RETRY_MS = 3_600_000
 const PRIORITY: Record<EmailKind, number> = { transactional: 0, forYou: 1, weekly: 2 }
@@ -28,18 +30,28 @@ export class EmailQueueService {
     const now = this.d.clock(), today = day(now)
     const due = (await this.d.repo.due(now, limit)).sort((a, b) => PRIORITY[a.kind] - PRIORITY[b.kind] || a.createdAt.getTime() - b.createdAt.getTime())
     let sent = 0, failed = 0, used = 0
-    for (const m of due) {
-      if (!(await this.d.rateLimit.incrementDaily("email_sent", today, this.d.cap))) break // tope del día: el resto queda en cola
-      const r = await this.d.email.send({ to: m.to, subject: m.subject, text: m.text, html: m.html, headers: m.headers, idempotencyKey: m.id })
-      if (r.ok) {
-        await this.d.repo.markSent(m.id, r.id, now); sent++; used++
-        if (used === Math.ceil(this.d.cap * 0.8)) await this.alert80(today)
-      } else {
-        await this.d.rateLimit.decrementDaily("email_sent", today) // no se envió: el cupo se devuelve
-        const attempts = m.attempts + 1
-        const retry = r.retryable && attempts < MAX_ATTEMPTS
-        await this.d.repo.markRetry(m.id, attempts, retry ? new Date(now.getTime() + RETRY_MS) : null, r.error)
-        if (!retry) failed++
+    // Se reserva cupo del día por correo y se envía en lotes de hasta 100. Lo que falla devuelve su cupo y deja pasar al siguiente.
+    const pending = [...due]
+    while (pending.length) {
+      const chunk: typeof due = []
+      while (pending.length && chunk.length < BATCH) {
+        if (!(await this.d.rateLimit.incrementDaily("email_sent", today, this.d.cap))) break // tope del día: lo que sigue queda en cola
+        chunk.push(pending.shift()!)
+      }
+      if (!chunk.length) break
+      const results = await this.d.email.sendBatch(chunk.map((m) => ({ to: m.to, subject: m.subject, text: m.text, html: m.html, headers: m.headers, idempotencyKey: m.id, tags: [{ name: "kind", value: m.kind }] })))
+      for (const [j, m] of chunk.entries()) {
+        const r = results[j] ?? { ok: false as const, error: "Sin resultado.", retryable: true }
+        if (r.ok) {
+          await this.d.repo.markSent(m.id, r.id, now); sent++; used++
+          if (used === Math.ceil(this.d.cap * 0.8)) await this.alert80(today)
+        } else {
+          await this.d.rateLimit.decrementDaily("email_sent", today) // no se envió: el cupo se devuelve
+          const attempts = m.attempts + 1
+          const retry = r.retryable && attempts < MAX_ATTEMPTS
+          await this.d.repo.markRetry(m.id, attempts, retry ? new Date(now.getTime() + RETRY_MS) : null, r.error)
+          if (!retry) failed++
+        }
       }
     }
     return { sent, failed, left: due.length - sent - failed }

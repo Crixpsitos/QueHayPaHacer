@@ -24,6 +24,8 @@ export interface IEmailOutboxRepository {
   enqueue(item: OutboxItem): Promise<boolean>
   /** Pendientes cuyo `sendAfter` ya pasó (sin orden garantizado; máx. `limit`). */
   due(now: Date, limit: number): Promise<OutboxItem[]>
+  /** De quién era el correo con ese id de Resend (`email_id` de los webhooks). */
+  uidByProviderId(providerId: string): Promise<string | null>
   markSent(id: string, providerId: string, at: Date): Promise<void>
   /** Reintento (`sendAfter` nuevo) o descarte (`failed`). */
   markRetry(id: string, attempts: number, sendAfter: Date | null, error: string): Promise<void>

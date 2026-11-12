@@ -73,9 +73,11 @@ import { FcmPushSender } from "../push/FcmPushSender";
 import { TransactionalEmailBridge } from "@/application/services/email/TransactionalEmailBridge";
 import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner";
 import { buildPool } from "@/domain/entities/email/selection";
+import { EmailEventsService } from "@/application/services/email/EmailEventsService";
 import { EmailQueueService } from "@/application/services/email/EmailQueueService";
 import { EmailOutboxFirebaseRepository } from "../firebase/repositories/email/EmailOutboxFirebaseRepository";
 import { ResendEmailService } from "../email/ResendEmailService";
+import { renderEmailHtml } from "../email/renderEmail";
 import { NotificationPrefsService } from "@/application/services/notificationPrefs/NotificationPrefsService";
 import { NotificationPrefsFirebaseRepository } from "../firebase/repositories/notificationPrefs/NotificationPrefsFirebaseRepository";
 import { ActivityStampService } from "@/application/services/activities/ActivityStampService";
@@ -321,6 +323,7 @@ export const createServerContainer = () => {
     siteUrl: siteUrlForEmail,
     secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
     clock: () => new Date(),
+    render: renderEmailHtml,
   });
   // push web (FCM): solo con la clave VAPID pública configurada; a quien lo autorizó, con tope diario
   const pushService = new PushService({
@@ -396,11 +399,23 @@ export const createServerContainer = () => {
 
   // correo con Resend (desactivado sin RESEND_API_KEY y EMAIL_FROM) y su cola con tope diario
   const emailService = new ResendEmailService(process.env.RESEND_API_KEY, process.env.EMAIL_FROM);
+  const emailOutboxRepo = new EmailOutboxFirebaseRepository(getFirebaseFirestore());
   const emailQueueService = new EmailQueueService({
-    repo: new EmailOutboxFirebaseRepository(getFirebaseFirestore()),
+    repo: emailOutboxRepo,
     email: emailService,
     rateLimit: rateLimitRepo,
     cap: Number(process.env.EMAIL_DAILY_CAP) > 0 ? Number(process.env.EMAIL_DAILY_CAP) : 100,
+    clock: () => new Date(),
+    log: (m) => console.warn(`[email] ${m}`),
+  });
+
+  // rebotes y quejas que avisa Resend (webhook firmado)
+  const emailEventsService = new EmailEventsService({
+    uidByEmailId: (id) => emailOutboxRepo.uidByProviderId(id),
+    unsubscribe: (uid) => notificationPrefsService.unsubscribe(uid),
+    record: async (id, data) => {
+      try { await getFirebaseFirestore().collection("emailEvents").doc(id).create({ ...data, expireAt: new Date(Date.now() + 365 * 86_400_000) }); return true } catch (e) { if ((e as { code?: number }).code === 6) return false; throw e }
+    },
     clock: () => new Date(),
     log: (m) => console.warn(`[email] ${m}`),
   });
@@ -421,6 +436,7 @@ export const createServerContainer = () => {
     siteUrl: siteUrlForEmail,
     secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
     clock: () => new Date(),
+    render: renderEmailHtml,
   });
 
   // pasaporte: sellos por el QR del local (visita verificada)
@@ -521,6 +537,7 @@ export const createServerContainer = () => {
     emailQueueService,
     valueEmailRunner,
     pushService,
+    emailEventsService,
   };
 };
 

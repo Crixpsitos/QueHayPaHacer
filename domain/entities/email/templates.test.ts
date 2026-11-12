@@ -15,7 +15,7 @@ test("transaccional: confirmación, recordatorio y último cupo con tu texto, tu
     const e = transactionalEmailFor(n(t), ctx)!
     assert.ok(e.subject.includes("Senderismo"), t)
     assert.ok(e.text.includes("https://x.co/actividades/senderismo?ch=em"), t)
-    assert.ok(e.text.includes(ctx.unsubscribeUrl) && e.html.includes("/baja?u=u1&amp;t=abc"), t) // en HTML el & va escapado
+    assert.ok(e.text.includes(ctx.unsubscribeUrl) && e.model.unsubscribeUrl === ctx.unsubscribeUrl, t)
     assert.match(e.text, /porque (reservaste|guardaste|te apuntaste)/i)
   }
 })
@@ -23,11 +23,10 @@ test("solo tres tipos de aviso se envían por correo; los demás no", () => {
   assert.equal(transactionalEmailFor(n("activity_join"), ctx), null)
   assert.equal(transactionalEmailFor(n("review_received"), ctx), null)
 })
-test("el HTML escapa el texto (sin inyección) y no hay voseo", () => {
-  const e = transactionalEmailFor(n("activity_join_confirmed", { title: '<img src=x onerror=alert(1)> "hola"' }), ctx)!
-  assert.ok(!e.html.includes("<img"))
-  assert.ok(e.html.includes("&lt;img"))
-  assert.doesNotMatch(`${e.text} ${e.html}`, /\b(vos|tenés|querés|podés|mirá|sabés|hacé)\b/i)
+test("el texto no tiene voseo y el modelo lleva el botón con atribución", () => {
+  const e = transactionalEmailFor(n("activity_join_confirmed"), ctx)!
+  assert.doesNotMatch(`${e.text}`, /\b(vos|tenés|querés|podés|mirá|sabés|hacé)\b/i)
+  assert.match(e.model.cta!.href, /\?ch=em&utm_source=email&utm_medium=transactional/)
 })
 test("correos de valor: dicen por qué llegan, listan lo vigente con enlace y llevan la baja", () => {
   for (const kind of ["forYou", "weekly"] as const) {

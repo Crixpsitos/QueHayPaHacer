@@ -13,10 +13,12 @@ function setup(cap: number, results: Record<string, EmailResult> = {}) {
   const repo: IEmailOutboxRepository = {
     async enqueue(i) { if (db.has(i.id)) return false; db.set(i.id, { ...i }); return true },
     async due(now, n) { return [...db.values()].filter((i) => i.status === "queued" && i.sendAfter <= now).slice(0, n) },
+    async uidByProviderId(pid) { return [...db.values()].find((i) => i.providerId === pid)?.uid ?? null },
     async markSent(id, pid, at) { Object.assign(db.get(id)!, { status: "sent", providerId: pid, sentAt: at }) },
     async markRetry(id, attempts, after, err) { Object.assign(db.get(id)!, { attempts, lastError: err, ...(after ? { sendAfter: after } : { status: "failed" }) }) },
   }
-  const email: IEmailService = { async send(m) { sent.push(m.subject); return results[m.subject] ?? { ok: true, id: "r-" + m.subject } } }
+  const one = (m: { subject: string }): EmailResult => { sent.push(m.subject); return results[m.subject] ?? { ok: true, id: "r-" + m.subject } }
+  const email: IEmailService = { async send(m) { return one(m) }, async sendBatch(ms) { return ms.map(one) } }
   const svc = new EmailQueueService({ repo, email, rateLimit: new InMemoryRateLimit(), cap, clock: () => T, log: (m) => logs.push(m) })
   return { svc, db, sent, logs }
 }

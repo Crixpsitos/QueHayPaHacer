@@ -1,5 +1,5 @@
 import { unsubscribeHeaders } from "@/domain/entities/email/unsubscribeToken"
-import { valueEmail, type ValueItem } from "@/domain/entities/email/templates"
+import { valueEmail, type EmailModel, type ValueItem } from "@/domain/entities/email/templates"
 import { selectForYou, type PoolItem } from "@/domain/entities/email/selection"
 import type { Digest } from "@/domain/entities/activities/weeklyDigest"
 import type { EmailKind, OutboxItem } from "@/domain/repository/email/IEmailOutboxRepository"
@@ -15,6 +15,8 @@ export interface RunnerDeps {
   siteUrl: string
   secret: string | undefined
   clock: () => Date
+  /** Dibuja el HTML del correo (React). */
+  render: (m: EmailModel) => Promise<string>
 }
 
 const bogota = (d: Date) => new Date(d.getTime() - 5 * 3_600_000)
@@ -50,6 +52,6 @@ export class ValueEmailRunner {
     if (!to || !this.d.secret) return false
     const u = unsubscribeHeaders(this.d.siteUrl, uid, this.d.secret)
     const e = valueEmail(kind, items, { siteUrl: this.d.siteUrl, unsubscribeUrl: u.link })
-    return this.d.enqueue({ id, uid, to, kind, subject: e.subject, text: e.text, html: e.html, headers: u.headers, status: "queued", attempts: 0, sendAfter: now, createdAt: now })
+    return this.d.enqueue({ id, uid, to, kind, subject: e.subject, text: e.text, html: await this.d.render(e.model), headers: u.headers, status: "queued", attempts: 0, sendAfter: now, createdAt: now })
   }
 }

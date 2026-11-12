@@ -1,4 +1,4 @@
-import { transactionalEmailFor } from "@/domain/entities/email/templates"
+import { transactionalEmailFor, type EmailModel } from "@/domain/entities/email/templates"
 import { unsubscribeHeaders } from "@/domain/entities/email/unsubscribeToken"
 import type { OutboxItem } from "@/domain/repository/email/IEmailOutboxRepository"
 
@@ -10,6 +10,8 @@ export interface BridgeDeps {
   /** Secreto de la baja con un clic. Sin él NO se envía correo (no habría cómo darse de baja). */
   secret: string | undefined
   clock: () => Date
+  /** Dibuja el HTML del correo (React). */
+  render: (m: EmailModel) => Promise<string>
 }
 
 /** Convierte los avisos de la campanita de una reserva (confirmación, «mañana sale», último cupo) en correo transaccional. Nunca rompe el flujo que lo llama. */
@@ -26,7 +28,7 @@ export class TransactionalEmailBridge {
       const built = transactionalEmailFor(n, { siteUrl: this.d.siteUrl, unsubscribeUrl: u.link })
       if (!built) return
       const now = this.d.clock()
-      await this.d.enqueue({ id: `tx_${uid}_${n.type}_${id ?? now.toISOString().slice(0, 10)}`.slice(0, 200), uid, to, kind: "transactional", subject: built.subject, text: built.text, html: built.html, headers: u.headers, status: "queued", attempts: 0, sendAfter: now, createdAt: now })
+      await this.d.enqueue({ id: `tx_${uid}_${n.type}_${id ?? now.toISOString().slice(0, 10)}`.slice(0, 200), uid, to, kind: "transactional", subject: built.subject, text: built.text, html: await this.d.render(built.model), headers: u.headers, status: "queued", attempts: 0, sendAfter: now, createdAt: now })
     } catch (e) {
       console.warn("[email-bridge]", e instanceof Error ? e.message : "error")
     }

@@ -19,6 +19,10 @@ export class EmailOutboxFirebaseRepository extends FirebaseBaseRepository implem
     const s = await this.collection.where("status", "==", "queued").limit(1000).get()
     return s.docs.map((d) => from(d.id, d.data())).filter((i) => i.sendAfter <= now).slice(0, limit)
   }
+  async uidByProviderId(providerId: string): Promise<string | null> {
+    const s = await this.collection.where("providerId", "==", providerId).limit(1).get()
+    return s.empty ? null : (s.docs[0].get("uid") as string)
+  }
   async markSent(id: string, providerId: string, at: Date): Promise<void> { await this.collection.doc(id).update({ status: "sent", providerId, sentAt: at, text: "", html: "" }) } // el cuerpo no se conserva tras enviar
   async markRetry(id: string, attempts: number, sendAfter: Date | null, error: string): Promise<void> {
     await this.collection.doc(id).update(sendAfter ? { attempts, sendAfter, lastError: error.slice(0, 200) } : { attempts, status: "failed", lastError: error.slice(0, 200), text: "", html: "" })

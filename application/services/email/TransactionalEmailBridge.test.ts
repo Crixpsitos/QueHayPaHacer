@@ -9,7 +9,7 @@ function setup(over: { allow?: boolean; email?: string | null; secret?: string |
   const bridge = new TransactionalEmailBridge({
     allows: async () => over.allow !== false, getEmail: async () => (over.email === undefined ? "ana@x.co" : over.email),
     enqueue: async (i) => { if (queued.some((q) => q.id === i.id)) return false; queued.push(i); return true },
-    siteUrl: "https://x.co", secret: "secret" in over ? over.secret : "s3", clock: () => T,
+    siteUrl: "https://x.co", secret: "secret" in over ? over.secret : "s3", clock: () => T, render: async (m) => `<p>${m.heading}</p>`,
   })
   return { bridge, queued }
 }
