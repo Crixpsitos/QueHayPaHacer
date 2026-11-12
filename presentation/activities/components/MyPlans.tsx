@@ -10,6 +10,7 @@ import type { PlanSlot } from "@/domain/entities/activities/weekPlan"
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
+import { CoverFallback } from "./CoverFallback"
 import { WeekPlan } from "./WeekPlan"
 import { RemovedReviews } from "./reviews/RemovedReviews"
 import { PassportTab } from "./passport/PassportTab"
@@ -20,7 +21,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 function Thumb({ a }: { a: ActivityCardView }) {
   return (
     <div className="relative size-21 shrink-0 overflow-hidden rounded-xl bg-muted">
-      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="84px" className="object-cover" /> : null}
+      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="84px" className="object-cover" /> : <CoverFallback categorySlug={a.categorySlug} />}
     </div>
   )
 }
