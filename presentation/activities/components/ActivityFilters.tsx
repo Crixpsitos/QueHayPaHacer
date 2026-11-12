@@ -28,7 +28,7 @@ function Chip({ current, patch, active, children }: { current: UrlFilters; patch
   // Un toque en el chip activo lo quita; en otro, lo cambia.
   const key = Object.keys(patch)[0] as keyof UrlFilters
   const href = active ? filterHref(current, { [key]: undefined }) : filterHref(current, patch)
-  return <Link href={href} scroll={false} aria-current={active ? "true" : undefined} className={cn(pill, active ? on : off)}>{children}</Link>
+  return <Link prefetch={false} href={href} scroll={false} aria-current={active ? "true" : undefined} className={cn(pill, active ? on : off)}>{children}</Link>
 }
 
 /** Filtros del hub como enlaces (funcionan sin JavaScript y se pueden compartir). Cada cambio vive en la dirección. */
@@ -46,8 +46,8 @@ export function ActivityFilters({ current }: { current: UrlFilters }) {
     <div id="filtros" className="grid scroll-mt-4 gap-4">
       {active.length ? (
         <div className="flex flex-wrap items-center gap-2" aria-label="Filtros activos">
-          {active.map((a) => <Link key={a.label} href={a.href} scroll={false} aria-label={`Quitar filtro ${a.label}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary-light px-3 text-[0.8125rem] font-semibold text-primary-dark outline-none focus-visible:ring-3 focus-visible:ring-ring/40">{a.label} <span aria-hidden>✕</span></Link>)}
-          <Link href="/actividades#filtros" aria-label="Quitar todos los filtros" className="inline-flex min-h-9 items-center rounded-full border border-primary-dark px-3 text-[0.8125rem] font-semibold text-primary-dark hover:bg-primary-light">Quitar todo</Link>
+          {active.map((a) => <Link prefetch={false} key={a.label} href={a.href} scroll={false} aria-label={`Quitar filtro ${a.label}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-primary-light px-3 text-[0.8125rem] font-semibold text-primary-dark outline-none focus-visible:ring-3 focus-visible:ring-ring/40">{a.label} <span aria-hidden>✕</span></Link>)}
+          <Link prefetch={false} href="/actividades#filtros" aria-label="Quitar todos los filtros" className="inline-flex min-h-9 items-center rounded-full border border-primary-dark px-3 text-[0.8125rem] font-semibold text-primary-dark hover:bg-primary-light">Quitar todo</Link>
         </div>
       ) : null}
       {/* Lo secundario va plegado: en el móvil lo primero que se ve debe ser el resultado. Nativo, sin JavaScript. */}

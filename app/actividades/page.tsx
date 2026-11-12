@@ -72,8 +72,8 @@ async function Hub({ searchParams }: PageProps) {
             <h2 className="font-heading text-xl font-bold">No hay actividades con esa combinación</h2>
             <p className="text-sm text-muted-foreground">Prueba otro día o quita un filtro{f.when === "hoy" || f.day ? ", o mira lo que sí hay esta semana" : ""}.</p>
             <div className="flex flex-wrap gap-2">
-              {f.when === "hoy" || f.day ? <Button asChild variant="outline" className="h-11 border-primary text-primary-dark"><Link href={filterHref(f, { when: "esta-semana" })}>Ver toda la semana</Link></Button> : null}
-              <Button asChild variant="outline" className="h-11"><Link href="/actividades">Quitar filtros</Link></Button>
+              {f.when === "hoy" || f.day ? <Button asChild variant="outline" className="h-11 border-primary text-primary-dark"><Link prefetch={false} href={filterHref(f, { when: "esta-semana" })}>Ver toda la semana</Link></Button> : null}
+              <Button asChild variant="outline" className="h-11"><Link prefetch={false} href="/actividades">Quitar filtros</Link></Button>
             </div>
           </div>
         ) : null}
@@ -82,7 +82,7 @@ async function Hub({ searchParams }: PageProps) {
           <div className="grid gap-3 rounded-[1.75rem] border border-dashed border-border bg-card p-8 text-center">
             <h2 className="font-heading text-xl font-bold">Todavía no hay actividades aquí</h2>
             <p className="text-sm text-muted-foreground">Publica la tuya: es gratis.</p>
-            <Button asChild size="lg" className="mx-auto h-12"><Link href="/actividades/crear">Crear una actividad</Link></Button>
+            <Button asChild size="lg" className="mx-auto h-12"><Link prefetch={false} href="/actividades/crear">Crear una actividad</Link></Button>
           </div>
         ) : null}
 

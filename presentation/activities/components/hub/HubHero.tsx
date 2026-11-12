@@ -30,7 +30,7 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
             const { wd, n } = dayParts(d.date)
             const on = selected === d.date
             return (
-              <Link key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} scroll={false} aria-current={on ? "date" : undefined} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
+              <Link prefetch={false} key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} scroll={false} aria-current={on ? "date" : undefined} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
                 className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-[#5C0011]" : "border-white/15 bg-white/6 text-white hover:bg-white/12")}>
                 <span className={cn("text-xs font-medium", on ? "text-foreground/80" : "text-white/70")}>{i === 0 ? "Hoy" : wd}</span>
                 <span className="font-heading text-[1.75rem] font-bold leading-none">{n}</span>
@@ -40,9 +40,9 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
           })}
         </nav>
         <div className="flex flex-wrap gap-2">
-          <Link href={toggle("when", "este-fin-de-semana")} scroll={false} aria-current={current.when === "este-fin-de-semana" ? "true" : undefined} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</Link>
-          <Link href={toggle("when", "esta-semana")} scroll={false} aria-current={current.when === "esta-semana" ? "true" : undefined} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</Link>
-          <Link href={promoHref} scroll={false} aria-current={current.promo ? "true" : undefined} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</Link>
+          <Link prefetch={false} href={toggle("when", "este-fin-de-semana")} scroll={false} aria-current={current.when === "este-fin-de-semana" ? "true" : undefined} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</Link>
+          <Link prefetch={false} href={toggle("when", "esta-semana")} scroll={false} aria-current={current.when === "esta-semana" ? "true" : undefined} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</Link>
+          <Link prefetch={false} href={promoHref} scroll={false} aria-current={current.promo ? "true" : undefined} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</Link>
         </div>
       </div>
     </header>
