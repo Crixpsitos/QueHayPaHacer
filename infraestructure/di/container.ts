@@ -1,3 +1,4 @@
+import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
 
 import { UserAdapter } from "@/infraestructure/adapters/user/UserAdapter";
 import { UserFirebaseRepository } from "@/infraestructure/firebase/repositories/user/UserFirebaseRepository";
@@ -64,6 +65,8 @@ import { activityBadgesFor, EXPLORER_MIN_VISITS } from "@/domain/entities/activi
 import { isRestricted } from "@/domain/entities/activities/moderation/reviewModeration";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
+import { ActivityStampService } from "@/application/services/activities/ActivityStampService";
+import { ActivityStampFirebaseRepository } from "../firebase/repositories/activities/ActivityStampFirebaseRepository";
 import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
 import { ActivityAppealFirebaseRepository } from "../firebase/repositories/activities/ActivityAppealFirebaseRepository";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
@@ -347,6 +350,17 @@ export const createServerContainer = () => {
     lastFlag: REVIEW_LAST_FLAG,
   });
 
+  // pasaporte: sellos por el QR del local (visita verificada)
+  const activityStampService = new ActivityStampService({
+    repo: new ActivityStampFirebaseRepository(getFirebaseFirestore()),
+    isPublic: async (id) => (await activityService.getPublicById(id)) !== null,
+    canManage: async (uid, id) => (await activityService.getForManager(id, { uid, isAdmin: isQhpaAdmin(uid) })) !== null,
+    markVisited: (uid, id) => activityEngagementService.markVisited(uid, id),
+    award: (uid, badge) => badgeService.awardBadgeToUser(uid, badge, "Sellos del pasaporte"),
+    newToken: () => crypto.randomUUID().replace(/-/g, ""),
+    clock: () => new Date(),
+  });
+
   // apelar una reseña retirada (una sola vez)
   const activityAppealRepo = new ActivityAppealFirebaseRepository(getFirebaseFirestore());
   const activityAppealService = new ActivityAppealService({
@@ -378,7 +392,8 @@ export const createServerContainer = () => {
   });
 
   // configuración editable por el administrador (festivos; luego rutas de bus)
-  const holidayService = new HolidayService(new ConfigFirebaseRepository(getFirebaseFirestore()));
+  const appConfigRepo = new ConfigFirebaseRepository(getFirebaseFirestore());
+  const holidayService = new HolidayService(appConfigRepo);
   const transitRouteService = new TransitRouteService(new ConfigFirebaseRepository(getFirebaseFirestore()));
   const siteTransitService = new SiteTransitService(
     new SiteTransitReportFirebaseRepository(getFirebaseFirestore()),
@@ -425,6 +440,8 @@ export const createServerContainer = () => {
     holidayService,
     transitRouteService,
     siteTransitService,
+    appConfigRepo,
+    activityStampService,
   };
 };
 

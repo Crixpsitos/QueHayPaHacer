@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button/button"
 import { setActivityActiveAction } from "@/app/actions/activities/set-activity-active.action"
 import { getActivityChannelStatsAction } from "@/app/actions/activities/my-activities.action"
 import { cn } from "@/app/lib/utils/cn"
+import { StampQrDialog } from "./passport/StampQrDialog"
 import { ShareKit } from "@/presentation/shared/components/ShareKit"
 import type { MyActivitySummary, StatusKey } from "@/presentation/activities/lib/activityStatus"
 
@@ -24,6 +25,7 @@ function Row({ a }: { a: MyActivitySummary }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [kit, setKit] = useState(false)
+  const [stampQr, setStampQr] = useState(false)
   const [origin, setOrigin] = useState<Awaited<ReturnType<typeof getActivityChannelStatsAction>> | undefined>(undefined)
   const loadOrigin = async () => setOrigin(await getActivityChannelStatsAction(a.id))
 
@@ -64,6 +66,7 @@ function Row({ a }: { a: MyActivitySummary }) {
           {a.status.key !== "draft" ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.slug}`}>{a.status.key === "live" ? "Ver" : "Vista previa"}</Link></Button> : null}
           {a.status.key === "live" || a.status.key === "review" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setKit(true)}><Share2 aria-hidden /> Compartir</Button> : null}
           {a.status.key === "live" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => void loadOrigin()}>De dónde vienen</Button> : null}
+          {a.status.key === "live" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setStampQr(true)}>QR de sello</Button> : null}
           {a.canToggleActive ? <Button type="button" variant="ghost" size="lg" className="h-11" disabled={busy} onClick={() => void toggle()}>{a.isActive ? "Pausar" : "Reactivar"}</Button> : null}
         </div>
       </div>
@@ -72,6 +75,7 @@ function Row({ a }: { a: MyActivitySummary }) {
           {origin && origin.rows.length ? <ul className="grid gap-1">{origin.rows.map((r) => <li key={r.label} className="flex justify-between gap-3"><span>{r.label}</span><span className="font-semibold">{r.views} {r.views === 1 ? "visita" : "visitas"} · {r.clicks} {r.clicks === 1 ? "clic" : "clics"}</span></li>)}</ul> : <p className="text-muted-foreground">Todavía no hay visitas por enlaces o QR en los últimos 30 días. Comparte tu actividad con su kit y aquí verás de dónde llegan.</p>}
         </div>
       ) : null}
+      {stampQr ? <StampQrDialog activityId={a.id} title={a.title} onClose={() => setStampQr(false)} /> : null}
       {kit ? <ShareKit open kind="activity" id={a.id} title={a.title} where={a.schedule} imageUrl={a.coverUrl ?? undefined} pendingReview={a.status.key === "review"} onClose={() => setKit(false)} /> : null}
     </li>
   )

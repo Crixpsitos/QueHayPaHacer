@@ -11,8 +11,9 @@ import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
 import { WeekPlan } from "./WeekPlan"
 import { RemovedReviews } from "./reviews/RemovedReviews"
+import { PassportTab } from "./passport/PassportTab"
 
-type Tab = "week" | "upcoming" | "saved" | "done"
+type Tab = "week" | "upcoming" | "saved" | "done" | "passport"
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function Thumb({ a }: { a: ActivityCardView }) {
@@ -69,22 +70,24 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
     { id: "upcoming", label: "Próximo", n: initial.upcoming.length },
     { id: "saved", label: "Guardado", n: saved.length + gone.length },
     { id: "done", label: "Hecho", n: initial.done.length },
+    { id: "passport", label: "Pasaporte", n: -1 },
   ]
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-5">
       <h1 className="font-heading text-3xl font-bold">Mis planes</h1>
       <RemovedReviews />
-      <div role="tablist" aria-label="Mis planes" className="flex gap-1 rounded-full bg-muted p-1">
+      <div role="tablist" aria-label="Mis planes" className="flex gap-1 overflow-x-auto rounded-full bg-muted p-1">
         {tabs.map((t) => (
-          <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} onClick={() => setTab(t.id)} className={cn("flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40", tab === t.id ? "bg-card shadow-subtle" : "text-muted-foreground")}>
-            {t.label} <span className="font-medium text-muted-foreground">{t.n}</span>
+          <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} onClick={() => setTab(t.id)} className={cn("flex min-h-11 min-w-fit flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40", tab === t.id ? "bg-card shadow-subtle" : "text-muted-foreground")}>
+            {t.label} {t.n >= 0 ? <span className="font-medium text-muted-foreground">{t.n}</span> : null}
           </button>
         ))}
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="grid gap-3">
         {tab === "week" ? <WeekPlan cards={weekCards} /> : null}
+        {tab === "passport" ? <PassportTab /> : null}
 
         {tab === "upcoming" ? (
           initial.upcoming.length ? (

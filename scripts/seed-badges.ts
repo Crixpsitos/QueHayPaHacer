@@ -76,6 +76,17 @@ const BADGES_TO_SEED: Record<string, Badge> = {
     createdAt: new Date(),
     active: true,
   },
+  "pasaporte-ibague": {
+    id: "pasaporte-ibague",
+    name: "Pasaporte de Ibagué",
+    description: "Juntaste 3 sellos escaneando el QR en el local",
+    icon: "🛂",
+    color: "#9B0A26",
+    category: "achievement",
+    criteria: { type: "automatic", requirement: "Se otorga con 3 sellos distintos del pasaporte" },
+    createdAt: new Date(),
+    active: true,
+  },
   "year-member": {
     id: "year-member",
     name: "Miembro de Un Año",
