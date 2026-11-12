@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertTriangle, Share2 } from "lucide-react"
+import { AlertTriangle, ImageIcon, Share2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { buildWeekPlan, weekPlanText, type WeekDay } from "@/domain/entities/activities/weekPlan"
+import { planWeekPoster } from "@/domain/entities/activities/weekPoster"
+import { WeekPosterDialog } from "./WeekPosterDialog"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
 import { SITE_URL } from "@/app/lib/site"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
@@ -19,6 +21,7 @@ const dayLabel = (iso: string) => new Intl.DateTimeFormat("es-CO", { weekday: "l
  */
 export function WeekPlan({ cards, removableIds = [], onRemove }: { cards: ActivityCardView[]; /** Guardados que se pueden sacar del plan (las reservas se cancelan desde su actividad). */ removableIds?: string[]; onRemove?: (id: string) => void }) {
   const [week, setWeek] = useState<WeekDay[] | null>(null)
+  const [poster, setPoster] = useState(false)
   useEffect(() => {
     const t = setTimeout(() => { const now = new Date(); setWeek(buildWeekPlan(cards.map((c) => ({ id: c.id, title: c.title, schedule: c.schedule })), bogotaDateIso(now), now)) }, 0)
     return () => clearTimeout(t)
@@ -83,7 +86,9 @@ export function WeekPlan({ cards, removableIds = [], onRemove }: { cards: Activi
           </ul>
         </section>
       ) : null}
+      <Button type="button" className="h-12 w-full" onClick={() => setPoster(true)}><ImageIcon aria-hidden /> Afiche para compartir</Button>
       <Button asChild variant="outline" className="h-12 w-full"><a href={share} target="_blank" rel="noopener noreferrer"><Share2 aria-hidden /> Enviar mi semana por WhatsApp</a></Button>
+      <WeekPosterDialog open={poster} onClose={() => setPoster(false)} plan={planWeekPoster(week, { today: week[0].date, price: (id) => (byId.get(id)?.priceFrom ?? "").replace("Desde ", "") || "Gratis" })} />
       <p className="text-xs text-muted-foreground">Incluye tus reservas y tus guardados de los próximos 7 días. El mensaje solo lleva títulos y horas.</p>
     </div>
   )
