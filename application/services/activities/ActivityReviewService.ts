@@ -17,7 +17,7 @@ const norm = (t: string) => t.trim().toLowerCase().replace(/\s+/g, " ")
 export interface ReviewDeps {
   repo: IActivityReviewRepository
   /** Solo actividades PÚBLICAS; null si no existe o no es visible. `siteOwnerUid` = dueño del sitio vinculado. */
-  getActivity: (id: string) => Promise<{ id: string; slug: string; title: string; ownerUid: string; siteOwnerUid: string | null } | null>
+  getActivity: (id: string) => Promise<{ id: string; slug: string; title: string; ownerUid: string; siteOwnerUid: string | null; /** Sitio al que cuenta la reseña. */ siteId?: string | null; /** Ruta base de la ficha (por defecto /actividades). */ base?: string } | null>
   getAccount: (uid: string) => Promise<{ displayName: string; photoURL: string; createdAt: Date } | null>
   notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
@@ -45,7 +45,7 @@ export class ActivityReviewService {
     if (!(await this.limit.tryHit(cooldownKey, COOLDOWN_MS, now))) throw new Error("Espera unos segundos antes de enviar otra reseña.")
     try {
       const a = await this.d.getActivity(activityId)
-      if (!a) throw new Error("Esa actividad no existe.")
+      if (!a) throw new Error("Eso ya no existe.")
       const blocked = canReview(a, uid)
       if (blocked) throw new Error(blocked)
       if (this.d.isRestricted && (await this.d.isRestricted(uid))) throw new Error("Por ahora no puedes reseñar: tu cuenta tiene una restricción.")
@@ -70,7 +70,7 @@ export class ActivityReviewService {
       }
 
       const review: ActivityReview = {
-        id, activityId, uid,
+        id, activityId, uid, siteId: a.siteId ?? null, subjectTitle: a.title, subjectSlug: a.slug,
         rating: input.rating, title: input.title.trim(), body: input.body.trim(), visitedAt: input.visitedAt,
         media, coverIndex: Math.max(0, Math.min(extra.coverIndex, Math.max(0, media.filter((m) => m.type === "image").length - 1))),
         author: { uid, displayName: publicAuthorName(account.displayName), photoURL: account.photoURL },
@@ -84,7 +84,7 @@ export class ActivityReviewService {
       for (const old of existing?.media ?? []) if (!media.some((m) => m.id === old.id)) await this.removeFiles([old])
       if (saved.created) {
         await this.d.afterCreate?.(uid).catch(() => undefined)
-        await this.d.notify(a.ownerUid, reviewReceivedNotification({ title: a.title, slug: a.slug, rating: input.rating, who: review.author.displayName }), `review_${review.id}`).catch(() => undefined)
+        await this.d.notify(a.ownerUid, reviewReceivedNotification({ title: a.title, slug: a.slug, rating: input.rating, who: review.author.displayName, base: a.base }), `review_${review.id}`).catch(() => undefined)
       }
       return { review, created: saved.created, rating: saved.rating }
     } catch (e) {

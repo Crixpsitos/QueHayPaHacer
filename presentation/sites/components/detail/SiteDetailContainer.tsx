@@ -33,6 +33,7 @@ import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { SectionsAccordion } from "./SectionsAccordion";
 import { SiteActivitiesBlock } from "@/presentation/activities/components/SiteActivitiesBlock";
+import { SiteReviewsSection } from "@/presentation/activities/components/reviews/SiteReviewsSection";
 import { FactsRow } from "./FactsRow";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
@@ -277,6 +278,10 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
 
           <Suspense fallback={null}>
             <SiteActivitiesBlock siteId={siteId} siteSlug={site!.slug || ""} />
+          </Suspense>
+
+          <Suspense fallback={null}>
+            <SiteReviewsSection siteId={siteId} />
           </Suspense>
 
           <Separator />

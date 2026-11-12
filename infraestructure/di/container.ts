@@ -59,6 +59,7 @@ import { ActivityJoinService } from "@/application/services/activities/ActivityJ
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity";
+import { isSiteSubject, siteIdOfSubject } from "@/domain/entities/activities/review/subject";
 import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
 import { activityBadgesFor, EXPLORER_MIN_VISITS } from "@/domain/entities/activities/badges";
@@ -358,15 +359,23 @@ export const createServerContainer = () => {
   });
 
   // reseñas de actividades (una por persona, agregado en la misma transacción)
+  // De qué es una reseña: una actividad pública o un sitio público (`site_<id>`); las de actividades también cuentan para su sitio.
+  const reviewSubject = async (id: string) => {
+    if (isSiteSubject(id)) {
+      const siteId = siteIdOfSubject(id);
+      const s = await sitesService.getActivityLinkSnapshot(siteId);
+      if (!s || !s.published || !s.active) return null;
+      return { id, slug: s.slug || siteId, title: s.name, ownerUid: s.authorId ?? "", siteOwnerUid: null, siteId, base: "/donde-ir" };
+    }
+    const a = await activityService.getPublicById(id);
+    if (!a) return null;
+    const site = a.siteId ? await sitesService.getActivityLinkSnapshot(a.siteId) : null;
+    return { id: a.id, slug: a.slug, title: a.title, ownerUid: a.ownerUid, siteOwnerUid: site?.authorId ?? null, siteId: a.siteId ?? null };
+  };
   const sanctionRepo = new ActivitySanctionFirebaseRepository(getFirebaseFirestore());
   const activityReviewService = new ActivityReviewService({
     repo: new ActivityReviewFirebaseRepository(getFirebaseFirestore()),
-    getActivity: async (id) => {
-      const a = await activityService.getPublicById(id);
-      if (!a) return null;
-      const site = a.siteId ? await sitesService.getActivityLinkSnapshot(a.siteId) : null;
-      return { id: a.id, slug: a.slug, title: a.title, ownerUid: a.ownerUid, siteOwnerUid: site?.authorId ?? null };
-    },
+    getActivity: reviewSubject,
     getAccount: async (uid) => {
       const u = await userService.getUserById(uid);
       // Fecha real de la cuenta según Firebase Auth; si no se puede leer, se trata como NUEVA (el freno de 10 min no se salta).
@@ -387,12 +396,7 @@ export const createServerContainer = () => {
   const reviewModerationService = new ReviewModerationService({
     reviews: reviewRepo,
     sanctions: sanctionRepo,
-    getActivity: async (id) => {
-      const a = await activityService.getPublicById(id);
-      if (!a) return null;
-      const site = a.siteId ? await sitesService.getActivityLinkSnapshot(a.siteId) : null;
-      return { id: a.id, slug: a.slug, title: a.title, ownerUid: a.ownerUid, siteOwnerUid: site?.authorId ?? null };
-    },
+    getActivity: reviewSubject,
     notify: (uid, n, id) => notificationService.notify(uid, n, id),
     clock: () => new Date(),
     log: (m) => console.warn(`[review-moderation] ${m}`),
@@ -561,6 +565,7 @@ export const createServerContainer = () => {
     organizerEmailRunner,
     pushService,
     emailEventsService,
+    reviewSubject,
   };
 };
 

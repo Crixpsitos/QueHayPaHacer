@@ -18,7 +18,7 @@ export function ReviewStory({ r, activityId, isHost, onClose, onFlag, onChanged 
   const sendReply = async () => {
     if (!r) return
     setBusy(true); setError(null)
-    const res = await replyReviewAction(activityId, r.key, reply)
+    const res = await replyReviewAction(r.subjectId, r.key, reply)
     setBusy(false)
     if (!res.success) return setError(res.error)
     setReplying(false); onChanged()
@@ -32,6 +32,7 @@ export function ReviewStory({ r, activityId, isHost, onClose, onFlag, onChanged 
               <DialogTitle className="font-heading text-xl font-bold">{r.title || `Reseña de ${r.name}`}</DialogTitle>
               <DialogDescription>{r.name} · fue en {r.visitedLabel} · reseñó el {r.createdLabel}</DialogDescription>
             </DialogHeader>
+            {r.about ? <p className="text-sm text-muted-foreground">{r.about.kind === "site" ? "Reseña del sitio" : <>Reseña de la actividad <strong className="font-semibold text-foreground">{r.about.title}</strong></>}</p> : null}
             <Stars value={r.rating} className="[&_svg]:size-5" />
             {r.inVerification ? <p role="status" className="rounded-2xl border border-[#F6DDA0] bg-accent p-3 text-sm font-medium text-[#7a5200]">En verificación: esta reseña fue cuestionada y la estamos revisando. Sigue visible con este aviso.</p> : null}
             {r.verifiedByQhpa ? <p className="text-sm font-semibold text-primary-dark">Verificada por QHPA tras revisar un reporte.</p> : null}
@@ -40,10 +41,10 @@ export function ReviewStory({ r, activityId, isHost, onClose, onFlag, onChanged 
             {r.processingMedia ? <p className="text-sm text-muted-foreground">Procesando fotos o video…</p> : null}
             {r.body ? <p className="whitespace-pre-line text-base leading-relaxed">{r.body}</p> : null}
             {r.reply ? <div className="rounded-2xl border-l-4 border-[#FFB703] bg-accent p-3"><p className="text-sm font-semibold text-primary-dark">Respuesta de quien organiza</p><p className="text-sm leading-relaxed">{r.reply.text}</p></div> : null}
-            {!r.inVerification ? (
+            {!r.inVerification && !r.subjectId.startsWith("site_") ? (
               <div className="flex flex-wrap gap-2">
-                <a href={`https://wa.me/?text=${encodeURIComponent(`${r.name} (${r.rating}★): «${(r.body || r.title).slice(0, 140)}» ${typeof window !== "undefined" ? window.location.origin : ""}/r/a/${activityId}/wa`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Compartir por WhatsApp</a>
-                <a href={`/og/resena/${activityId}/${r.key}`} download="resena.png" className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Descargar tarjeta</a>
+                <a href={`https://wa.me/?text=${encodeURIComponent(`${r.name} (${r.rating}★): «${(r.body || r.title).slice(0, 140)}» ${typeof window !== "undefined" ? window.location.origin : ""}/r/a/${r.subjectId}/wa`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Compartir por WhatsApp</a>
+                <a href={`/og/resena/${r.subjectId}/${r.key}`} download="resena.png" className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Descargar tarjeta</a>
               </div>
             ) : null}
             {isHost ? (
@@ -61,7 +62,7 @@ export function ReviewStory({ r, activityId, isHost, onClose, onFlag, onChanged 
                   </div>
                 )}
               </div>
-            ) : <ReportButton targetType="review" targetId={`${activityId}_${r.key}`} />}
+            ) : <ReportButton targetType="review" targetId={`${r.subjectId}_${r.key}`} />}
           </>
         ) : null}
       </DialogContent>

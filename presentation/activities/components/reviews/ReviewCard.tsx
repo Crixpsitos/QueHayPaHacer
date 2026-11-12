@@ -10,7 +10,7 @@ import { Stars } from "./Stars"
 const TILT = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"]
 
 /** Polaroid: foto (o el color de la categoría), nombre, estrellas y una frase. Toda la tarjeta abre la historia. */
-export function ReviewCard({ r, i, categorySlug, onOpen }: { r: ReviewView; i: number; categorySlug: string; onOpen: () => void }) {
+export function ReviewCard({ r, i, categorySlug, onOpen, showAbout }: { r: ReviewView; i: number; categorySlug: string; onOpen: () => void; showAbout?: boolean }) {
   const c = categoryStyle(categorySlug)
   return (
     <li className="w-44 shrink-0 snap-start sm:w-auto">
@@ -21,6 +21,7 @@ export function ReviewCard({ r, i, categorySlug, onOpen }: { r: ReviewView; i: n
         </span>
         <span className="flex items-center gap-1.5 font-heading text-sm font-bold">{r.name}{r.verifiedByQhpa ? <span className="rounded-full bg-primary-dark px-2 py-0.5 text-[0.6875rem] font-semibold text-white">Verificada</span> : null}</span>
         <Stars value={r.rating} />
+        {showAbout && r.about ? <span className="truncate text-xs font-semibold text-primary-dark">{r.about.kind === "site" ? "Del sitio" : r.about.title}</span> : null}
         <span className="line-clamp-2 text-sm leading-snug text-muted-foreground">{r.title || r.body || `Fue en ${r.visitedLabel}`}</span>
         {r.reply ? <span className="flex items-center gap-1 text-xs font-semibold text-primary-dark"><MessageCircle className="size-3.5" aria-hidden />Respondió quien organiza</span> : null}
       </button>

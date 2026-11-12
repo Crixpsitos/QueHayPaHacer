@@ -1,11 +1,16 @@
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity"
 import type { ActivityReview } from "@/domain/entities/activities/review/ActivityReview"
+import { isSiteSubject } from "@/domain/entities/activities/review/subject"
 
 export type { ReviewFilter } from "./reviewFilters"
 
 export interface ReviewView {
   /** Clave opaca para pedir acciones sobre esta reseña (nunca el uid ni el id del documento). */
   key: string
+  /** De qué es: la actividad o `site_<id>` (las acciones sobre la reseña van contra este id). */
+  subjectId: string
+  /** Solo con datos: de qué es la reseña (se muestra en la ficha del sitio). */
+  about: { kind: "site" | "activity"; title: string; slug: string } | null
   name: string
   photoURL: string
   rating: number
@@ -34,6 +39,8 @@ export function toReviewView(r: ActivityReview): ReviewView {
   const video = ready.find((m) => m.type === "video")
   return {
     key: reviewKey(r.activityId, r.uid),
+    subjectId: r.activityId,
+    about: r.subjectTitle ? { kind: isSiteSubject(r.activityId) ? "site" : "activity", title: r.subjectTitle, slug: r.subjectSlug ?? "" } : null,
     name: r.author.displayName,
     photoURL: r.author.photoURL,
     rating: r.rating,

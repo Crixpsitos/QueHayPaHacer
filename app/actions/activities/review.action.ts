@@ -5,11 +5,19 @@ import { getSessionUid } from "@/app/actions/_session"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import { FLAG_REASONS, type FlagReason } from "@/domain/entities/activities/moderation/reviewModeration"
-import { REVIEW_BODY_MAX, REVIEW_TITLE_MAX, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
+import { REVIEW_BODY_MAX, REVIEW_TITLE_MAX, canReview, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
 import type { ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
 
 type Result = { success: true } | { success: false; authRequired?: boolean; error: string }
 const validId = (id: unknown): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id)
+
+/** Invalida las reseñas de lo reseñado y las del sitio al que cuenta (la ficha del sitio las junta). */
+async function bust(subjectId: string) {
+  updateTag(`activity-reviews-${subjectId}`)
+  updateTag(`activity-${subjectId}`)
+  const subject = await createServerContainer().reviewSubject(subjectId).catch(() => null)
+  if (subject?.siteId) updateTag(`site-reviews-${subject.siteId}`)
+}
 
 /** Lo que llega del navegador: solo contenido. La identidad sale de la cookie; el nombre, el estado y la versión legal los pone el servidor. */
 export interface ReviewPayload { rating: number; title: string; body: string; visitedAt: string; media?: ActivityMedia[]; coverIndex?: number; authorized: boolean }
@@ -24,8 +32,7 @@ export async function submitReviewAction(activityId: string, p: ReviewPayload): 
   const input: ReviewInput = { rating: Number(p.rating), title: String(p.title ?? "").slice(0, REVIEW_TITLE_MAX + 1), body: String(p.body ?? "").slice(0, REVIEW_BODY_MAX + 1), visitedAt: String(p.visitedAt ?? ""), photos: 0, video: 0 }
   try {
     await createServerContainer().activityReviewService.submit(uid, activityId, input, { media, coverIndex: Number.isInteger(p.coverIndex) ? (p.coverIndex as number) : 0 })
-    updateTag(`activity-reviews-${activityId}`)
-    updateTag(`activity-${activityId}`)
+    await bust(activityId)
     return { success: true }
   } catch (e) {
     // Los mensajes del servicio están escritos para la persona (sin datos internos).
@@ -40,8 +47,7 @@ export async function deleteReviewAction(activityId: string): Promise<Result> {
   if (!validId(activityId)) return { success: false, error: "Actividad inválida." }
   try {
     await createServerContainer().activityReviewService.remove(uid, activityId)
-    updateTag(`activity-reviews-${activityId}`)
-    updateTag(`activity-${activityId}`)
+    await bust(activityId)
     return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "No se pudo borrar tu reseña." }
@@ -55,8 +61,8 @@ export async function getMyReviewAction(activityId: string): Promise<{ loggedIn:
   const uid = await getSessionUid()
   if (!uid || !validId(activityId)) return { loggedIn: false, blocked: null, mine: null, docId: null }
   const c = createServerContainer()
-  const [mine, a] = await Promise.all([c.activityReviewService.getMine(uid, activityId), c.activityService.getPublicById(activityId)])
-  const blocked = !a ? "Esa actividad no existe." : a.ownerUid === uid ? "No puedes reseñar una actividad que publicaste." : null
+  const [mine, a] = await Promise.all([c.activityReviewService.getMine(uid, activityId), c.reviewSubject(activityId)])
+  const blocked = !a ? "Eso ya no existe." : canReview(a, uid)
   return { loggedIn: true, blocked, docId: reviewId(activityId, uid), mine: mine ? { rating: mine.rating, title: mine.title, body: mine.body, visitedAt: mine.visitedAt, media: mine.media, inVerification: mine.status === "flagged" } : null }
 }
 
@@ -69,7 +75,7 @@ export async function flagReviewAction(activityId: string, key: string, reason: 
   if (!validId(activityId) || !validKey(key) || !FLAG_REASONS.includes(reason as FlagReason)) return { success: false, error: "Solicitud inválida." }
   try {
     await createServerContainer().reviewModerationService.flag(uid, activityId, key, { reason: reason as FlagReason, note: String(note ?? "").slice(0, 400) })
-    updateTag(`activity-reviews-${activityId}`)
+    await bust(activityId)
     return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "No se pudo enviar." }
@@ -83,7 +89,7 @@ export async function replyReviewAction(activityId: string, key: string, text: s
   if (!validId(activityId) || !validKey(key)) return { success: false, error: "Solicitud inválida." }
   try {
     await createServerContainer().reviewModerationService.reply(uid, activityId, key, String(text ?? ""))
-    updateTag(`activity-reviews-${activityId}`)
+    await bust(activityId)
     return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "No se pudo guardar la respuesta." }
@@ -95,13 +101,12 @@ export async function getReviewRoleAction(activityId: string): Promise<{ isHost:
   const uid = await getSessionUid()
   if (!uid || !validId(activityId)) return { isHost: false }
   const c = createServerContainer()
-  const a = await c.activityService.getPublicById(activityId)
+  const a = await c.reviewSubject(activityId)
   if (!a) return { isHost: false }
-  const site = a.siteId ? await c.sitesService.getActivityLinkSnapshot(a.siteId) : null
-  return { isHost: uid === a.ownerUid || uid === site?.authorId }
+  return { isHost: uid === a.ownerUid || uid === a.siteOwnerUid }
 }
 
-export interface RemovedReview { activityId: string; title: string; slug: string; appealed: boolean }
+export interface RemovedReview { activityId: string; title: string; slug: string; base: string; appealed: boolean }
 
 /** Mis reseñas retiradas (para apelar una vez). Sin sesión: nada. */
 export async function getMyRemovedReviewsAction(): Promise<RemovedReview[]> {
@@ -111,8 +116,8 @@ export async function getMyRemovedReviewsAction(): Promise<RemovedReview[]> {
   const mine = (await c.activityReviewRepo.listByAuthorSince(uid, new Date(0))).filter((r) => r.status === "removed")
   const out: RemovedReview[] = []
   for (const r of mine.slice(0, 20)) {
-    const a = await c.activityService.getPublicById(r.activityId)
-    out.push({ activityId: r.activityId, title: a?.title ?? "una actividad", slug: a?.slug ?? "", appealed: (await c.activityAppealRepoGet(r.id)) !== null })
+    const a = await c.reviewSubject(r.activityId)
+    out.push({ activityId: r.activityId, title: a?.title ?? r.subjectTitle ?? "una actividad", slug: a?.slug ?? r.subjectSlug ?? "", base: a?.base ?? "/actividades", appealed: (await c.activityAppealRepoGet(r.id)) !== null })
   }
   return out
 }

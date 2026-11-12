@@ -105,7 +105,13 @@ export interface ReviewFlag { by: string; reason: string; note: string; at: Date
 export interface ActivityReview {
   /** `{activityId}_{uid}` */
   id: string
+  /** Actividad, o `site_<id>` si la reseña es del sitio (ver `subject.ts`). */
   activityId: string
+  /** Sitio al que cuenta: el propio (reseña de sitio) o el vinculado a la actividad. */
+  siteId?: string | null
+  /** De qué es la reseña, para mostrarla en la ficha del sitio. */
+  subjectTitle?: string
+  subjectSlug?: string
   uid: string
   rating: number
   title: string

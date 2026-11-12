@@ -219,6 +219,12 @@ export class SitesService {
     }
   }
 
+  /** Promedio de reseñas del sitio (las suyas y las de sus actividades). null si nadie ha reseñado. */
+  async getReviewRating(id: string): Promise<{ count: number; sum: number; avg: number; dist: [number, number, number, number, number] } | null> {
+    const dto = (await this.adapter.findRawById(id)) as unknown as { rating?: { count: number; sum: number; avg: number; dist: [number, number, number, number, number] } } | null
+    return dto?.rating ?? null
+  }
+
   async getClaimSnapshot(id: string): Promise<ClaimSiteSnapshot | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null
