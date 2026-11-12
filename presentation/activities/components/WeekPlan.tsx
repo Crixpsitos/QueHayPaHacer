@@ -47,10 +47,11 @@ export function WeekPlan({ cards, removableIds = [], onRemove }: { cards: Activi
   return (
     <div className="grid gap-4">
       <ol className="grid gap-4">
-        {week.map((d) => ({ ...d, blocks: d.blocks.filter((b) => !anytime.includes(b.id)) })).filter((d) => d.blocks.length).map((d) => (
+        {week.map((d) => ({ ...d, blocks: d.blocks.filter((b) => !anytime.includes(b.id)) })).map((d) => (
           <li key={d.date} className="grid gap-2">
             <h2 className="font-heading text-lg font-bold capitalize">{dayLabel(d.date)}</h2>
             <ul className="grid gap-2">
+              {d.blocks.length === 0 ? <li className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-card px-3 py-3 text-sm text-muted-foreground"><span>Día libre</span><Link href={`/actividades?dia=${d.date}`} prefetch={false} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Ver qué hay</Link></li> : null}
               {d.blocks.map((b) => {
                 const c = byId.get(b.id)!, st = categoryStyle(c.categorySlug)
                 return (
