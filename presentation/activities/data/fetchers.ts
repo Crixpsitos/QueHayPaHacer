@@ -1,7 +1,8 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
-import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
+import { bogotaDateIso, nextOccurrence } from "@/domain/entities/activities/value-objects/occurrences"
+import { pickFeatured } from "@/domain/entities/activities/featured"
 import { anytimeIds, buildAgenda } from "@/domain/entities/activities/agenda"
 import { countsByDay, dayRange, whenRange } from "@/domain/entities/activities/when"
 import { moreToDo, type LevelKey, type MoreItem } from "@/domain/entities/activities/moreToDo"
@@ -144,6 +145,18 @@ export const fetchHubMeta = async (): Promise<HubMeta> => {
   const categories: Record<string, number> = {}
   for (const a of all) categories[a.category] = (categories[a.category] ?? 0) + 1
   return { days: countsByDay(all.map((a) => a.schedule), new Date(), 7), categories, total: all.length }
+}
+
+/** «El plan de la semana» del hub: una actividad, la misma todo el día (ver `pickFeatured`). null si no hay. */
+export const fetchFeaturedPlan = async (): Promise<ActivityCardView | null> => {
+  "use cache"
+  cacheLife("hours")
+  cacheTag("activity-list")
+  const all = await createServerContainer().activityService.listPublic(500)
+  const now = new Date()
+  const id = pickFeatured(all.map((a) => ({ id: a.id, host: a.ownerUid, hasPhoto: a.media.some((m) => m.type === "image" && m.isCover && m.status !== "error"), nextAt: nextOccurrence(a.schedule, now)?.startsAt?.getTime() ?? null })), now, bogotaDateIso(now))
+  const pick = all.find((a) => a.id === id)
+  return pick ? toCardView(pick) : null
 }
 
 export interface AgendaDayView { date: string; /** Grupo «sin hora fija» de un rango de varios días (no es un día). */ anytime?: boolean; entries: { card: ActivityCardView; hhmm: string | null }[] }

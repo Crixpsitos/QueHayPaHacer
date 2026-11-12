@@ -7,6 +7,7 @@ import { parseFilters, type ActivityFilters as Filters } from "@/domain/entities
 import { WHEN_LABELS, ActivityFilters } from "@/presentation/activities/components/ActivityFilters"
 import { ActivityList } from "@/presentation/activities/components/ActivityList"
 import { HubHero } from "@/presentation/activities/components/hub/HubHero"
+import { FeaturedPlan } from "@/presentation/activities/components/hub/FeaturedPlan"
 import { CategoryTiles } from "@/presentation/activities/components/hub/CategoryTiles"
 import { AgendaView } from "@/presentation/activities/components/hub/AgendaView"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
@@ -44,6 +45,8 @@ async function Hub({ searchParams }: PageProps) {
     <>
       <HubHero current={f} meta={meta} />
       <div className="grid gap-10 py-8">
+        {!filtered ? <Suspense fallback={null}><FeaturedPlan /></Suspense> : null}
+
         {mapData && (mapData.pins.length || mapData.withoutPlace) ? <HubMapLazy data={mapData} /> : null}
 
         <ActivityFilters current={f} />
