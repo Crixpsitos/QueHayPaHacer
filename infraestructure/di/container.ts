@@ -342,7 +342,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     enabled: Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
   });
-  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot"]);
+  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot", "event_seat"]);
   const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
     await notificationService.notify(uid, n, id);
     await transactionalEmailBridge.fromNotification(uid, n, id);
@@ -556,6 +556,7 @@ export const createServerContainer = () => {
     activityReviewRepo: reviewRepo,
     activityAppealRepoGet: (id: string) => activityAppealRepo.get(id),
     activityJoinService,
+    notifyUser: notifyAndEmail,
     activityPlansService,
     activityReminderService,
     hostIdentityService,

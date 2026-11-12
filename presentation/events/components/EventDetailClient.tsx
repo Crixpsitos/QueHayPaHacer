@@ -1,7 +1,7 @@
 "use client";
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
-import { useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import Link from "next/link";
 import { ExternalLink, Info, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
@@ -13,6 +13,7 @@ import { eventOutHref } from "@/app/r/_lib/outHref";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
 import { expressInterestAction } from "@/app/actions/events/express-interest.action";
 import { ExternalInterestGate, type InterestGate } from "./ExternalInterestGate";
+import { rebalanceEventSeatsAction } from "@/app/actions/events/rebalance-event-seats.action";
 import { PastEventState } from "./PastEventState";
 import { isEventPast } from "../utils/eventTemporalUtils";
 import { EventHero } from "./detail/EventHero";
@@ -78,6 +79,12 @@ export function EventDetailClient({
   const setIsRegistered = setRegisteredOverride;
 
   const isPast = isEventPast(event.endDate);
+  // Evento con enlace externo y cupos: al abrir el detalle se ponen al día los vencimientos (24 h) y la lista de espera, y se
+  // avisa a quienes cambiaron de estado. Sin escribir durante el render; el servidor lo limita a una revisión cada 5 minutos.
+  const watchSeats = event.registrationType === "external" && (event.capacity ?? 0) > 0 && !isPast;
+  useEffect(() => {
+    if (watchSeats) void rebalanceEventSeatsAction(event.id).catch(() => undefined);
+  }, [watchSeats, event.id]);
   const registrations = event.analytics?.registrations ?? 0;
   const capacity = event.capacity ?? 0;
   const isOverCapacity = capacity > 0 && registrations >= capacity;

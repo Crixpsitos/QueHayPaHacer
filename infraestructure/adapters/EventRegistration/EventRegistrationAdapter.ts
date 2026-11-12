@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
-import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult, IEventRegistrationRepository, SeatRebalance, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { IEventRegistrationMapper } from "@/infraestructure/firebase/mappers/EventRegistration/IEventRegistrationMapper";
 import type { IEventRegistrationFirebaseRepository } from "@/infraestructure/firebase/repositories/EventRegistration/IEventRegistrationFirebaseRepository";
 
@@ -58,6 +58,10 @@ export class EventRegistrationAdapter implements IEventRegistrationRepository {
       status: "registered",
       ...(input.formData ? { formData: input.formData } : {}),
     });
+  }
+
+  rebalanceExternalSeats(eventId: string, force?: boolean): Promise<SeatRebalance> {
+    return this.repository.rebalanceExternalSeats(eventId, force);
   }
 
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]> {

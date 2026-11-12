@@ -3,7 +3,7 @@ import { FieldValue, Timestamp, type DocumentData, type Firestore } from "fireba
 
 import { cancelBlock, type UserRegistrationItem } from "@/domain/entities/EventRegistration/myRegistrations";
 import { generateCheckInCode } from "@/domain/entities/EventRegistration/checkIn";
-import { interestOutcome, seatKind, toPromote, waitlistPosition, type SeatRow } from "@/domain/entities/EventRegistration/interest";
+import { interestOutcome, pendingChanges, seatKind, toPromote, waitlistPosition, type SeatNotice, type SeatRow } from "@/domain/entities/EventRegistration/interest";
 import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
@@ -11,6 +11,22 @@ import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/
 
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository";
 import { IEventRegistrationFirebaseRepository } from "./IEventRegistrationFirebaseRepository";
+
+
+/** Fila de cupo (dominio) a partir de una inscripción guardada. `waitlist` y `seatNotice` son de este flujo externo. */
+function toSeat(id: string, d: DocumentData): SeatRow & { id: string; notice: string | null } {
+  return {
+    id,
+    status: d.status === "canceled" ? "canceled" : d.status === "accepted" ? "accepted" : "pending",
+    registeredAt: (d.registeredAt as Timestamp | undefined)?.toDate() ?? new Date(0),
+    checkedInAt: d.checkedInAt,
+    paidAmount: typeof d.paidAmount === "number" ? d.paidAmount : null,
+    guest: d.guest === true,
+    waitlist: d.status === "waitlist",
+    notice: (d.seatNotice as string | undefined) ?? null,
+  };
+}
+const REBALANCE_EVERY_MS = 5 * 60_000;
 
 export class EventRegistrationFirebaseRepository
   extends FirebaseBaseRepository
@@ -111,15 +127,6 @@ export class EventRegistrationFirebaseRepository
   async registerExternalInterest(eventId: string, entry: FirebaseEventRegistrationEntry): Promise<ExternalInterestResult> {
     const eventRef = this.collection.doc(eventId);
     const col = this.registrationsCol(eventId);
-    const toSeat = (id: string, d: DocumentData): SeatRow & { id: string } => ({
-      id,
-      status: d.status === "canceled" ? "canceled" : d.status === "accepted" ? "accepted" : "pending",
-      registeredAt: (d.registeredAt as Timestamp | undefined)?.toDate() ?? new Date(0),
-      checkedInAt: d.checkedInAt,
-      paidAmount: typeof d.paidAmount === "number" ? d.paidAmount : null,
-      guest: d.guest === true,
-      waitlist: d.status === "waitlist",
-    });
     return this.db.runTransaction(async (tx) => {
       const regRef = col.doc(entry.userId);
       const [eventSnap, mine] = await Promise.all([tx.get(eventRef), tx.get(regRef)]);
@@ -146,6 +153,37 @@ export class EventRegistrationFirebaseRepository
       if (newSeats > 0) tx.set(eventRef, { analytics: { registrations: FieldValue.increment(newSeats) }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       const position = outcome === "waitlist" ? waitlistPosition([...rows, { id: entry.userId, status: "pending", registeredAt: now, waitlist: true }], entry.userId, now) : null;
       return { outcome, position, already: false };
+    });
+  }
+
+  /**
+   * Pone al día los cupos de un evento con enlace externo (transacción): quien lleva más de 24 h interesado deja su hueco, quien
+   * esperó 24 h sin cupo se deniega, y la lista de espera ocupa los huecos libres. Devuelve a quién avisar (una sola vez por
+   * persona: queda marcado en su inscripción). Sin `force` solo corre cada 5 minutos por evento, así que visitar el detalle es
+   * casi gratis (1 lectura). Sin capacidad definida no hace nada.
+   */
+  async rebalanceExternalSeats(eventId: string, force = false): Promise<{ title: string; ref: string; changes: { uid: string; notice: SeatNotice; registeredAt: number }[] }> {
+    const eventRef = this.collection.doc(eventId);
+    const col = this.registrationsCol(eventId);
+    const none = { title: "", ref: eventId, changes: [] };
+    return this.db.runTransaction(async (tx) => {
+      const eventSnap = await tx.get(eventRef);
+      const capacity = Number(eventSnap.get("capacity")) > 0 ? Number(eventSnap.get("capacity")) : undefined;
+      if (!eventSnap.exists || eventSnap.get("registrationType") !== "external" || !capacity) return none;
+      const now = Date.now();
+      const last = (eventSnap.get("seatsCheckedAt") as Timestamp | undefined)?.toMillis() ?? 0;
+      if (!force && now - last < REBALANCE_EVERY_MS) return none;
+      const rows = (await tx.get(col.where("status", "!=", "canceled").limit(2000))).docs.map((d) => toSeat(d.id, d.data()));
+      const changes = pendingChanges(capacity, rows, now);
+      for (const c of changes) {
+        const ref = col.doc(c.id);
+        if (c.notice === "promoted") tx.update(ref, { status: "registered", registeredAt: Timestamp.now(), seatNotice: "promoted" });
+        else if (c.notice === "denied") tx.update(ref, { status: "canceled", seatNotice: "denied" });
+        else tx.update(ref, { seatNotice: "expired" });
+      }
+      const promoted = changes.filter((c) => c.notice === "promoted").length;
+      tx.set(eventRef, { seatsCheckedAt: Timestamp.now(), ...(promoted ? { analytics: { registrations: FieldValue.increment(promoted) } } : {}) }, { merge: true });
+      return { title: (eventSnap.get("title") as string) ?? "", ref: (eventSnap.get("slug") as string) || eventId, changes: changes.map((c) => ({ uid: c.id, notice: c.notice, registeredAt: c.row.registeredAt instanceof Date ? c.row.registeredAt.getTime() : Number(c.row.registeredAt) })) };
     });
   }
 

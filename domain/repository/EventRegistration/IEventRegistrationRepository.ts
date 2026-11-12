@@ -11,6 +11,8 @@ export type CheckInCodeResult =
 /** Resultado de «Me interesa» en un evento con enlace externo. `already`: ya estaba vigente, no se cambió nada. */
 export interface ExternalInterestResult { outcome: "interested" | "waitlist"; position: number | null; already: boolean }
 
+export interface SeatRebalance { title: string; ref: string; changes: { uid: string; notice: "expired" | "denied" | "promoted"; registeredAt: number }[] }
+
 export interface RegisterEventInput {
   userId: string;
   eventId: string;
@@ -35,6 +37,9 @@ export interface IEventRegistrationRepository {
 
   /** «Me interesa» con cupos (24 h de vigencia y lista de espera). Ver `domain/entities/EventRegistration/interest.ts`. */
   registerExternalInterest(input: RegisterEventInput): Promise<ExternalInterestResult>;
+
+  /** Pone al día cupos, vencimientos y lista de espera de un evento externo; devuelve a quién avisar. */
+  rebalanceExternalSeats(eventId: string, force?: boolean): Promise<SeatRebalance>;
 
   /** Inscripciones del usuario en todos los eventos/sesiones (las 100 más recientes). */
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;

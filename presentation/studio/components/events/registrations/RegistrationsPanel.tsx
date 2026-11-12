@@ -6,6 +6,7 @@ import { EmptyRegistrations } from "./EmptyRegistrations";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { EventIncomeCard } from "@/presentation/events/components/EventIncomeCard";
+import { SeatsRebalance } from "./SeatsRebalance";
 import { EventAttendeesDialog } from "@/presentation/events/components/EventAttendeesDialog";
 
 interface RegistrationsPanelProps {
@@ -32,6 +33,7 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
       // Enlace externo: los clics y, debajo, quienes pulsaron «inscribirme» (interesados) para confirmar a quien fue o pagó.
       return (
         <div className="space-y-6">
+          <SeatsRebalance eventId={data.eventId} />
           <ExternalClicksPanel clicks={data.externalClicks ?? 0} url={data.externalUrl} />
           {/* Personas sin cuenta: se agregan aquí, con su entrada QR (el diálogo lista, confirma y agrega). */}
           <EventAttendeesDialog

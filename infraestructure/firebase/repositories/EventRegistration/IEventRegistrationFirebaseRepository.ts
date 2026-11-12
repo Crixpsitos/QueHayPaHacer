@@ -23,6 +23,8 @@ export interface IEventRegistrationFirebaseRepository {
 
   registerExternalInterest(eventId: string, entry: FirebaseEventRegistrationEntry): Promise<ExternalInterestResult>;
 
+  rebalanceExternalSeats(eventId: string, force?: boolean): Promise<{ title: string; ref: string; changes: { uid: string; notice: "expired" | "denied" | "promoted"; registeredAt: number }[] }>;
+
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;
 
   getOrCreateCheckInCode(eventId: string, userId: string, sessionId?: string): Promise<CheckInCodeResult>;

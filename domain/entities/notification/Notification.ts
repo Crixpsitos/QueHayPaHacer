@@ -25,6 +25,7 @@ export const NOTIFICATION_TYPES = [
   "review_received",
   "review_flag_resolved",
   "activity_sanction",
+  "event_seat",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
