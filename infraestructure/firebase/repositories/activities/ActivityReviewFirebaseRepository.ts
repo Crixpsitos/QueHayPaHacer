@@ -119,4 +119,18 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
     const s = await this.collection.where("status", "==", "flagged").limit(500).get()
     return s.docs.map((d) => fromDoc(d.id, d.data())).sort((a, b) => (a.flag?.at.getTime() ?? 0) - (b.flag?.at.getTime() ?? 0)).slice(0, limit)
   }
+
+  async restoreRemoved(reviewId: string): Promise<{ review: ActivityReview; rating: ActivityRating } | null> {
+    const ref = this.collection.doc(reviewId)
+    return this.db.runTransaction(async (tx) => {
+      const d = await tx.get(ref)
+      if (!d.exists || d.get("status") !== "removed") return null
+      const act = this.activity(d.get("activityId"))
+      const a = await tx.get(act)
+      const rating = applyReviewToRating((a.exists ? a.get("rating") : null) ?? EMPTY, { type: "add", rating: d.get("rating") })
+      tx.update(ref, { status: "published", updatedAt: new Date() })
+      if (a.exists) tx.update(act, { rating, "analytics.reviews": rating.count })
+      return { review: fromDoc(d.id, { ...d.data()!, status: "published" }), rating }
+    })
+  }
 }

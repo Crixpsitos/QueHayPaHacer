@@ -99,3 +99,32 @@ export async function getReviewRoleAction(activityId: string): Promise<{ isHost:
   const site = a.siteId ? await c.sitesService.getActivityLinkSnapshot(a.siteId) : null
   return { isHost: uid === a.ownerUid || uid === site?.authorId }
 }
+
+export interface RemovedReview { activityId: string; title: string; slug: string; appealed: boolean }
+
+/** Mis reseñas retiradas (para apelar una vez). Sin sesión: nada. */
+export async function getMyRemovedReviewsAction(): Promise<RemovedReview[]> {
+  const uid = await getSessionUid()
+  if (!uid) return []
+  const c = createServerContainer()
+  const mine = (await c.activityReviewRepo.listByAuthorSince(uid, new Date(0))).filter((r) => r.status === "removed")
+  const out: RemovedReview[] = []
+  for (const r of mine.slice(0, 20)) {
+    const a = await c.activityService.getPublicById(r.activityId)
+    out.push({ activityId: r.activityId, title: a?.title ?? "una actividad", slug: a?.slug ?? "", appealed: (await c.activityAppealRepoGet(r.id)) !== null })
+  }
+  return out
+}
+
+/** Apelar una reseña retirada (una sola vez, explicación de 30+ caracteres). */
+export async function appealReviewAction(activityId: string, explanation: string): Promise<Result> {
+  const uid = await getSessionUid()
+  if (!uid) return { success: false, authRequired: true, error: "Inicia sesión." }
+  if (!validId(activityId)) return { success: false, error: "Solicitud inválida." }
+  try {
+    await createServerContainer().activityAppealService.submit(uid, `${activityId}_${uid}`, String(explanation ?? ""))
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "No se pudo enviar la apelación." }
+  }
+}

@@ -25,4 +25,6 @@ export interface IActivityReviewRepository {
   setReply(reviewId: string, reply: { text: string; at: Date } | null): Promise<void>
   /** Cuestionamientos abiertos, los más antiguos primero (para QHPA). */
   listFlagged(limit: number): Promise<ActivityReview[]>
+  /** Restituye una reseña retirada (apelación aceptada): vuelve a publicada y al promedio en la misma transacción. */
+  restoreRemoved(reviewId: string): Promise<{ review: ActivityReview; rating: ActivityRating } | null>
 }

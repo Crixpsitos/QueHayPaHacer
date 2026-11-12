@@ -62,6 +62,8 @@ import { ActivityReviewService } from "@/application/services/activities/Activit
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
+import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
+import { ActivityAppealFirebaseRepository } from "../firebase/repositories/activities/ActivityAppealFirebaseRepository";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
@@ -333,6 +335,15 @@ export const createServerContainer = () => {
     lastFlag: REVIEW_LAST_FLAG,
   });
 
+  // apelar una reseña retirada (una sola vez)
+  const activityAppealRepo = new ActivityAppealFirebaseRepository(getFirebaseFirestore());
+  const activityAppealService = new ActivityAppealService({
+    appeals: activityAppealRepo,
+    getReview: (id) => reviewRepo.getById(id),
+    restore: async (id) => (await reviewRepo.restoreRemoved(id)) !== null,
+    clock: () => new Date(),
+  });
+
   // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
   const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
   const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
@@ -381,6 +392,9 @@ export const createServerContainer = () => {
     activityEngagementService,
     activityReviewService,
     reviewModerationService,
+    activityAppealService,
+    activityReviewRepo: reviewRepo,
+    activityAppealRepoGet: (id: string) => activityAppealRepo.get(id),
     activityJoinService,
     activityPlansService,
     activityReminderService,

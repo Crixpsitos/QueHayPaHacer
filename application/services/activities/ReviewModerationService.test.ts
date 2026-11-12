@@ -24,7 +24,7 @@ function setup() {
     async setFlag(id, flag: ReviewFlag) { const d = docs.get(id); if (!d || d.status !== "published") return false; d.status = "flagged"; d.flag = flag; return true },
     async countOpenFlags(f) { return [...docs.values()].filter((d) => d.status === "flagged" && (!f.by || d.flag?.by === f.by) && (!f.activityId || d.activityId === f.activityId)).length },
     async resolveFlag(id, r) { const d = docs.get(id); if (!d || d.status !== "flagged") return null; d.status = r.status; d.flag = { ...d.flag!, resolution: r.resolution, resolvedAt: r.at, resolvedBy: r.resolvedBy }; if (r.status === "removed") rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { review: d, rating } },
-    async setReply(id, reply) { docs.get(id)!.ownerReply = reply }, async listFlagged() { return [...docs.values()].filter((d) => d.status === "flagged") },
+    async setReply(id, reply) { docs.get(id)!.ownerReply = reply }, async listFlagged() { return [...docs.values()].filter((d) => d.status === "flagged") }, async restoreRemoved() { throw new Error("n/a") },
   }
   const sanctions: Sanction[] = []
   const sRepo: IActivitySanctionRepository = { async add(s) { sanctions.push(s) }, async listByUid(u) { return sanctions.filter((s) => s.uid === u) }, async countSince(u, role, since) { return sanctions.filter((s) => s.uid === u && s.role === role && s.createdAt >= since).length } }

@@ -10,6 +10,7 @@ import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/p
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
 import { WeekPlan } from "./WeekPlan"
+import { RemovedReviews } from "./reviews/RemovedReviews"
 
 type Tab = "week" | "upcoming" | "saved" | "done"
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -73,6 +74,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-5">
       <h1 className="font-heading text-3xl font-bold">Mis planes</h1>
+      <RemovedReviews />
       <div role="tablist" aria-label="Mis planes" className="flex gap-1 rounded-full bg-muted p-1">
         {tabs.map((t) => (
           <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} onClick={() => setTab(t.id)} className={cn("flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/40", tab === t.id ? "bg-card shadow-subtle" : "text-muted-foreground")}>
