@@ -63,7 +63,7 @@ test("canal de enlace automático: ?ch=ig → ch:ig, con prioridad sobre utm_sou
 test("canal desconocido se ignora (cae a utm_source/referrer)", () => {
   assert.equal(trafficSource({ ch: "evil", utm_source: "facebook" }), "facebook");
   assert.equal(trafficSource({ ch: "__proto__" }), "direct");
-  assert.deepEqual([...CHANNELS], ["ig", "ig_h", "wa", "fb", "x", "tt", "qr"]);
+  assert.deepEqual([...CHANNELS], ["ig", "ig_h", "wa", "wc", "fb", "x", "tt", "qr"]);
   assert.equal(isChannel("wa"), true);
   assert.equal(isChannel("zz"), false);
 });

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: { title: TITLE, description: DESCRIPTION, url: "/cosas-para-hacer-en-ibague", type: "website", siteName: SITE_NAME, locale: "es_CO", images: [DEFAULT_OG_IMAGE] },
 }
 
-/** Página pilar: une actividades, eventos de hoy y sitios. El texto es BORRADOR (docs/34-textos-borrador-actividades.md). */
+/** Página pilar: une actividades, eventos de hoy y sitios. Texto aprobado por el dueño (docs/34). */
 async function Pillar() {
   const week = await fetchActivityPage({ when: "esta-semana" }, 0, 6)
   return (

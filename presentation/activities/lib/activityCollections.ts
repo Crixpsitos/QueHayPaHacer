@@ -1,6 +1,6 @@
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
 
-/** Landings de actividades: prefijo `actividades-` en la raíz (como `donde-ir-` y `eventos-`). Los textos son BORRADORES: ver docs/34-textos-borrador-actividades.md. */
+/** Landings de actividades: prefijo `actividades-` en la raíz (como `donde-ir-` y `eventos-`). Textos aprobados por el dueño (docs/34). */
 export const ACTIVITY_PREFIX = "actividades-"
 
 export interface ActivityCollectionDef {

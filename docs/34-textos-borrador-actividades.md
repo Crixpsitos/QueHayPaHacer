@@ -1,6 +1,6 @@
 # Textos BORRADOR de actividades (pendientes de revisión del dueño)
 
-Estado: **borrador escrito por Claude el 2026-11-11**. Están en develop; antes de producción el dueño debe aprobarlos o corregirlos (la regla de fundamento de B4 pide texto propio, no de plantilla).
+Estado: **APROBADOS por el dueño el 2026-11-12** (revisados). Texto original del borrador (la regla de fundamento de B4 pide texto propio, no de plantilla).
 
 ## Dónde viven
 - Landings (`/actividades-*-ibague`): `presentation/activities/lib/activityCollections.ts` (campo `intro`, 2 párrafos por colección). Se indexan solo con ≥160 caracteres de texto y ≥3 actividades públicas (`domain/entities/activities/collectionRule.ts`); si no, `noindex` y fuera del sitemap.

@@ -4,7 +4,7 @@ import { AUTO_CHANNELS, autoLinkHref, autoLandingPath } from "./autoLinks";
 
 test("canales visibles al dueño, en el orden en que se muestran", () => {
   assert.deepEqual(AUTO_CHANNELS.map((c) => [c.id, c.label]), [
-    ["ig", "Instagram (bio)"], ["ig_h", "Instagram (historias)"], ["wa", "WhatsApp"], ["fb", "Facebook"], ["qr", "Afiche con QR"],
+    ["ig", "Instagram (bio)"], ["ig_h", "Instagram (historias)"], ["wa", "WhatsApp"], ["wc", "Canal de WhatsApp"], ["fb", "Facebook"], ["qr", "Afiche con QR"],
   ]);
 });
 

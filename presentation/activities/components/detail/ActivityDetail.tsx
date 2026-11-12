@@ -10,6 +10,7 @@ import { HowItWorks } from "./HowItWorks"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { ActivityPlace } from "./ActivityPlace"
+import { FollowChannel } from "@/presentation/shared/components/FollowChannel"
 import { OfferingsList } from "./OfferingsList"
 import { PromoCards } from "./PromoCards"
 import { SpacesList } from "./SpacesList"
@@ -120,6 +121,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
 
           {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
+          {preview ? null : <Suspense fallback={null}><FollowChannel /></Suspense>}
 
           {sparse ? <HowItWorks joinEnabled={d.joinEnabled} /> : null}
 

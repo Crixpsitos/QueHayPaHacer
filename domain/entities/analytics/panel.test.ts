@@ -54,7 +54,7 @@ test("buildVerdict: con datos, la frase usa los números reales y el nivel sale 
 test("channelRows: visitas = viewsBy, acciones = bySource − viewsBy, clics = linkClicks; en el orden de los canales", () => {
   const rows = channelRows({ views: 0, clicks: 0, bySource: { ch_ig: 50, ch_wa: 9 }, viewsBy: { ch_ig: 40, ch_wa: 9 }, linkClicks: { ig: 55, wa: 12 }, byType: {} });
   assert.deepEqual(rows.map((r) => [r.id, r.visits, r.actions, r.linkClicks]), [
-    ["ig", 40, 10, 55], ["ig_h", 0, 0, 0], ["wa", 9, 0, 12], ["fb", 0, 0, 0], ["qr", 0, 0, 0],
+    ["ig", 40, 10, 55], ["ig_h", 0, 0, 0], ["wa", 9, 0, 12], ["wc", 0, 0, 0], ["fb", 0, 0, 0], ["qr", 0, 0, 0],
   ]);
 });
 
@@ -62,6 +62,6 @@ test("nextStep: historias sin usar con Instagram funcionando → sugiere ese enl
   const t = (viewsBy: Record<string, number>, linkClicks: Record<string, number>) => ({ views: 100, clicks: 0, bySource: {}, viewsBy, linkClicks, byType: {} });
   assert.equal(nextStep(t({ ch_ig: 40 }, { ig: 50 }))?.channel, "ig_h");
   assert.equal(nextStep(t({}, {}))?.channel, null);
-  assert.equal(nextStep(t({ ch_ig: 40, ch_ig_h: 20, ch_wa: 10, ch_fb: 5, ch_qr: 3 }, { ig: 1, ig_h: 1, wa: 1, fb: 1, qr: 1 })), null);
+  assert.equal(nextStep(t({ ch_ig: 40, ch_ig_h: 20, ch_wa: 10, ch_wc: 4, ch_fb: 5, ch_qr: 3 }, { ig: 1, ig_h: 1, wa: 1, wc: 1, fb: 1, qr: 1 })), null);
   assert.equal(nextStep({ ...t({}, {}), views: 5 }), null);
 });

@@ -2,7 +2,7 @@
 export const SOURCES = ["instagram", "facebook", "tiktok", "whatsapp", "x", "google", "direct", "other"] as const
 export type Source = (typeof SOURCES)[number]
 /** Canales de los enlaces automáticos de cada ficha (`/r/e|s/<id>/<canal>`): Instagram bio, Instagram historias, WhatsApp, Facebook, X, TikTok, afiche QR. */
-export const CHANNELS = ["ig", "ig_h", "wa", "fb", "x", "tt", "qr"] as const
+export const CHANNELS = ["ig", "ig_h", "wa", "wc", "fb", "x", "tt", "qr"] as const
 export type Channel = (typeof CHANNELS)[number]
 export const isChannel = (v: unknown): v is Channel => typeof v === "string" && (CHANNELS as readonly string[]).includes(v)
 
