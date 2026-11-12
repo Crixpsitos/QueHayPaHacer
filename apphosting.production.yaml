@@ -96,8 +96,18 @@ env:
     availability:
       - RUNTIME
 
-  # Correo (Resend): sin EMAIL_FROM el servicio queda apagado y no envía nada. Falta (cuando el dominio esté verificado en Resend):
-  # EMAIL_FROM, RESEND_WEBHOOK_SECRET y NEXT_PUBLIC_FIREBASE_VAPID_KEY (ver docs/36-correo-y-push-pasos.md).
+  # Correo (Resend), dominio avisos.yquehaypahacer.com verificado. Falta: RESEND_WEBHOOK_SECRET y NEXT_PUBLIC_FIREBASE_VAPID_KEY
+  # (ver docs/36-correo-y-push-pasos.md). Sin EMAIL_FROM el servicio queda apagado y no envía nada.
+  - variable: EMAIL_FROM
+    value: "Qué Hay Pa Hacer <avisos@avisos.yquehaypahacer.com>"
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_DAILY_CAP
+    value: "100"
+    availability:
+      - RUNTIME
+
   - variable: RESEND_API_KEY
     secret: resendApiKey
     availability:
