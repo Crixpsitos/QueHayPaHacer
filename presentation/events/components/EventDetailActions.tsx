@@ -9,6 +9,7 @@ import { analytics as ga } from "@/app/lib/analytics";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { HeartLikeButton } from "./card/HeartLikeButton";
+import { PlanLink } from "@/presentation/shared/components/PlanLink";
 import { Eye, X } from "lucide-react";
 import type { EventViewModel } from "../view-models/EventViewModel";
 
@@ -85,6 +86,8 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
             className="h-11 gap-2.5 rounded-xl border border-[#E4E4E7] bg-white px-5 text-sm font-semibold text-[#09090B] shadow-card transition-all hover:border-[#D42F3C] hover:bg-[#FDF2F4] hover:text-[#D42F3C]"
           />
         )}
+
+        {!sessionId && <PlanLink kind="event" />}
 
         {/* Vistas — pill solo en el evento padre, no en sesiones */}
         {!sessionId && (
