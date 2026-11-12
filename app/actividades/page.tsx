@@ -11,7 +11,7 @@ import { FeaturedPlan } from "@/presentation/activities/components/hub/FeaturedP
 import { CategoryTiles } from "@/presentation/activities/components/hub/CategoryTiles"
 import { AgendaView } from "@/presentation/activities/components/hub/AgendaView"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
-import { HubMapLazy } from "@/presentation/activities/components/hub/HubMapLazy"
+import { HubMapToggle } from "@/presentation/activities/components/hub/HubMapToggle"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
 import { fetchActivityPage, fetchAgenda, fetchHubMap, fetchHubMeta, resolveSiteId } from "@/presentation/activities/data/fetchers"
 
@@ -47,11 +47,9 @@ async function Hub({ searchParams }: PageProps) {
       <div className="grid gap-10 py-8">
         {!filtered ? <Suspense fallback={null}><FeaturedPlan /></Suspense> : null}
 
-        {mapData && (mapData.pins.length || mapData.withoutPlace) ? <HubMapLazy data={mapData} /> : null}
+        {mapData && (mapData.pins.length || mapData.withoutPlace) ? <HubMapToggle data={mapData} /> : null}
 
         <ActivityFilters current={f} />
-
-        {!filtered ? <CategoryTiles counts={meta.categories} current={f} /> : null}
 
         {agendaMode && !empty ? (
           <section aria-label="Agenda" className="grid gap-5">
@@ -69,6 +67,8 @@ async function Hub({ searchParams }: PageProps) {
             <ActivityList key={JSON.stringify(f)} first={page} filters={{ category: f.category, kind: f.kind, siteId: siteId ?? undefined, cuando: f.when, dia: f.day, presupuesto: f.budget, con: f.companion, promos: f.promo ? "hoy" : undefined }} />
           </section>
         ) : null}
+
+        {!filtered && !agendaMode ? <CategoryTiles counts={meta.categories} current={f} /> : null}
 
         {empty && filtered ? (
           <div className="grid justify-items-start gap-3 rounded-[1.75rem] border border-border bg-card p-6">
