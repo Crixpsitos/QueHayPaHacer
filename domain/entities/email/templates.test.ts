@@ -11,16 +11,16 @@ test("el enlace del correo lleva el canal «em» y respeta query y # existentes"
   assert.match(withEmailAttribution("https://x.co/a?x=1", "forYou"), /\?x=1&ch=em/)
 })
 test("transaccional: confirmación, recordatorio y último cupo con tu texto, tuteo y baja visible", () => {
-  for (const t of ["activity_join_confirmed", "activity_reminder", "activity_last_spot"]) {
+  for (const t of ["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot"]) {
     const e = transactionalEmailFor(n(t), ctx)!
     assert.ok(e.subject.includes("Senderismo"), t)
     assert.ok(e.text.includes("https://x.co/actividades/senderismo?ch=em"), t)
     assert.ok(e.text.includes(ctx.unsubscribeUrl) && e.model.unsubscribeUrl === ctx.unsubscribeUrl, t)
-    assert.match(e.text, /porque (reservaste|guardaste|te apuntaste)/i)
+    assert.match(e.text, /porque (reservaste|guardaste|te apuntaste|organizas)/i)
   }
 })
-test("solo tres tipos de aviso se envían por correo; los demás no", () => {
-  assert.equal(transactionalEmailFor(n("activity_join"), ctx), null)
+test("solo cuatro tipos de aviso se envían por correo; los demás no", () => {
+  assert.equal(transactionalEmailFor(n("activity_sanction"), ctx), null)
   assert.equal(transactionalEmailFor(n("review_received"), ctx), null)
 })
 test("el texto no tiene voseo y el modelo lleva el botón con atribución", () => {

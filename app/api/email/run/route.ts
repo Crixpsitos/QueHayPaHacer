@@ -16,7 +16,8 @@ export async function POST(request: Request) {
   if (!c.emailService.enabled) return NextResponse.json({ skipped: "El correo no está configurado (RESEND_API_KEY y EMAIL_FROM)." });
   try {
     const enqueued = await c.valueEmailRunner.run(() => fetchWeekendDigest());
-    return NextResponse.json({ enqueued, drained: await c.emailQueueService.drain() });
+    const organizers = await c.organizerEmailRunner.run();
+    return NextResponse.json({ enqueued, organizers, drained: await c.emailQueueService.drain() });
   } catch (error) {
     console.error("[email-run]", error instanceof Error ? error.message : "error");
     return NextResponse.json({ error: "Run failed." }, { status: 500 });

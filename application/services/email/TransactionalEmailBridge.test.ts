@@ -24,7 +24,7 @@ test("un aviso de reserva se convierte en correo transaccional con cabeceras de 
 })
 test("sin permiso, sin correo, sin secreto de baja o tipo que no va por correo: no se encola nada", async () => {
   for (const o of [{ allow: false }, { email: null }, { secret: undefined }] as const) { const s = setup(o); await s.bridge.fromNotification("u1", n, "x"); assert.equal(s.queued.length, 0, JSON.stringify(o)) }
-  const t = setup(); await t.bridge.fromNotification("u1", { ...n, type: "activity_join" }, "x"); assert.equal(t.queued.length, 0)
+  const t = setup(); await t.bridge.fromNotification("u1", { ...n, type: "activity_sanction" }, "x"); assert.equal(t.queued.length, 0)
 })
 test("idempotente: el mismo aviso no genera dos correos", async () => {
   const s = setup()

@@ -74,6 +74,7 @@ import { TransactionalEmailBridge } from "@/application/services/email/Transacti
 import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner";
 import { buildPool } from "@/domain/entities/email/selection";
 import { EmailEventsService } from "@/application/services/email/EmailEventsService";
+import { OrganizerEmailRunner } from "@/application/services/email/OrganizerEmailRunner";
 import { EmailQueueService } from "@/application/services/email/EmailQueueService";
 import { EmailOutboxFirebaseRepository } from "../firebase/repositories/email/EmailOutboxFirebaseRepository";
 import { ResendEmailService } from "../email/ResendEmailService";
@@ -334,7 +335,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     enabled: Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
   });
-  const PUSHED = new Set(["activity_join_confirmed", "activity_reminder", "activity_last_spot"]);
+  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot"]);
   const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
     await notificationService.notify(uid, n, id);
     await transactionalEmailBridge.fromNotification(uid, n, id);
@@ -439,6 +440,21 @@ export const createServerContainer = () => {
     render: renderEmailHtml,
   });
 
+  // correos para quien organiza: salida sin inscritos y resumen del lunes
+  const organizerJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
+  const organizerEmailRunner = new OrganizerEmailRunner({
+    activities: async () => (await activityService.listPublic(300)).filter((a) => a.join).map((a) => ({ id: a.id, title: a.title, slug: a.slug, ownerUid: a.ownerUid, schedule: a.schedule })),
+    counts: (id, keys) => organizerJoinRepo.counts(id, keys),
+    joinDates: async (id) => (await organizerJoinRepo.list(id, 500)).map((r) => r.createdAt),
+    allows: (uid) => notificationPrefsService.allows(uid, "email", "transactional"),
+    getEmail: async (uid) => (await userService.getUserById(uid))?.email ?? null,
+    enqueue: (item) => emailQueueService.enqueue(item),
+    siteUrl: siteUrlForEmail,
+    secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
+    clock: () => new Date(),
+    render: renderEmailHtml,
+  });
+
   // pasaporte: sellos por el QR del local (visita verificada)
   const activityStampService = new ActivityStampService({
     repo: new ActivityStampFirebaseRepository(getFirebaseFirestore()),
@@ -536,6 +552,7 @@ export const createServerContainer = () => {
     emailService,
     emailQueueService,
     valueEmailRunner,
+    organizerEmailRunner,
     pushService,
     emailEventsService,
   };
