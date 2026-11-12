@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
@@ -77,10 +78,10 @@ export const fetchActivityPage = async (filters: ActivityFilters, offset: number
 }
 
 /** `sitio=<slug>` → id del sitio (null si no existe: el hub muestra vacío en vez de ignorar el filtro). */
-export async function resolveSiteId(slug: string): Promise<string | null> {
+export const resolveSiteId = cache(async (slug: string): Promise<string | null> => {
   const site = await createServerContainer().sitesService.getSiteDetailBySlug(slug)
   return site?.id ?? null
-}
+})
 
 export const SITE_BLOCK_MAX = 6
 
