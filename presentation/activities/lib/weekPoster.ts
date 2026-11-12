@@ -4,7 +4,7 @@ import type { PosterTier, WeekPosterPlan } from "@/domain/entities/activities/we
 const W = 1080
 const HEAD = "Outfit, Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
 const BODY = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
-const CREAM = "#FFF8E7", GOLD = "#FFB703", WINE = "#9B0A26", DEEP = "#6E0A1D"
+const CREAM = "#FFF8E7", GOLD = "#FFB703", WINE = "#9B0A26", DEEP = "#6E0A1D", INK = "#27272A"
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -15,103 +15,102 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
     img.src = src
   })
 }
+/** Las fotos se piden por la ruta de imágenes de la propia web (mismo origen: el canvas no se «mancha» y se puede descargar). */
+const photo = (u: string | null) => (u ? loadImage(/^https?:/.test(u) ? `/_next/image?url=${encodeURIComponent(u)}&w=256&q=70` : u) : Promise.resolve(null))
 
-/** Recorta con «…» para que el texto quepa en `max` píxeles. */
 function fit(g: CanvasRenderingContext2D, text: string, max: number): string {
   if (g.measureText(text).width <= max) return text
   let t = text
   while (t.length > 1 && g.measureText(`${t}…`).width > max) t = t.slice(0, -1)
   return `${t.trimEnd()}…`
 }
-
-/** Medidas por formato y por cuántos planes hay (las filas se achican para que todo quepa). */
-const ROW: Record<PostersKey, { h: number; title: number; time: number; gap: number }> = {
-  "feed-comfortable": { h: 118, title: 40, time: 28, gap: 12 },
-  "feed-compact": { h: 82, title: 32, time: 24, gap: 8 },
-  "feed-dense": { h: 96, title: 34, time: 25, gap: 10 },
-  "story-comfortable": { h: 170, title: 46, time: 30, gap: 14 },
-  "story-compact": { h: 122, title: 38, time: 26, gap: 10 },
-  "story-dense": { h: 150, title: 42, time: 28, gap: 12 },
+function cover(g: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, s: number) {
+  const k = Math.max(s / img.width, s / img.height), sw = s / k, sh = s / k
+  g.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, s, s)
 }
-type PostersKey = `${PosterFormat}-${PosterTier}`
+
+const ROW_H: Record<`${PosterFormat}-${PosterTier}`, number> = {
+  "feed-comfortable": 190, "feed-compact": 118, "feed-dense": 118,
+  "story-comfortable": 280, "story-compact": 190, "story-dense": 190,
+}
 
 /**
- * Afiche «Mi semana en Ibagué» listo para compartir: 1080×1350 (feed y WhatsApp) o 1080×1920 (historias).
- * Fondo vinotinto con el sello dorado, una fila por plan (día, hora, título y precio), lo que no tiene hora en una sola línea
- * y, abajo, el QR de la semana completa. Si hay más de 8 planes, 8 filas y «+N planes más».
+ * Afiche «Mi semana en Ibagué» (1080×1350 para feed y WhatsApp, 1080×1920 para historias): fondo vinotinto con el logo grande
+ * asomando por la derecha, y cada plan en una tarjeta crema con su foto, el día y la hora, y el precio. Las tarjetas se achican
+ * según cuántos planes haya (máx. 8; con más, 6 y «+N planes más»). Abajo, el QR de la semana completa.
  */
 export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPosterPlan; url: string; format?: PosterFormat }): Promise<HTMLCanvasElement> {
   const story = i.format === "story"
   const H = story ? 1920 : 1350
-  const m = ROW[`${story ? "story" : "feed"}-${i.plan.tier}` as PostersKey]
-  const logo = await loadImage("/logo.png")
+  const [logo, ...pics] = await Promise.all([loadImage("/logo.png"), ...i.plan.rows.map((r) => photo(r.imageUrl))])
   const c = document.createElement("canvas")
   c.width = W; c.height = H
   const g = c.getContext("2d")!
 
-  const bg = g.createLinearGradient(0, 0, W * 0.35, H)
+  const bg = g.createLinearGradient(0, 0, W * 0.4, H)
   bg.addColorStop(0, WINE); bg.addColorStop(1, DEEP)
   g.fillStyle = bg; g.fillRect(0, 0, W, H)
-  g.fillStyle = GOLD; g.beginPath(); g.arc(W - 40, 20, story ? 250 : 220, 0, Math.PI * 2); g.fill()
+  g.save(); g.globalAlpha = 0.1
+  if (logo) g.drawImage(logo, W - 330, H * 0.3, 660, 660)
+  g.restore()
+  g.fillStyle = GOLD; g.beginPath(); g.arc(W - 40, 20, story ? 250 : 215, 0, Math.PI * 2); g.fill()
 
-  // marca: el logo (pin vinotinto) sobre un círculo crema, con el nombre al lado
-  g.textBaseline = "middle"
-  g.fillStyle = CREAM; g.beginPath(); g.arc(64 + 44, 56 + 44, 44, 0, Math.PI * 2); g.fill()
-  if (logo) g.drawImage(logo, 64 + 8, 56 + 6, 72, 72)
-  else { g.fillStyle = WINE; g.font = `800 44px ${HEAD}`; g.textAlign = "center"; g.fillText("Q", 108, 102); g.textAlign = "left" }
-  g.fillStyle = "#FFFFFF"; g.font = `700 36px ${HEAD}`; g.textAlign = "left"
+  // marca
+  g.textBaseline = "middle"; g.textAlign = "left"
+  g.fillStyle = CREAM; g.beginPath(); g.arc(108, 100, 44, 0, Math.PI * 2); g.fill()
+  if (logo) g.drawImage(logo, 72, 62, 72, 72)
+  g.fillStyle = "#FFFFFF"; g.font = `700 36px ${HEAD}`
   g.fillText("Qué Hay Pa Hacer", 172, 102)
 
   // titular y fechas
   g.textBaseline = "alphabetic"
-  g.fillStyle = CREAM; g.font = `800 ${story ? 112 : 88}px ${HEAD}`
-  const headY = story ? 330 : 270
-  g.fillText("Mi semana", 64, headY); g.fillText("en Ibagué", 64, headY + (story ? 120 : 92))
-  const pillY = headY + (story ? 120 : 92) + 30
+  const headY = story ? 330 : 262
+  g.fillStyle = CREAM; g.font = `800 ${story ? 112 : 92}px ${HEAD}`
+  g.fillText("Mi semana", 64, headY); g.fillText("en Ibagué", 64, headY + (story ? 120 : 98))
+  const pillY = headY + (story ? 120 : 98) + 30
   g.font = `700 32px ${BODY}`
-  const pw = g.measureText(i.plan.rangeLabel).width + 48
-  g.fillStyle = GOLD; g.beginPath(); g.roundRect(64, pillY, pw, 58, 29); g.fill()
-  g.fillStyle = "#5C0011"; g.textBaseline = "middle"; g.fillText(i.plan.rangeLabel, 88, pillY + 30)
+  const pw = g.measureText(i.plan.rangeLabel).width + 52
+  g.fillStyle = GOLD; g.beginPath(); g.roundRect(64, pillY, pw, 60, 30); g.fill()
+  g.fillStyle = "#5C0011"; g.textBaseline = "middle"; g.fillText(i.plan.rangeLabel, 90, pillY + 31)
 
-  // filas: la altura se ajusta a lo que queda entre el titular y la franja del QR (nunca se montan sobre ella)
+  // tarjetas: la altura se ajusta a lo que queda entre el titular y la franja del QR
   const top = H - (story ? 380 : 270)
-  let y = pillY + 58 + (story ? 52 : 30)
+  let y = pillY + 60 + (story ? 50 : 30)
   const n = Math.max(1, i.plan.rows.length)
-  const extras = (i.plan.more > 0 ? 56 : 0) + (i.plan.anytime.length ? 52 : 0)
-  const rh = Math.min(m.h, Math.floor((top - 20 - y - extras - m.gap * (n - 1)) / n))
-  const tall = rh >= 104
-  const tsz = tall ? m.title : Math.max(24, Math.min(m.title, Math.round(rh * 0.42)))
-  const msz = tall ? m.time : Math.max(18, Math.round(tsz * 0.74))
-  for (const r of i.plan.rows) {
-    g.fillStyle = "rgba(255,255,255,0.12)"; g.beginPath(); g.roundRect(64, y, W - 128, rh, 24); g.fill()
-    const mid = y + rh / 2
-    g.textAlign = "left"
-    if (r.showDay) {
-      g.fillStyle = GOLD; g.font = `800 ${tsz - 4}px ${HEAD}`; g.fillText(r.day, 92, mid - (tall ? 12 : 0))
-      if (tall) { g.fillStyle = "#FDE7EB"; g.font = `600 ${msz - 4}px ${BODY}`; g.fillText(r.dayNum, 92, mid + 24) }
-    }
+  const gap = story ? 16 : 12
+  const more = i.plan.more > 0 ? 58 : 0
+  const rh = Math.min(ROW_H[`${story ? "story" : "feed"}-${i.plan.tier}`], Math.floor((top - 16 - y - more - gap * (n - 1)) / n))
+  const th = rh - 20
+  y += Math.max(0, Math.floor((top - 16 - y - (rh * n + gap * (n - 1) + more)) / 2) * 0.6)
+  const tsz = Math.max(24, Math.min(story ? 54 : 46, Math.round(rh * 0.28)))
+  const msz = Math.max(18, Math.round(tsz * 0.72))
+  i.plan.rows.forEach((r, k) => {
+    g.fillStyle = CREAM; g.beginPath(); g.roundRect(64, y, W - 128, rh, 30); g.fill()
+    // foto (o bloque dorado con la inicial)
+    const tx = 74, ty = y + 10
+    g.save(); g.beginPath(); g.roundRect(tx, ty, th, th, 22); g.clip()
+    const pic = pics[k]
+    if (pic) cover(g, pic, tx, ty, th)
+    else { const gg = g.createLinearGradient(tx, ty, tx + th, ty + th); gg.addColorStop(0, GOLD); gg.addColorStop(1, "#F08A00"); g.fillStyle = gg; g.fillRect(tx, ty, th, th); g.fillStyle = "#5C0011"; g.textAlign = "center"; g.font = `800 ${Math.round(th * 0.5)}px ${HEAD}`; g.fillText(r.title.charAt(0).toUpperCase(), tx + th / 2, ty + th / 2 + 2); g.textAlign = "left" }
+    g.restore()
+    // precio (píldora a la derecha)
     g.font = `700 ${msz}px ${BODY}`
-    const priceW = g.measureText(r.price).width
-    const timeW = tall ? 0 : g.measureText(r.time).width + 28
-    const textX = 250
-    g.fillStyle = "#FFFFFF"; g.font = `700 ${tsz}px ${HEAD}`
-    g.fillText(fit(g, r.title, W - 92 - textX - priceW - 24 - timeW), textX, mid - (tall ? 14 : 0))
-    g.fillStyle = "#FDE7EB"; g.font = `500 ${msz}px ${BODY}`
-    if (tall) g.fillText(r.time, textX, mid + 26)
-    else { g.textAlign = "right"; g.fillText(r.time, W - 92 - priceW - 20, mid); g.textAlign = "left" }
-    g.fillStyle = r.price === "Gratis" ? GOLD : "#FFFFFF"; g.font = `700 ${msz}px ${BODY}`; g.textAlign = "right"
-    g.fillText(r.price, W - 92, tall ? mid - 14 : mid); g.textAlign = "left"
-    y += rh + m.gap
-  }
+    const priceW = g.measureText(r.price).width + 36
+    const free = r.price === "Gratis"
+    g.fillStyle = free ? "#E4F5E8" : WINE; g.beginPath(); g.roundRect(W - 64 - 22 - priceW, y + rh / 2 - msz, priceW, msz * 2, msz); g.fill()
+    g.fillStyle = free ? "#14532D" : "#FFFFFF"; g.textAlign = "center"; g.fillText(r.price, W - 64 - 22 - priceW / 2, y + rh / 2 + 1); g.textAlign = "left"
+    // título y cuándo
+    const x = tx + th + 24
+    g.fillStyle = INK; g.font = `800 ${tsz}px ${HEAD}`
+    g.fillText(fit(g, r.title, W - 64 - 22 - priceW - 20 - x), x, y + rh / 2 - tsz * 0.38)
+    g.fillStyle = WINE; g.font = `700 ${msz}px ${BODY}`
+    g.fillText(fit(g, `${r.day} · ${r.time}`, W - 64 - 22 - priceW - 20 - x), x, y + rh / 2 + tsz * 0.78)
+    y += rh + gap
+  })
   g.textBaseline = "middle"
   if (i.plan.more > 0) {
     g.fillStyle = CREAM; g.font = `700 ${story ? 36 : 32}px ${BODY}`
-    g.fillText(`+ ${i.plan.more} ${i.plan.more === 1 ? "plan más" : "planes más"} en el enlace`, 92, y + 24); y += 56
-  }
-  if (i.plan.anytime.length) {
-    const names = i.plan.anytime.join(", ") + (i.plan.anytimeMore ? ` y ${i.plan.anytimeMore} más` : "")
-    g.fillStyle = CREAM; g.font = `600 ${story ? 32 : 28}px ${BODY}`
-    g.fillText(fit(g, `Cuando quieras: ${names}`, W - 184), 92, y + 24)
+    g.fillText(`+ ${i.plan.more} ${i.plan.more === 1 ? "plan más" : "planes más"} en el enlace`, 72, y + 22)
   }
 
   // franja inferior con el QR
@@ -120,7 +119,7 @@ export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPost
   g.fillStyle = "#FFFFFF"; g.beginPath(); g.roundRect(W - 64 - qrSize - 28, top + (H - top - qrSize - 28) / 2, qrSize + 28, qrSize + 28, 24); g.fill()
   g.imageSmoothingEnabled = false
   g.drawImage(i.qr, W - 64 - qrSize - 14, top + (H - top - qrSize) / 2, qrSize, qrSize)
-  g.textAlign = "left"; g.textBaseline = "alphabetic"
+  g.textBaseline = "alphabetic"
   g.fillStyle = DEEP; g.font = `800 ${story ? 52 : 46}px ${HEAD}`
   g.fillText("Escanéalo y arma", 64, top + (story ? 150 : 108)); g.fillText("la tuya", 64, top + (story ? 210 : 160))
   g.fillStyle = WINE; g.font = `700 ${story ? 30 : 28}px ${BODY}`

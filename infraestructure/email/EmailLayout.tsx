@@ -101,6 +101,14 @@ function WeeklyLayout({ m, w }: { m: EmailModel; w: WeeklyBlock }) {
                   {g.items.map((c) => <WeeklyRow key={c.href + c.when} c={c} />)}
                 </Section>
               ))}
+              {w.anytime.length ? (
+                <Section style={{ marginTop: 22, backgroundColor: CREAM, border: "1px solid #F6DDA0", borderRadius: 18, padding: "14px 16px" }}>
+                  <Text style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#6E0A1D" }}>Cuando quieras</Text>
+                  <Text style={{ margin: "4px 0 0", fontSize: 14, lineHeight: "1.6", color: "#7A5200" }}>
+                    {w.anytime.map((a, i) => <span key={a.href}>{i ? " · " : ""}<Link href={a.href} style={{ color: "#7A5200", fontWeight: 600 }}>{a.title}</Link></span>)}
+                  </Text>
+                </Section>
+              ) : null}
               <Section style={{ textAlign: "center", margin: "26px 0 10px" }}>
                 <Button href={w.allHref} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "15px 30px", borderRadius: 999, fontWeight: 700, fontSize: 16, textDecoration: "none" }}>Ver los {w.total} planes</Button>
               </Section>

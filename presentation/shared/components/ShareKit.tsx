@@ -23,10 +23,12 @@ export interface ShareKitProps {
   imageUrl?: string;
   /** El sitio aún está en revisión: los enlaces funcionarán cuando lo aprueben. */
   pendingReview?: boolean;
+  /** Título del diálogo (por defecto «Comparte tu evento/actividad/sitio»). */
+  heading?: string;
 }
 
 /** Modal "tu kit para compartir": vista previa del afiche, enlaces por canal ya listos, QR y un mensaje escrito. */
-export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, pendingReview }: ShareKitProps) {
+export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, pendingReview, heading }: ShareKitProps) {
   // El QR vive dentro del portal del diálogo (se monta después): se guarda en estado para que los efectos esperen a que exista.
   const [qr, setQr] = useState<HTMLCanvasElement | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><CheckCircle2 className="size-7" aria-hidden /></span>
           <div className="min-w-0">
             <DialogTitle className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              {pendingReview ? `Tu ${noun} está en revisión` : `Comparte tu ${noun}`}
+              {pendingReview ? `Tu ${noun} está en revisión` : (heading ?? `Comparte tu ${noun}`)}
             </DialogTitle>
             <DialogDescription className="mt-1 text-[15px] text-slate-600">
               {pendingReview

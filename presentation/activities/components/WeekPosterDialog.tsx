@@ -44,7 +44,7 @@ export function WeekPosterDialog({ open, onClose, plan }: { open: boolean; onClo
             <img src={preview} alt="Vista previa del afiche de tu semana" className="aspect-[4/5] w-full object-cover" />
           ) : <div className="grid aspect-[4/5] place-items-center text-muted-foreground"><Loader2 className="size-6 animate-spin" aria-label="Preparando el afiche" /></div>}
         </div>
-        {plan.more > 0 ? <p className="text-xs text-muted-foreground">Tienes muchos planes: en el afiche van los primeros 6 y el resto se ve en el enlace.</p> : null}
+        {plan.more > 0 ? <p className="text-xs text-muted-foreground">Tienes muchos planes: en el afiche van los primeros 5 y el resto se ve en el enlace.</p> : null}
         <div className="grid gap-2">
           <Button type="button" size="lg" className="h-12" disabled={busy !== null || !qr} onClick={() => void download("feed")}>{busy === "feed" ? <Loader2 className="animate-spin" aria-hidden /> : <Download aria-hidden />} Afiche para publicar</Button>
           <Button type="button" variant="outline" size="lg" className="h-12" disabled={busy !== null || !qr} onClick={() => void download("story")}>{busy === "story" ? <Loader2 className="animate-spin" aria-hidden /> : <ImageIcon aria-hidden />} Para historias</Button>

@@ -3,11 +3,11 @@ import { occurrencesBetween } from "./value-objects/occurrences"
 import { whenRange } from "./when"
 
 export const DIGEST_MAX_PER_DAY = 6
-export interface DigestEvent { id: string; title: string; start: Date; end: Date; place: string; url: string; imageUrl?: string }
+export interface DigestEvent { id: string; title: string; start: Date; end: Date; place: string; url: string; imageUrl?: string; /** puntuación del evento (más = mejor) */ score?: number }
 export interface DigestActivity { id: string; title: string; schedule: ActivitySchedule; priceFrom: string; place: string; url: string; imageUrl?: string }
-export interface DigestItem { kind: "event" | "activity"; title: string; timeLabel: string; place: string; detail: string; url: string; sortMin: number; imageUrl?: string }
+export interface DigestItem { kind: "event" | "activity"; title: string; timeLabel: string; place: string; detail: string; url: string; sortMin: number; imageUrl?: string; score?: number }
 export interface DigestDay { date: string; label: string; items: DigestItem[] }
-export interface Digest { title: string; days: DigestDay[] }
+export interface Digest { title: string; days: DigestDay[]; /** disponible todos los días sin hora (cines…): no es un plan con día, va como «Cuando quieras» */ anytime?: { title: string; url: string }[] }
 
 const OFFSET = 5 * 3_600_000
 const DAY = 86_400_000
@@ -30,7 +30,7 @@ export function buildWeekendDigest(events: readonly DigestEvent[], activities: r
     for (const e of events) {
       if (e.end.getTime() < now.getTime() || e.end.getTime() < from || e.start.getTime() > to) continue
       const startsToday = e.start.getTime() >= from
-      items.push({ kind: "event", title: e.title, timeLabel: startsToday ? hourText(minutesOf(e.start)) : "Todo el día", place: e.place, detail: "Evento", url: e.url, imageUrl: e.imageUrl, sortMin: startsToday ? minutesOf(e.start) : -1 })
+      items.push({ kind: "event", title: e.title, timeLabel: startsToday ? hourText(minutesOf(e.start)) : "Todo el día", place: e.place, detail: "Evento", url: e.url, imageUrl: e.imageUrl, score: e.score, sortMin: startsToday ? minutesOf(e.start) : -1 })
     }
     for (const a of activities) {
       for (const o of occurrencesBetween(a.schedule, date, date)) {
@@ -44,7 +44,8 @@ export function buildWeekendDigest(events: readonly DigestEvent[], activities: r
     items.sort((x, y) => x.sortMin - y.sortMin || x.title.localeCompare(y.title, "es"))
     if (items.length) days.push({ date, label: dayLabel(date), items: items.slice(0, DIGEST_MAX_PER_DAY) })
   }
-  return { title: "Qué hacer este fin de semana en Ibagué", days }
+  const anytime = activities.filter((a) => occurrencesBetween(a.schedule, range.from, range.to).some((o) => !o.startsAt)).slice(0, 4).map((a) => ({ title: a.title, url: a.url }))
+  return { title: "Qué hacer este fin de semana en Ibagué", days, ...(anytime.length ? { anytime } : {}) }
 }
 
 /** Texto listo para pegar en el Canal de WhatsApp: un bloque por día, un renglón por plan y su enlace. */
