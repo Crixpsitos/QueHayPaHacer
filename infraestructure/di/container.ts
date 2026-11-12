@@ -57,8 +57,11 @@ import { ActivityPlansService } from "@/application/services/activities/Activity
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
+import { reviewKey } from "@/presentation/activities/lib/reviewView";
 import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
+import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
+import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
@@ -102,6 +105,7 @@ const complaintLimiter = createIpLimiter(5);
 
 // Cooldown de reseñas por persona: a nivel de módulo (createServerContainer se ejecuta en cada llamada).
 const REVIEW_LAST_SUBMIT = new Map<string, number>();
+const REVIEW_LAST_FLAG = new Map<string, number>();
 
 export const createServerContainer = () => {
 
@@ -216,11 +220,23 @@ export const createServerContainer = () => {
   const contactService = new ContactService(contactAdapter);
 
   // reports (moderación de contenido)
+  const reviewRepoEarly = new ActivityReviewFirebaseRepository(getFirebaseFirestore());
   const reportService = new ReportService(
     new ReportFirebaseRepository(getFirebaseFirestore()),
     eventsService,
     eventSessionService,
     sitesService,
+    {
+      activity: async (id) => { const a = await activityService.getPublicById(id); return a ? { title: a.title, authorId: a.ownerUid } : null; },
+      review: async (compound) => {
+        const i = compound.lastIndexOf("_");
+        const activityId = compound.slice(0, i), key = compound.slice(i + 1);
+        const a = await activityService.getPublicById(activityId);
+        const r = a ? (await reviewRepoEarly.listByActivity(activityId, 500)).find((x) => reviewKey(x.activityId, x.uid) === key) : null;
+        return a && r ? { title: `${a.title} (reseña)`, authorId: r.uid, reviewId: r.id } : null;
+      },
+      hideReview: async (reviewId) => { await reviewRepoEarly.setFlag(reviewId, { by: "system", reason: "reports", note: "", at: new Date() }); },
+    },
   );
 
   // declaración del autor al publicar (evidencia legal)
@@ -300,6 +316,23 @@ export const createServerContainer = () => {
     lastSubmit: REVIEW_LAST_SUBMIT,
   });
 
+  // cuestionar reseñas, responderlas y resolverlas (QHPA)
+  const reviewRepo = new ActivityReviewFirebaseRepository(getFirebaseFirestore());
+  const reviewModerationService = new ReviewModerationService({
+    reviews: reviewRepo,
+    sanctions: new ActivitySanctionFirebaseRepository(getFirebaseFirestore()),
+    getActivity: async (id) => {
+      const a = await activityService.getPublicById(id);
+      if (!a) return null;
+      const site = a.siteId ? await sitesService.getActivityLinkSnapshot(a.siteId) : null;
+      return { id: a.id, slug: a.slug, title: a.title, ownerUid: a.ownerUid, siteOwnerUid: site?.authorId ?? null };
+    },
+    notify: (uid, n, id) => notificationService.notify(uid, n, id),
+    clock: () => new Date(),
+    log: (m) => console.warn(`[review-moderation] ${m}`),
+    lastFlag: REVIEW_LAST_FLAG,
+  });
+
   // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
   const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
   const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
@@ -347,6 +380,7 @@ export const createServerContainer = () => {
     activityPublishService,
     activityEngagementService,
     activityReviewService,
+    reviewModerationService,
     activityJoinService,
     activityPlansService,
     activityReminderService,

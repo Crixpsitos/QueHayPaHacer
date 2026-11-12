@@ -1,6 +1,6 @@
 import type { DocumentData, Firestore } from "firebase-admin/firestore"
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
-import { applyReviewToRating, type ActivityReview } from "@/domain/entities/activities/review/ActivityReview"
+import { applyReviewToRating, type ActivityReview, type ReviewFlag } from "@/domain/entities/activities/review/ActivityReview"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 
@@ -69,5 +69,54 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
   async listByAuthorSince(uid: string, since: Date): Promise<ActivityReview[]> {
     const s = await this.collection.where("uid", "==", uid).limit(200).get()
     return s.docs.map((d) => fromDoc(d.id, d.data())).filter((r) => r.createdAt >= since)
+  }
+
+  async getById(reviewId: string): Promise<ActivityReview | null> {
+    const s = await this.collection.doc(reviewId).get()
+    return s.exists ? fromDoc(s.id, s.data()!) : null
+  }
+
+  async setFlag(reviewId: string, flag: ReviewFlag): Promise<boolean> {
+    const ref = this.collection.doc(reviewId)
+    return this.db.runTransaction(async (tx) => {
+      const d = await tx.get(ref)
+      if (!d.exists || d.get("status") !== "published") return false
+      tx.update(ref, { status: "flagged", flag, updatedAt: new Date() })
+      return true
+    })
+  }
+
+  async countOpenFlags(filter: { by?: string; activityId?: string }): Promise<number> {
+    let q = this.collection.where("status", "==", "flagged")
+    if (filter.by) q = q.where("flag.by", "==", filter.by)
+    if (filter.activityId) q = q.where("activityId", "==", filter.activityId)
+    return (await q.count().get()).data().count
+  }
+
+  async resolveFlag(reviewId: string, r: { status: "published" | "removed"; resolution: "upheld" | "removed"; resolvedBy: string; at: Date }): Promise<{ review: ActivityReview; rating: ActivityRating } | null> {
+    const ref = this.collection.doc(reviewId)
+    return this.db.runTransaction(async (tx) => {
+      const d = await tx.get(ref)
+      if (!d.exists || d.get("status") !== "flagged") return null
+      const act = this.activity(d.get("activityId"))
+      const a = await tx.get(act)
+      let rating: ActivityRating = (a.exists ? a.get("rating") : null) ?? EMPTY
+      tx.update(ref, { status: r.status, "flag.resolution": r.resolution, "flag.resolvedAt": r.at, "flag.resolvedBy": r.resolvedBy, updatedAt: r.at })
+      if (r.status === "removed" && a.exists) {
+        rating = applyReviewToRating(rating, { type: "remove", rating: d.get("rating") })
+        tx.update(act, { rating, "analytics.reviews": rating.count })
+      }
+      const data = { ...d.data()!, status: r.status, flag: { ...d.get("flag"), resolution: r.resolution, resolvedAt: r.at, resolvedBy: r.resolvedBy } }
+      return { review: fromDoc(d.id, data), rating }
+    })
+  }
+
+  async setReply(reviewId: string, reply: { text: string; at: Date } | null): Promise<void> {
+    await this.collection.doc(reviewId).update({ ownerReply: reply, updatedAt: new Date() })
+  }
+
+  async listFlagged(limit: number): Promise<ActivityReview[]> {
+    const s = await this.collection.where("status", "==", "flagged").limit(500).get()
+    return s.docs.map((d) => fromDoc(d.id, d.data())).sort((a, b) => (a.flag?.at.getTime() ?? 0) - (b.flag?.at.getTime() ?? 0)).slice(0, limit)
   }
 }

@@ -9,7 +9,7 @@ const DocId = v.pipe(v.string(), v.trim(), v.regex(/^[A-Za-z0-9_-]{1,128}$/, "Co
 
 export const ReportInputSchema = v.pipe(
   v.object({
-    targetType: v.picklist(["event", "site"], "Contenido inválido"),
+    targetType: v.picklist(["event", "site", "activity", "review"], "Contenido inválido"),
     targetId: DocId,
     sessionId: v.optional(DocId),
     reason: v.string("Selecciona un motivo"),

@@ -33,6 +33,8 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   activity_transferred: ArrowRightLeft,
   activity_join: UserPlus,
   review_received: MessageSquareDiff,
+  review_flag_resolved: BadgeCheck,
+  activity_sanction: Compass,
   activity_join_confirmed: UserCheck,
   activity_reminder: CalendarDays,
   activity_last_spot: Ticket,

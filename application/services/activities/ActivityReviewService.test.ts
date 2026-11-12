@@ -20,6 +20,8 @@ function setup(o: { now?: () => Date; accountAgeMin?: number; activityOwner?: st
     async remove(a, u) { const d = docs.get(`${a}_${u}`); if (!d) return { removed: false, rating }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating } },
     async listByActivity(a) { return [...docs.values()].filter((d) => d.activityId === a) },
     async listByAuthorSince(u, since) { return [...docs.values()].filter((d) => d.uid === u && d.createdAt >= since) },
+    async getById() { throw new Error("n/a") }, async setFlag() { throw new Error("n/a") }, async countOpenFlags() { throw new Error("n/a") },
+    async resolveFlag() { throw new Error("n/a") }, async setReply() { throw new Error("n/a") }, async listFlagged() { throw new Error("n/a") },
   }
   const notes: { uid: string; n: NewNotification; id?: string }[] = []
   const svc = new ActivityReviewService({

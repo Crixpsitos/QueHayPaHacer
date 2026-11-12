@@ -23,6 +23,8 @@ export const NOTIFICATION_TYPES = [
   "activity_reminder",
   "activity_last_spot",
   "review_received",
+  "review_flag_resolved",
+  "activity_sanction",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

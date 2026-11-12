@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/app/components/ui/button/button"
 import { cn } from "@/app/lib/utils/cn"
-import { getMyReviewAction } from "@/app/actions/activities/review.action"
+import { getMyReviewAction, getReviewRoleAction } from "@/app/actions/activities/review.action"
 import type { ReviewsData } from "@/presentation/activities/data/reviews"
 import { filterReviews, type ReviewFilter } from "@/presentation/activities/lib/reviewFilters"
 import type { ReviewView } from "@/presentation/activities/lib/reviewView"
+import { FlagDialog } from "./FlagDialog"
 import { ReviewCard } from "./ReviewCard"
 import { ReviewForm } from "./ReviewForm"
 import { ReviewStory } from "./ReviewStory"
@@ -25,9 +26,12 @@ export function ReviewsClient({ activityId, categorySlug, data, visitedLabel }: 
   const [open, setOpen] = useState<ReviewView | null>(null)
   const [form, setForm] = useState(false)
   const [mine, setMine] = useState<Mine | null>(null)
+  const [isHost, setIsHost] = useState(false)
+  const [flagKey, setFlagKey] = useState<string | null>(null)
 
   const openForm = async () => { setMine(await getMyReviewAction(activityId)); setForm(true) }
   useEffect(() => { if (params.get("resena") === "1") { const t = setTimeout(() => { void openForm() }, 0); return () => clearTimeout(t) } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { let on = true; void getReviewRoleAction(activityId).then((r) => { if (on) setIsHost(r.isHost) }); return () => { on = false } }, [activityId])
   const list = filterReviews(data.reviews, filter)
 
   return (
@@ -54,7 +58,8 @@ export function ReviewsClient({ activityId, categorySlug, data, visitedLabel }: 
       )}
       <Button type="button" size="lg" className="h-12 w-fit" onClick={() => void openForm()}>Escribir una reseña</Button>
 
-      <ReviewStory r={open} onClose={() => setOpen(null)} />
+      <ReviewStory r={open} activityId={activityId} isHost={isHost} onClose={() => setOpen(null)} onFlag={(k) => { setOpen(null); setFlagKey(k) }} onChanged={() => { setOpen(null); router.refresh() }} />
+      <FlagDialog reviewKey={flagKey} activityId={activityId} onClose={() => setFlagKey(null)} onDone={() => { setFlagKey(null); router.refresh() }} />
       {form && mine ? (
         <ReviewForm key={mine.mine ? "edit" : "new"} open={form} onClose={() => setForm(false)} activityId={activityId} docId={mine.docId} loggedIn={mine.loggedIn} mine={mine.mine} blocked={mine.blocked}
           onDone={() => { setForm(false); router.refresh() }} />

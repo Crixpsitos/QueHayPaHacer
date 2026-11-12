@@ -1,12 +1,28 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog"
+import { ReportButton } from "@/presentation/shared/components/ReportButton"
+import { replyReviewAction } from "@/app/actions/activities/review.action"
+import { Textarea } from "@/app/components/ui/textarea"
 import type { ReviewView } from "@/presentation/activities/lib/reviewView"
 import { Stars } from "./Stars"
 
 /** Historia abierta: todas las fotos, el video, el texto completo y la respuesta de quien organiza. Foco atrapado y Esc cierran (Dialog). */
-export function ReviewStory({ r, onClose, onFlag }: { r: ReviewView | null; onClose: () => void; onFlag?: (key: string) => void }) {
+export function ReviewStory({ r, activityId, isHost, onClose, onFlag, onChanged }: { r: ReviewView | null; activityId: string; isHost: boolean; onClose: () => void; onFlag: (key: string) => void; onChanged: () => void }) {
+  const [reply, setReply] = useState("")
+  const [replying, setReplying] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const sendReply = async () => {
+    if (!r) return
+    setBusy(true); setError(null)
+    const res = await replyReviewAction(activityId, r.key, reply)
+    setBusy(false)
+    if (!res.success) return setError(res.error)
+    setReplying(false); onChanged()
+  }
   return (
     <Dialog open={!!r} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -24,7 +40,22 @@ export function ReviewStory({ r, onClose, onFlag }: { r: ReviewView | null; onCl
             {r.processingMedia ? <p className="text-sm text-muted-foreground">Procesando fotos o video…</p> : null}
             {r.body ? <p className="whitespace-pre-line text-base leading-relaxed">{r.body}</p> : null}
             {r.reply ? <div className="rounded-2xl border-l-4 border-[#FFB703] bg-accent p-3"><p className="text-sm font-semibold text-primary-dark">Respuesta de quien organiza</p><p className="text-sm leading-relaxed">{r.reply.text}</p></div> : null}
-            {onFlag ? <button type="button" onClick={() => onFlag(r.key)} className="min-h-11 w-fit rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Cuestionar esta reseña</button> : null}
+            {isHost ? (
+              <div className="grid gap-2">
+                {replying ? (
+                  <>
+                    <label className="grid gap-1.5 text-sm font-semibold">Tu respuesta (máx. 600 caracteres)<Textarea value={reply} maxLength={600} rows={3} onChange={(e) => setReply(e.target.value)} /></label>
+                    {error ? <p role="alert" className="text-sm font-medium text-destructive">{error}</p> : null}
+                    <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => void sendReply()} className="min-h-11 rounded-full bg-primary-dark px-5 text-sm font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-ring/40 disabled:opacity-60">{busy ? "Guardando…" : "Guardar respuesta"}</button><button type="button" onClick={() => setReplying(false)} className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40">Cancelar</button></div>
+                  </>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => { setReply(r.reply?.text ?? ""); setReplying(true) }} className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">{r.reply ? "Editar mi respuesta" : "Responder"}</button>
+                    {!r.inVerification ? <button type="button" onClick={() => onFlag(r.key)} className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40">Cuestionar esta reseña</button> : null}
+                  </div>
+                )}
+              </div>
+            ) : <ReportButton targetType="review" targetId={`${activityId}_${r.key}`} />}
           </>
         ) : null}
       </DialogContent>

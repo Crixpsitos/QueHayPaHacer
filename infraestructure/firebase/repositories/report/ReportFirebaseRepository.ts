@@ -28,4 +28,12 @@ export class ReportFirebaseRepository extends FirebaseBaseRepository implements 
       throw e;
     }
   }
+
+  // Sin orderBy ni rango: solo igualdades (sin índice compuesto); los reportes de un mismo contenido son pocos.
+  async recentReporters(targetType: Report["targetType"], targetId: string, since: Date): Promise<{ by: string; at: Date }[]> {
+    const s = await this.collection.where("targetType", "==", targetType).where("targetId", "==", targetId).limit(200).get();
+    return s.docs
+      .map((d) => ({ by: d.get("uid") as string, at: (d.get("createdAt")?.toDate?.() as Date | undefined) ?? new Date(0) }))
+      .filter((r) => r.at >= since);
+  }
 }

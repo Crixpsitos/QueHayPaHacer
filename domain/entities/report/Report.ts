@@ -1,4 +1,4 @@
-export type ReportTargetType = "event" | "site";
+export type ReportTargetType = "event" | "site" | "activity" | "review";
 export type ReportStatus = "open" | "resolved";
 
 /** Motivos por tipo de contenido (valor → etiqueta). Compartido por la UI y la validación del servidor. */
@@ -21,6 +21,23 @@ export const REPORT_REASONS = {
     { value: "inappropriate", label: "Contenido inapropiado u ofensivo" },
     { value: "spam", label: "Spam o publicidad no relacionada" },
     { value: "copyright", label: "Usa imágenes o contenido sin permiso" },
+    { value: "other", label: "Otro motivo" },
+  ],
+  activity: [
+    { value: "inappropriate", label: "Contenido inapropiado u ofensivo" },
+    { value: "spam", label: "Spam o publicidad no relacionada" },
+    { value: "scam", label: "Posible fraude o cobro engañoso" },
+    { value: "false_info", label: "Información falsa o engañosa" },
+    { value: "personal_data", label: "Muestra datos personales" },
+    { value: "copyright", label: "Usa imágenes o contenido sin permiso" },
+    { value: "other", label: "Otro motivo" },
+  ],
+  review: [
+    { value: "inappropriate", label: "Es ofensiva o discriminatoria" },
+    { value: "spam", label: "Es spam o publicidad" },
+    { value: "false_info", label: "Parece falsa o de alguien que no fue" },
+    { value: "personal_data", label: "Contiene datos personales" },
+    { value: "copyright", label: "Usa fotos o video sin permiso" },
     { value: "other", label: "Otro motivo" },
   ],
 } as const satisfies Record<ReportTargetType, readonly { value: string; label: string }[]>;

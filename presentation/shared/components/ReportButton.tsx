@@ -66,7 +66,7 @@ export function ReportButton({ targetType, targetId, sessionId, isOwner = false,
     );
   }
 
-  const noun = targetType === "event" ? "evento" : "sitio";
+  const noun = { event: "evento", site: "sitio", activity: "actividad", review: "reseña" }[targetType];
   const needsDetails = reason === "other";
   const trimmed = details.trim();
   const canSubmit =

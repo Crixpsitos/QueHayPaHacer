@@ -61,3 +61,23 @@ export function activityJoinConfirmedNotification(i: { title: string; slug: stri
 export function reviewReceivedNotification(i: { title: string; slug: string; rating: number; who: string }): NewNotification {
   return { type: "review_received", title: `${i.who} reseñó "${i.title}"`, body: `${"★".repeat(i.rating)}${"☆".repeat(5 - i.rating)}`, href: `/actividades/${i.slug}#resenas` };
 }
+
+/** Aviso a las dos partes tras resolver un cuestionamiento. Explica el resultado; el motivo del cuestionamiento solo lo ve quien lo envió. */
+export function reviewFlagResolvedNotification(i: { title: string; slug: string; outcome: "upheld" | "removed"; audience: "host" | "reviewer" }): NewNotification {
+  const href = `/actividades/${i.slug}#resenas`;
+  if (i.outcome === "upheld") {
+    return i.audience === "host"
+      ? { type: "review_flag_resolved", title: `Revisamos una reseña de "${i.title}"`, body: "La reseña es válida y se mantiene con la marca «Verificada por QHPA».", href }
+      : { type: "review_flag_resolved", title: "Tu reseña fue verificada", body: `Revisamos tu reseña de "${i.title}" y se mantiene publicada como «Verificada por QHPA».`, href };
+  }
+  return i.audience === "host"
+    ? { type: "review_flag_resolved", title: `Retiramos una reseña de "${i.title}"`, body: "Tras revisarla, la reseña incumplía las reglas y se retiró.", href }
+    : { type: "review_flag_resolved", title: "Retiramos tu reseña", body: `Tras revisarla, tu reseña de "${i.title}" incumplía las reglas. Si crees que fue un error, puedes apelar una vez desde tu cuenta.`, href: "/mis-planes" };
+}
+
+export function activitySanctionNotification(i: { kind: "warning" | "restriction" | "suspension"; role: "reviewer" | "host"; days: number }): NewNotification {
+  const what = i.role === "reviewer" ? "reseñar" : "cuestionar reseñas";
+  if (i.kind === "warning") return { type: "activity_sanction", title: "Advertencia sobre tus reseñas", body: i.role === "reviewer" ? "Una reseña tuya incumplía las reglas. La próxima vez habrá restricciones." : "Cuestionaste una reseña válida. Úsalo solo cuando incumpla las reglas.", href: "/terminos#resenas" };
+  if (i.kind === "restriction") return { type: "activity_sanction", title: `Restricción: no puedes ${what} por ${i.days} días`, body: "Por reincidir en incumplir las reglas de reseñas.", href: "/terminos#resenas" };
+  return { type: "activity_sanction", title: "Tu cuenta fue suspendida en reseñas y actividades", body: "QHPA revisará tu caso. Puedes escribirnos desde Contáctanos.", href: "/contactanos" };
+}
