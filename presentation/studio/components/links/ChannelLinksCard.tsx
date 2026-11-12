@@ -23,6 +23,7 @@ export function ChannelLinksCard({ detail, baseUrl }: { detail: PanelDetail; bas
   const create = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
+      if (detail.type === "activity") return; // los enlaces propios aún son solo de eventos y sitios
       const res = await createLinkAction({ label, targetType: detail.type, targetId: detail.id });
       if (!res.success) return notify.error(res.error);
       notify.success("Enlace creado.");
@@ -79,7 +80,7 @@ export function ChannelLinksCard({ detail, baseUrl }: { detail: PanelDetail; bas
         </div>
       )}
 
-      <div className="mt-5">
+      <div className={detail.type === "activity" ? "hidden" : "mt-5"}>
         {composing ? (
           <form onSubmit={create} className="flex flex-col gap-2 sm:flex-row">
             <label className="sr-only" htmlFor="own-link-label">Nombre del enlace (solo lo ves tú)</label>

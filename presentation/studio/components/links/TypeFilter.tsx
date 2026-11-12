@@ -5,15 +5,15 @@ import type { TypeFilter as T } from "@/presentation/studio/lib/panelNav";
 import { cn } from "@/app/lib/utils/cn";
 import { usePanelNav } from "./PanelNav";
 
-const TABS: { id: T; label: string }[] = [{ id: "all", label: "Todos" }, { id: "event", label: "Eventos" }, { id: "site", label: "Sitios" }];
+const TABS: { id: T; label: string }[] = [{ id: "all", label: "Todos" }, { id: "event", label: "Eventos" }, { id: "site", label: "Sitios" }, { id: "activity", label: "Actividades" }];
 
-/** Todos / Eventos / Sitios con su cantidad. Solo se muestra si hay de los dos tipos (si no, no hay nada que filtrar). */
+/** Todos / Eventos / Sitios / Actividades con su cantidad. Solo se muestra si hay de al menos dos tipos (si no, no hay nada que filtrar). */
 export function TypeFilter({ counts }: { counts: PanelVM["counts"] }) {
   const { nav, go } = usePanelNav();
-  if (!counts.event || !counts.site) return null;
+  if ([counts.event, counts.site, counts.activity].filter(Boolean).length < 2) return null;
   return (
     <div role="group" aria-label="Mostrar" className="flex w-fit gap-1 rounded-[10px] bg-slate-200 p-1">
-      {TABS.map((t) => (
+      {TABS.filter((t) => t.id === "all" || counts[t.id] > 0).map((t) => (
         <button
           key={t.id}
           type="button"

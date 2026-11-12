@@ -3,12 +3,12 @@ import { buildFunnel, buildSeries, buildVerdict, channelRows, dayRange, nextStep
 import type { Channel } from "@/domain/entities/analytics/trafficSource"
 import type { FichaRef, LinkRow } from "./panelTypes"
 
-import type { Period, TypeFilter } from "./panelNav"
+import type { FichaType, Period, TypeFilter } from "./panelNav"
 export { PERIODS, type Period } from "./panelNav"
 
-export interface PanelFicha { key: string; type: "event" | "site"; id: string; name: string; image?: string; views30: number; selected: boolean }
+export interface PanelFicha { key: string; type: FichaType; id: string; name: string; image?: string; views30: number; selected: boolean }
 export interface PanelDetail {
-  type: "event" | "site"; id: string; name: string; image?: string; publicHref: string
+  type: FichaType; id: string; name: string; image?: string; publicHref: string
   verdict: ReturnType<typeof buildVerdict>
   kpis: { views: number; interest: number; action: number; interestPct: number; actionPct: number; viewsDeltaPct: number | null }
   series: { points: SeriesPoint[]; peak: SeriesPoint | null }
@@ -17,7 +17,7 @@ export interface PanelDetail {
   next: { channel: Channel | null; title: string; body: string } | null
   customLinks: LinkRow[]
 }
-export interface PanelVM { fichas: PanelFicha[]; period: Period; typeFilter: TypeFilter; counts: { all: number; event: number; site: number }; detail: PanelDetail | null }
+export interface PanelVM { fichas: PanelFicha[]; period: Period; typeFilter: TypeFilter; counts: { all: number; event: number; site: number; activity: number }; detail: PanelDetail | null }
 
 interface Input {
   fichas: FichaRef[]
@@ -41,7 +41,7 @@ export function buildPanel(i: Input): PanelVM {
   const keyOf = (f: FichaRef) => `${f.type}:${f.id}`
   const views30 = (f: FichaRef) => i.stats30[keyOf(f)]?.views ?? 0
   const typeFilter = i.typeFilter ?? "all"
-  const counts = { all: i.fichas.length, event: i.fichas.filter((f) => f.type === "event").length, site: i.fichas.filter((f) => f.type === "site").length }
+  const counts = { all: i.fichas.length, event: i.fichas.filter((f) => f.type === "event").length, site: i.fichas.filter((f) => f.type === "site").length, activity: i.fichas.filter((f) => f.type === "activity").length }
   // `fichas` lleva TODAS (el cliente filtra por tipo al instante); la seleccionada sale del tipo filtrado.
   const sorted = [...i.fichas].sort((a, b) => views30(b) - views30(a))
   const pool = sorted.filter((f) => typeFilter === "all" || f.type === typeFilter)
@@ -65,7 +65,7 @@ export function buildPanel(i: Input): PanelVM {
       id: selected.id,
       name: selected.name,
       image: selected.image,
-      publicHref: selected.type === "event" ? `/eventos/${selected.id}` : `/donde-ir/${selected.id}`,
+      publicHref: selected.type === "event" ? `/eventos/${selected.id}` : selected.type === "activity" ? `/actividades/${selected.slug || selected.id}` : `/donde-ir/${selected.id}`,
       verdict: buildVerdict({ views: cur.views, actionPct: funnel.actionPct }),
       kpis: {
         views: cur.views, interest: funnel.interest, action: funnel.action, interestPct: funnel.interestPct, actionPct: funnel.actionPct,
