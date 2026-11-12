@@ -19,6 +19,8 @@ export interface ReviewDeps {
   notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
   legalVersion: string
+  /** Borra un archivo de Storage por ruta (reseñas borradas: no deben quedar fotos huérfanas). Opcional. */
+  deleteFile?: (path: string) => Promise<void>
   /** Último envío por persona (cooldown). Debe vivir a nivel de módulo en producción: el contenedor no se memoiza. */
   lastSubmit?: Map<string, number>
 }
@@ -86,6 +88,20 @@ export class ActivityReviewService {
       if (e instanceof Error && e.message === "FLAGGED") throw new Error("Tu reseña está en verificación: no se puede borrar mientras tanto.")
       throw e
     }
+  }
+
+  /** Al eliminar la cuenta: se borran las reseñas (también las cuestionadas), el promedio se ajusta y se borran sus fotos y videos. */
+  async eraseUser(uid: string): Promise<number> {
+    if (!uid?.trim()) return 0
+    const mine = await this.d.repo.listByAuthorSince(uid, new Date(0))
+    let n = 0
+    for (const r of mine) {
+      const res = await this.d.repo.remove(r.activityId, uid, { force: true })
+      if (!res.removed) continue
+      n++
+      for (const m of res.media) for (const path of [m.path, m.thumbnailPath]) if (path && this.d.deleteFile) await this.d.deleteFile(path).catch(() => undefined)
+    }
+    return n
   }
 
   getMine(uid: string, activityId: string): Promise<ActivityReview | null> {

@@ -45,18 +45,19 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
     })
   }
 
-  async remove(activityId: string, uid: string): Promise<{ removed: boolean; rating: ActivityRating }> {
+  async remove(activityId: string, uid: string, opts?: { force?: boolean }): Promise<{ removed: boolean; rating: ActivityRating; media: { path: string; thumbnailPath?: string }[] }> {
     const ref = this.collection.doc(`${activityId}_${uid}`)
     const act = this.activity(activityId)
     return this.db.runTransaction(async (tx) => {
       const [mine, a] = await Promise.all([tx.get(ref), tx.get(act)])
       const current: ActivityRating = (a.exists ? a.get("rating") : null) ?? EMPTY
-      if (!mine.exists) return { removed: false, rating: current }
-      if (mine.get("status") === "flagged") throw new Error("FLAGGED")
-      const rating = applyReviewToRating(current, { type: "remove", rating: mine.get("rating") })
+      if (!mine.exists) return { removed: false, rating: current, media: [] }
+      if (mine.get("status") === "flagged" && !opts?.force) throw new Error("FLAGGED")
+      const counted = mine.get("status") === "published" || mine.get("status") === "flagged" || mine.get("status") === "pendingMedia"
+      const rating = counted ? applyReviewToRating(current, { type: "remove", rating: mine.get("rating") }) : current
       tx.delete(ref)
-      if (a.exists) tx.update(act, { rating, "analytics.reviews": rating.count })
-      return { removed: true, rating }
+      if (a.exists && counted) tx.update(act, { rating, "analytics.reviews": rating.count })
+      return { removed: true, rating, media: (mine.get("media") ?? []).map((m: { path: string; thumbnailPath?: string }) => ({ path: m.path, thumbnailPath: m.thumbnailPath })) }
     })
   }
 

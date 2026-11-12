@@ -17,7 +17,7 @@ function setup(o: { now?: () => Date; accountAgeMin?: number; activityOwner?: st
   const repo: IActivityReviewRepository = {
     async get(a, u) { return docs.get(`${a}_${u}`) ?? null },
     async save(r) { await Promise.resolve(); const prev = docs.get(r.id); rating = applyReviewToRating(rating, prev ? { type: "edit", from: prev.rating, to: r.rating } : { type: "add", rating: r.rating }); docs.set(r.id, r); return { created: !prev, rating } },
-    async remove(a, u) { const d = docs.get(`${a}_${u}`); if (!d) return { removed: false, rating }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating } },
+    async remove(a, u) { const d = docs.get(`${a}_${u}`); if (!d) return { removed: false, rating, media: [] }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating, media: [] } },
     async listByActivity(a) { return [...docs.values()].filter((d) => d.activityId === a) },
     async listByAuthorSince(u, since) { return [...docs.values()].filter((d) => d.uid === u && d.createdAt >= since) },
     async getById() { throw new Error("n/a") }, async setFlag() { throw new Error("n/a") }, async countOpenFlags() { throw new Error("n/a") },
@@ -105,4 +105,15 @@ test("borrar: se puede, ajusta el agregado y no se puede si está cuestionada", 
   await s.svc.submit("u1", "a1", input, meta)
   s.docs.get("a1_u1")!.status = "flagged"
   await assert.rejects(s.svc.remove("u1", "a1"), /verificación/)
+})
+
+test("eliminar la cuenta borra todas sus reseñas (incluida una en verificación) y ajusta el promedio", async () => {
+  const s = setup()
+  await s.svc.submit("u1", "a1", input, meta)
+  s.advance(31_000)
+  await s.svc.submit("u1", "a2", { ...input, body: "Otro texto distinto para otra actividad cualquiera." }, meta)
+  assert.equal(s.rating.count, 2)
+  assert.equal(await s.svc.eraseUser("u1"), 2)
+  assert.equal(s.docs.size, 0)
+  assert.equal(s.rating.count, 0)
 })

@@ -10,7 +10,7 @@ export interface IActivityReviewRepository {
   /** Crea o reemplaza la reseña de esa persona y ajusta `rating` de la actividad. `created` = false si era edición. */
   save(review: ActivityReview): Promise<{ created: boolean; rating: ActivityRating }>
   /** Borra la reseña y ajusta `rating`. Lanza `FLAGGED` si está cuestionada (no se puede borrar mientras se verifica). */
-  remove(activityId: string, uid: string): Promise<{ removed: boolean; rating: ActivityRating }>
+  remove(activityId: string, uid: string, opts?: { force?: boolean }): Promise<{ removed: boolean; rating: ActivityRating; media: { path: string; thumbnailPath?: string }[] }>
   listByActivity(activityId: string, limit: number): Promise<ActivityReview[]>
   /** Reseñas de una persona desde `since` (antispam: tope diario y texto repetido). */
   listByAuthorSince(uid: string, since: Date): Promise<ActivityReview[]>

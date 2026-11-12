@@ -316,6 +316,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     legalVersion: LEGAL_VERSION,
     lastSubmit: REVIEW_LAST_SUBMIT,
+    deleteFile: (path) => storageService.delete(path),
   });
 
   // cuestionar reseñas, responderlas y resolverlas (QHPA)

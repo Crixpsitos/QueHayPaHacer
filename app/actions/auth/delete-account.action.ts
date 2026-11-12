@@ -41,6 +41,13 @@ export async function deleteAccountAction(
       console.error("[DELETE USER JOINS ERROR]", joinError);
     }
 
+    // Reseñas de actividades (texto, fotos y video): se borran y el promedio se ajusta.
+    try {
+      await createServerContainer().activityReviewService.eraseUser(uid);
+    } catch (reviewError) {
+      console.error("[DELETE USER REVIEWS ERROR]", reviewError);
+    }
+
     // Eliminar el usuario de Firebase Auth
     await getFirebaseAdminAuth().deleteUser(uid);
     // Sin esto la cookie de sesión sigue viva hasta expirar.
