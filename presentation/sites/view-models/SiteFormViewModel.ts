@@ -20,6 +20,7 @@ export type SiteCategory =
   | "gym"
   | "spa"
   | "theater"
+  | "ice_cream"
   | "other"
 export type WeekDay = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 

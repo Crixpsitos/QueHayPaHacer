@@ -79,6 +79,12 @@ const CATEGORIES = [
     icon: "party",
   },
   {
+    slug: "talleres",
+    title: "Talleres",
+    description: "Talleres prácticos para aprender haciendo: café, arte, cocina, manualidades y más.",
+    icon: "education",
+  },
+  {
     slug: "naturaleza",
     title: "Naturaleza",
     description: "Senderismo, ecoturismo, actividades al aire libre y campamentos.",

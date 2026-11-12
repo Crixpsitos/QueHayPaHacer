@@ -24,6 +24,7 @@ import {
   Dumbbell,
   Sparkles,
   MapPinned,
+  IceCreamCone,
 } from "lucide-react";
 import { SiteItemListJsonLd } from "./SiteJsonLd";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
@@ -41,7 +42,7 @@ const CATEGORY_ICON: Record<string, React.ElementType> = {
   restaurant: UtensilsCrossed, cafe: Coffee, bar: Beer, discotheque: Music2,
   mall: ShoppingBag, park: Trees, museum: Landmark, cultural: Theater,
   viewpoint: Mountain, hostel: BedDouble, hotel: Building2, gym: Dumbbell,
-  spa: Sparkles, theater: Theater, other: MapPinned,
+  spa: Sparkles, theater: Theater, ice_cream: IceCreamCone, other: MapPinned,
 };
 
 /** Columnas del grid y `sizes` de la imagen van juntos: si cambias uno, cambia el otro. */

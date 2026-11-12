@@ -10,6 +10,7 @@ export const DEFAULT_ZOOM = 13
 export const CATEGORY_OPTIONS: { value: SiteCategory; label: string }[] = [
   { value: "restaurant",  label: "Restaurante" },
   { value: "cafe",        label: "Café" },
+  { value: "ice_cream",   label: "Heladería" },
   { value: "bar",         label: "Bar" },
   { value: "discotheque", label: "Discoteca" },
   { value: "mall",        label: "Centro comercial" },

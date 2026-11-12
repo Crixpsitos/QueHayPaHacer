@@ -46,7 +46,7 @@ const SITE_CATEGORY_LABELS: Record<string, string> = {
   discotheque: "Discoteca", mall: "Centro comercial", park: "Parque",
   museum: "Museo", cultural: "Cultural", viewpoint: "Mirador",
   hostel: "Hostal", hotel: "Hotel", gym: "Gimnasio",
-  spa: "Spa", theater: "Teatro", other: "Otro",
+  spa: "Spa", theater: "Teatro", ice_cream: "Heladería", other: "Otro",
 };
 
 const WEEK_LABELS: Record<WeekDay, string> = {

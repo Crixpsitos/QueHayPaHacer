@@ -11,6 +11,7 @@ import { FeaturedPlan } from "@/presentation/activities/components/hub/FeaturedP
 import { CategoryTiles } from "@/presentation/activities/components/hub/CategoryTiles"
 import { AgendaView } from "@/presentation/activities/components/hub/AgendaView"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
+import { HubSync } from "@/presentation/activities/components/hub/HubSync"
 import { HubMapToggle } from "@/presentation/activities/components/hub/HubMapToggle"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
 import { fetchActivityPage, fetchAgenda, fetchHubMap, fetchHubMeta, resolveSiteId } from "@/presentation/activities/data/fetchers"
@@ -43,6 +44,7 @@ async function Hub({ searchParams }: PageProps) {
 
   return (
     <>
+      <HubSync rendered={filterHref(f, {})} />
       <HubHero current={f} meta={meta} />
       <div className="grid gap-10 py-8">
         {!filtered ? <Suspense fallback={null}><FeaturedPlan /></Suspense> : null}
