@@ -24,3 +24,13 @@ test("varios días: agrupa por día y deja fuera 'todo el día' (sería repetir 
 test("sin nada: lista vacía", () => {
   assert.deepEqual(buildAgenda([], { from: "2026-11-11", to: "2026-11-11" }, NOW), [])
 })
+
+test("anytimeIds: lo sin hora fija sale aparte en rangos de varios días, y no en un solo día", async () => {
+  const { anytimeIds } = await import("./agenda")
+  const always = { rules: [{ kind: "always" }], skipDates: [] } as never
+  const timed = { rules: [{ kind: "weekly", weekdays: [0, 1, 2, 3, 4, 5, 6], start: "10:00" }], skipDates: [] } as never
+  const items = [{ id: "cine", schedule: always }, { id: "trote", schedule: timed }]
+  const now = new Date("2026-11-12T15:00:00Z")
+  assert.deepEqual(anytimeIds(items, { from: "2026-11-12", to: "2026-11-18" }, now), ["cine"])
+  assert.deepEqual(anytimeIds(items, { from: "2026-11-12", to: "2026-11-12" }, now), [])
+})

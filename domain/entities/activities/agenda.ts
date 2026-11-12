@@ -31,3 +31,12 @@ export function buildAgenda(items: readonly { id: string; schedule: ActivitySche
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, entries]) => ({ date, entries: entries.sort((x, y) => (x.hhmm ?? "99:99").localeCompare(y.hhmm ?? "99:99") || x.id.localeCompare(y.id)) }))
 }
+
+/**
+ * Lo que está disponible en el rango pero SIN hora fija (cines, «siempre abierto»…): en un rango de varios días no entra
+ * en cada jornada (repetiría lo mismo), así que va aparte, una sola vez. En un solo día ya sale como «Todo el día».
+ */
+export function anytimeIds(items: readonly { id: string; schedule: ActivitySchedule }[], range: DayRange, now: Date): string[] {
+  if (range.from === range.to) return []
+  return items.filter((it) => occurrencesBetween(it.schedule, range.from, range.to).some((o) => stillOpen(o, now) && hhmmOf(o) === null)).map((it) => it.id)
+}

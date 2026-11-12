@@ -16,8 +16,8 @@ export function AgendaView({ days, showDayTitles }: { days: AgendaDayView[]; sho
   return (
     <div className="grid gap-9">
       {days.map((d) => (
-        <section key={d.date} aria-label={cap(dayTitle(d.date))} className="grid gap-4">
-          {showDayTitles ? <h2 className="font-heading text-2xl font-extrabold tracking-tight">{cap(dayTitle(d.date))}</h2> : null}
+        <section key={d.anytime ? "anytime" : d.date} aria-label={d.anytime ? "Sin hora fija" : cap(dayTitle(d.date))} className="grid gap-4">
+          {d.anytime ? <h2 className="font-heading text-2xl font-extrabold tracking-tight">Sin hora fija <span className="text-base font-semibold text-muted-foreground">· disponible todos los días</span></h2> : showDayTitles ? <h2 className="font-heading text-2xl font-extrabold tracking-tight">{cap(dayTitle(d.date))}</h2> : null}
           <ol className="grid gap-4">
             {d.entries.map((e, i) => {
               const cat = categoryStyle(e.card.categorySlug)

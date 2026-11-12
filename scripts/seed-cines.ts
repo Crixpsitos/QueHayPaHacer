@@ -40,7 +40,7 @@ async function main() {
     const { id: _i, ...a } = makeActivity({
       slug: c.slug, title: `Ir al cine en ${c.name}`, tagline: `Mira la cartelera de ${c.chain} en Ibagué`,
       description: `${c.name} queda en el ${c.place}, ${c.address}, en Ibagué. La cartelera y los horarios cambian cada semana: míralos en el sitio oficial de ${c.chain} con el botón «Ver la cartelera» y compra tu boleta allá. Las funciones se reparten por salas y formatos, y los precios varían según el día.`,
-      kind: "global", siteId: null, category: "cine-y-espectaculos", companions: ["pareja", "amigos", "familia"], difficulty: null, durationMinutes: 150, ageNote: "Según la clasificación de cada película",
+      kind: "global", siteId: null, category: "cine-y-espectaculos", companions: ["solo", "pareja", "amigos", "familia"], difficulty: null, durationMinutes: 150, ageNote: "Según la clasificación de cada película",
       host: { kind: "user", id: owner, displayName: "Qué Hay Pa Hacer", photoURL: "" }, ownerUid: owner,
       meetingPoint: { mode: "fixed", text: `${c.place}, ${c.address}`, references: "", geo: c.geo },
       schedule: { rules: [{ kind: "always" }], skipDates: [], requiresReservation: false, note: "Funciones todos los días; los horarios los fija el cine cada semana." },
