@@ -88,7 +88,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove }: { cards: Activi
       ) : null}
       <Button type="button" className="h-12 w-full" onClick={() => setPoster(true)}><ImageIcon aria-hidden /> Afiche para compartir</Button>
       <Button asChild variant="outline" className="h-12 w-full"><a href={share} target="_blank" rel="noopener noreferrer"><Share2 aria-hidden /> Enviar mi semana por WhatsApp</a></Button>
-      <WeekPosterDialog open={poster} onClose={() => setPoster(false)} plan={planWeekPoster(week, { today: week[0].date, price: (id) => (byId.get(id)?.priceFrom ?? "").replace("Desde ", "") || "Gratis" })} />
+      <WeekPosterDialog open={poster} onClose={() => setPoster(false)} plan={planWeekPoster(week, { today: week[0].date, price: (id) => (byId.get(id)?.priceFrom ?? "").replace("Desde ", "") || "Gratis", image: (id) => byId.get(id)?.coverUrl ?? null })} />
       <p className="text-xs text-muted-foreground">Incluye tus reservas y tus guardados de los próximos 7 días. El mensaje solo lleva títulos y horas.</p>
     </div>
   )

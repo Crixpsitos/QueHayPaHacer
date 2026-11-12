@@ -20,6 +20,7 @@ import { UpcomingDates } from "./UpcomingDates"
 import { ComplaintInfo } from "./ComplaintInfo"
 import { NextDeparture } from "./NextDeparture"
 import { ShareButton } from "./ShareButton"
+import { ActivityPosterButton } from "./ActivityPosterButton"
 import { ActivityEngagement } from "./ActivityEngagement"
 import { ActivityHostBadge } from "./ActivityHostBadge"
 import { ActivityJoin } from "./ActivityJoin"
@@ -89,7 +90,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
       <div className="grid gap-10 lg:grid-cols-[1fr_23rem] lg:items-start lg:gap-14">
         <div className="grid gap-10">
-          <div className="lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} /></div>
+          <div className="grid gap-2 lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} />{preview ? null : <ActivityPosterButton slug={d.slug} title={d.title} when={d.scheduleText} where={d.site?.name || d.meeting.text} coverUrl={d.gallery[0]?.url} />}</div>
 
           {facts.length && !sparse ? <ul className="grid gap-2.5 sm:grid-cols-2" aria-label="Datos rápidos">{facts.map((f) => <Fact key={f.label} {...f} />)}</ul> : null}
 
@@ -156,6 +157,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
             {d.joinEnabled && !preview ? <Button asChild size="lg" className="h-12 text-base"><a href="#reservar">{reserveLabel}</a></Button> : null}
             {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</TrackedCta></Button> : null}
             <ShareButton title={d.title} activityId={d.id} className="h-11 w-full" />
+            {preview ? null : <ActivityPosterButton slug={d.slug} title={d.title} when={d.scheduleText} where={d.site?.name || d.meeting.text} coverUrl={d.gallery[0]?.url} />}
           </div>
           <ActivityHostBadge host={d.host} site={d.site} />
         </aside>

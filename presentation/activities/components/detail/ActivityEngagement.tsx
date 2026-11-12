@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, Check } from "lucide-react"
+import Link from "next/link"
+import { Bookmark, CalendarDays, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { getMyActivityEngagementAction, markActivityVisitedAction, setActivitySavedAction } from "@/app/actions/activities/engagement.action"
 
@@ -63,6 +64,7 @@ export function ActivityEngagement({ activityId, visitedLabel, className, varian
         <Button type="button" variant={state.visited ? "default" : "outline"} size="lg" className="h-11" aria-pressed={state.visited} onClick={() => void markVisited()}>
           <Check aria-hidden /> {state.visited ? "Fuiste" : "Yo fui"}
         </Button>
+        <Button asChild variant="ghost" size="lg" className="h-11 text-primary-dark"><Link href="/mis-planes" prefetch={false}><CalendarDays aria-hidden /> Ver mis planes</Link></Button>
       </div>
       {visitedLabel ? <p className="text-sm text-muted-foreground">{visitedLabel}</p> : null}
       {error ? <p role="alert" className="text-sm font-medium text-destructive">{error}</p> : null}
