@@ -34,6 +34,7 @@ import { SectionsContent } from "./SectionsContent"
 import { FactsContent } from "./FactsContent"
 import { SECTIONS_TOTAL_MAX } from "@/domain/entities/sites/value-objects/SiteSections"
 import { AuthorDeclaration } from "@/app/components/feature/AuthorDeclaration"
+import { MapsLinkInput } from "@/presentation/shared/components/MapsLinkInput"
 import type {
   DaySchedule, FormErrors, MediaFormItem, SiteCategory,
   SiteFormViewModel, SiteSocialMedia, SiteTemporarilyClosed, WeekDay,
@@ -90,15 +91,17 @@ function AccordionSection({ id, title, icon, open, onToggle, error, children }: 
 // ── Form sections content ────────────────────────────────────────────────────
 
 function LocationContent({
-  form, errors, addressAutoDetected, onAddressChange,
+  form, errors, addressAutoDetected, onAddressChange, onPickCoords,
 }: {
   form: SiteFormViewModel
   errors: FormErrors
   addressAutoDetected: boolean
   onAddressChange: (v: string) => void
+  onPickCoords?: (lat: number, lng: number) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
+      {onPickCoords ? <MapsLinkInput onCoords={onPickCoords} /> : null}
       {form.coordinates ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="size-3.5 shrink-0 text-primary" aria-hidden />
@@ -632,6 +635,8 @@ export interface SiteFormDrawerProps {
   rejectionReason?: string | null
   onBack: () => void
   onAddressChange: (v: string) => void
+  /** Pega un enlace de Google Maps: mueve el punto a esas coordenadas (no toca la dirección escrita). */
+  onPickCoords?: (lat: number, lng: number) => void
   onUpdateField: <K extends keyof SiteFormViewModel>(key: K, value: SiteFormViewModel[K]) => void
   onClearError: (key: keyof FormErrors) => void
   onReplaceCover: (item: MediaFormItem) => void
@@ -878,7 +883,7 @@ const SECTIONS: { id: SectionKey; title: string; icon: React.ReactNode }[] = [
 export function SiteFormDrawer({
   form, errors, submitState, coverUrl, addressAutoDetected, isMediaProcessing,
   mode = "create", isDraft = false, isRejected = false, rejectionReason = null,
-  onBack, onAddressChange, onUpdateField, onClearError,
+  onBack, onAddressChange, onPickCoords, onUpdateField, onClearError,
   onReplaceCover, onAddMedia, onMediaUploaded, onUpdateMedia, onRemoveMedia, onSetCover,
   onUpdateSchedule, onUpdateOpeningPolicy, onSaveDraft, onPublish, onReset, onEnsureDraftId, isQhpaAdmin = false,
 }: SiteFormDrawerProps) {
@@ -967,7 +972,7 @@ export function SiteFormDrawer({
               error={sectionErrors[s.id]}
             >
               {s.id === "location" && (
-                <LocationContent form={form} errors={errors} addressAutoDetected={addressAutoDetected} onAddressChange={onAddressChange} />
+                <LocationContent form={form} errors={errors} addressAutoDetected={addressAutoDetected} onAddressChange={onAddressChange} onPickCoords={onPickCoords} />
               )}
               {s.id === "info" && (
                 <BasicInfoContent

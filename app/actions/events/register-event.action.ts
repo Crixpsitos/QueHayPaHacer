@@ -84,6 +84,16 @@ export async function registerEventAction(
       updateTag(`event-registration-${uid}-${eventId.trim()}`);
     }
 
+    // Inscribirse (básica o con formulario) es el «Voy a ir» más claro: se marca solo (el like es del evento; si ya estaba marcado no suma otra vez).
+    try {
+      const { eventInteractionsService } = createServerContainer();
+      await eventInteractionsService.registerLike(eventId.trim(), uid, true);
+      updateTag(`event-interaction-${uid}-${eventId.trim()}`);
+      updateTag(`preference-events-${uid}`);
+    } catch (e) {
+      console.warn("[register-event] no se pudo marcar «Voy a ir»:", e instanceof Error ? e.message : "error");
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Error registering user to event:", error);

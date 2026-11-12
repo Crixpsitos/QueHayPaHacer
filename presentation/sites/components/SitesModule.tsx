@@ -267,6 +267,7 @@ export function SitesModule({ isQhpaAdmin = false }: { isQhpaAdmin?: boolean }) 
                 rejectionReason={editingSite?.rejectionReason ?? null}
                 onBack={goToList}
                 onAddressChange={siteForm.handleAddressChange}
+                onPickCoords={(lat, lng) => siteForm.handlePick({ latitude: lat, longitude: lng }, "")}
                 onUpdateField={siteForm.updateField}
                 onClearError={siteForm.clearError}
                 onReplaceCover={siteForm.replaceCover}
