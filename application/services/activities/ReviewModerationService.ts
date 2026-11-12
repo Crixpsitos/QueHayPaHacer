@@ -6,6 +6,8 @@ import type { IActivityReviewRepository } from "@/domain/repository/activities/I
 import type { IActivitySanctionRepository } from "@/domain/repository/activities/IActivitySanctionRepository"
 import { containsContactInfo } from "@/domain/entities/activities/review/ActivityReview"
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity"
+import type { IRateLimitRepository } from "@/domain/repository/rateLimit/IRateLimitRepository"
+import { InMemoryRateLimit } from "@/application/services/rateLimit/InMemoryRateLimit"
 
 const COOLDOWN_MS = 30_000
 const YEAR_MS = 365 * 86_400_000
@@ -19,25 +21,25 @@ export interface ModerationDeps {
   notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
   log: (message: string) => void
-  /** Último cuestionamiento por cuenta (cooldown). A nivel de módulo en producción. */
-  lastFlag?: Map<string, number>
+  /** Cooldown entre cuestionamientos (en la base en producción: vale entre instancias). */
+  rateLimit?: IRateLimitRepository
 }
 
 /** Cuestionar reseñas (quien organiza), responderlas y resolverlas (QHPA). El motivo y la nota nunca salen a la vista pública. */
 export class ReviewModerationService {
-  private readonly last: Map<string, number>
-  constructor(private readonly d: ModerationDeps) { this.last = d.lastFlag ?? new Map() }
+  private readonly limit: IRateLimitRepository
+  constructor(private readonly d: ModerationDeps) { this.limit = d.rateLimit ?? new InMemoryRateLimit() }
 
   private async findByKey(activityId: string, key: string): Promise<ActivityReview | null> {
-    const all = await this.d.reviews.listByActivity(activityId, 500)
-    return all.find((r) => reviewKey(r.activityId, r.uid) === key) ?? null
+    // El id del documento es `{actividad}_{clave}`: lectura directa, sin cargar las reseñas de la actividad.
+    const r = await this.d.reviews.getById(`${activityId}_${key}`)
+    return r && r.activityId === activityId && reviewKey(r.activityId, r.uid) === key ? r : null
   }
 
   async flag(uid: string, activityId: string, key: string, input: { reason: FlagReason; note: string }): Promise<void> {
     const now = this.d.clock()
-    const prev = this.last.get(uid)
-    if (prev !== undefined && now.getTime() - prev < COOLDOWN_MS) throw new Error("Espera unos segundos antes de cuestionar otra reseña.")
-    this.last.set(uid, now.getTime())
+    const cooldownKey = `review_flag_${uid}`
+    if (!(await this.limit.tryHit(cooldownKey, COOLDOWN_MS, now))) throw new Error("Espera unos segundos antes de cuestionar otra reseña.")
     try {
       const a = await this.d.getActivity(activityId)
       if (!a) throw new Error("Esa actividad no existe.")
@@ -50,7 +52,7 @@ export class ReviewModerationService {
       if (!changed) throw new Error("Esta reseña ya está en revisión o fue retirada.")
       this.d.log(`alert=qhpa_new_flag review=${review.id} activity=${activityId}`)
     } catch (e) {
-      if (this.last.get(uid) === now.getTime()) this.last.delete(uid)
+      await this.limit.release(cooldownKey).catch(() => undefined)
       throw e
     }
   }

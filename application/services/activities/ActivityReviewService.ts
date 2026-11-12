@@ -5,6 +5,8 @@ import { reviewReceivedNotification } from "@/domain/entities/notification/messa
 import type { NewNotification } from "@/domain/entities/notification/Notification"
 import { mediaOwnershipError, mergeMedia, parseMediaInput, type ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
+import type { IRateLimitRepository } from "@/domain/repository/rateLimit/IRateLimitRepository"
+import { InMemoryRateLimit } from "@/application/services/rateLimit/InMemoryRateLimit"
 
 const COOLDOWN_MS = 30_000
 const MIN_ACCOUNT_AGE_MS = 10 * 60_000
@@ -26,22 +28,21 @@ export interface ReviewDeps {
   isRestricted?: (uid: string) => Promise<boolean>
   /** Tras publicar una reseña NUEVA (insignia «Primera historia»). Un fallo aquí nunca rompe la reseña. */
   afterCreate?: (uid: string) => Promise<void>
-  /** Último envío por persona (cooldown). Debe vivir a nivel de módulo en producción: el contenedor no se memoiza. */
-  lastSubmit?: Map<string, number>
+  /** Cooldown entre envíos. En producción vive en la base (vale entre instancias); sin esto, en memoria. */
+  rateLimit?: IRateLimitRepository
 }
 
 /** Crear, editar y borrar la propia reseña. La identidad llega del token: nunca del cliente. */
 export class ActivityReviewService {
-  private readonly last: Map<string, number>
-  constructor(private readonly d: ReviewDeps) { this.last = d.lastSubmit ?? new Map() }
+  private readonly limit: IRateLimitRepository
+  constructor(private readonly d: ReviewDeps) { this.limit = d.rateLimit ?? new InMemoryRateLimit() }
 
   async submit(uid: string, activityId: string, input: ReviewInput, extra: { media: ActivityMedia[]; coverIndex: number }): Promise<{ review: ActivityReview; created: boolean; rating: ActivityRating }> {
     if (!uid?.trim() || !activityId?.trim()) throw new Error("Falta la sesión o la actividad.")
     const now = this.d.clock()
     // Cooldown ANTES de cualquier espera: dos envíos casi simultáneos no pasan los dos.
-    const prev = this.last.get(uid)
-    if (prev !== undefined && now.getTime() - prev < COOLDOWN_MS) throw new Error("Espera unos segundos antes de enviar otra reseña.")
-    this.last.set(uid, now.getTime())
+    const cooldownKey = `review_submit_${uid}`
+    if (!(await this.limit.tryHit(cooldownKey, COOLDOWN_MS, now))) throw new Error("Espera unos segundos antes de enviar otra reseña.")
     try {
       const a = await this.d.getActivity(activityId)
       if (!a) throw new Error("Esa actividad no existe.")
@@ -88,7 +89,7 @@ export class ActivityReviewService {
       return { review, created: saved.created, rating: saved.rating }
     } catch (e) {
       // Si no se guardó nada, el cooldown no debe castigar a quien solo corrige un error.
-      if (this.last.get(uid) === now.getTime()) this.last.delete(uid)
+      await this.limit.release(cooldownKey).catch(() => undefined)
       throw e
     }
   }
@@ -114,11 +115,20 @@ export class ActivityReviewService {
   async eraseUser(uid: string): Promise<number> {
     if (!uid?.trim()) return 0
     let n = 0
+    const anonymized = new Set<string>()
     // De a lotes hasta que no quede ninguna (el repositorio devuelve máximo 200 por consulta).
     for (let round = 0; round < 50; round++) {
-      const mine = await this.d.repo.listByAuthorSince(uid, new Date(0))
+      const mine = (await this.d.repo.listByAuthorSince(uid, new Date(0))).filter((r) => !anonymized.has(r.id))
       if (!mine.length) break
       for (const r of mine) {
+        // En verificación: no se borra (evitaría la sanción); se anonimiza y se quitan fotos/video, y QHPA la resuelve igual.
+        if (r.status === "flagged") {
+          const media = await this.d.repo.anonymize(r.activityId, uid)
+          await this.removeFiles(media)
+          anonymized.add(r.id)
+          n++
+          continue
+        }
         const res = await this.d.repo.remove(r.activityId, uid, { force: true })
         if (!res.removed) continue
         n++

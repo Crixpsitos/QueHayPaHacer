@@ -13,6 +13,8 @@ const ENTITIES = new Set([...OWN_UID_ENTITIES, "events", "sessions", "sites", "a
 const SUBFOLDERS = new Set(["", "images", "videos", "avatar", "banner", "media", "attachments"]);
 // svg excluido: bucket público y puede ejecutar scripts.
 const CONTENT_TYPE = /^(image\/(?!svg)[a-z0-9.+-]+|video\/[a-z0-9.+-]+)$/;
+/** Subidas (fotos y videos) por persona y día: sobra para publicar un evento con galería y varias reseñas. */
+const UPLOADS_PER_DAY = 150;
 const SEGMENT = /^[A-Za-z0-9_-]{1,128}$/;
 
 /** Nombre de archivo seguro como segmento de ruta: sin "/", ".." ni caracteres raros. */
@@ -62,6 +64,9 @@ export async function generateUploadUrl({
   if (customMetadata && Object.keys(customMetadata).some((k) => !/^[a-z0-9-]{1,64}$/.test(k))) {
     throw new Error("Metadatos no permitidos");
   }
+  // Cuota diaria de URLs firmadas por persona (el bucket es público: sin tope, una cuenta podría llenarlo). Vale entre instancias.
+  const day = new Date(Date.now() - 5 * 3_600_000).toISOString().slice(0, 10);
+  if (!(await createServerContainer().rateLimitRepo.incrementDaily(`upload_${uid}`, day, UPLOADS_PER_DAY))) throw new Error("Llegaste al límite de subidas de hoy. Vuelve mañana.");
   // ponytail: sin tope de tamaño — StorageService.generateSignedUrl no deja pasar x-goog-content-length-range.
   const { storageService } = createServerContainer();
   const bucketName = storageService.getBucketName;

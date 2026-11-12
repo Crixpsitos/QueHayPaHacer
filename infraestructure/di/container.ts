@@ -65,6 +65,8 @@ import { activityBadgesFor, EXPLORER_MIN_VISITS } from "@/domain/entities/activi
 import { isRestricted } from "@/domain/entities/activities/moderation/reviewModeration";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
+import { RateLimitFirebaseRepository } from "../firebase/repositories/rateLimit/RateLimitFirebaseRepository";
+import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
 import { ActivityStampService } from "@/application/services/activities/ActivityStampService";
 import { ActivityStampFirebaseRepository } from "../firebase/repositories/activities/ActivityStampFirebaseRepository";
 import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
@@ -109,10 +111,6 @@ import { SiteInteractionService } from "@/application/services/sites/SiteInterac
 
 /** Consultas de datos de oferentes para quejas: 5 por minuto por persona, en memoria de la instancia. */
 const complaintLimiter = createIpLimiter(5);
-
-// Cooldown de reseñas por persona: a nivel de módulo (createServerContainer se ejecuta en cada llamada).
-const REVIEW_LAST_SUBMIT = new Map<string, number>();
-const REVIEW_LAST_FLAG = new Map<string, number>();
 
 export const createServerContainer = () => {
 
@@ -310,6 +308,8 @@ export const createServerContainer = () => {
     legalVersion: LEGAL_VERSION,
   });
 
+  // límites compartidos entre instancias (cooldowns y cuotas diarias), en la base
+  const rateLimitRepo = new RateLimitFirebaseRepository(getFirebaseFirestore());
   // reseñas de actividades (una por persona, agregado en la misma transacción)
   const sanctionRepo = new ActivitySanctionFirebaseRepository(getFirebaseFirestore());
   const activityReviewService = new ActivityReviewService({
@@ -322,12 +322,14 @@ export const createServerContainer = () => {
     },
     getAccount: async (uid) => {
       const u = await userService.getUserById(uid);
-      return u ? { displayName: u.displayName ?? "", photoURL: u.photoURL ?? "", createdAt: u.createdAt instanceof Date ? u.createdAt : new Date(0) } : null;
+      // Fecha real de la cuenta según Firebase Auth; si no se puede leer, se trata como NUEVA (el freno de 10 min no se salta).
+      const created = await getAccountCreatedAt(uid);
+      return u ? { displayName: u.displayName ?? "", photoURL: u.photoURL ?? "", createdAt: new Date(created ?? Date.now()) } : null;
     },
     notify: (uid, n, id) => notificationService.notify(uid, n, id),
     clock: () => new Date(),
     legalVersion: LEGAL_VERSION,
-    lastSubmit: REVIEW_LAST_SUBMIT,
+    rateLimit: rateLimitRepo,
     afterCreate: async (uid) => { for (const b of activityBadgesFor({ reviews: 1, visits: 0 })) await badgeService.awardBadgeToUser(uid, b, "Tu primera reseña"); },
     deleteFile: (path) => storageService.delete(path),
     isRestricted: async (uid) => isRestricted(await sanctionRepo.listByUid(uid), uid, "reviewer", new Date()),
@@ -347,7 +349,7 @@ export const createServerContainer = () => {
     notify: (uid, n, id) => notificationService.notify(uid, n, id),
     clock: () => new Date(),
     log: (m) => console.warn(`[review-moderation] ${m}`),
-    lastFlag: REVIEW_LAST_FLAG,
+    rateLimit: rateLimitRepo,
   });
 
   // pasaporte: sellos por el QR del local (visita verificada)
@@ -442,6 +444,7 @@ export const createServerContainer = () => {
     siteTransitService,
     appConfigRepo,
     activityStampService,
+    rateLimitRepo,
   };
 };
 

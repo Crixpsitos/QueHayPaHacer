@@ -123,6 +123,17 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
     return s.docs.map((d) => fromDoc(d.id, d.data())).sort((a, b) => (a.flag?.at.getTime() ?? 0) - (b.flag?.at.getTime() ?? 0)).slice(0, limit)
   }
 
+  async anonymize(activityId: string, uid: string): Promise<{ path: string; thumbnailPath?: string }[]> {
+    const ref = this.collection.doc(reviewId(activityId, uid))
+    return this.db.runTransaction(async (tx) => {
+      const d = await tx.get(ref)
+      if (!d.exists) return []
+      const media = (d.get("media") ?? []).map((m: { path: string; thumbnailPath?: string }) => ({ path: m.path, thumbnailPath: m.thumbnailPath }))
+      tx.update(ref, { "author.displayName": "Usuario eliminado", "author.photoURL": "", media: [], updatedAt: new Date() })
+      return media
+    })
+  }
+
   async restoreRemoved(reviewId: string): Promise<{ review: ActivityReview; rating: ActivityRating } | null> {
     const ref = this.collection.doc(reviewId)
     return this.db.runTransaction(async (tx) => {

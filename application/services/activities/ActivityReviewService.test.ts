@@ -23,6 +23,7 @@ function setup(o: { now?: () => Date; accountAgeMin?: number; activityOwner?: st
     async listByAuthorSince(u, since) { return [...docs.values()].filter((d) => d.uid === u && d.createdAt >= since) },
     async getById() { throw new Error("n/a") }, async setFlag() { throw new Error("n/a") }, async countOpenFlags() { throw new Error("n/a") },
     async resolveFlag() { throw new Error("n/a") }, async setReply() { throw new Error("n/a") }, async listFlagged() { throw new Error("n/a") }, async restoreRemoved() { throw new Error("n/a") },
+    async anonymize(a, u) { const d = docs.get(reviewId(a, u)); if (!d) return []; d.author = { ...d.author, displayName: "Usuario eliminado", photoURL: "" }; const m = d.media.map((x) => ({ path: x.path })); d.media = []; return m },
   }
   const notes: { uid: string; n: NewNotification; id?: string }[] = []
   const svc = new ActivityReviewService({
@@ -157,4 +158,23 @@ test("insignia: el aviso de reseña nueva se da una vez (no por ediciones) y un 
   await svc2.submit("u1", "a1", input, meta)
   assert.equal(calls, 1)
   s.advance(0)
+})
+
+test("el cooldown vale entre instancias: dos servicios con la misma base de límites, un solo envío pasa", async () => {
+  const { InMemoryRateLimit } = await import("@/application/services/rateLimit/InMemoryRateLimit")
+  const shared = new InMemoryRateLimit()
+  const s = setup()
+  const d = (s.svc as unknown as { d: ConstructorParameters<typeof ActivityReviewService>[0] }).d
+  const a = new ActivityReviewService({ ...d, rateLimit: shared }), b = new ActivityReviewService({ ...d, rateLimit: shared })
+  const results = await Promise.allSettled([a.submit("u1", "a1", input, meta), b.submit("u1", "a1", input, meta)])
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1)
+})
+test("eliminar la cuenta con una reseña EN VERIFICACIÓN no la borra: la anonimiza (la sanción sigue posible)", async () => {
+  const s = setup()
+  await s.svc.submit("u1", "a1", input, meta)
+  s.docs.get(reviewId("a1", "u1"))!.status = "flagged"
+  assert.equal(await s.svc.eraseUser("u1"), 1)
+  const d = s.docs.get(reviewId("a1", "u1"))!
+  assert.equal(d.status, "flagged")
+  assert.equal(d.author.displayName, "Usuario eliminado")
 })
