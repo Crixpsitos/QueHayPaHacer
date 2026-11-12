@@ -44,7 +44,7 @@ async function Hub({ searchParams }: PageProps) {
 
   return (
     <>
-      <HubSync rendered={filterHref(f, {})} />
+      <HubSync rendered={filterHref(f, {})}>
       <HubHero current={f} meta={meta} />
       <div className="grid gap-10 py-8">
         {!filtered ? <Suspense fallback={null}><FeaturedPlan /></Suspense> : null}
@@ -93,6 +93,7 @@ async function Hub({ searchParams }: PageProps) {
 
         <PublishBand />
       </div>
+      </HubSync>
     </>
   )
 }
