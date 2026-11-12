@@ -17,7 +17,7 @@ void _active
 export interface ModerationDeps {
   reviews: IActivityReviewRepository
   sanctions: IActivitySanctionRepository
-  getActivity: (id: string) => Promise<{ id: string; slug: string; title: string; ownerUid: string; siteOwnerUid: string | null } | null>
+  getActivity: (id: string) => Promise<{ id: string; slug: string; title: string; ownerUid: string; siteOwnerUid: string | null; base?: string } | null>
   notify: (uid: string, n: NewNotification, id?: string) => Promise<void>
   clock: () => Date
   log: (message: string) => void
@@ -91,8 +91,8 @@ export class ReviewModerationService {
     }
     const title = a?.title ?? "la actividad", slug = a?.slug ?? ""
     await Promise.all([
-      bySystem ? Promise.resolve() : this.d.notify(hostUid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "host" }), `flagres_h_${review.id}`),
-      this.d.notify(review.uid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "reviewer" }), `flagres_r_${review.id}`),
+      bySystem ? Promise.resolve() : this.d.notify(hostUid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "host", base: a?.base }), `flagres_h_${review.id}`),
+      this.d.notify(review.uid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "reviewer", base: a?.base }), `flagres_r_${review.id}`),
     ]).catch(() => undefined)
     return { review: done.review }
   }

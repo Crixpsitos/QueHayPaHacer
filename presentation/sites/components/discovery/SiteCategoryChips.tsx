@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   Utensils, Coffee, Wine, Music, ShoppingBag, TreePine,
   Landmark, Palette, Mountain, BedDouble, Building2,
-  Dumbbell, Sparkles, Drama, MapPin, type LucideIcon,
+  Dumbbell, Sparkles, Drama, MapPin, IceCreamCone, type LucideIcon,
 } from "lucide-react";
 import { siteCollectionHref } from "@/presentation/sites/lib/siteCollections";
 import type { SiteCollectionDef } from "@/presentation/sites/lib/siteCollections";
@@ -24,6 +24,7 @@ const SITE_ICON_MAP: Record<string, LucideIcon> = {
   gym: Dumbbell,
   spa: Sparkles,
   theater: Drama,
+  ice_cream: IceCreamCone,
   other: MapPin,
 };
 

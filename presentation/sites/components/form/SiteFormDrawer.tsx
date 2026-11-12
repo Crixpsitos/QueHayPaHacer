@@ -897,7 +897,7 @@ export function SiteFormDrawer({
   const [shareId, setShareId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(true)
   // Declaración del autor: nunca pre-marcada; exigida para publicar/guardar cambios.
-  const [declared, setDeclared] = useState(false)
+  const [declared, setDeclared] = useState(isQhpaAdmin)
   const [mounted, setMounted] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const y = useMotionValue(0)

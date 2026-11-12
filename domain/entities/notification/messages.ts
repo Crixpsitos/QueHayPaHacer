@@ -58,13 +58,13 @@ export function activityJoinConfirmedNotification(i: { title: string; slug: stri
   return { type: "activity_join_confirmed", title: `Estás dentro: "${i.title}"`, body: i.dateLabel ? `Salida: ${i.dateLabel}.` : "Te esperan. Si no puedes ir, cancela desde la actividad.", href: `/actividades/${i.slug}` };
 }
 
-export function reviewReceivedNotification(i: { title: string; slug: string; rating: number; who: string }): NewNotification {
-  return { type: "review_received", title: `${i.who} reseñó "${i.title}"`, body: `${"★".repeat(i.rating)}${"☆".repeat(5 - i.rating)}`, href: `/actividades/${i.slug}#resenas` };
+export function reviewReceivedNotification(i: { title: string; slug: string; rating: number; who: string; base?: string }): NewNotification {
+  return { type: "review_received", title: `${i.who} reseñó "${i.title}"`, body: `${"★".repeat(i.rating)}${"☆".repeat(5 - i.rating)}`, href: `${i.base ?? "/actividades"}/${i.slug}#resenas` };
 }
 
 /** Aviso a las dos partes tras resolver un cuestionamiento. Explica el resultado; el motivo del cuestionamiento solo lo ve quien lo envió. */
-export function reviewFlagResolvedNotification(i: { title: string; slug: string; outcome: "upheld" | "removed"; audience: "host" | "reviewer" }): NewNotification {
-  const href = `/actividades/${i.slug}#resenas`;
+export function reviewFlagResolvedNotification(i: { title: string; slug: string; outcome: "upheld" | "removed"; audience: "host" | "reviewer"; base?: string }): NewNotification {
+  const href = `${i.base ?? "/actividades"}/${i.slug}#resenas`;
   if (i.outcome === "upheld") {
     return i.audience === "host"
       ? { type: "review_flag_resolved", title: `Revisamos una reseña de "${i.title}"`, body: "La reseña es válida y se mantiene con la marca «Verificada por QHPA».", href }

@@ -33,6 +33,7 @@ import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { SectionsAccordion } from "./SectionsAccordion";
 import { SiteActivitiesBlock } from "@/presentation/activities/components/SiteActivitiesBlock";
+import { SiteReviewsSection } from "@/presentation/activities/components/reviews/SiteReviewsSection";
 import { FactsRow } from "./FactsRow";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
@@ -45,7 +46,7 @@ const SITE_CATEGORY_LABELS: Record<string, string> = {
   discotheque: "Discoteca", mall: "Centro comercial", park: "Parque",
   museum: "Museo", cultural: "Cultural", viewpoint: "Mirador",
   hostel: "Hostal", hotel: "Hotel", gym: "Gimnasio",
-  spa: "Spa", theater: "Teatro", other: "Otro",
+  spa: "Spa", theater: "Teatro", ice_cream: "Heladería", other: "Otro",
 };
 
 const WEEK_LABELS: Record<WeekDay, string> = {
@@ -277,6 +278,10 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
 
           <Suspense fallback={null}>
             <SiteActivitiesBlock siteId={siteId} siteSlug={site!.slug || ""} />
+          </Suspense>
+
+          <Suspense fallback={null}>
+            <SiteReviewsSection siteId={siteId} />
           </Suspense>
 
           <Separator />

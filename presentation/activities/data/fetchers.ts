@@ -9,6 +9,16 @@ import { moreToDo, type LevelKey, type MoreItem } from "@/domain/entities/activi
 import { chooseHomeBlock } from "@/presentation/activities/lib/homeBlock"
 import { toCardView, toPublicView, type ActivityCardView, type ActivityPublicView } from "@/presentation/activities/lib/publicView"
 
+type CardSource = Parameters<typeof toCardView>[0]
+
+/** Tarjetas con el dueño de su sitio (una lectura por sitio). */
+async function cardsOf(list: CardSource[]): Promise<ActivityCardView[]> {
+  const sitesSvc = createServerContainer().sitesService
+  const ids = [...new Set(list.map((a) => a.siteId).filter((x): x is string => !!x))]
+  const owners = new Map(await Promise.all(ids.map(async (id) => [id, (await sitesSvc.getActivityLinkSnapshot(id))?.owner ?? null] as const)))
+  return list.map((a) => ({ ...toCardView(a), owner: a.siteId ? (owners.get(a.siteId) ?? null) : null }))
+}
+
 export interface ActivityPageData extends ActivityPublicView {
   /** Sitio vinculado (nombre y slug para el enlace), o null en actividades globales. */
   site: { name: string; slug: string; address: string; geo: { latitude: number; longitude: number } | null; owner: { displayName: string; photoURL: string } | null } | null
@@ -63,7 +73,7 @@ export const fetchActivityPage = async (filters: ActivityFilters, offset: number
   cacheLife("minutes")
   cacheTag("activity-list")
   const r = await createServerContainer().activityService.search(filters, offset, pageSize)
-  return { items: r.items.map(toCardView), total: r.total, nextOffset: r.nextOffset }
+  return { items: await cardsOf(r.items), total: r.total, nextOffset: r.nextOffset }
 }
 
 /** `sitio=<slug>` → id del sitio (null si no existe: el hub muestra vacío en vez de ignorar el filtro). */
@@ -89,7 +99,7 @@ export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardV
   cacheLife("minutes")
   cacheTag(`site-${siteId}-activities`, "activity-list")
   const list = await createServerContainer().activityService.listForSite(siteId)
-  return list.slice(0, SITE_BLOCK_MAX).map(toCardView)
+  return cardsOf(list.slice(0, SITE_BLOCK_MAX))
 }
 
 export interface HomeBlockData {
@@ -112,7 +122,7 @@ export const fetchHomeActivities = async (): Promise<HomeBlockData | null> => {
   if (!r.ids.length) return null
   const pool = new Map([...week.items, ...today.items].map((a) => [a.id, a]))
   const dateLabel = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bogota" }).format(now)
-  return { mode: r.mode, dateLabel, items: r.ids.map((id) => toCardView(pool.get(id)!)) }
+  return { mode: r.mode, dateLabel, items: await cardsOf(r.ids.map((id) => pool.get(id)!)) }
 }
 
 export interface RelatedData { sameSite: ActivityCardView[]; similar: ActivityCardView[]; similarTitle: string }
@@ -131,7 +141,7 @@ export const fetchRelatedActivities = async (id: string, categorySlug: string, s
     similar = (await svc.search({ when: "esta-semana" }, 0, 12)).items.filter((a) => !taken.has(a.id)).slice(0, 6)
     similarTitle = "También esta semana"
   }
-  return { sameSite: sameSite.map(toCardView), similar: similar.map(toCardView), similarTitle }
+  return { sameSite: await cardsOf(sameSite), similar: await cardsOf(similar), similarTitle }
 }
 
 export interface HubMeta { days: { date: string; count: number }[]; categories: Record<string, number>; total: number }
@@ -156,7 +166,7 @@ export const fetchFeaturedPlan = async (): Promise<ActivityCardView | null> => {
   const now = new Date()
   const id = pickFeatured(all.map((a) => ({ id: a.id, host: a.ownerUid, hasPhoto: a.media.some((m) => m.type === "image" && m.isCover && m.status !== "error"), nextAt: nextOccurrence(a.schedule, now)?.startsAt?.getTime() ?? null })), now, bogotaDateIso(now))
   const pick = all.find((a) => a.id === id)
-  return pick ? toCardView(pick) : null
+  return pick ? (await cardsOf([pick]))[0] : null
 }
 
 export interface AgendaDayView { date: string; /** Grupo «sin hora fija» de un rango de varios días (no es un día). */ anytime?: boolean; entries: { card: ActivityCardView; hhmm: string | null }[] }
@@ -172,9 +182,10 @@ export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayVi
   const { items } = await svc.search(filters, 0, 200)
   const byId = new Map(items.map((a) => [a.id, a]))
   const input = items.map((a) => ({ id: a.id, schedule: a.schedule }))
-  const days: AgendaDayView[] = buildAgenda(input, range, new Date()).map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: toCardView(byId.get(e.id)!), hhmm: e.hhmm })) }))
+  const cards = new Map((await cardsOf(items)).map((c) => [c.id, c]))
+  const days: AgendaDayView[] = buildAgenda(input, range, new Date()).map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: cards.get(e.id)!, hhmm: e.hhmm })) }))
   const anytime = anytimeIds(input, range, new Date())
-  if (anytime.length) days.push({ date: "", anytime: true, entries: anytime.map((id) => ({ card: toCardView(byId.get(id)!), hhmm: null })) })
+  if (anytime.length) days.push({ date: "", anytime: true, entries: anytime.map((id) => ({ card: cards.get(id)!, hhmm: null })) })
   return days
 }
 
@@ -199,7 +210,7 @@ export const fetchMoreToDo = async (id: string): Promise<MoreLevelView[]> => {
     geo: a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : ((a.siteId && sites.get(a.siteId)?.geo) || null),
   })
   const byId = new Map(pool.map((a) => [a.id, a]))
-  return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => ({ ...toCardView(byId.get(i.id)!), meters: i.meters })) }))
+  return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => { const a = byId.get(i.id)!; return { ...toCardView(a), owner: (a.siteId && sites.get(a.siteId)?.owner) || null, meters: i.meters } }) }))
 }
 
 export interface MapPin { id: string; slug: string; title: string; categorySlug: string; categoryName: string; priceFrom: string; lat: number; lng: number; hhmm: string | null; durationMinutes: number | null; placeName: string }

@@ -19,6 +19,7 @@ function setup(o: { now?: () => Date; accountAgeMin?: number; activityOwner?: st
     async get(a, u) { return docs.get(reviewId(a, u)) ?? null },
     async save(r) { await Promise.resolve(); const prev = docs.get(r.id); rating = applyReviewToRating(rating, prev ? { type: "edit", from: prev.rating, to: r.rating } : { type: "add", rating: r.rating }); docs.set(r.id, r); return { created: !prev, rating } },
     async remove(a, u) { const d = docs.get(reviewId(a, u)); if (!d) return { removed: false, rating, media: [] }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating, media: [] } },
+    async listBySite() { return [] },
     async listByActivity(a) { return [...docs.values()].filter((d) => d.activityId === a) },
     async listByAuthorSince(u, since) { return [...docs.values()].filter((d) => d.uid === u && d.createdAt >= since) },
     async getById() { throw new Error("n/a") }, async setFlag() { throw new Error("n/a") }, async countOpenFlags() { throw new Error("n/a") },

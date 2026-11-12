@@ -1,3 +1,4 @@
+import { normalizeConfirm, type ConfirmChannel } from "@/domain/entities/activities/value-objects/MeetingConfirm"
 import type { Activity, Difficulty } from "@/domain/entities/activities/Activity"
 import { DESCRIPTION_MAX, DESCRIPTION_MIN, TITLE_MAX, TITLE_MIN, plainTextError } from "@/domain/entities/activities/Activity"
 import type { ActivityCategory, Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
@@ -54,9 +55,13 @@ export interface ActivityForm {
   difficulty: Difficulty | ""
   durationMinutes: string
   ageNote: string
-  meetingMode: "fixed" | "sharedAfterJoining" | "varies"
+  /** Dos opciones: lugar fijo (con mapa) o cambia cada vez (con dónde se confirma). `sharedAfterJoining` es el modo viejo: se lee como «cambia cada vez». */
+  meetingMode: "fixed" | "varies"
   meetingText: string
   meetingReferences: string
+  meetingGeo: { lat: number; lng: number } | null
+  confirmChannel: ConfirmChannel
+  confirmUrl: string
   rules: FormRule[]
   validFrom: string
   validUntil: string
@@ -107,7 +112,7 @@ export const blankExtra = (): FormExtra => ({ label: "", amount: "", unit: "pers
 
 export const emptyForm = (): ActivityForm => ({
   kind: "global", siteId: null, title: "", tagline: "", description: "", category: "", companions: [], difficulty: "", durationMinutes: "", ageNote: "",
-  meetingMode: "fixed", meetingText: "", meetingReferences: "",
+  meetingMode: "fixed", meetingText: "", meetingReferences: "", meetingGeo: null, confirmChannel: "whatsapp", confirmUrl: "",
   rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "", holidays: "",
   priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [], offerings: [], spaces: [], promotions: [],
 })
@@ -176,7 +181,7 @@ export function toRawInput(f: ActivityForm): unknown {
     difficulty: f.difficulty || null,
     durationMinutes: f.durationMinutes.trim() ? Number(f.durationMinutes) : null,
     ageNote: f.ageNote,
-    meetingPoint: { mode: f.meetingMode, text: f.meetingText, references: f.meetingReferences, geo: null },
+    meetingPoint: { mode: f.meetingMode, text: f.meetingText, references: f.meetingReferences, geo: f.meetingMode === "fixed" ? f.meetingGeo : null, confirm: f.meetingMode === "varies" ? { channel: f.confirmChannel, url: f.confirmUrl } : null },
     schedule: scheduleFromForm(f),
     priceOptions: priceFromForm(f),
     extras: extrasFromForm(f),
@@ -208,7 +213,8 @@ export function formFromActivity(a: Activity): ActivityForm {
   return {
     kind: a.kind, siteId: a.siteId, title: a.title, tagline: a.tagline, description: a.description, category: a.category, companions: [...a.companions],
     difficulty: a.difficulty ?? "", durationMinutes: a.durationMinutes === null ? "" : String(a.durationMinutes), ageNote: a.ageNote,
-    meetingMode: a.meetingPoint.mode, meetingText: a.meetingPoint.text, meetingReferences: a.meetingPoint.references,
+    meetingMode: a.meetingPoint.mode === "fixed" ? "fixed" : "varies", meetingText: a.meetingPoint.text, meetingReferences: a.meetingPoint.references, meetingGeo: a.meetingPoint.geo ?? null,
+    confirmChannel: a.meetingPoint.confirm?.channel ?? "whatsapp", confirmUrl: a.meetingPoint.confirm?.url ?? "",
     rules: a.schedule.rules.map(ruleFromDomain), validFrom: a.schedule.validFrom ?? "", validUntil: a.schedule.validUntil ?? "", skipDates: [...a.schedule.skipDates],
     requiresReservation: a.schedule.requiresReservation, scheduleNote: a.schedule.note ?? "", holidays: a.schedule.holidays ?? "",
     priceOptions: a.priceOptions.map((p) => ({ label: p.label, amount: moneyToString(p.amountCop), unit: p.unit, includes: [...p.includes], note: p.note ?? "" })),
@@ -266,7 +272,8 @@ export function stepError(step: number, f: ActivityForm, ctx: StepContext = {}):
     case 4:
       return validatePriceOptions(priceFromForm(f)) ?? validateExtras(extrasFromForm(f))
     case 5:
-      if (f.kind === "global" && f.meetingMode === "fixed" && f.meetingText.trim().length < 3) return "Escribe el punto de encuentro (o elige que se dice en el grupo)."
+      if (f.kind === "global" && f.meetingMode === "fixed" && f.meetingText.trim().length < 3) return "Escribe el punto de encuentro o elígelo en el mapa."
+      if (f.kind === "global" && f.meetingMode === "varies") { const c = normalizeConfirm({ channel: f.confirmChannel, url: f.confirmUrl }); if (!c.ok) return c.error }
       return plainTextError("El punto de encuentro", `${f.meetingText} ${f.meetingReferences}`)
     case 6:
       if (ctx.coverCount === undefined || ctx.coverCount === 1) return null

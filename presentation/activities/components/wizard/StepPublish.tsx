@@ -21,7 +21,7 @@ export function StepPublish({ context, onPublish, onError }: Props) {
   const needsIdentity = !context.identity.ok
   const [identity, setIdentity] = useState<IdentityForm>(emptyIdentity())
   const [authorized, setAuthorized] = useState(false)
-  const [declared, setDeclared] = useState(false)
+  const [declared, setDeclared] = useState(context.isAdmin)
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<IdentityForm>) => setIdentity((f) => ({ ...f, ...p }))
 

@@ -17,6 +17,7 @@ const SCHEMA_TYPE: Record<string, string> = {
   gym: "ExerciseGym",
   spa: "DaySpa",
   theater: "PerformingArtsTheater",
+  ice_cream: "IceCreamShop",
   other: "LocalBusiness",
 };
 

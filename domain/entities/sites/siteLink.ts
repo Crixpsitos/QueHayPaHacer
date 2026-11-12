@@ -19,6 +19,9 @@ export const SITE_LINK_ERROR =
  */
 export function isLinkableSite(site: Omit<SiteLinkSnapshot, "authorId">): boolean {
   const publishedAs = site.publishedAs ?? "proposer"
+  const live = site.publicationStatus === "published" && site.moderationStatus === "approved"
+  // Los sitios que publica QHPA tienen de autor a la cuenta admin: solo ella puede vincularles eventos y actividades (`canLinkEventToSite`).
+  if (publishedAs === "qhpa") return live
   if (publishedAs !== "owner") return false
   if ((site.verification ?? initialVerification(publishedAs)) === "community") return false
   return site.publicationStatus === "published" && site.moderationStatus === "approved"

@@ -9,7 +9,7 @@ import { HOLIDAY_POLICIES, RAIN_NOTE_MAX, RAIN_POLICIES } from "@/domain/entitie
 
 const SITE_CATEGORIES = [
   "cafe", "restaurant", "bar", "discotheque", "mall", "park", "museum", "hostel",
-  "hotel", "cultural", "viewpoint", "gym", "spa", "theater", "other",
+  "hotel", "cultural", "viewpoint", "gym", "spa", "theater", "ice_cream", "other",
 ] as const satisfies readonly SiteCategory[]
 
 const WEEK_DAYS = [

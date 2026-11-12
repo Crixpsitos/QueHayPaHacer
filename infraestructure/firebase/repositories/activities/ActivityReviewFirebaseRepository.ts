@@ -1,6 +1,7 @@
-import type { DocumentData, Firestore } from "firebase-admin/firestore"
+import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from "firebase-admin/firestore"
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
 import { applyReviewToRating, type ActivityReview, type ReviewFlag } from "@/domain/entities/activities/review/ActivityReview"
+import { isSiteSubject, siteIdOfSubject } from "@/domain/entities/activities/review/subject"
 import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
@@ -11,7 +12,7 @@ const toDateOrNull = (v: unknown): Date | null => (v ? toDate(v) : null)
 
 function fromDoc(id: string, d: DocumentData): ActivityReview {
   return {
-    id, activityId: d.activityId, uid: d.uid, rating: d.rating, title: d.title ?? "", body: d.body ?? "", visitedAt: d.visitedAt,
+    id, activityId: d.activityId, siteId: d.siteId ?? null, subjectTitle: d.subjectTitle, subjectSlug: d.subjectSlug, uid: d.uid, rating: d.rating, title: d.title ?? "", body: d.body ?? "", visitedAt: d.visitedAt,
     media: d.media ?? [], coverIndex: d.coverIndex ?? 0, author: d.author, status: d.status,
     flag: d.flag ? { ...d.flag, at: toDate(d.flag.at), resolvedAt: toDateOrNull(d.flag.resolvedAt) ?? undefined } : null,
     ownerReply: d.ownerReply ? { text: d.ownerReply.text, at: toDate(d.ownerReply.at) } : null,
@@ -26,6 +27,31 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
 
   private activity(id: string) { return this.db.collection("activities").doc(id) }
 
+  /**
+   * Documentos cuyo promedio (`rating`) cuenta esta reseña, el primero es el «principal» (el que se devuelve):
+   * reseña de sitio → el sitio; reseña de actividad → la actividad y, si tiene, el sitio vinculado.
+   */
+  private targets(subject: string, siteId?: string | null): { ref: DocumentReference; site: boolean }[] {
+    if (isSiteSubject(subject)) return [{ ref: this.db.collection("sites").doc(siteIdOfSubject(subject)), site: true }]
+    return [{ ref: this.activity(subject), site: false }, ...(siteId ? [{ ref: this.db.collection("sites").doc(siteId), site: true }] : [])]
+  }
+
+  private readAll(tx: Transaction, ts: { ref: DocumentReference; site: boolean }[]) { return Promise.all(ts.map((t) => tx.get(t.ref))) }
+
+  /** Aplica la operación a cada promedio en la misma transacción. Devuelve el del documento principal. */
+  private applyAll(tx: Transaction, ts: { ref: DocumentReference; site: boolean }[], snaps: DocumentSnapshot[], op: Parameters<typeof applyReviewToRating>[1]): ActivityRating {
+    let main: ActivityRating = EMPTY
+    ts.forEach((t, i) => {
+      const snap = snaps[i]
+      const current: ActivityRating = (snap.exists ? snap.get("rating") : null) ?? EMPTY
+      const rating = applyReviewToRating(current, op)
+      if (i === 0) main = rating
+      if (!snap.exists) return
+      tx.update(t.ref, t.site ? { rating } : { rating, "analytics.reviews": rating.count })
+    })
+    return main
+  }
+
   async get(activityId: string, uid: string): Promise<ActivityReview | null> {
     const s = await this.collection.doc(reviewId(activityId, uid)).get()
     return s.exists ? fromDoc(s.id, s.data()!) : null
@@ -33,32 +59,30 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
 
   async save(review: ActivityReview): Promise<{ created: boolean; rating: ActivityRating }> {
     const ref = this.collection.doc(review.id)
-    const act = this.activity(review.activityId)
+    const ts = this.targets(review.activityId, review.siteId)
     return this.db.runTransaction(async (tx) => {
-      const [mine, a] = await Promise.all([tx.get(ref), tx.get(act)])
-      if (!a.exists) throw new Error("Esa actividad no existe.")
-      const current: ActivityRating = a.get("rating") ?? EMPTY
+      const [mine, ...snaps] = await Promise.all([tx.get(ref), ...ts.map((t) => tx.get(t.ref))])
+      if (!snaps[0].exists) throw new Error(isSiteSubject(review.activityId) ? "Ese sitio no existe." : "Esa actividad no existe.")
       if (mine.exists && !["published", "pendingMedia"].includes(mine.get("status"))) throw new Error(mine.get("status") === "flagged" ? "Tu reseña está en verificación: no se puede editar ahora." : "Esa reseña fue retirada: si crees que fue un error, puedes apelar.")
       const created = !mine.exists
-      const rating = applyReviewToRating(current, created ? { type: "add", rating: review.rating } : { type: "edit", from: mine.get("rating"), to: review.rating })
-      tx.set(ref, { ...review, flag: review.flag ?? null, ownerReply: review.ownerReply ?? null, editedAt: review.editedAt ?? null })
-      tx.update(act, { rating, "analytics.reviews": rating.count })
+      const rating = this.applyAll(tx, ts, snaps, created ? { type: "add", rating: review.rating } : { type: "edit", from: mine.get("rating"), to: review.rating })
+      tx.set(ref, { ...review, siteId: review.siteId ?? null, flag: review.flag ?? null, ownerReply: review.ownerReply ?? null, editedAt: review.editedAt ?? null })
       return { created, rating }
     })
   }
 
   async remove(activityId: string, uid: string, opts?: { force?: boolean }): Promise<{ removed: boolean; rating: ActivityRating; media: { path: string; thumbnailPath?: string }[] }> {
     const ref = this.collection.doc(reviewId(activityId, uid))
-    const act = this.activity(activityId)
     return this.db.runTransaction(async (tx) => {
-      const [mine, a] = await Promise.all([tx.get(ref), tx.get(act)])
-      const current: ActivityRating = (a.exists ? a.get("rating") : null) ?? EMPTY
+      const mine = await tx.get(ref)
+      const ts = this.targets(activityId, mine.exists ? mine.get("siteId") : null)
+      const snaps = await this.readAll(tx, ts)
+      const current: ActivityRating = (snaps[0].exists ? snaps[0].get("rating") : null) ?? EMPTY
       if (!mine.exists) return { removed: false, rating: current, media: [] }
       if (mine.get("status") === "flagged" && !opts?.force) throw new Error("FLAGGED")
       const counted = mine.get("status") === "published" || mine.get("status") === "flagged" || mine.get("status") === "pendingMedia"
-      const rating = counted ? applyReviewToRating(current, { type: "remove", rating: mine.get("rating") }) : current
+      const rating = counted ? this.applyAll(tx, ts, snaps, { type: "remove", rating: mine.get("rating") }) : current
       tx.delete(ref)
-      if (a.exists && counted) tx.update(act, { rating, "analytics.reviews": rating.count })
       return { removed: true, rating, media: (mine.get("media") ?? []).map((m: { path: string; thumbnailPath?: string }) => ({ path: m.path, thumbnailPath: m.thumbnailPath })) }
     })
   }
@@ -66,6 +90,11 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
   // Sin orderBy: evita un índice compuesto. El volumen por actividad/persona es pequeño y se corta aquí.
   async listByActivity(activityId: string, limit: number): Promise<ActivityReview[]> {
     const s = await this.collection.where("activityId", "==", activityId).limit(500).get()
+    return s.docs.map((d) => fromDoc(d.id, d.data())).filter((r) => r.status === "published" || r.status === "flagged").sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit)
+  }
+
+  async listBySite(siteId: string, limit: number): Promise<ActivityReview[]> {
+    const s = await this.collection.where("siteId", "==", siteId).limit(500).get()
     return s.docs.map((d) => fromDoc(d.id, d.data())).filter((r) => r.status === "published" || r.status === "flagged").sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit)
   }
 
@@ -101,14 +130,11 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
     return this.db.runTransaction(async (tx) => {
       const d = await tx.get(ref)
       if (!d.exists || d.get("status") !== "flagged") return null
-      const act = this.activity(d.get("activityId"))
-      const a = await tx.get(act)
-      let rating: ActivityRating = (a.exists ? a.get("rating") : null) ?? EMPTY
+      const ts = this.targets(d.get("activityId"), d.get("siteId"))
+      const snaps = await this.readAll(tx, ts)
+      let rating: ActivityRating = (snaps[0].exists ? snaps[0].get("rating") : null) ?? EMPTY
       tx.update(ref, { status: r.status, "flag.resolution": r.resolution, "flag.resolvedAt": r.at, "flag.resolvedBy": r.resolvedBy, updatedAt: r.at })
-      if (r.status === "removed" && a.exists) {
-        rating = applyReviewToRating(rating, { type: "remove", rating: d.get("rating") })
-        tx.update(act, { rating, "analytics.reviews": rating.count })
-      }
+      if (r.status === "removed") rating = this.applyAll(tx, ts, snaps, { type: "remove", rating: d.get("rating") })
       const data = { ...d.data()!, status: r.status, flag: { ...d.get("flag"), resolution: r.resolution, resolvedAt: r.at, resolvedBy: r.resolvedBy } }
       return { review: fromDoc(d.id, data), rating }
     })
@@ -139,11 +165,10 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
     return this.db.runTransaction(async (tx) => {
       const d = await tx.get(ref)
       if (!d.exists || d.get("status") !== "removed") return null
-      const act = this.activity(d.get("activityId"))
-      const a = await tx.get(act)
-      const rating = applyReviewToRating((a.exists ? a.get("rating") : null) ?? EMPTY, { type: "add", rating: d.get("rating") })
+      const ts = this.targets(d.get("activityId"), d.get("siteId"))
+      const snaps = await this.readAll(tx, ts)
+      const rating = this.applyAll(tx, ts, snaps, { type: "add", rating: d.get("rating") })
       tx.update(ref, { status: "published", updatedAt: new Date() })
-      if (a.exists) tx.update(act, { rating, "analytics.reviews": rating.count })
       return { review: fromDoc(d.id, { ...d.data()!, status: "published" }), rating }
     })
   }

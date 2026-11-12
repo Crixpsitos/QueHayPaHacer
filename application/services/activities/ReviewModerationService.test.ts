@@ -19,6 +19,7 @@ function setup() {
   let rating: ActivityRating = { count: 2, sum: 7, avg: 3.5, dist: [0, 1, 0, 0, 1] }
   const reviews: IActivityReviewRepository = {
     async get(a, u) { return docs.get(`${a}_${u}`) ?? null }, async save() { throw new Error("n/a") }, async remove() { throw new Error("n/a") },
+    async listBySite() { return [] },
     async listByActivity() { return [...docs.values()] }, async listByAuthorSince() { return [] },
     async getById(id) { return docs.get(id) ?? null },
     async setFlag(id, flag: ReviewFlag) { const d = docs.get(id); if (!d || d.status !== "published") return false; d.status = "flagged"; d.flag = flag; return true },

@@ -89,7 +89,8 @@ test("validación por paso", () => {
   assert.equal(stepError(4, filled()), null)
   assert.match(stepError(4, filled({ priceOptions: [{ label: "x", amount: "abc", unit: "persona", includes: [], note: "" }] }))!, /precio/i)
   assert.match(stepError(5, filled({ meetingMode: "fixed", meetingText: "" }))!, /punto de encuentro/i)
-  assert.equal(stepError(5, filled({ meetingMode: "sharedAfterJoining" })), null)
+  assert.match(stepError(5, filled({ meetingMode: "varies", confirmUrl: "" }))!, /enlace/i)
+  assert.equal(stepError(5, filled({ meetingMode: "varies", confirmChannel: "whatsapp", confirmUrl: "https://chat.whatsapp.com/abc" })), null)
   assert.equal(stepError(5, filled({ kind: "site", siteId: "s1", meetingMode: "fixed", meetingText: "" })), null) // el sitio pone el lugar
   assert.equal(stepError(6, filled()), null) // sin contexto de medios no se evalúa
   assert.match(stepError(6, filled(), { coverCount: 0 })!, /al menos una foto/i)

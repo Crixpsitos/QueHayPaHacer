@@ -22,7 +22,8 @@ test("un sitio ajeno no se puede vincular", () => {
 
 test("los sitios propuestos por la comunidad y los de QHPA quedan fuera, aunque sean del autor", () => {
   assert.equal(canLinkEventToSite({ ...own, publishedAs: "proposer", verification: "community" }, "u1"), false)
-  assert.equal(canLinkEventToSite({ ...own, publishedAs: "qhpa" }, "u1"), false)
+  assert.equal(canLinkEventToSite({ ...own, publishedAs: "qhpa", verification: "community" }, "u1"), true)
+  assert.equal(canLinkEventToSite({ ...own, publishedAs: "qhpa", verification: "community" }, "otro"), false)
 })
 
 test("un doc antiguo sin publishedAs se lee como propuesto: no es vinculable", () => {

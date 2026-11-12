@@ -117,7 +117,7 @@ async function ExplorarContent({ sp }: { sp: ExplorarSearchParams }) {
       discotheque: "Discotecas", mall: "Centros comerciales", park: "Parques",
       museum: "Museos", cultural: "Cultural", viewpoint: "Miradores",
       hostel: "Hostales", hotel: "Hoteles", gym: "Gimnasios",
-      spa: "Spas", theater: "Teatros", other: "Otros sitios",
+      spa: "Spas", theater: "Teatros", ice_cream: "Heladerías", other: "Otros sitios",
     };
 
     siteSections = Object.entries(siteGrouped).map(([cat, sites]) => ({
