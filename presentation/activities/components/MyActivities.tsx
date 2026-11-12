@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button/button"
 import { setActivityActiveAction } from "@/app/actions/activities/set-activity-active.action"
 import { getActivityChannelStatsAction } from "@/app/actions/activities/my-activities.action"
 import { cn } from "@/app/lib/utils/cn"
+import { CoverFallback } from "./CoverFallback"
 import { StampQrDialog } from "./passport/StampQrDialog"
 import { ShareKit } from "@/presentation/shared/components/ShareKit"
 import type { MyActivitySummary, StatusKey } from "@/presentation/activities/lib/activityStatus"
@@ -44,7 +45,7 @@ function Row({ a }: { a: MyActivitySummary }) {
         {a.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- portada propia en Storage (miniatura optimizada)
           <img src={a.coverUrl} alt="" className="size-full object-cover" />
-        ) : null}
+        ) : <CoverFallback categorySlug={a.categorySlug} className="size-12" />}
       </div>
       <div className="grid content-start gap-2">
         <div className="flex flex-wrap items-center gap-2">

@@ -10,6 +10,7 @@ import type { PlanSlot } from "@/domain/entities/activities/weekPlan"
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
+import { CoverFallback } from "./CoverFallback"
 import { WeekPlan } from "./WeekPlan"
 import { RemovedReviews } from "./reviews/RemovedReviews"
 import { PassportTab } from "./passport/PassportTab"
@@ -20,7 +21,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 function Thumb({ a }: { a: ActivityCardView }) {
   return (
     <div className="relative size-21 shrink-0 overflow-hidden rounded-xl bg-muted">
-      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="84px" className="object-cover" /> : null}
+      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="84px" className="object-cover" /> : <CoverFallback categorySlug={a.categorySlug} />}
     </div>
   )
 }
@@ -31,7 +32,7 @@ function Row({ a, children, aside }: { a: ActivityCardView; children?: React.Rea
       <Thumb a={a} />
       <div className="grid min-w-0 flex-1 content-start gap-0.5">
         <div className="flex items-start justify-between gap-2">
-          <Link href={`/actividades/${a.slug}`} className="font-heading text-base font-semibold leading-snug outline-none hover:underline focus-visible:underline">{a.title}</Link>
+          <Link href={a.href ?? `/actividades/${a.slug}`} className="font-heading text-base font-semibold leading-snug outline-none hover:underline focus-visible:underline">{a.title}</Link>
           {aside}
         </div>
         {children ?? <p className="text-sm text-muted-foreground">{a.hostName}</p>}
@@ -52,11 +53,11 @@ function Empty({ title, text, cta }: { title: string; text: string; cta: { href:
 
 /** «Mis planes»: lo que reservé (próximo), lo que guardé y lo que ya hice. Todo es de mi cuenta. */
 export function MyPlans({ initial }: { initial: MyPlansView }) {
-  const [tab, setTab] = useState<Tab>(initial.upcoming.length || initial.saved.length ? "week" : "upcoming")
+  const [tab, setTab] = useState<Tab>(initial.upcoming.length || initial.saved.length || initial.extra.cards.length ? "week" : "upcoming")
   const [removed, setRemoved] = useState<string[]>([])
   const [savedGone, setSavedGone] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [slots, setSlots] = useState<Record<string, PlanSlot>>(initial.slots)
+  const [slots, setSlots] = useState<Record<string, PlanSlot>>({ ...initial.slots, ...initial.extra.slots })
   const setSlot = async (id: string, slot: PlanSlot | null): Promise<string | null> => {
     const r = await setActivityPlanSlotAction(id, slot)
     if (!r.success) return r.error
@@ -72,11 +73,11 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
     if (r.success) onDone(); else setError(r.error ?? "No se pudo quitar. Intenta de nuevo.")
   }
 
-  const weekCards = [...initial.upcoming.map((u) => u.card), ...saved].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i)
+  const weekCards = [...initial.upcoming.map((u) => u.card), ...saved, ...initial.extra.cards].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i)
   const tabs: { id: Tab; label: string; n: number }[] = [
     { id: "week", label: "Semana", n: weekCards.length },
     { id: "upcoming", label: "Próximo", n: initial.upcoming.length },
-    { id: "saved", label: "Guardado", n: saved.length + gone.length },
+    { id: "saved", label: "Guardado", n: saved.length + gone.length + initial.extra.cards.length },
     { id: "done", label: "Hecho", n: initial.done.length },
     { id: "passport", label: "Pasaporte", n: -1 },
   ]
@@ -117,13 +118,19 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
         ) : null}
 
         {tab === "saved" ? (
-          saved.length + gone.length ? (
+          saved.length + gone.length + initial.extra.cards.length ? (
             <>
               <ul className="grid gap-3">
                 {saved.map((a) => (
                   <Row key={a.id} a={a}>
                     <div className="text-sm font-medium"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></div>
                     <p className="text-sm text-muted-foreground">{a.hostName} · <button type="button" onClick={() => void unsave(a.id, () => setSavedGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
+                  </Row>
+                ))}
+                {initial.extra.cards.map((a) => (
+                  <Row key={a.id} a={a}>
+                    <p className="text-sm font-medium">{a.categoryName}{a.scheduleText ? ` · ${a.scheduleText}` : ""}</p>
+                    <p className="text-sm text-muted-foreground">{a.hostName} · <Link href={a.href ?? "#"} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Abrir para quitarlo</Link></p>
                   </Row>
                 ))}
                 {gone.map((id) => (

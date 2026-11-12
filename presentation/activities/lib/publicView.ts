@@ -113,6 +113,8 @@ export function toPublicView(a: Activity): ActivityPublicView {
 export interface ActivityCardView {
   id: string
   slug: string
+  /** Enlace propio cuando la tarjeta no es de una actividad (un evento o un sitio en «Mis planes»). */
+  href?: string
   title: string
   hostName: string
   hostPhoto: string

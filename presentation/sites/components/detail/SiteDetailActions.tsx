@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { readLikedIds, saveFreshLikes, setLikedId } from "@/app/lib/clientCache/likedIds";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import { Heart, X } from "lucide-react";
+import { PlanLink } from "@/presentation/shared/components/PlanLink";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils/cn";
 import { recordSiteInteractionAction } from "@/app/actions/sites/record-site-interaction.action";
@@ -111,6 +112,8 @@ export function SiteDetailActions({ siteId, initialLikes }: SiteDetailActionsPro
         <Heart className={cn("size-5", liked && "fill-current")} />
         <span className="tabular-nums">{likes > 0 ? likes.toLocaleString("es-CO") : "Me gusta"}</span>
       </Button>
+
+      <PlanLink kind="site" />
 
       {isLoginOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

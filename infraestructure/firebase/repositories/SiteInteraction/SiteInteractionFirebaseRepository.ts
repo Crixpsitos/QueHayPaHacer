@@ -64,6 +64,11 @@ export class SiteInteractionFirebaseRepository
 
     await interactionRef.set(payload, { merge: true });
 
+    // «Mis planes»: lista de sitios que la persona quiere visitar (sin consultar todos los sitios).
+    const mine = this.db.collection("users").doc(userId).collection("likedSites").doc(siteId);
+    if (liked) await mine.set({ siteId, likedAt: now });
+    else await mine.delete();
+
     // Keep analytics.likes counter in sync
     const delta = liked && !wasLiked ? 1 : !liked && wasLiked ? -1 : 0;
     if (delta !== 0) {

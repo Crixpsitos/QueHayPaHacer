@@ -12,6 +12,7 @@ import { SITE_URL } from "@/app/lib/site"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 
+const hrefOf = (c: ActivityCardView) => c.href ?? `/actividades/${c.slug}`
 const hourText = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 === 0 ? 12 : h % 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}` }
 const dayLabel = (iso: string) => new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`))
 
@@ -51,7 +52,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
       <Button asChild className="h-12"><Link href="/actividades">Ver actividades</Link></Button>
     </div>
   )
-  const share = `https://wa.me/?text=${encodeURIComponent(weekPlanText(week, "Mi semana en Ibagué", { link: (id) => `${SITE_URL}/actividades/${byId.get(id)?.slug}?ch=wa&utm_source=whatsapp&utm_medium=share&utm_campaign=mi_semana`, footer: `Arma la tuya en ${SITE_URL}/actividades` }))}`
+  const share = `https://wa.me/?text=${encodeURIComponent(weekPlanText(week, "Mi semana en Ibagué", { link: (id) => `${SITE_URL}${hrefOf(byId.get(id)!)}?ch=wa&utm_source=whatsapp&utm_medium=share&utm_campaign=mi_semana`, footer: `Arma la tuya en ${SITE_URL}/actividades` }))}`
   return (
     <div className="grid gap-4">
       <ol className="grid gap-4">
@@ -65,7 +66,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
                 return (
                   <li key={`${b.id}-${b.startMin}`} className="grid gap-1.5 rounded-2xl p-3" style={{ background: st.bg, color: st.ink }}>
                     <div className="flex items-baseline justify-between gap-3">
-                      <Link href={`/actividades/${c.slug}`} className="flex min-w-0 items-baseline gap-3 outline-none focus-visible:underline">
+                      <Link href={hrefOf(c)} className="flex min-w-0 items-baseline gap-3 outline-none focus-visible:underline">
                         <span className="w-16 shrink-0 font-heading text-sm font-bold">{b.startMin === null ? "Todo el día" : hourText(b.startMin)}</span>
                         <span className="font-heading font-semibold leading-snug">{c.title}</span>
                       </Link>
@@ -88,7 +89,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
               const c = byId.get(id)!, st = categoryStyle(c.categorySlug)
               return (
                 <li key={id} className="grid gap-2 rounded-2xl p-3" style={{ background: st.bg, color: st.ink }}><div className="flex items-baseline justify-between gap-3">
-                  <Link href={`/actividades/${c.slug}`} className="grid min-w-0 outline-none focus-visible:underline"><span className="font-heading font-semibold leading-snug">{c.title}</span><span className="text-sm opacity-80">Sin hora fija · todos los días</span></Link>
+                  <Link href={hrefOf(c)} className="grid min-w-0 outline-none focus-visible:underline"><span className="font-heading font-semibold leading-snug">{c.title}</span><span className="text-sm opacity-80">Sin hora fija · todos los días</span></Link>
                   <span className="flex shrink-0 gap-1.5">{slotBtn(id, "Elegir día y hora")}{removeBtn(id, c.title)}</span></div>
                   {editor(id)}
                 </li>
@@ -103,7 +104,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
           <ul className="grid gap-2">
             {unplaced.map((c) => (
               <li key={c.id} className="flex items-baseline justify-between gap-3 rounded-2xl border border-border bg-card p-3">
-                <Link href={`/actividades/${c.slug}`} className="grid min-w-0 outline-none focus-visible:underline"><span className="font-heading font-semibold leading-snug">{c.title}</span><span className="text-sm text-muted-foreground">{c.scheduleText}</span></Link>
+                <Link href={hrefOf(c)} className="grid min-w-0 outline-none focus-visible:underline"><span className="font-heading font-semibold leading-snug">{c.title}</span><span className="text-sm text-muted-foreground">{c.scheduleText}</span></Link>
                 {removeBtn(c.id, c.title)}
               </li>
             ))}

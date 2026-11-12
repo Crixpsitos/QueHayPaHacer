@@ -60,6 +60,8 @@ import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activit
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity";
 import { isSiteSubject, siteIdOfSubject } from "@/domain/entities/activities/review/subject";
+import { PlanExtrasService } from "@/application/services/activities/PlanExtrasService";
+import { PlanExtrasFirebaseRepository } from "../firebase/repositories/activities/PlanExtrasFirebaseRepository";
 import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
 import { activityBadgesFor, EXPLORER_MIN_VISITS } from "@/domain/entities/activities/badges";
@@ -391,6 +393,22 @@ export const createServerContainer = () => {
     isRestricted: async (uid) => isRestricted(await sanctionRepo.listByUid(uid), uid, "reviewer", new Date()),
   });
 
+  // «Mis planes»: eventos con «Voy a ir» y sitios guardados
+  const planExtrasService = new PlanExtrasService({
+    repo: new PlanExtrasFirebaseRepository(getFirebaseFirestore()),
+    getEvent: async (id) => {
+      const e = await eventsService.getEventById(id);
+      if (!e || e.status !== "published") return null;
+      return { id: e.id, slug: e.slug, title: e.title, venue: e.location?.venue ?? "", startDate: e.startDate, endDate: e.endDate, imageUrl: e.mainImage?.url ?? null, priceLabel: e.price?.isFree ? "Gratis" : e.price ? `Desde $${new Intl.NumberFormat("es-CO").format(e.price.amount)}` : "", published: true };
+    },
+    getSite: async (id) => {
+      const s = await sitesService.getSiteDetailById(id);
+      if (!s || s.publicationStatus !== "published" || s.moderationStatus !== "approved") return null;
+      return { id: s.id, slug: s.slug || s.id, name: s.name, coverUrl: s.coverUrl ?? null, address: s.address ?? "", published: true };
+    },
+    clock: () => new Date(),
+  });
+
   // cuestionar reseñas, responderlas y resolverlas (QHPA)
   const reviewRepo = new ActivityReviewFirebaseRepository(getFirebaseFirestore());
   const reviewModerationService = new ReviewModerationService({
@@ -566,6 +584,7 @@ export const createServerContainer = () => {
     pushService,
     emailEventsService,
     reviewSubject,
+    planExtrasService,
   };
 };
 

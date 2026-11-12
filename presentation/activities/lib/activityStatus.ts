@@ -16,6 +16,7 @@ export interface MyActivitySummary {
   slug: string
   title: string
   coverUrl: string | null
+  categorySlug: string
   schedule: string
   status: { key: StatusKey; label: string; help: string }
   canToggleActive: boolean
@@ -33,6 +34,7 @@ export function toMySummary(a: Activity): MyActivitySummary {
     slug: a.slug,
     title: a.title,
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
+    categorySlug: a.category,
     schedule: describeSchedule(a.schedule),
     status: activityStatus(a),
     canToggleActive: a.publicationStatus === "published" && a.moderationStatus === "approved",

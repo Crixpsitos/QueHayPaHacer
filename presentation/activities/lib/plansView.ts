@@ -7,6 +7,8 @@ export interface MyPlansView {
   removedSaved: string[]
   done: ActivityCardView[]
   slots: Record<string, { date: string; time: string | null }>
+  /** Eventos con «Voy a ir» (con su día y hora) y sitios guardados, ya como tarjetas. */
+  extra: { cards: ActivityCardView[]; slots: Record<string, { date: string; time: string | null }> }
 }
 
 /** «domingo 15 de noviembre»; salida sin fecha fija → null. */
