@@ -60,6 +60,7 @@ import { LEGAL_VERSION } from "@/app/lib/legal/version";
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity";
 import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
+import { activityBadgesFor, EXPLORER_MIN_VISITS } from "@/domain/entities/activities/badges";
 import { isRestricted } from "@/domain/entities/activities/moderation/reviewModeration";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
@@ -267,9 +268,15 @@ export const createServerContainer = () => {
   });
 
   // guardar y "Yo fui" de actividades (solo sobre públicas)
+  const engagementRepoForBadges = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
   const activityEngagementService = new ActivityEngagementService(
-    new ActivityEngagementFirebaseRepository(getFirebaseFirestore()),
+    engagementRepoForBadges,
     async (id) => (await activityService.getPublicById(id)) !== null,
+    async (uid) => {
+      // «Explorador de Ibagué»: 5 actividades distintas con «Yo fui».
+      const visits = (await engagementRepoForBadges.listVisitedIds(uid, EXPLORER_MIN_VISITS)).length;
+      for (const b of activityBadgesFor({ reviews: 0, visits })) await badgeService.awardBadgeToUser(uid, b, "Yo fui en 5 actividades");
+    },
   );
 
   // reclamos de sitios (dueños que piden verificación)
@@ -318,6 +325,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     legalVersion: LEGAL_VERSION,
     lastSubmit: REVIEW_LAST_SUBMIT,
+    afterCreate: async (uid) => { for (const b of activityBadgesFor({ reviews: 1, visits: 0 })) await badgeService.awardBadgeToUser(uid, b, "Tu primera reseña"); },
     deleteFile: (path) => storageService.delete(path),
     isRestricted: async (uid) => isRestricted(await sanctionRepo.listByUid(uid), uid, "reviewer", new Date()),
   });

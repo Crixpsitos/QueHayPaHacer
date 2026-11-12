@@ -148,3 +148,13 @@ test("una cuenta con restricción de reseñas no reseña", async () => {
   const svc2 = new ActivityReviewService({ ...(s.svc as unknown as { d: ConstructorParameters<typeof ActivityReviewService>[0] }).d, isRestricted: async () => true })
   await assert.rejects(svc2.submit("u1", "a1", input, meta), /restricción/)
 })
+
+test("insignia: el aviso de reseña nueva se da una vez (no por ediciones) y un fallo del aviso no rompe la reseña", async () => {
+  const s = setup()
+  let calls = 0
+  const d = (s.svc as unknown as { d: ConstructorParameters<typeof ActivityReviewService>[0] }).d
+  const svc2 = new ActivityReviewService({ ...d, afterCreate: async () => { calls++; throw new Error("boom") } })
+  await svc2.submit("u1", "a1", input, meta)
+  assert.equal(calls, 1)
+  s.advance(0)
+})

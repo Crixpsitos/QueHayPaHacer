@@ -24,6 +24,8 @@ export interface ReviewDeps {
   deleteFile?: (path: string) => Promise<void>
   /** ¿La cuenta tiene una restricción o suspensión de reseñas vigente? (sanciones de QHPA) */
   isRestricted?: (uid: string) => Promise<boolean>
+  /** Tras publicar una reseña NUEVA (insignia «Primera historia»). Un fallo aquí nunca rompe la reseña. */
+  afterCreate?: (uid: string) => Promise<void>
   /** Último envío por persona (cooldown). Debe vivir a nivel de módulo en producción: el contenedor no se memoiza. */
   lastSubmit?: Map<string, number>
 }
@@ -80,6 +82,7 @@ export class ActivityReviewService {
       // Medios que la persona quitó al editar: se borran del almacenamiento (no quedan fotos públicas huérfanas).
       for (const old of existing?.media ?? []) if (!media.some((m) => m.id === old.id)) await this.removeFiles([old])
       if (saved.created) {
+        await this.d.afterCreate?.(uid).catch(() => undefined)
         await this.d.notify(a.ownerUid, reviewReceivedNotification({ title: a.title, slug: a.slug, rating: input.rating, who: review.author.displayName }), `review_${review.id}`).catch(() => undefined)
       }
       return { review, created: saved.created, rating: saved.rating }

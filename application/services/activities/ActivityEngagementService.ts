@@ -9,6 +9,8 @@ export class ActivityEngagementService {
   constructor(
     private readonly repo: IActivityEngagementRepository,
     private readonly isPublic: (activityId: string) => Promise<boolean>,
+    /** Tras un «Yo fui» NUEVO (insignia «Explorador de Ibagué»). Un fallo aquí nunca rompe el «Yo fui». */
+    private readonly afterVisit?: (uid: string) => Promise<void>,
   ) {}
 
   private static ids(uid: string, activityId: string) {
@@ -29,7 +31,8 @@ export class ActivityEngagementService {
   async markVisited(uid: string, activityId: string): Promise<void> {
     ActivityEngagementService.ids(uid, activityId)
     if (!(await this.isPublic(activityId))) throw new Error(NOT_FOUND)
-    await this.repo.markVisited(uid, activityId)
+    const r = await this.repo.markVisited(uid, activityId)
+    if (r.changed) await this.afterVisit?.(uid).catch(() => undefined)
   }
 
   recordTrack(activityId: string, type: ActivityTrackType, day: string, source: TrafficSource): Promise<void> {
