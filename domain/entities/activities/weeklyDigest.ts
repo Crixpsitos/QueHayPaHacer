@@ -3,9 +3,9 @@ import { occurrencesBetween } from "./value-objects/occurrences"
 import { whenRange } from "./when"
 
 export const DIGEST_MAX_PER_DAY = 6
-export interface DigestEvent { id: string; title: string; start: Date; end: Date; place: string; url: string }
-export interface DigestActivity { id: string; title: string; schedule: ActivitySchedule; priceFrom: string; place: string; url: string }
-export interface DigestItem { kind: "event" | "activity"; title: string; timeLabel: string; place: string; detail: string; url: string; sortMin: number }
+export interface DigestEvent { id: string; title: string; start: Date; end: Date; place: string; url: string; imageUrl?: string }
+export interface DigestActivity { id: string; title: string; schedule: ActivitySchedule; priceFrom: string; place: string; url: string; imageUrl?: string }
+export interface DigestItem { kind: "event" | "activity"; title: string; timeLabel: string; place: string; detail: string; url: string; sortMin: number; imageUrl?: string }
 export interface DigestDay { date: string; label: string; items: DigestItem[] }
 export interface Digest { title: string; days: DigestDay[] }
 
@@ -30,14 +30,14 @@ export function buildWeekendDigest(events: readonly DigestEvent[], activities: r
     for (const e of events) {
       if (e.end.getTime() < now.getTime() || e.end.getTime() < from || e.start.getTime() > to) continue
       const startsToday = e.start.getTime() >= from
-      items.push({ kind: "event", title: e.title, timeLabel: startsToday ? hourText(minutesOf(e.start)) : "Todo el día", place: e.place, detail: "Evento", url: e.url, sortMin: startsToday ? minutesOf(e.start) : -1 })
+      items.push({ kind: "event", title: e.title, timeLabel: startsToday ? hourText(minutesOf(e.start)) : "Todo el día", place: e.place, detail: "Evento", url: e.url, imageUrl: e.imageUrl, sortMin: startsToday ? minutesOf(e.start) : -1 })
     }
     for (const a of activities) {
       for (const o of occurrencesBetween(a.schedule, date, date)) {
         if (!o.startsAt) continue
         if ((o.endsAt ?? new Date(o.startsAt.getTime() + 3_600_000)).getTime() < now.getTime()) continue
         const m = minutesOf(o.startsAt)
-        items.push({ kind: "activity", title: a.title, timeLabel: hourText(m), place: a.place, detail: a.priceFrom, url: a.url, sortMin: m })
+        items.push({ kind: "activity", title: a.title, timeLabel: hourText(m), place: a.place, detail: a.priceFrom, url: a.url, imageUrl: a.imageUrl, sortMin: m })
         break
       }
     }
