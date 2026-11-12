@@ -52,7 +52,9 @@ export interface IStudioRepository {
    * registro y lugar propios, que en multi-date viven en cada sesión.
    */
   getMultiDateEventStats(eventId: string): Promise<MultiDateEventStats | null>;
-  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string): Promise<void>;
+  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string, payment?: { tier: string | null; amountCop: number }): Promise<void>;
+  /** Confirmados con pago (categoría y valor), para los ingresos del evento. */
+  getPaymentRows(eventId: string): Promise<{ tier?: string | null; paidAmount?: number | null }[]>;
   /** Check-in por código QR: busca la inscripción por `checkInCode` y sella `checkedInAt`. */
   checkInByCode(eventId: string, code: string, sessionId: string | undefined, actingUid: string): Promise<CheckInByCodeResult>;
   removeParticipant(eventId: string, userId: string, sessionId?: string): Promise<void>;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Award, Check, Loader2, MessageCircle, Search, UserPlus, Users } from "lucide-react";
+import { Award, Check, Loader2, MessageCircle, ScanLine, Search, UserPlus, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import {
   Dialog,
@@ -18,6 +18,9 @@ import {
 import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
 import { addGuestAction, type AddGuestResult } from "@/app/actions/events/add-guest.action";
 import { isGuestId } from "@/domain/entities/EventRegistration/guest";
+import { AttendanceScannerDialog } from "@/presentation/studio/components/events/registrations/AttendanceScannerDialog";
+import { EventIncomeCard, notifyIncomeChanged } from "./EventIncomeCard";
+import type { PayTier } from "@/domain/entities/EventRegistration/payment";
 import { CopyButton } from "@/presentation/shared/components/CopyButton";
 
 interface EventAttendeesDialogProps {
@@ -29,6 +32,9 @@ interface EventAttendeesDialogProps {
 
 const formatDateTime = (iso: string) =>
   new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+
+const cop = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+const cheapest = (t: PayTier[]) => [...t].sort((a, b) => a.amount - b.amount)[0]?.name;
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -57,6 +63,10 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestRes, setGuestRes] = useState<AddGuestResult | null>(null);
   const [query, setQuery] = useState("");
+  const [tiers, setTiers] = useState<PayTier[]>([]);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [guestTier, setGuestTier] = useState("");
+  const [scanOpen, setScanOpen] = useState(false);
 
   const fetchFirstPage = async () => {
     setLoading(true);
@@ -69,6 +79,8 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
       setTotal(res.total);
       setIsExternal(res.isExternal);
       setCapacity(res.capacity);
+      setTiers(res.tiers);
+      setGuestTier((g) => g || cheapest(res.tiers) || "");
     } else {
       setError(res.error);
     }
@@ -96,7 +108,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
 
   const addGuest = async () => {
     setGuestBusy(true);
-    const r = await addGuestAction(eventId, { name: guestName, phone: guestPhone });
+    const r = await addGuestAction(eventId, { name: guestName, phone: guestPhone, tier: tiers.length ? guestTier : undefined });
     setGuestBusy(false);
     setGuestRes(r);
     if (r.success) { setGuestName(""); setGuestPhone(""); void fetchFirstPage(); }
@@ -104,9 +116,15 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
   const confirmed = attendees.filter((a) => a.attendanceConfirmed).length;
   const confirm = async (userId: string) => {
     setConfirming(userId);
-    const r = await confirmAttendanceAction(eventId, userId);
+    const a = attendees.find((x) => x.userId === userId);
+    const tier = tiers.length ? (picked[userId] ?? a?.tier ?? cheapest(tiers)) : undefined;
+    const r = await confirmAttendanceAction(eventId, userId, undefined, tier);
     setConfirming(null);
-    if (r.success) setAttendees((prev) => prev.map((x) => (x.userId === userId ? { ...x, attendanceConfirmed: true } : x)));
+    if (r.success) {
+      const amount = tiers.find((t) => t.name === tier)?.amount;
+      setAttendees((prev) => prev.map((x) => (x.userId === userId ? { ...x, attendanceConfirmed: true, ...(tier && amount ? { tier, paidAmount: amount } : {}) } : x)));
+      notifyIncomeChanged();
+    }
     else setError(r.error ?? "No se pudo confirmar.");
   };
   const filtered = query.trim()
@@ -150,6 +168,15 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
           </div>
         ) : null}
 
+        {isExternal && !loading && !error ? (
+          <div className="grid gap-3 border-b border-gray-100 px-5 py-3">
+            {tiers.length ? <EventIncomeCard eventId={eventId} /> : null}
+            <button type="button" onClick={() => setScanOpen(true)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#9B0A26] px-4 text-sm font-semibold text-white">
+              <ScanLine className="h-4 w-4" aria-hidden /> Escanear QR de entrada
+            </button>
+          </div>
+        ) : null}
+
         <div className="border-b border-gray-100 px-5 py-3">
           {!adding ? (
             <button type="button" onClick={() => { setAdding(true); setGuestRes(null); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#9B0A26] px-4 text-sm font-semibold text-[#9B0A26] hover:bg-[#FDF2F4]">
@@ -160,6 +187,9 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
               <p className="text-xs text-gray-500">Para quien se inscribió por WhatsApp o llega a la puerta. Le generamos su entrada con QR. El WhatsApp es un dato personal: úsalo solo para enviarle su entrada.</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="grid gap-1 text-xs font-medium text-gray-700">Nombre<input value={guestName} onChange={(e) => setGuestName(e.target.value)} maxLength={80} placeholder="Ana María Ruiz" className="min-h-10 rounded-lg border border-gray-200 px-3 text-sm font-normal outline-none focus:border-[#9B0A26]" /></label>
+                {tiers.length > 1 ? (
+                  <label className="grid gap-1 text-xs font-medium text-gray-700 sm:col-span-2">Categoría de la entrada<select value={guestTier} onChange={(e) => setGuestTier(e.target.value)} className="min-h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm font-normal">{tiers.map((t) => <option key={t.name} value={t.name}>{t.name} · {cop(t.amount)}</option>)}</select></label>
+                ) : null}
                 <label className="grid gap-1 text-xs font-medium text-gray-700">WhatsApp (opcional)<input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} inputMode="tel" placeholder="300 123 4567" className="min-h-10 rounded-lg border border-gray-200 px-3 text-sm font-normal outline-none focus:border-[#9B0A26]" /></label>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -263,12 +293,19 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                     (a.attendanceConfirmed ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                         <Check className="h-3 w-3" />
-                        Asistió
+                        Asistió{a.paidAmount ? ` · ${a.tier ? `${a.tier} ` : ""}${cop(a.paidAmount)}` : ""}
                       </span>
                     ) : isExternal ? (
+                      <span className="flex items-center gap-1.5">
+                      {tiers.length > 1 ? (
+                        <select aria-label={`Categoría que pagó ${a.name}`} value={picked[a.userId] ?? a.tier ?? cheapest(tiers)} onChange={(e) => setPicked((p) => ({ ...p, [a.userId]: e.target.value }))} className="min-h-9 max-w-[8.5rem] rounded-lg border border-gray-200 bg-white px-1.5 text-xs">
+                          {tiers.map((t) => <option key={t.name} value={t.name}>{t.name} · {cop(t.amount)}</option>)}
+                        </select>
+                      ) : null}
                       <button type="button" disabled={confirming === a.userId} onClick={() => void confirm(a.userId)} className="inline-flex min-h-9 items-center rounded-full bg-[#9B0A26] px-3 text-xs font-semibold text-white disabled:opacity-60">
-                        {confirming === a.userId ? "Confirmando…" : "Confirmar"}
+                        {confirming === a.userId ? "Confirmando…" : tiers.length ? "Pagó" : "Confirmar"}
                       </button>
+                      </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
                         Pendiente
@@ -295,6 +332,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
           </div>
         )}
       </DialogContent>
+      {isExternal ? <AttendanceScannerDialog eventId={eventId} open={scanOpen} onOpenChange={(o) => { setScanOpen(o); if (!o) void fetchFirstPage(); }} /> : null}
     </Dialog>
   );
 }

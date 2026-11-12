@@ -3,6 +3,7 @@
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
+import { payTiers, type PayTier } from "@/domain/entities/EventRegistration/payment";
 import { createServerContainer } from "@/infraestructure/di/container";
 
 /** Asistente serializable para el modal de inscritos. */
@@ -17,6 +18,10 @@ export interface EventAttendeeVM {
   /** ISO 8601. */
   registeredAt: string;
   attendanceConfirmed: boolean;
+  tier?: string;
+  paidAmount?: number;
+  /** Persona sin cuenta agregada por quien organiza. */
+  isGuest: boolean;
 }
 
 export type GetEventAttendeesResult =
@@ -33,6 +38,8 @@ export type GetEventAttendeesResult =
       isExternal: boolean;
       /** Cupo del evento, si lo definió. */
       capacity?: number;
+      /** Categorías cobrables (vacío = gratis). */
+      tiers: PayTier[];
     }
   | { success: false; error: string };
 
@@ -86,6 +93,7 @@ export async function getEventAttendeesAction(
         total: event.analytics?.registrations ?? 0,
         isExternal: event.registrationType === "external",
         capacity: event.capacity,
+        tiers: payTiers(event.price),
       };
     }
 
@@ -99,6 +107,9 @@ export async function getEventAttendeesAction(
         photoURL: r.photoURL,
         registeredAt: r.registeredAt.toISOString(),
         attendanceConfirmed: r.attendanceConfirmed,
+        tier: r.tier,
+        paidAmount: r.paidAmount,
+        isGuest: r.isGuest === true,
       };
     });
 
@@ -110,6 +121,7 @@ export async function getEventAttendeesAction(
       total: event.analytics?.registrations ?? attendees.length,
       isExternal: event.registrationType === "external",
       capacity: event.capacity,
+      tiers: payTiers(event.price),
     };
   } catch (error) {
     console.error("getEventAttendeesAction error", { eventId, error });

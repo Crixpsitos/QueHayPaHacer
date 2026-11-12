@@ -36,6 +36,9 @@ export interface RegistrationRow {
   photoURL?: string;
   registeredAt: string; // ISO
   attendanceConfirmed: boolean;
+  tier?: string;
+  paidAmount?: number;
+  isGuest?: boolean;
   /** Solo en eventos tipo "form". */
   formResponses?: { label: string; value: string }[];
 }
@@ -70,6 +73,8 @@ export interface EventRegistrationsViewModel {
   /** external */
   externalClicks?: number;
   externalUrl?: string;
+  /** Categorías cobrables (vacío = gratis). */
+  tiers?: { name: string; amount: number }[];
   /** Si el evento lleva control de asistencia (check-in) de los inscritos. */
   requiresAttendance: boolean;
   /** Cursor de paginación: `null` si no hay página en esa dirección. */

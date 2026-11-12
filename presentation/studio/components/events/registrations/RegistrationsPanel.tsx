@@ -5,6 +5,7 @@ import { ExternalClicksPanel } from "./ExternalClicksPanel";
 import { EmptyRegistrations } from "./EmptyRegistrations";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { EventIncomeCard } from "@/presentation/events/components/EventIncomeCard";
 import { EventAttendeesDialog } from "@/presentation/events/components/EventAttendeesDialog";
 
 interface RegistrationsPanelProps {
@@ -42,21 +43,21 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
               </Button>
             }
           />
-          {data.rows.length ? (
-            <RegistrationsTable
-              eventId={data.eventId}
-              sessionId={sessionId}
-              rows={data.rows}
-              sortBy={sortBy}
-              sortDir={sortDir}
-              limit={limit}
-              query={query}
-              nextCursor={data.nextCursor}
-              prevCursor={data.prevCursor}
-              requiresAttendance
-              permissions={data.permissions}
-            />
-          ) : null}
+          {data.tiers?.length ? <EventIncomeCard eventId={data.eventId} /> : null}
+          <RegistrationsTable
+            eventId={data.eventId}
+            sessionId={sessionId}
+            rows={data.rows}
+            sortBy={sortBy}
+            sortDir={sortDir}
+            limit={limit}
+            query={query}
+            nextCursor={data.nextCursor}
+            prevCursor={data.prevCursor}
+            requiresAttendance
+            tiers={data.tiers}
+            permissions={data.permissions}
+          />
         </div>
       );
     case "form":

@@ -32,8 +32,8 @@ export async function checkInByCodeAction(input: {
   const sessionId = input.sessionId?.trim() || undefined;
   try {
     // Escanear y confirmar van juntos: el rol debe poder ambas cosas.
-    const access = eventId ? await requireEventPermission(eventId, "scan_attendance") : null;
-    if (!eventId || !access || !(await requireEventPermission(eventId, "confirm_attendance"))) {
+    const access = eventId ? await requireEventPermission(eventId, "scan_attendance", { ownerNeedsPremium: false }) : null;
+    if (!eventId || !access || !(await requireEventPermission(eventId, "confirm_attendance", { ownerNeedsPremium: false }))) {
       return { success: false, error: "No autorizado." };
     }
 

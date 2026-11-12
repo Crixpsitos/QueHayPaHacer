@@ -7,6 +7,7 @@ import { Camera, CameraOff, Info, Loader2, X } from "lucide-react";
 import { checkInByCodeAction } from "@/app/actions/studio/check-in-by-code.action";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";
+import { notifyIncomeChanged } from "@/presentation/events/components/EventIncomeCard";
 import { cn } from "@/app/lib/utils/cn";
 
 interface Props {
@@ -87,6 +88,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
           setOutcome({ kind: "success", text: `Asistencia confirmada: ${res.name}` });
           setRecent((r) => [res.name ?? "Asistente", ...r].slice(0, 5));
           router.refresh(); // actualiza la tabla y las estadísticas
+          notifyIncomeChanged();
         }
         return Boolean(res?.success);
       } finally {

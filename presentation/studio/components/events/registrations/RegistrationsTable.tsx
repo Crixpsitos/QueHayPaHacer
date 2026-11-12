@@ -33,6 +33,7 @@ import { cn } from "@/app/lib/utils/cn";
 import { notify } from "@/presentation/shared/lib/notify";
 import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
 import { removeParticipantAction } from "@/app/actions/studio/remove-participant.action";
+import { notifyIncomeChanged } from "@/presentation/events/components/EventIncomeCard";
 import { AttendanceScannerDialog } from "./AttendanceScannerDialog";
 import { toCsv, downloadCsv } from "../../../lib/csv";
 import { EventsSearchInput } from "../EventsSearchInput";
@@ -57,6 +58,8 @@ interface RegistrationsTableProps {
    * columna "Asistencia" no se gestiona y muestra "No se requiere". */
   requiresAttendance: boolean;
   withFormResponses?: boolean;
+  /** Categorías cobrables (eventos externos de pago): al confirmar se elige cuál pagó. */
+  tiers?: { name: string; amount: number }[];
   /** Permisos del rol de quien mira (la UI solo oculta; el servidor autoriza cada acción). */
   permissions: Record<TeamAction, boolean>;
 }
@@ -65,6 +68,8 @@ const LIMIT_OPTIONS = [10, 25, 50, 100];
 
 const formatDateTime = (iso: string) =>
   new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+
+const formatCop = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
 const initials = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -80,6 +85,7 @@ export function RegistrationsTable({
   prevCursor,
   requiresAttendance,
   withFormResponses = false,
+  tiers = [],
   permissions,
 }: RegistrationsTableProps) {
   const canScan = permissions.scan_attendance;
@@ -158,13 +164,16 @@ export function RegistrationsTable({
       return next;
     });
 
-  const confirmOne = async (userId: string) => {
-    setData((prev) => prev.map((r) => (r.userId === userId ? { ...r, attendanceConfirmed: true } : r)));
-    const res = await confirmAttendanceAction(eventId, userId, sessionId);
+  const tierAmount = (name?: string) => tiers.find((t) => t.name === name)?.amount;
+  const defaultTier = (r: RegistrationRow) => (tiers.length ? (tiers.find((t) => t.name === r.tier) ?? [...tiers].sort((a, b) => a.amount - b.amount)[0]).name : undefined);
+
+  const confirmOne = async (userId: string, tier?: string) => {
+    setData((prev) => prev.map((r) => (r.userId === userId ? { ...r, attendanceConfirmed: true, ...(tier ? { tier, paidAmount: tierAmount(tier) } : {}) } : r)));
+    const res = await confirmAttendanceAction(eventId, userId, sessionId, tier);
     if (!res.success) {
       notify.error(res.error ?? "Error al confirmar.");
       router.refresh(); // revierte el optimista con la verdad del servidor
-    }
+    } else notifyIncomeChanged();
   };
 
   const removeOne = async (userId: string) => {
@@ -187,12 +196,13 @@ export function RegistrationsTable({
     const ids = [...selected];
     setData((prev) => prev.map((r) => (selected.has(r.userId) ? { ...r, attendanceConfirmed: true } : r)));
     setSelected(new Set());
-    const results = await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id, sessionId)));
+    const results = await Promise.all(ids.map((id) => confirmAttendanceAction(eventId, id, sessionId, defaultTier(data.find((r) => r.userId === id) as RegistrationRow))));
     const failed = results.filter((r) => !r.success).length;
     if (failed) {
       notify.error(`No se pudieron confirmar ${failed} de ${ids.length}.`);
       router.refresh();
     } else notify.success(`${ids.length} asistencia(s) confirmada(s).`);
+    notifyIncomeChanged();
   };
 
   const bulkRemove = async () => {
@@ -387,7 +397,8 @@ export function RegistrationsTable({
                   hasRowActions={hasRowActions}
                   onToggleSelect={() => toggleOne(row.userId)}
                   onViewResponses={() => setResponsesRow(row)}
-                  onConfirm={() => void confirmOne(row.userId)}
+                  tiers={tiers}
+                  onConfirm={(tier) => void confirmOne(row.userId, tier)}
                   onRemove={() => void removeOne(row.userId)}
                 />
               ))}
@@ -569,6 +580,7 @@ function RegistrationRowItem({
   hasRowActions,
   onToggleSelect,
   onViewResponses,
+  tiers,
   onConfirm,
   onRemove,
 }: {
@@ -583,9 +595,11 @@ function RegistrationRowItem({
   hasRowActions: boolean;
   onToggleSelect: () => void;
   onViewResponses: () => void;
-  onConfirm: () => void;
+  tiers: { name: string; amount: number }[];
+  onConfirm: (tier?: string) => void;
   onRemove: () => void;
 }) {
+  const [pickedTier, setPickedTier] = useState(row.tier ?? [...tiers].sort((a, b) => a.amount - b.amount)[0]?.name);
   // Al pasar a "confirmada" (escáner o botón) la fila destella un tinte esmeralda.
   const still = useReducedMotion();
   const [prevConfirmed, setPrevConfirmed] = useState(row.attendanceConfirmed);
@@ -653,7 +667,7 @@ function RegistrationRowItem({
             className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
           >
             <Check className="h-3 w-3" />
-            Confirmada
+            Confirmada{row.paidAmount ? ` · ${row.tier ? `${row.tier} ` : ""}${formatCop(row.paidAmount)}` : ""}
           </motion.span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
@@ -673,10 +687,22 @@ function RegistrationRowItem({
               Respuestas
             </button>
           )}
+          {requiresAttendance && canConfirm && !row.attendanceConfirmed && tiers.length > 1 && (
+            <select
+              value={pickedTier}
+              onChange={(e) => setPickedTier(e.target.value)}
+              aria-label={`Categoría que pagó ${row.name}`}
+              className="h-7 max-w-[9rem] rounded-md border border-gray-200 bg-white px-1.5 text-xs text-slate-700"
+            >
+              {tiers.map((t) => (
+                <option key={t.name} value={t.name}>{t.name} · {formatCop(t.amount)}</option>
+              ))}
+            </select>
+          )}
           {requiresAttendance && canConfirm && !row.attendanceConfirmed && (
             <button
               type="button"
-              onClick={onConfirm}
+              onClick={() => onConfirm(tiers.length ? pickedTier : undefined)}
               title="Confirmar asistencia"
               aria-label={`Confirmar asistencia de ${row.name}`}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"

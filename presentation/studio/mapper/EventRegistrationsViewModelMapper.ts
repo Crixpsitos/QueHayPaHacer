@@ -44,6 +44,9 @@ export function toEventRegistrationsViewModel(
       photoURL: r.photoURL,
       registeredAt: r.registeredAt.toISOString(),
       attendanceConfirmed: r.attendanceConfirmed,
+      tier: r.tier,
+      paidAmount: r.paidAmount,
+      isGuest: r.isGuest,
       formResponses: r.formResponses?.map((f) => ({
         label: f.label,
         value: f.value,
@@ -57,6 +60,7 @@ export function toEventRegistrationsViewModel(
     rows,
     externalClicks: result.externalClicks,
     externalUrl: result.externalUrl,
+    tiers: result.payTiers,
     requiresAttendance: result.requiresAttendance,
     nextCursor: result.nextCursor,
     prevCursor: result.prevCursor,
