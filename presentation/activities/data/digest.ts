@@ -13,7 +13,7 @@ export const fetchWeekendDigest = async (): Promise<Digest> => {
   const [ids, acts] = await Promise.all([c.eventFeed.getWeekend(), c.activityService.search({ when: "este-fin-de-semana" }, 0, 200)])
   const events: DigestEvent[] = (await Promise.all(ids.map((id) => fetchEventDetailById(id).catch(() => null))))
     .filter((e): e is NonNullable<typeof e> => !!e && e.status === "published")
-    .map((e) => ({ id: e.id, title: e.title, start: e.startDate, end: e.endDate, place: e.location?.venue ?? "", url: `/eventos/${e.slug || e.id}`, imageUrl: e.mainImage?.url }))
+    .map((e) => ({ id: e.id, title: e.title, start: e.startDate, end: e.endDate, place: e.location?.venue ?? "", url: `/eventos/${e.slug || e.id}`, imageUrl: e.mainImage?.url, score: e.analytics?.score }))
   const names = new Map<string, string>()
   for (const siteId of new Set(acts.items.map((a) => a.siteId).filter((x): x is string => !!x))) names.set(siteId, (await c.sitesService.getActivityLinkSnapshot(siteId))?.name ?? "")
   const activities: DigestActivity[] = acts.items.map((a) => {
