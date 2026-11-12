@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
-import { FieldValue, type DocumentData, type Firestore, type Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentData, type Firestore } from "firebase-admin/firestore";
 
 import { cancelBlock, type UserRegistrationItem } from "@/domain/entities/EventRegistration/myRegistrations";
 import { generateCheckInCode } from "@/domain/entities/EventRegistration/checkIn";
-import type { CancelRegistrationResult, CheckInCodeResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import { interestOutcome, seatKind, toPromote, waitlistPosition, type SeatRow } from "@/domain/entities/EventRegistration/interest";
+import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
@@ -99,6 +100,53 @@ export class EventRegistrationFirebaseRepository
     );
 
     await batch.commit();
+  }
+
+  /**
+   * «Me interesa» en un evento con enlace externo, dentro de una transacción. Con capacidad definida: cuenta los cupos (los
+   * interesados de más de 24 h ya no cuentan), promueve de la lista de espera a quien le toque por los huecos libres, y deja a
+   * esta persona como interesada o en la lista de espera. Sin capacidad no lee las demás inscripciones (cero costo extra).
+   * Quien ya estaba interesado y venció vuelve a entrar con un nuevo plazo; quien ya está vigente no cambia.
+   */
+  async registerExternalInterest(eventId: string, entry: FirebaseEventRegistrationEntry): Promise<ExternalInterestResult> {
+    const eventRef = this.collection.doc(eventId);
+    const col = this.registrationsCol(eventId);
+    const toSeat = (id: string, d: DocumentData): SeatRow & { id: string } => ({
+      id,
+      status: d.status === "canceled" ? "canceled" : d.status === "accepted" ? "accepted" : "pending",
+      registeredAt: (d.registeredAt as Timestamp | undefined)?.toDate() ?? new Date(0),
+      checkedInAt: d.checkedInAt,
+      paidAmount: typeof d.paidAmount === "number" ? d.paidAmount : null,
+      guest: d.guest === true,
+      waitlist: d.status === "waitlist",
+    });
+    return this.db.runTransaction(async (tx) => {
+      const regRef = col.doc(entry.userId);
+      const [eventSnap, mine] = await Promise.all([tx.get(eventRef), tx.get(regRef)]);
+      const capacity = Number(eventSnap.get("capacity")) > 0 ? Number(eventSnap.get("capacity")) : undefined;
+      const now = Date.now();
+      const mineSeat = mine.exists ? toSeat(mine.id, mine.data()!) : null;
+      const mineKind = mineSeat ? seatKind(mineSeat, now) : null;
+      if (mineKind === "confirmed" || mineKind === "interested") return { outcome: "interested", position: null, already: true };
+      if (mineKind === "waitlist") {
+        const all = (await tx.get(col.where("status", "==", "waitlist").limit(2000))).docs.map((d) => toSeat(d.id, d.data()));
+        return { outcome: "waitlist", position: waitlistPosition(all, entry.userId, now), already: true };
+      }
+
+      let rows: (SeatRow & { id: string })[] = [];
+      if (capacity) rows = (await tx.get(col.where("status", "!=", "canceled").limit(2000))).docs.filter((d) => d.id !== entry.userId).map((d) => toSeat(d.id, d.data()));
+
+      const promote = capacity ? toPromote(capacity, rows, now) : [];
+      for (const id of promote) tx.update(col.doc(id), { status: "registered", registeredAt: Timestamp.now() });
+      rows = rows.map((r) => (promote.includes(r.id) ? { ...r, waitlist: false, registeredAt: now } : r));
+
+      const outcome = capacity ? interestOutcome(capacity, rows, now) : "interested";
+      tx.set(regRef, { ...entry, status: outcome === "waitlist" ? "waitlist" : "registered" }, { merge: false });
+      const newSeats = promote.length + (outcome === "interested" && mineKind !== "expired" ? 1 : 0);
+      if (newSeats > 0) tx.set(eventRef, { analytics: { registrations: FieldValue.increment(newSeats) }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      const position = outcome === "waitlist" ? waitlistPosition([...rows, { id: entry.userId, status: "pending", registeredAt: now, waitlist: true }], entry.userId, now) : null;
+      return { outcome, position, already: false };
+    });
   }
 
   /**

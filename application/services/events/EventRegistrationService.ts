@@ -1,5 +1,5 @@
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
-import type { CancelRegistrationResult, CheckInCodeResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 
 export class EventRegistrationService {
   constructor(
@@ -24,6 +24,10 @@ export class EventRegistrationService {
 
   async registerUserToEvent(input: RegisterEventInput): Promise<void> {
     return this.eventRegistrationRepository.registerUserToEvent(input);
+  }
+
+  registerExternalInterest(input: RegisterEventInput): Promise<ExternalInterestResult> {
+    return this.eventRegistrationRepository.registerExternalInterest(input);
   }
 
   async listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]> {

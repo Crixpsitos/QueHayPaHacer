@@ -8,6 +8,9 @@ export type CheckInCodeResult =
   | { status: "ok"; code: string; title: string }
   | { status: "not_found" | "canceled" | "finished" | "no_attendance" };
 
+/** Resultado de «Me interesa» en un evento con enlace externo. `already`: ya estaba vigente, no se cambió nada. */
+export interface ExternalInterestResult { outcome: "interested" | "waitlist"; position: number | null; already: boolean }
+
 export interface RegisterEventInput {
   userId: string;
   eventId: string;
@@ -29,6 +32,9 @@ export interface IEventRegistrationRepository {
   isUserRegistered(eventId: string, userId: string, sessionId?: string): Promise<boolean>;
 
   registerUserToEvent(input: RegisterEventInput): Promise<void>;
+
+  /** «Me interesa» con cupos (24 h de vigencia y lista de espera). Ver `domain/entities/EventRegistration/interest.ts`. */
+  registerExternalInterest(input: RegisterEventInput): Promise<ExternalInterestResult>;
 
   /** Inscripciones del usuario en todos los eventos/sesiones (las 100 más recientes). */
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;

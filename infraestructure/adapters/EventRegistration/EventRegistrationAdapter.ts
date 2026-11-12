@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 import type { EventRegistration } from "@/domain/entities/EventRegistration/EventRegistration";
-import type { CancelRegistrationResult, CheckInCodeResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult, IEventRegistrationRepository, RegisterEventInput, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { IEventRegistrationMapper } from "@/infraestructure/firebase/mappers/EventRegistration/IEventRegistrationMapper";
 import type { IEventRegistrationFirebaseRepository } from "@/infraestructure/firebase/repositories/EventRegistration/IEventRegistrationFirebaseRepository";
 
@@ -44,6 +44,20 @@ export class EventRegistrationAdapter implements IEventRegistrationRepository {
       },
       input.sessionId,
     );
+  }
+
+  registerExternalInterest(input: RegisterEventInput): Promise<ExternalInterestResult> {
+    return this.repository.registerExternalInterest(input.eventId, {
+      userId: input.userId,
+      eventId: input.eventId,
+      parentType: "events",
+      name: input.name,
+      email: input.email,
+      registeredAt: Timestamp.now(),
+      registrationType: input.registrationType,
+      status: "registered",
+      ...(input.formData ? { formData: input.formData } : {}),
+    });
   }
 
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]> {

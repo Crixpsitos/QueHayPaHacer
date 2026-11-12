@@ -1,5 +1,5 @@
 import type { FirebaseEventRegistration } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistration";
-import type { CancelRegistrationResult, CheckInCodeResult, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
+import type { CancelRegistrationResult, CheckInCodeResult, ExternalInterestResult, UserRegistrationItem } from "@/domain/repository/EventRegistration/IEventRegistrationRepository";
 import type { FirebaseEventRegistrationEntry } from "@/infraestructure/firebase/dto/EventRegistration/FirebaseEventRegistrationEntry";
 
 export interface IEventRegistrationFirebaseRepository {
@@ -20,6 +20,8 @@ export interface IEventRegistrationFirebaseRepository {
     entry: FirebaseEventRegistrationEntry,
     sessionId?: string,
   ): Promise<void>;
+
+  registerExternalInterest(eventId: string, entry: FirebaseEventRegistrationEntry): Promise<ExternalInterestResult>;
 
   listByUserId(userId: string, limit?: number): Promise<UserRegistrationItem[]>;
 
