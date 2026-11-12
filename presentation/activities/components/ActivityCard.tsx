@@ -2,6 +2,8 @@ import Image from "next/image"
 import Link from "next/link"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/app/components/ui/avatar"
+import { getInitials } from "@/app/lib/utils/getInitials"
 import { NextLine } from "./NextLine"
 
 /** Tarjeta de actividad: foto grande, categoría con su color, precio en la foto y la próxima salida. Toda la tarjeta es un enlace. */
@@ -19,7 +21,15 @@ export function ActivityCard({ a, priority }: { a: ActivityCardView; priority?: 
         </div>
         <div className="grid flex-1 content-start gap-1 p-4">
           <h3 className="font-heading text-xl font-bold leading-snug tracking-tight">{a.title}</h3>
-          <p className="text-sm text-muted-foreground">{a.hostName}</p>
+          {a.owner ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <AvatarGroup>
+                <Avatar className="relative z-10 size-7">{a.owner.photoURL ? <AvatarImage src={a.owner.photoURL} alt="" /> : null}<AvatarFallback>{getInitials(a.owner.displayName)}</AvatarFallback></Avatar>
+                <Avatar className="size-7">{a.hostPhoto ? <AvatarImage src={a.hostPhoto} alt="" /> : null}<AvatarFallback>{getInitials(a.hostName)}</AvatarFallback></Avatar>
+              </AvatarGroup>
+              <span className="min-w-0 truncate">{a.owner.displayName}</span>
+            </div>
+          ) : <p className="text-sm text-muted-foreground">{a.hostName}</p>}
           <div className="mt-1"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></div>
         </div>
       </Link>

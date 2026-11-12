@@ -114,6 +114,9 @@ export interface ActivityCardView {
   slug: string
   title: string
   hostName: string
+  hostPhoto: string
+  /** Dueño del sitio vinculado (si lo tiene): se muestra al frente, como en la ficha. */
+  owner?: { displayName: string; photoURL: string } | null
   categorySlug: string
   categoryName: string
   coverUrl: string | null
@@ -134,6 +137,7 @@ export function toCardView(a: Activity): ActivityCardView {
     slug: a.slug,
     title: a.title,
     hostName: a.host.displayName,
+    hostPhoto: a.host.photoURL ?? "",
     categorySlug: a.category,
     categoryName: ACTIVITY_CATEGORIES.find((c) => c.slug === a.category)?.name ?? "",
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,

@@ -28,7 +28,7 @@ import {
 import { SiteItemListJsonLd } from "./SiteJsonLd";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
 import { cn } from "@/app/lib/utils/cn";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/app/components/ui/avatar";
 import { compactCount, plainText } from "@/presentation/events/components/card/cardMeta";
 import { siteCategoryLabel } from "../../lib/constants";
 import { getSiteOpenStatus } from "../../lib/openStatus";
@@ -167,11 +167,24 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
         <div className="mt-auto border-t border-dashed border-[#E4E4E7] pt-3">
           <div className="flex items-center justify-between gap-3">
             <span className="flex min-w-0 items-center gap-2">
-              <Avatar className="size-6">
-                {site.author?.photoURL && <AvatarImage src={site.author.photoURL} alt="" />}
-                <AvatarFallback className="text-[10px]">{authorName.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <span className="truncate text-xs text-[#52525B]">{authorName}</span>
+              {site.owner ? (
+                <AvatarGroup>
+                  <Avatar className="relative z-10 size-6">
+                    {site.owner.photoURL && <AvatarImage src={site.owner.photoURL} alt="" />}
+                    <AvatarFallback className="text-[10px]">{site.owner.displayName.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <Avatar className="size-6">
+                    {site.author?.photoURL && <AvatarImage src={site.author.photoURL} alt="" />}
+                    <AvatarFallback className="text-[10px]">{authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </AvatarGroup>
+              ) : (
+                <Avatar className="size-6">
+                  {site.author?.photoURL && <AvatarImage src={site.author.photoURL} alt="" />}
+                  <AvatarFallback className="text-[10px]">{authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              )}
+              <span className="truncate text-xs text-[#52525B]">{site.owner?.displayName ?? authorName}</span>
             </span>
             <span className="flex shrink-0 items-center gap-3 text-xs tabular-nums text-[#52525B]">
               {eventCount > 0 && (
