@@ -54,18 +54,18 @@ export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPost
   g.fillStyle = bg; g.fillRect(0, 0, W, H)
   g.fillStyle = GOLD; g.beginPath(); g.arc(W - 40, 20, story ? 250 : 220, 0, Math.PI * 2); g.fill()
 
-  // marca
+  // marca: el logo (pin vinotinto) sobre un círculo crema, con el nombre al lado
   g.textBaseline = "middle"
-  g.fillStyle = CREAM; g.beginPath(); g.roundRect(64, 60, 56, 56, 18); g.fill()
-  if (logo) g.drawImage(logo, 68, 64, 48, 48)
-  else { g.fillStyle = WINE; g.font = `800 32px ${HEAD}`; g.textAlign = "center"; g.fillText("Q", 92, 90); g.textAlign = "left" }
-  g.fillStyle = "#FFFFFF"; g.font = `700 32px ${HEAD}`; g.textAlign = "left"
-  g.fillText("Qué Hay Pa Hacer", 136, 90)
+  g.fillStyle = CREAM; g.beginPath(); g.arc(64 + 44, 56 + 44, 44, 0, Math.PI * 2); g.fill()
+  if (logo) g.drawImage(logo, 64 + 8, 56 + 6, 72, 72)
+  else { g.fillStyle = WINE; g.font = `800 44px ${HEAD}`; g.textAlign = "center"; g.fillText("Q", 108, 102); g.textAlign = "left" }
+  g.fillStyle = "#FFFFFF"; g.font = `700 36px ${HEAD}`; g.textAlign = "left"
+  g.fillText("Qué Hay Pa Hacer", 172, 102)
 
   // titular y fechas
   g.textBaseline = "alphabetic"
   g.fillStyle = CREAM; g.font = `800 ${story ? 112 : 88}px ${HEAD}`
-  const headY = story ? 300 : 236
+  const headY = story ? 330 : 270
   g.fillText("Mi semana", 64, headY); g.fillText("en Ibagué", 64, headY + (story ? 120 : 92))
   const pillY = headY + (story ? 120 : 92) + 30
   g.font = `700 32px ${BODY}`
