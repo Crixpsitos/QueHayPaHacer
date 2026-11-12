@@ -13,7 +13,7 @@ export class EventGuestFirebaseRepository implements IEventGuestRepository {
     const batch = this.db.batch()
     batch.set(this.regs(eventId).doc(g.id), {
       userId: g.id, eventId, parentType: "events", name: g.name, email: "", registeredAt: Timestamp.now(),
-      registrationType: "internal", status: "registered", checkInCode: g.code, guest: true, addedBy: g.addedBy, ...(g.phone ? { phone: g.phone } : {}),
+      registrationType: "internal", status: "registered", checkInCode: g.code, guest: true, addedBy: g.addedBy, ...(g.phone ? { phone: g.phone } : {}), ...(g.tier ? { tier: g.tier } : {}),
     })
     batch.set(this.db.collection("events").doc(eventId), { analytics: { registrations: FieldValue.increment(1) }, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
     await batch.commit()

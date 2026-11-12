@@ -187,6 +187,11 @@ export interface EventRegistration {
   isCreator: boolean;
   registeredAt: Date;
   attendanceConfirmed: boolean;
+  /** Categoría y valor cobrado (eventos externos de pago). */
+  tier?: string;
+  paidAmount?: number;
+  /** Persona sin cuenta agregada por quien organiza. */
+  isGuest?: boolean;
   /** Respuestas del formulario (solo para eventos tipo "form"). */
   formResponses?: FormResponseAnswer[];
 }
@@ -206,6 +211,8 @@ export interface EventRegistrationsResult {
   /** Para tipo "external": clicks al botón de registro externo. */
   externalClicks?: number;
   externalUrl?: string;
+  /** Categorías cobrables del evento (vacío si es gratis). */
+  payTiers?: { name: string; amount: number }[];
   /** Cursor (valor del campo de orden de la última fila) para "Siguiente". `null` si no hay más. */
   nextCursor: string | null;
   /** Cursor de la primera fila para "Anterior". `null` si ya estás en la primera página. */

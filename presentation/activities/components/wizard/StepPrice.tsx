@@ -56,7 +56,12 @@ export function StepPrice({ form, patch }: StepProps) {
               {prices.length > 1 ? <Button type="button" variant="ghost" size="icon-lg" aria-label={`Quitar la opción ${i + 1}`} onClick={() => patch({ priceOptions: removePrice(prices, i) })}><Trash2 aria-hidden /></Button> : null}
             </div>
             <div className="grid grid-cols-[1fr_8rem] gap-3">
-              <Field label="Precio (COP)" hint="0 si es gratis.">{(id) => <Input id={id} inputMode="numeric" value={p.amount} placeholder="40.000" onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { amount: moneyInput(e.target.value) }) })} />}</Field>
+              <Field label="Precio (COP)" hint="Si es gratis, toca «Es gratis» (o escribe 0). Igual puedes recibir reservas.">{(id) => (
+                <div className="flex gap-2">
+                  <Input id={id} inputMode="numeric" value={p.amount} placeholder="40.000" onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { amount: moneyInput(e.target.value) }) })} />
+                  <Button type="button" variant={p.amount === "0" ? "default" : "outline"} className="shrink-0" aria-pressed={p.amount === "0"} onClick={() => patch({ priceOptions: updatePrice(prices, i, { amount: "0" }) })}>Es gratis</Button>
+                </div>
+              )}</Field>
               <Field label="Por">{(id) => <select id={id} className={selectClass} value={p.unit} onChange={(e) => patch({ priceOptions: updatePrice(prices, i, e.target.value === "consultar" ? { unit: "consultar", amount: "0" } : { unit: e.target.value as PriceUnit }) })}>{PRICE_UNITS.map((u) => <option key={u} value={u}>{UNIT_LABEL[u]}</option>)}</select>}</Field>
             </div>
             <IncludesEditor value={p.includes} onChange={(includes) => patch({ priceOptions: updatePrice(prices, i, { includes }) })} />

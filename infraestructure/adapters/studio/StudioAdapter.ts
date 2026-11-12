@@ -63,8 +63,12 @@ export class StudioAdapter implements IStudioRepository {
     return this.repository.getMultiDateEventStats(eventId);
   }
 
-  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string): Promise<void> {
-    return this.repository.confirmAttendance(eventId, userId, sessionId, actingUid);
+  confirmAttendance(eventId: string, userId: string, sessionId: string | undefined, actingUid: string, payment?: { tier: string | null; amountCop: number }): Promise<void> {
+    return this.repository.confirmAttendance(eventId, userId, sessionId, actingUid, payment);
+  }
+
+  getPaymentRows(eventId: string) {
+    return this.repository.getPaymentRows(eventId);
   }
 
   checkInByCode(eventId: string, code: string, sessionId: string | undefined, actingUid: string) {

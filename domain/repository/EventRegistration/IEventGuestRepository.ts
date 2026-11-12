@@ -1,4 +1,4 @@
-export interface GuestEntry { id: string; name: string; phone: string | null; code: string; addedBy: string }
+export interface GuestEntry { id: string; name: string; phone: string | null; code: string; addedBy: string; tier?: string | null }
 
 /** Invitados sin cuenta: viven en `events/{id}/registrations/guest_*` (así los cuentan y los confirman el mismo check-in y la misma lista). */
 export interface IEventGuestRepository {

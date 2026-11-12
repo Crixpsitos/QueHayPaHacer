@@ -40,6 +40,7 @@ import type {
 } from "@/domain/entities/studio/Studio";
 import { Pipelines, FieldValue, FieldPath } from "@google-cloud/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { payTiers, resolvePayment, type IncomeRow } from "@/domain/entities/EventRegistration/payment";
 import { isRoleValidForKind } from "@/domain/entities/events/teamPolicy";
 import { isTeamRole } from "@/domain/entities/events/teamAccess";
 
@@ -96,6 +97,9 @@ interface PipelineRegistrationRow {
   registeredAt?: unknown;
   status?: string;
   checkedInAt?: unknown;
+  tier?: string;
+  paidAmount?: number;
+  guest?: boolean;
   formData?: Record<string, unknown>;
   userData?: RegistrationUserInfo | null;
 }
@@ -805,20 +809,17 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         requiresAttendance?: boolean;
         registrationEventForm?: { fields?: { id: string; label: string }[] };
         analytics?: { clicks?: number };
+        price?: { isFree?: boolean; amount?: number; tiers?: { name: string; amount: number }[] };
       };
       const registrationType = event.registrationType ?? "none";
       const requiresAttendance = event.requiresAttendance ?? false;
 
-      // "external": no hay inscritos, solo clicks al botón externo.
-      if (registrationType === "external") {
-        return {
-          registrationType: "external",
-          ...EMPTY,
-          requiresAttendance,
-          externalClicks: Number(event.analytics?.clicks ?? 0),
-          externalUrl: event.externalUrl,
-        };
-      }
+      // "external": además de los clics, lleva interesados e invitados (se listan abajo, como los demás tipos).
+      const externalExtra =
+        registrationType === "external"
+          ? { externalClicks: Number(event.analytics?.clicks ?? 0), externalUrl: event.externalUrl }
+          : {};
+      const tiers = payTiers(event.price);
 
       // "none": no se recolectan inscripciones.
       if (registrationType === "none") {
@@ -902,6 +903,9 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           "registeredAt",
           "status",
           "checkedInAt",
+          "tier",
+          "paidAmount",
+          "guest",
           "formData",
           "userData",
         )
@@ -949,7 +953,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         this.mapRegistrationEntry(entry, fieldLabels),
       );
 
-      return { registrationType, registrations, requiresAttendance, nextCursor, prevCursor };
+      return { registrationType, registrations, requiresAttendance, nextCursor, prevCursor, payTiers: tiers, ...externalExtra };
     } catch (error) {
       console.error("getEventRegistrations error", { eventId, error });
       throw error;
@@ -994,6 +998,9 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       isCreator: user?.participation === "creator",
       registeredAt,
       attendanceConfirmed,
+      tier: entry.tier,
+      paidAmount: entry.paidAmount,
+      isGuest: entry.guest === true,
       formResponses,
     };
   }
@@ -1317,12 +1324,29 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
     userId: string,
     sessionId: string | undefined,
     actingUid: string,
+    /** Evento de pago: categoría y valor (ya resueltos en servidor desde el precio del evento). */
+    payment?: { tier: string | null; amountCop: number },
   ): Promise<void> {
     const regRef = this.db
       .collection(`${this.docPath(eventId, sessionId)}/registrations`)
       .doc(userId);
     // checkedInBy = quién confirmó (auditoría).
-    await regRef.update({ checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
+    await regRef.update({
+      checkedInAt: FieldValue.serverTimestamp(),
+      checkedInBy: actingUid,
+      ...(payment && payment.amountCop > 0 ? { tier: payment.tier, paidAmount: payment.amountCop } : {}),
+    });
+  }
+
+  /** Confirmados con pago (categoría y valor) de un evento, para los ingresos. */
+  async getPaymentRows(eventId: string): Promise<IncomeRow[]> {
+    const s = await this.db
+      .collection(`${this.docPath(eventId, undefined)}/registrations`)
+      .where("paidAmount", ">", 0)
+      .select("tier", "paidAmount")
+      .limit(5000)
+      .get();
+    return s.docs.map((d) => ({ tier: (d.get("tier") as string) ?? null, paidAmount: d.get("paidAmount") as number }));
   }
 
   /**
@@ -1350,7 +1374,13 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       if (entry.status === "canceled") return { result: "canceled" };
       const name = (entry.name as string) || "Asistente";
       if (entry.status === "accepted" || entry.checkedInAt) return { result: "already", name };
-      tx.update(doc.ref, { checkedInAt: FieldValue.serverTimestamp(), checkedInBy: actingUid });
+      // Evento externo de pago: al entrar queda cobrado según su categoría (o la más barata si no tiene).
+      const pay = target.get("registrationType") === "external" ? resolvePayment(target.get("price"), entry.tier as string | undefined) : null;
+      tx.update(doc.ref, {
+        checkedInAt: FieldValue.serverTimestamp(),
+        checkedInBy: actingUid,
+        ...(pay && pay.amountCop > 0 ? { tier: pay.tier, paidAmount: pay.amountCop } : {}),
+      });
       return { result: "ok", name };
     });
   }
