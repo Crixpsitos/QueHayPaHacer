@@ -36,3 +36,17 @@ test("correos de valor: dicen por qué llegan, listan lo vigente con enlace y ll
     assert.ok(e.text.includes(ctx.unsubscribeUrl))
   }
 })
+
+test("correo semanal con portada: destacado con foto, grupos por día y foto optimizada", () => {
+  const items = [
+    { title: "A", when: "viernes 13 · 5:30 p. m.", path: "/actividades/a", day: "viernes 13", time: "5:30 p. m.", place: "Parque", price: "Gratis", imageUrl: "https://s.co/a.jpg" },
+    { title: "B", when: "viernes 13 · 7:00 p. m.", path: "/actividades/b", day: "viernes 13", time: "7:00 p. m.", place: "Centro", price: "$25.000" },
+    { title: "C", when: "sábado 14 · 6:00 a. m.", path: "/eventos/c", day: "sábado 14", time: "6:00 a. m.", place: "Plaza", price: "Evento" },
+  ]
+  const w = valueEmail("weekly", items, ctx).model.weekly!
+  assert.equal(w.featured!.title, "A"); assert.match(w.featured!.imageUrl!, /\/_next\/image\?url=https%3A%2F%2Fs\.co%2Fa\.jpg&w=640/)
+  assert.deepEqual(w.days.map((d) => [d.label, d.count]), [["Viernes 13", 2], ["Sábado 14", 1]])
+  assert.deepEqual(w.groups.map((g) => [g.title, g.items.map((i) => i.title)]), [["Viernes 13", ["B"]], ["Sábado 14", ["C"]]]) // el destacado no se repite
+  assert.equal(w.range, "viernes 13 al sábado 14"); assert.equal(w.total, 3)
+  assert.ok(valueEmail("weekly", [{ title: "X", when: "hoy", path: "/x" }], ctx).model.weekly === undefined) // sin día: queda el formato simple
+})

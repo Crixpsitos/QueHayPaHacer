@@ -3,7 +3,11 @@
  * el HTML lo dibuja el componente React de `infraestructure/email` (react-email), que escapa todo lo que viene de personas.
  */
 export interface EmailCtx { siteUrl: string; unsubscribeUrl: string }
+export interface WeeklyCard { title: string; when: string; place: string; price: string; imageUrl: string | null; href: string }
+/** Correo semanal con portada: tira de días, plan destacado con foto y filas por día. */
+export interface WeeklyBlock { range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
 export interface EmailModel {
+  weekly?: WeeklyBlock
   heading: string
   paragraphs: string[]
   items: { title: string; when: string; href: string }[]
@@ -37,10 +41,10 @@ export function transactionalEmailFor(n: { type: string; title: string; body?: s
   return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl } }
 }
 
-export interface ValueItem { title: string; when: string; path: string }
+export interface ValueItem { title: string; when: string; path: string; day?: string; time?: string; place?: string; price?: string; imageUrl?: string }
 const VALUE: Record<"forYou" | "weekly", { subject: string; heading: string; reason: string; empty: string }> = {
   forYou: { subject: "Para ti: planes que te pueden gustar en Ibagué", heading: "Planes que te pueden gustar", reason: "Recibes este correo porque activaste «Para ti» en Mis avisos. Elegimos según lo que guardas y marcas con «Yo fui».", empty: "Hoy no hay nada nuevo para ti." },
-  weekly: { subject: "Qué hacer esta semana en Ibagué", heading: "Qué hacer esta semana en Ibagué", reason: "Recibes este correo porque autorizaste el resumen semanal en Mis avisos.", empty: "Esta semana todavía no hay planes publicados." },
+  weekly: { subject: "Qué hacer este fin de semana en Ibagué", heading: "Qué hacer este fin de semana en Ibagué", reason: "Recibes este correo porque autorizaste el resumen semanal en Mis avisos.", empty: "Esta semana todavía no hay planes publicados." },
 }
 
 /** «Para ti» (máx. 1 al día) y «Qué hacer esta semana» (1 por semana): contenido vigente, y cada correo dice por qué se recibe. */
@@ -49,7 +53,28 @@ export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: Ema
   const link = (p: string) => withEmailAttribution(`${c.siteUrl}${p}`, kind)
   const list = items.length ? items.map((i) => `• ${i.when} · ${i.title}\n  ${link(i.path)}`).join("\n") : v.empty
   const text = `${v.heading}\n\n${list}\n\n—\n${v.reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  return { subject: v.subject, text, model: { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl } }
+  const base: EmailModel = { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl }
+  const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link) : null
+  return { subject: v.subject, text, model: weekly ? { ...base, items: [], weekly } : base }
+}
+
+/** Foto optimizada para correo: la misma ruta de imágenes de la web, a 640 px. */
+const emailImage = (siteUrl: string, url?: string) => (url ? `${siteUrl}/_next/image?url=${encodeURIComponent(url)}&w=640&q=75` : null)
+
+function weeklyBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => string): WeeklyBlock {
+  const card = (i: ValueItem): WeeklyCard => ({ title: i.title, when: i.time ?? i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })
+  // el destacado: el primero con foto (si ninguno la tiene, no hay destacado y todo va en filas)
+  const star = items.find((i) => i.imageUrl)
+  const days = [...new Set(items.map((i) => i.day!))]
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  return {
+    range: days.length > 1 ? `${days[0]} al ${days[days.length - 1]}` : days[0],
+    total: items.length,
+    days: days.map((d) => ({ label: cap(d), count: items.filter((i) => i.day === d).length })),
+    featured: star ? card(star) : null,
+    groups: days.map((d) => ({ title: cap(d), items: items.filter((i) => i.day === d && i !== star).map(card) })).filter((g) => g.items.length),
+    allHref: link("/actividades"),
+  }
 }
 
 /** Correos para quien ORGANIZA: alguien se unió (agrupado por hora) ya sale por `transactionalEmailFor`; aquí, la salida sin inscritos y el resumen de la semana. */

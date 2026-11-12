@@ -39,7 +39,7 @@ export class ValueEmailRunner {
     }
     if (local.getUTCDay() === 4) { // jueves: el fin de semana ya se ve
       const digest = await weekendDigest()
-      const items: ValueItem[] = digest.days.flatMap((d) => d.items.slice(0, 4).map((i) => ({ title: i.title, when: `${d.label} · ${i.timeLabel}`, path: i.url }))).slice(0, 12)
+      const items: ValueItem[] = digest.days.flatMap((d) => d.items.slice(0, 4).map((i) => ({ title: i.title, when: `${d.label} · ${i.timeLabel}`, path: i.url, day: d.label, time: i.timeLabel, place: i.place, price: i.detail, imageUrl: i.imageUrl }))).slice(0, 12)
       if (items.length) for (const uid of await this.d.optIns("weekly")) {
         if (!(await this.d.allows(uid, "weekly"))) continue
         if (await this.queue(uid, "weekly", `wk_${uid}_${day}`, items, now)) weekly++
