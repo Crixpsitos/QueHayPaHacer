@@ -67,6 +67,9 @@ import { ReviewModerationService } from "@/application/services/activities/Revie
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { RateLimitFirebaseRepository } from "../firebase/repositories/rateLimit/RateLimitFirebaseRepository";
 import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
+import { EmailQueueService } from "@/application/services/email/EmailQueueService";
+import { EmailOutboxFirebaseRepository } from "../firebase/repositories/email/EmailOutboxFirebaseRepository";
+import { ResendEmailService } from "../email/ResendEmailService";
 import { NotificationPrefsService } from "@/application/services/notificationPrefs/NotificationPrefsService";
 import { NotificationPrefsFirebaseRepository } from "../firebase/repositories/notificationPrefs/NotificationPrefsFirebaseRepository";
 import { ActivityStampService } from "@/application/services/activities/ActivityStampService";
@@ -357,6 +360,17 @@ export const createServerContainer = () => {
   // preferencias de avisos (correo y push): por defecto todo apagado salvo lo transaccional propio
   const notificationPrefsService = new NotificationPrefsService(new NotificationPrefsFirebaseRepository(getFirebaseFirestore()), LEGAL_VERSION);
 
+  // correo con Resend (desactivado sin RESEND_API_KEY y EMAIL_FROM) y su cola con tope diario
+  const emailService = new ResendEmailService(process.env.RESEND_API_KEY, process.env.EMAIL_FROM);
+  const emailQueueService = new EmailQueueService({
+    repo: new EmailOutboxFirebaseRepository(getFirebaseFirestore()),
+    email: emailService,
+    rateLimit: rateLimitRepo,
+    cap: Number(process.env.EMAIL_DAILY_CAP) > 0 ? Number(process.env.EMAIL_DAILY_CAP) : 100,
+    clock: () => new Date(),
+    log: (m) => console.warn(`[email] ${m}`),
+  });
+
   // pasaporte: sellos por el QR del local (visita verificada)
   const activityStampService = new ActivityStampService({
     repo: new ActivityStampFirebaseRepository(getFirebaseFirestore()),
@@ -451,6 +465,8 @@ export const createServerContainer = () => {
     activityStampService,
     rateLimitRepo,
     notificationPrefsService,
+    emailService,
+    emailQueueService,
   };
 };
 

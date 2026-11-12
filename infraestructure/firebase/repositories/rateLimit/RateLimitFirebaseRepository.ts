@@ -20,6 +20,10 @@ export class RateLimitFirebaseRepository extends FirebaseBaseRepository implemen
     })
   }
   async release(key: string): Promise<void> { await this.ref(key).delete() }
+  async decrementDaily(key: string, day: string): Promise<void> {
+    const ref = this.ref(`${key}_${day}`)
+    await this.db.runTransaction(async (tx) => { const s = await tx.get(ref); const n = s.exists ? (s.get("n") as number) : 0; if (n > 0) tx.update(ref, { n: n - 1 }) })
+  }
   async incrementDaily(key: string, day: string, max: number): Promise<boolean> {
     const ref = this.ref(`${key}_${day}`)
     return this.db.runTransaction(async (tx) => {

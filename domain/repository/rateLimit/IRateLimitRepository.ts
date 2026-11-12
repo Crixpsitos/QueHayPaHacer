@@ -9,4 +9,6 @@ export interface IRateLimitRepository {
   release(key: string): Promise<void>
   /** Suma 1 al contador del día; false (sin sumar) si ya llegó a `max`. */
   incrementDaily(key: string, day: string, max: number): Promise<boolean>
+  /** Devuelve un cupo reservado (p. ej. el envío falló y no se gastó). Nunca baja de 0. */
+  decrementDaily(key: string, day: string): Promise<void>
 }

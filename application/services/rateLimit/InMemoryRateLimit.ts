@@ -11,6 +11,7 @@ export class InMemoryRateLimit implements IRateLimitRepository {
     return true
   }
   async release(key: string): Promise<void> { this.hits.delete(key) }
+  async decrementDaily(key: string, day: string): Promise<void> { const k = `${key}|${day}`; this.daily.set(k, Math.max(0, (this.daily.get(k) ?? 0) - 1)) }
   async incrementDaily(key: string, day: string, max: number): Promise<boolean> {
     const k = `${key}|${day}`
     const n = this.daily.get(k) ?? 0
