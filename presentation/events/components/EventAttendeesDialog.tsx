@@ -15,6 +15,7 @@ import {
   getEventAttendeesAction,
   type EventAttendeeVM,
 } from "@/app/actions/events/get-event-attendees.action";
+import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
 
 interface EventAttendeesDialogProps {
   eventId: string;
@@ -44,6 +45,9 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [requiresAttendance, setRequiresAttendance] = useState(false);
   const [total, setTotal] = useState(0);
+  const [isExternal, setIsExternal] = useState(false);
+  const [capacity, setCapacity] = useState<number | undefined>();
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const fetchFirstPage = async () => {
@@ -55,6 +59,8 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
       setNextCursor(res.nextCursor);
       setRequiresAttendance(res.requiresAttendance);
       setTotal(res.total);
+      setIsExternal(res.isExternal);
+      setCapacity(res.capacity);
     } else {
       setError(res.error);
     }
@@ -80,6 +86,14 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
     if (next && !loaded) void fetchFirstPage();
   };
 
+  const confirmed = attendees.filter((a) => a.attendanceConfirmed).length;
+  const confirm = async (userId: string) => {
+    setConfirming(userId);
+    const r = await confirmAttendanceAction(eventId, userId);
+    setConfirming(null);
+    if (r.success) setAttendees((prev) => prev.map((x) => (x.userId === userId ? { ...x, attendanceConfirmed: true } : x)));
+    else setError(r.error ?? "No se pudo confirmar.");
+  };
   const filtered = query.trim()
     ? attendees.filter((a) => a.name.toLowerCase().includes(query.trim().toLowerCase()))
     : attendees;
@@ -93,7 +107,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
               <Users className="h-4 w-4" />
             </span>
-            Inscritos
+            {isExternal ? "Interesados" : "Inscritos"}
             {!loading && (
               <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                 {total}
@@ -101,9 +115,25 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
             )}
           </DialogTitle>
           <DialogDescription className="truncate">
-            Personas inscritas a «{eventTitle}».
+            {isExternal ? `Personas que pulsaron «inscribirme» en «${eventTitle}». Confirma a quien fue o pagó.` : `Personas inscritas a «${eventTitle}».`}
           </DialogDescription>
         </DialogHeader>
+
+        {isExternal && !loading && !error ? (
+          <div className="grid gap-1.5 border-b border-gray-100 px-5 py-3">
+            <div className="flex items-baseline justify-between text-sm">
+              <span><strong>{total}</strong> interesados · <strong>{confirmed}</strong> confirmados</span>
+              {capacity ? <span className="text-xs text-gray-500">Cupo {capacity}</span> : null}
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-gray-100" role="img" aria-label={`${total} interesados y ${confirmed} confirmados${capacity ? ` de ${capacity} cupos` : ""}`}>
+              <div className="relative h-full" style={{ width: `${Math.min(100, ((capacity ?? Math.max(total, 1)) > 0 ? (total / (capacity ?? Math.max(total, 1))) * 100 : 0))}%` }}>
+                <div className="absolute inset-0 rounded-full bg-[#FFB703]" />
+                <div className="absolute inset-y-0 left-0 rounded-full bg-[#9B0A26]" style={{ width: `${total ? Math.min(100, (confirmed / total) * 100) : 0}%` }} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">Dorado: interesados. Vinotinto: confirmados{attendees.length < total ? " (de los que ya cargaste)" : ""}.</p>
+          </div>
+        ) : null}
 
         {/* Búsqueda (filtra lo ya cargado en cliente). */}
         <div className="border-b border-gray-100 px-5 py-3">
@@ -181,7 +211,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                       )}
                     </p>
                     <p className="truncate text-xs text-gray-400" suppressHydrationWarning>
-                      Inscrito el {formatDateTime(a.registeredAt)}
+                      {isExternal ? "Se interesó el" : "Inscrito el"} {formatDateTime(a.registeredAt)}
                     </p>
                   </div>
                   {requiresAttendance &&
@@ -190,6 +220,10 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                         <Check className="h-3 w-3" />
                         Asistió
                       </span>
+                    ) : isExternal ? (
+                      <button type="button" disabled={confirming === a.userId} onClick={() => void confirm(a.userId)} className="inline-flex min-h-9 items-center rounded-full bg-[#9B0A26] px-3 text-xs font-semibold text-white disabled:opacity-60">
+                        {confirming === a.userId ? "Confirmando…" : "Confirmar"}
+                      </button>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
                         Pendiente

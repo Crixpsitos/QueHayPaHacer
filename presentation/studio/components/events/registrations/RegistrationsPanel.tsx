@@ -25,7 +25,27 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
     case "none":
       return <EmptyRegistrations />;
     case "external":
-      return <ExternalClicksPanel clicks={data.externalClicks ?? 0} url={data.externalUrl} />;
+      // Enlace externo: los clics y, debajo, quienes pulsaron «inscribirme» (interesados) para confirmar a quien fue o pagó.
+      return (
+        <div className="space-y-6">
+          <ExternalClicksPanel clicks={data.externalClicks ?? 0} url={data.externalUrl} />
+          {data.rows.length ? (
+            <RegistrationsTable
+              eventId={data.eventId}
+              sessionId={sessionId}
+              rows={data.rows}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              limit={limit}
+              query={query}
+              nextCursor={data.nextCursor}
+              prevCursor={data.prevCursor}
+              requiresAttendance
+              permissions={data.permissions}
+            />
+          ) : null}
+        </div>
+      );
     case "form":
       return (
         <RegistrationsTable

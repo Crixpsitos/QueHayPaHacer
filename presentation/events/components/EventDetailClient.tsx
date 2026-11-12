@@ -11,6 +11,7 @@ import { registerEventAction } from "@/app/actions/events/register-event.action"
 import { trackEventAction } from "@/app/lib/eventTrack";
 import { eventOutHref } from "@/app/r/_lib/outHref";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
+import { expressInterestAction } from "@/app/actions/events/express-interest.action";
 import { PastEventState } from "./PastEventState";
 import { isEventPast } from "../utils/eventTemporalUtils";
 import { EventHero } from "./detail/EventHero";
@@ -98,6 +99,7 @@ export function EventDetailClient({
     if (event.registrationType === "external") {
       if (event.externalUrl) {
         // /r/e/[id] cuenta el clic en el servidor (contador del estudio + stats diarias) y redirige al externalUrl guardado.
+        void expressInterestAction(event.id); // queda como «interesado» para quien organiza (no bloquea el enlace)
         window.open(eventOutHref(event.id, "register"), "_blank", "noopener,noreferrer");
       }
     } else {

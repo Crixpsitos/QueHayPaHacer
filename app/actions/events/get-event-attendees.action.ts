@@ -29,6 +29,10 @@ export type GetEventAttendeesResult =
       requiresAttendance: boolean;
       /** Total de inscritos (contador denormalizado del evento). */
       total: number;
+      /** Evento con enlace externo: los inscritos son «interesados» y quien organiza confirma quién fue o pagó. */
+      isExternal: boolean;
+      /** Cupo del evento, si lo definió. */
+      capacity?: number;
     }
   | { success: false; error: string };
 
@@ -78,8 +82,10 @@ export async function getEventAttendeesAction(
         success: true,
         attendees: [],
         nextCursor: null,
-        requiresAttendance: event.requiresAttendance ?? false,
+        requiresAttendance: (event.requiresAttendance ?? false) || event.registrationType === "external",
         total: event.analytics?.registrations ?? 0,
+        isExternal: event.registrationType === "external",
+        capacity: event.capacity,
       };
     }
 
@@ -100,8 +106,10 @@ export async function getEventAttendeesAction(
       success: true,
       attendees,
       nextCursor: result.nextCursor,
-      requiresAttendance: result.requiresAttendance,
+      requiresAttendance: result.requiresAttendance || event.registrationType === "external",
       total: event.analytics?.registrations ?? attendees.length,
+      isExternal: event.registrationType === "external",
+      capacity: event.capacity,
     };
   } catch (error) {
     console.error("getEventAttendeesAction error", { eventId, error });
