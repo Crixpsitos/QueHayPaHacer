@@ -6,6 +6,7 @@ import { AlertTriangle, Share2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { buildWeekPlan, weekPlanText, type WeekDay } from "@/domain/entities/activities/weekPlan"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
+import { SITE_URL } from "@/app/lib/site"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 
@@ -33,7 +34,7 @@ export function WeekPlan({ cards }: { cards: ActivityCardView[] }) {
       <Button asChild className="h-12"><Link href="/actividades">Ver actividades</Link></Button>
     </div>
   )
-  const share = `https://wa.me/?text=${encodeURIComponent(weekPlanText(week, "Mi semana en Ibagué"))}`
+  const share = `https://wa.me/?text=${encodeURIComponent(weekPlanText(week, "Mi semana en Ibagué", { link: (id) => `${SITE_URL}/actividades/${byId.get(id)?.slug}?ch=wa&utm_source=whatsapp&utm_medium=share&utm_campaign=mi_semana`, footer: `Arma la tuya en ${SITE_URL}/actividades` }))}`
   return (
     <div className="grid gap-4">
       <ol className="grid gap-4">
