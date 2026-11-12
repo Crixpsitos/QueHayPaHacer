@@ -19,9 +19,9 @@ const owner = args.includes("--owner") ? args[args.indexOf("--owner") + 1] : "";
 const VERIFIED = "12 de noviembre de 2026";
 
 const CINES = [
-  { slug: "ir-al-cine-cinemark-multicentro", chain: "Cinemark", name: "Cinemark Multicentro", place: "Centro comercial Multicentro", address: "Carrera 5 No. 60-123, local 218", geo: { lat: 4.43619, lng: -75.20681 }, url: "https://www.cinemark.com.co" },
+  { slug: "ir-al-cine-cinemark-multicentro", chain: "Cinemark", name: "Cinemark Multicentro", place: "Centro comercial Multicentro", address: "Carrera 5 No. 60-123, local 218", geo: { lat: 4.4363154, lng: -75.201573 }, url: "https://www.cinemark.com.co" },
   { slug: "ir-al-cine-royal-films-acqua", chain: "Royal Films", name: "Royal Films Acqua", place: "Centro comercial Acqua", address: "Carrera 9 No. 57-2", geo: null, url: "https://www.royal-films.com" },
-  { slug: "ir-al-cine-cine-colombia-la-estacion", chain: "Cine Colombia", name: "Cine Colombia La Estación", place: "Centro comercial La Estación", address: "Avenida Ambalá con calle 60", geo: null, url: "https://www.cinecolombia.com" },
+  { slug: "ir-al-cine-cine-colombia-la-estacion", chain: "Cine Colombia", name: "Cine Colombia La Estación", place: "Centro comercial La Estación", address: "Avenida Ambalá con calle 60", geo: { lat: 4.445518, lng: -75.204593 }, url: "https://www.cinecolombia.com" },
 ];
 
 async function main() {
@@ -40,7 +40,7 @@ async function main() {
     const { id: _i, ...a } = makeActivity({
       slug: c.slug, title: `Ir al cine en ${c.name}`, tagline: `Mira la cartelera de ${c.chain} en Ibagué`,
       description: `${c.name} queda en el ${c.place}, ${c.address}, en Ibagué. La cartelera y los horarios cambian cada semana: míralos en el sitio oficial de ${c.chain} con el botón «Ver la cartelera» y compra tu boleta allá. Las funciones se reparten por salas y formatos, y los precios varían según el día.`,
-      kind: "global", siteId: null, category: "cine-y-espectaculos", companions: ["pareja", "amigos", "familia"], difficulty: null, durationMinutes: 150, ageNote: "Según la clasificación de cada película",
+      kind: "global", siteId: null, category: "cine-y-espectaculos", companions: ["solo", "pareja", "amigos", "familia"], difficulty: null, durationMinutes: 150, ageNote: "Según la clasificación de cada película",
       host: { kind: "user", id: owner, displayName: "Qué Hay Pa Hacer", photoURL: "" }, ownerUid: owner,
       meetingPoint: { mode: "fixed", text: `${c.place}, ${c.address}`, references: "", geo: c.geo },
       schedule: { rules: [{ kind: "always" }], skipDates: [], requiresReservation: false, note: "Funciones todos los días; los horarios los fija el cine cada semana." },

@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import type { ActivityFilters } from "@/domain/entities/activities/filters"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
-import { buildAgenda } from "@/domain/entities/activities/agenda"
+import { anytimeIds, buildAgenda } from "@/domain/entities/activities/agenda"
 import { countsByDay, dayRange, whenRange } from "@/domain/entities/activities/when"
 import { moreToDo, type LevelKey, type MoreItem } from "@/domain/entities/activities/moreToDo"
 import { chooseHomeBlock } from "@/presentation/activities/lib/homeBlock"
@@ -146,7 +146,7 @@ export const fetchHubMeta = async (): Promise<HubMeta> => {
   return { days: countsByDay(all.map((a) => a.schedule), new Date(), 7), categories, total: all.length }
 }
 
-export interface AgendaDayView { date: string; entries: { card: ActivityCardView; hhmm: string | null }[] }
+export interface AgendaDayView { date: string; /** Grupo «sin hora fija» de un rango de varios días (no es un día). */ anytime?: boolean; entries: { card: ActivityCardView; hhmm: string | null }[] }
 
 /** Agenda por día para un «cuándo» o un día suelto (con los demás filtros aplicados). */
 export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayView[]> => {
@@ -158,8 +158,11 @@ export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayVi
   const svc = createServerContainer().activityService
   const { items } = await svc.search(filters, 0, 200)
   const byId = new Map(items.map((a) => [a.id, a]))
-  const days = buildAgenda(items.map((a) => ({ id: a.id, schedule: a.schedule })), range, new Date())
-  return days.map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: toCardView(byId.get(e.id)!), hhmm: e.hhmm })) }))
+  const input = items.map((a) => ({ id: a.id, schedule: a.schedule }))
+  const days: AgendaDayView[] = buildAgenda(input, range, new Date()).map((d) => ({ date: d.date, entries: d.entries.map((e) => ({ card: toCardView(byId.get(e.id)!), hhmm: e.hhmm })) }))
+  const anytime = anytimeIds(input, range, new Date())
+  if (anytime.length) days.push({ date: "", anytime: true, entries: anytime.map((id) => ({ card: toCardView(byId.get(id)!), hhmm: null })) })
+  return days
 }
 
 export interface MoreRow extends ActivityCardView { meters: number | null }
