@@ -27,8 +27,10 @@ export default function PrivacidadPage() {
         <ul>
           <li><strong>Cuenta:</strong> nombre, apellido, nombre de usuario, correo electrónico, teléfono y contraseña (cifrada por nuestro proveedor de autenticación). Si entras con Google, recibimos tu nombre, correo y foto de esa cuenta.</li>
           <li><strong>Perfil:</strong> foto, portada, biografía, sitio web y redes sociales que decidas agregar.</li>
-          <li><strong>Contenido que publicas:</strong> eventos, sitios, imágenes, descripciones y colaboradores que acreditas.</li>
+          <li><strong>Contenido que publicas:</strong> eventos, sitios, actividades, imágenes, descripciones y colaboradores que acreditas.</li>
           <li><strong>Inscripciones:</strong> los eventos en los que te inscribes y las respuestas a los formularios que el creador del evento solicite.</li>
+          <li><strong>Reservas en actividades:</strong> las actividades en las que reservas un cupo y su estado (por pagar, confirmada). Solo si la actividad tiene costo, el WhatsApp que escribes al reservar y la versión de esta política que viste cuando lo autorizaste.</li>
+          <li><strong>Guardados y «Yo fui»:</strong> las actividades que guardas o marcas como hechas. Son privadas: solo las ves tú.</li>
           <li><strong>Actividad:</strong> vistas, me gusta y compartidos de eventos y sitios, usados de forma agregada para ordenar y medir el contenido.</li>
           <li><strong>Contacto y soporte:</strong> el correo, teléfono y mensaje que nos envías.</li>
           <li><strong>Aceptaciones y reportes:</strong> la fecha y la versión de los términos y de esta política que aceptaste, las declaraciones que haces al publicar, los reportes que envías o recibes y las decisiones de moderación.</li>
@@ -66,6 +68,36 @@ export default function PrivacidadPage() {
           ley; nosotros solo ponemos la herramienta. No respondas preguntas sobre datos sensibles (como salud) si no
           estás de acuerdo.
         </p>
+      </section>
+
+      <section>
+        <h2>Tu WhatsApp en las reservas de actividades</h2>
+        <p>
+          Cuando reservas un cupo en una actividad con costo, te pedimos tu WhatsApp únicamente para que quien la organiza
+          te escriba, coordine el pago (que se hace fuera de Qué Hay Pa Hacer) y te confirme el cupo. Solo lo compartimos
+          con esa persona, solo para esa reserva y solo si marcas la casilla de autorización. En las actividades gratis no
+          pedimos teléfono. Quien organiza solo debe usarlo para coordinar esa actividad.
+        </p>
+        <p>
+          Puedes retirar tu autorización cancelando la reserva: se borra la inscripción y el número guardado. También se
+          borran al eliminar tu cuenta. Si quien organiza usa tu número para otra cosa, escríbenos desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link>.
+        </p>
+      </section>
+
+      <section id="resenas">
+        <h2>Reseñas y datos de quien organiza</h2>
+        <p>
+          De quien reseña tratamos: nombre público (primer nombre e inicial del apellido), foto de perfil, calificación,
+          texto, fotos y video que subas, mes de la visita y fecha de publicación. Tu correo y el identificador de tu cuenta no
+          se muestran. De quien organiza: los datos del registro de oferentes (Ley 1480, art. 53) que ya se informan en la
+          ficha y la respuesta que escriba a una reseña.
+        </p>
+        <ul>
+          <li><strong>Finalidad:</strong> mostrar opiniones públicas que ayuden a decidir, calcular el promedio, moderar reseñas cuestionadas y prevenir abuso. No las usamos para perfiles publicitarios.</li>
+          <li><strong>Publicidad:</strong> tu nombre público, foto y reseña los ve cualquier visitante. Si no quieres que se vea tu nombre, no publiques reseñas.</li>
+          <li><strong>Conservación:</strong> mientras tu reseña esté publicada y tu cuenta exista. Al borrarla se elimina de la plataforma; al eliminar tu cuenta se borran tus reseñas y medios. Los registros de moderación (motivo y decisión, sin el contenido) se conservan hasta 12 meses para atender apelaciones y detectar reincidencia.</li>
+          <li><strong>Autorización:</strong> al reseñar marcas una casilla separada para publicar tu nombre público, foto y reseña y tratar esos datos para moderarla; guardamos la versión de estos textos que aceptaste.</li>
+        </ul>
       </section>
 
       <section>

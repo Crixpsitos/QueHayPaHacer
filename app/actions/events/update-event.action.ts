@@ -26,6 +26,8 @@ import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFiel
 interface UpdateEventActionResult {
   success?: boolean;
   error?: string;
+  /** Estado final del evento: `pending` = la edición lo devolvió a validación (autor sin verificar). */
+  status?: string;
 }
 
 export async function updateEventAction(
@@ -155,7 +157,7 @@ export async function updateEventAction(
     updateTag(`profile-stats-${access.ownerId}`);
     revalidatePath("/profile/events", "page");
 
-    return { success: true };
+    return { success: true, status: updatedEvent.status };
   } catch (error) {
     console.error("Error updating event:", error);
     return {

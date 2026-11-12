@@ -13,6 +13,8 @@ const PUBLIC_UID_OK = new Set([
   "app/actions/profile/check-username-availability.action.ts",
   // El uid lo obtiene el servidor al crear la credencial, no lo envía el cliente.
   "app/actions/auth/register.action.ts",
+  // La baja del correo se autoriza con la FIRMA del enlace (HMAC del uid con un secreto del servidor), no con la sesión: se abre desde el correo.
+  "app/actions/notificationPrefs/unsubscribe.action.ts",
 ])
 
 test("server actions que reciben uid verifican la sesión", () => {

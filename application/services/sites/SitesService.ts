@@ -1,3 +1,4 @@
+import { isUsableCoordinates } from "@/domain/entities/sites/directions"
 import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { SitesAdapter } from "@/infraestructure/adapters/sites/SitesAdapter"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
@@ -7,7 +8,7 @@ import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import { siteScore } from "@/domain/entities/sites/siteRanking"
 import type { ClaimSiteSnapshot } from "@/domain/entities/siteClaim/SiteClaim"
 import type { SiteEventState } from "@/domain/entities/sites/siteEventCount"
-import type { SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
+import { isLinkableSite, type SiteLinkSnapshot } from "@/domain/entities/sites/siteLink"
 import { pickDiscoverIds } from "@/domain/entities/sites/siteDiscovery"
 
 export type SiteInput = Omit<FirebaseSiteDto, "id" | "createdAt" | "updatedAt">
@@ -197,6 +198,24 @@ export class SitesService {
       authorId: authorIdOf(dto) ?? null,
       isPublic: dto.publicationStatus === "published" && dto.moderationStatus === "approved" && dto.isActive === true,
       transit: dto.transit ?? null,
+    }
+  }
+
+  /** Datos mínimos para vincular y mostrar actividades de un sitio: autor, y si el sitio es público y está activo. */
+  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean; owner: { displayName: string; photoURL: string } | null; geo: { latitude: number; longitude: number } | null; address: string } | null> {
+    const dto = await this.adapter.findRawById(id)
+    if (!dto) return null
+    const g = dto.location?.geo
+    return {
+      geo: g && isUsableCoordinates(g) ? { latitude: g.latitude, longitude: g.longitude } : null,
+      address: dto.location?.address ?? "",
+      name: dto.name,
+      slug: dto.slug ?? "",
+      authorId: authorIdOf(dto) ?? null,
+      published: dto.publicationStatus === "published" && dto.moderationStatus === "approved",
+      active: dto.isActive === true,
+      linkable: isLinkableSite(dto),
+      owner: dto.owner ? { displayName: dto.owner.displayName, photoURL: dto.owner.photoURL } : null,
     }
   }
 

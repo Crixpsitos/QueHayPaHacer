@@ -173,3 +173,27 @@ async function trimCache(cache, max) {
 async function offlineFallback() {
   return (await caches.match(OFFLINE_URL)) || Response.error();
 }
+
+
+// ── Avisos push (FCM, mensajes de datos): el servidor manda {title, body, href} y aquí se dibuja.
+self.addEventListener("push", (event) => {
+  let d = {};
+  try {
+    const p = event.data ? event.data.json() : {};
+    d = p.data || p.notification || p;
+  } catch (_) {
+    return;
+  }
+  if (!d.title) return;
+  const href = typeof d.href === "string" && d.href.startsWith("/") ? d.href : "/";
+  event.waitUntil(self.registration.showNotification(String(d.title).slice(0, 80), { body: String(d.body || "").slice(0, 140), icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { href } }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const href = (event.notification.data && event.notification.data.href) || "/";
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) if ("focus" in c) { c.navigate(href); return c.focus(); }
+    return self.clients.openWindow(href);
+  }));
+});

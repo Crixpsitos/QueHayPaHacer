@@ -5,6 +5,7 @@ import { MapPin, Clock, CalendarDays, ExternalLink, Star, Eye, Share2, TrendingU
 import { Separator } from "@/app/components/ui/separator";
 import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { Suspense } from "react";
 import { fetchPublicSiteDetail, fetchSiteLinkedEvents } from "@/presentation/sites/data/siteDetailFetchers";
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus";
 import { getHolidaysAction } from "@/app/actions/config/get-holidays.action";
@@ -31,6 +32,7 @@ import { CompleteBadge } from "../CompleteBadge";
 import { SiteEventsBadge } from "../SiteEventsBadge";
 import { RecommendationsSection } from "./RecommendationsSection";
 import { SectionsAccordion } from "./SectionsAccordion";
+import { SiteActivitiesBlock } from "@/presentation/activities/components/SiteActivitiesBlock";
 import { FactsRow } from "./FactsRow";
 import { hasRecommendations } from "@/domain/entities/sites/value-objects/SiteRecommendations";
 import { ConfirmBeforeGoingNotice } from "../ConfirmBeforeGoingNotice";
@@ -272,6 +274,10 @@ export async function SiteDetailContainer({ siteId }: SiteDetailContainerProps) 
           )}
 
           {!!site!.sections?.length && <SectionsAccordion sections={site!.sections} />}
+
+          <Suspense fallback={null}>
+            <SiteActivitiesBlock siteId={siteId} siteSlug={site!.slug || ""} />
+          </Suspense>
 
           <Separator />
 

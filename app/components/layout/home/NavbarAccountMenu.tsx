@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, CalendarDays, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";
 
 import { hasTeamEventsAction } from "@/app/actions/studio/get-my-team-access.action";
 import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
@@ -219,6 +219,24 @@ export function NavbarAccountMenu({
               <Link href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
                 <Ticket className="size-4" aria-hidden="true" />
                 Mis inscripciones
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/actividades/mis" className={cn("flex items-center gap-2")}>
+                <Compass className="size-4" aria-hidden="true" />
+                Mis actividades
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/mis-planes" className={cn("flex items-center gap-2")}>
+                <Bookmark className="size-4" aria-hidden="true" />
+                Mis planes
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/avisos" className={cn("flex items-center gap-2")}>
+                <Bell className="size-4" aria-hidden="true" />
+                Mis avisos
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

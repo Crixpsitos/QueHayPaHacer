@@ -1,4 +1,4 @@
-import type { EventTrackType } from "./trackTypes"
+import type { ActivityTrackType, EventTrackType } from "./trackTypes"
 import { sourceKey, type TrafficSource } from "./trafficSource"
 
 /**
@@ -7,7 +7,7 @@ import { sourceKey, type TrafficSource } from "./trafficSource"
  * `analytics.shares`/`registrations` siguen siendo de sus acciones de servidor: aquí un share es solo un "clic" del día.
  * ponytail: `link:<código>` cuenta bajo la clave fija `link` (sourceKey) hasta que T10 verifique el código contra `links/`.
  */
-export function buildTrackWrites<T>(type: EventTrackType, day: string, source: TrafficSource, inc: (n: number) => T) {
+export function buildTrackWrites<T>(type: EventTrackType | ActivityTrackType, day: string, source: TrafficSource, inc: (n: number) => T) {
   const isView = type === "view"
   const key = sourceKey(source)
   return {

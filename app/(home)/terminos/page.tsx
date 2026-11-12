@@ -226,6 +226,25 @@ export default function TerminosPage() {
         </p>
       </section>
 
+      <section id="resenas">
+        <h2>Reseñas de actividades</h2>
+        <p>
+          Una reseña es la opinión de una persona sobre una actividad a la que asistió. Qué Hay Pa Hacer la publica, pero no la
+          escribe, no la verifica una por una y no garantiza que sea cierta. «Yo fui» y reseñar son declaraciones de la propia
+          persona: no comprobamos la asistencia.
+        </p>
+        <ul>
+          <li>Cualquier persona con cuenta puede reseñar una vez por actividad y editarla o borrarla. No pueden reseñar quien publicó la actividad ni el dueño del sitio al que está vinculada.</li>
+          <li>No se permiten insultos, discriminación, amenazas, contenido sexual, datos personales de otras personas, enlaces, correos, teléfonos, publicidad, reseñas pagadas ni reseñas de visitas que no hiciste.</li>
+          <li>Eres responsable de lo que escribes, fotografías o grabas, y declaras que tienes derecho a publicarlo. No subas fotos donde se reconozca a otras personas sin su permiso.</li>
+          <li>Nos das una licencia gratuita y no exclusiva para mostrar tu texto, fotos y video, reducirlos de tamaño y usarlos en vistas previas al compartir la actividad. Sigues siendo el autor y puedes borrar tu reseña cuando quieras; copias ya compartidas por terceros fuera de la plataforma pueden permanecer.</li>
+          <li>Quien organiza una actividad, o cualquier persona con cuenta, puede cuestionar una reseña eligiendo un motivo. Mientras la revisamos aparece como «En verificación». Podemos mantenerla, editarla para quitar lo prohibido o retirarla. Cuestionar sin motivo o de forma repetida para silenciar opiniones es un uso indebido.</li>
+          <li>Según la gravedad y la reincidencia en 12 meses podemos advertir, ocultar contenido, suspender la posibilidad de reseñar o cuestionar, o suspender la cuenta. Puedes apelar escribiéndonos desde tu cuenta.</li>
+          <li>Quien organiza puede responder una vez a cada reseña (editable); su respuesta sigue las mismas reglas.</li>
+          <li>Si crees que una reseña viola tus derechos, escríbenos desde <Link href={LEGAL_ENTITY.contactHref}>Contáctanos</Link> con el enlace y el motivo y retiraremos lo que corresponda.</li>
+        </ul>
+      </section>
+
       <section>
         <h2>Plan Premium</h2>
         <p>

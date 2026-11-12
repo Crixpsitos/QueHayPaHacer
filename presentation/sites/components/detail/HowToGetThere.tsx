@@ -74,7 +74,7 @@ export function HowToGetThere({ destination, transit }: { destination: LatLng; t
           disabled={busy}
           data-site-track="transit"
           className={cn(
-            "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#09090B] px-4 text-sm font-semibold text-white transition-opacity",
+            "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary-dark px-4 text-sm font-semibold text-white transition-opacity",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#09090B] disabled:opacity-60",
           )}
         >

@@ -13,7 +13,7 @@ export type AnalyticsEventName =
 
 // Mismas rutas privadas que proxy.ts (+ estudio, API y herramientas internas). Los perfiles (también los públicos) no se
 // miden: su URL y su título llevan el nombre de una persona.
-const PRIVATE_PREFIXES = ["/profile", "/studio", "/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/api", "/dev", "/reset-password"];
+const PRIVATE_PREFIXES = ["/profile", "/studio", "/mis-eventos", "/mis-inscripciones", "/mis-planes", "/mis-invitaciones", "/sites", "/eventos/create", "/api", "/dev", "/reset-password"];
 const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
 
 export function isTrackablePath(pathname: string): boolean {

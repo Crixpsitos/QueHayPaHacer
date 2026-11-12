@@ -15,8 +15,9 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getFirebaseFirestore } from "@/infraestructure/firebase/config/admin/firebase";
 import { NotificationFirebaseRepository } from "@/infraestructure/firebase/repositories/notification/NotificationFirebaseRepository";
 import { NotificationService } from "@/application/services/notification/NotificationService";
-import { claimResolvedNotification } from "@/domain/entities/notification/messages";
+import { activityTransferredNotification, claimResolvedNotification } from "@/domain/entities/notification/messages";
 import { revalidateSite } from "./_revalidateSite";
+import { transferPatch } from "@/domain/entities/activities/ownershipTransfer";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
@@ -32,9 +33,11 @@ async function approve(claimId: string) {
   const claimRef = db.collection("siteClaims").doc(claimId);
   // Se llenan dentro de la transacción (que puede reintentar) y se usan solo si se aplicó.
   let toNotify: { uid: string; siteName: string; approved: boolean; reason?: string; id: string }[] = [];
+  let transferred: { uid: string; activityTitle: string; siteName: string; id: string }[] = [];
   let stale: { siteId: string; authorIds: string[] } | null = null;
   await db.runTransaction(async (tx) => {
     toNotify = [];
+    transferred = [];
     stale = null;
     const claimSnap = await tx.get(claimRef);
     if (!claimSnap.exists) throw new Error(`No existe el reclamo ${claimId}`);
@@ -42,10 +45,12 @@ async function approve(claimId: string) {
     if (claim.status !== "pending") throw new Error(`El reclamo ya está ${claim.status}`);
 
     const siteRef = db.collection("sites").doc(claim.siteId);
-    const [siteSnap, userSnap, othersSnap] = await Promise.all([
+    const [siteSnap, userSnap, othersSnap, activitiesSnap] = await Promise.all([
       tx.get(siteRef),
       tx.get(db.collection("users").doc(claim.claimantUid)),
       tx.get(db.collection("siteClaims").where("siteId", "==", claim.siteId).where("status", "==", "pending")),
+      // actividades del sitio: pasan al nuevo autor (spec 7, D12)
+      tx.get(db.collection("activities").where("siteId", "==", claim.siteId)),
     ]);
     if (!siteSnap.exists) throw new Error(`No existe el sitio ${claim.siteId}`);
     const site = siteSnap.data()!;
@@ -67,6 +72,12 @@ async function approve(claimId: string) {
     console.log(`  verification: ${previous.verification} -> verified | publishedAs: ${previous.publishedAs} -> owner`);
     const others = othersSnap.docs.filter((d) => d.id !== claimId);
     console.log(`  reclamos que se rechazan: ${others.map((d) => d.id).join(", ") || "ninguno"}`);
+    const owner = { uid: claim.claimantUid, displayName: author.displayName, photoURL: author.photoURL ?? "" };
+    const moves = activitiesSnap.docs.flatMap((d) => {
+      const patch = transferPatch({ kind: "site", siteId: claim.siteId, ownerUid: d.get("ownerUid") }, owner);
+      return patch ? [{ ref: d.ref, id: d.id, title: d.get("title") as string, patch }] : [];
+    });
+    console.log(`  actividades que pasan al nuevo autor: ${moves.map((m) => `${m.id} ("${m.title}")`).join(", ") || "ninguna"}`);
     if (!APPLY) return console.log("dry-run (usa --apply)");
 
     tx.update(siteRef, { verification: "verified", publishedAs: "owner", author, updatedAt: FieldValue.serverTimestamp() });
@@ -76,6 +87,10 @@ async function approve(claimId: string) {
       reviewedBy: REVIEWER,
       previousSite: previous,
     });
+    for (const m of moves) {
+      tx.update(m.ref, { ownerUid: m.patch.ownerUid, host: m.patch.host, updatedAt: FieldValue.serverTimestamp() });
+      transferred.push({ uid: m.patch.previousOwnerUid, activityTitle: m.title, siteName: site.name, id: m.id });
+    }
     toNotify.push({ uid: claim.claimantUid, siteName: site.name, approved: true, id: claimId });
     stale = { siteId: claim.siteId, authorIds: [claim.claimantUid, previous.author?.id ?? previous.author?.uid] };
     for (const d of others) {
@@ -90,6 +105,9 @@ async function approve(claimId: string) {
   });
   for (const n of toNotify) {
     await notifications.notify(n.uid, claimResolvedNotification(n), `claim-resolved-${n.id}`);
+  }
+  for (const t of transferred as { uid: string; activityTitle: string; siteName: string; id: string }[]) {
+    await notifications.notify(t.uid, activityTransferredNotification({ title: t.activityTitle, siteName: t.siteName }), `activity-transferred-${t.id}`);
   }
   // TS no ve que la transacción asigna `stale`; el cast evita que lo estreche a `never`.
   const s = stale as { siteId: string; authorIds: string[] } | null;

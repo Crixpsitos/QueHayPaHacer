@@ -5,7 +5,7 @@ const W = 1080
 export type PosterFormat = "feed" | "story"
 export interface PosterInput {
   qr: HTMLCanvasElement
-  kind: "event" | "site"
+  kind: "event" | "site" | "activity"
   title: string
   subtitle?: string
   url: string

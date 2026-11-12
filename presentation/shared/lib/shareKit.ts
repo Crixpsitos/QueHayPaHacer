@@ -33,7 +33,8 @@ export function eventWhen(iso: string): string {
 }
 
 /** Qué se lleva quien escanea el QR: el gancho del afiche (titular + 3 puntos cortos). */
-export function posterHooks(kind: "event" | "site"): { headline: string; bullets: [string, string, string] } {
+export function posterHooks(kind: "event" | "site" | "activity"): { headline: string; bullets: [string, string, string] } {
+  if (kind === "activity") return { headline: "Escanéala y únete", bullets: ["Cuándo y dónde nos vemos", "Precio y qué incluye", "Únete en un toque"] }
   return kind === "event"
     ? { headline: "Escanéalo y mira todo en un toque", bullets: ["Fecha, hora y lugar", "Fotos y precio", "Cómo llegar sin perderte"] }
     : { headline: "Escanéalo y conoce el lugar", bullets: ["Horarios y fotos", "Cómo llegar sin perderte", "Reserva o escríbeles"] }

@@ -4,7 +4,7 @@ import { AUTO_CHANNELS, autoLinkHref, autoLandingPath } from "./autoLinks";
 
 test("canales visibles al dueño, en el orden en que se muestran", () => {
   assert.deepEqual(AUTO_CHANNELS.map((c) => [c.id, c.label]), [
-    ["ig", "Instagram (bio)"], ["ig_h", "Instagram (historias)"], ["wa", "WhatsApp"], ["fb", "Facebook"], ["qr", "Afiche con QR"],
+    ["ig", "Instagram (bio)"], ["ig_h", "Instagram (historias)"], ["wa", "WhatsApp"], ["wc", "Canal de WhatsApp"], ["fb", "Facebook"], ["qr", "Afiche con QR"],
   ]);
 });
 
@@ -24,4 +24,10 @@ test("canal desconocido, tipo desconocido o id vacío → null (nada del request
   assert.equal(autoLandingPath("other" as never, "ev1", "ig"), null);
   assert.equal(autoLandingPath("event", "", "ig"), null);
   assert.equal(autoLandingPath("event", "ev1", "__proto__"), null);
+});
+
+test("actividades: ruta corta por id y aterrizaje en la ficha por slug", () => {
+  assert.equal(autoLinkHref("activity", "a1", "wa"), "/r/a/a1/wa");
+  assert.equal(autoLandingPath("activity", "senderismo-los-domingos", "wa"), "/actividades/senderismo-los-domingos?ch=wa&utm_source=whatsapp&utm_medium=share&utm_campaign=auto");
+  assert.equal(autoLandingPath("activity", "", "wa"), null);
 });

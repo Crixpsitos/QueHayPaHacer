@@ -95,3 +95,37 @@ env:
     value: rwBy8op3QSRseVwU7EeCnYneCHw1
     availability:
       - RUNTIME
+
+  # Correo (Resend), dominio avisos.yquehaypahacer.com verificado. Todo configurado.
+  # (ver docs/36-correo-y-push-pasos.md). Sin EMAIL_FROM el servicio queda apagado y no envía nada.
+  - variable: EMAIL_FROM
+    value: "Qué Hay Pa Hacer <avisos@avisos.yquehaypahacer.com>"
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_DAILY_CAP
+    value: "100"
+    availability:
+      - RUNTIME
+
+  - variable: RESEND_API_KEY
+    secret: resendApiKey
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_UNSUBSCRIBE_SECRET
+    secret: emailUnsubscribeSecret
+    availability:
+      - RUNTIME
+
+  - variable: RESEND_WEBHOOK_SECRET
+    secret: resendWebhookSecret
+    availability:
+      - RUNTIME
+
+  # Push web (FCM): clave pública VAPID (no es secreta; se compila en el cliente).
+  - variable: NEXT_PUBLIC_FIREBASE_VAPID_KEY
+    value: "BHSgeN7kiabAM5S0ry303fsBqCiMYeD6Z4cFIAeN0xuyKht3b9FVcoFy4o5AMe0T1KU17pVg7Epiv3GLDvucLco"
+    availability:
+      - BUILD
+      - RUNTIME

@@ -16,6 +16,15 @@ export const NOTIFICATION_TYPES = [
   "site_moderation",
   "transit_outdated",
   "event_at_site",
+  "activity_moderation",
+  "activity_transferred",
+  "activity_join",
+  "activity_join_confirmed",
+  "activity_reminder",
+  "activity_last_spot",
+  "review_received",
+  "review_flag_resolved",
+  "activity_sanction",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

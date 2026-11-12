@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { isTrackablePath } from "@/app/lib/analytics/events";
-import { firstEventViewOfDay, landingSource, trackEvent } from "@/app/lib/eventTrack";
+import { firstEventViewOfDay, landingSource, trackActivity, trackEvent } from "@/app/lib/eventTrack";
 import { bogotaDay } from "@/domain/entities/sites/siteStats";
 
 const MIN_VISIBLE_MS = 2000;
@@ -13,7 +13,7 @@ const MIN_VISIBLE_MS = 2000;
  * libre del navegador, y una sola vez por navegador y día. El HTML es el mismo para todos (va al CDN): la cuenta sale
  * solo del navegador. Si la pestaña se oculta antes de los 2 s, el reloj arranca de nuevo al volver a verla.
  */
-export function EventViewTracker({ eventId }: { eventId: string }) {
+export function EventViewTracker({ eventId, kind = "event" }: { eventId: string; kind?: "event" | "activity" }) {
   const pathname = usePathname();
   useEffect(() => {
     if (!isTrackablePath(pathname)) return;
@@ -25,7 +25,9 @@ export function EventViewTracker({ eventId }: { eventId: string }) {
     };
     const send = () => {
       if (!firstEventViewOfDay(eventId, bogotaDay())) return;
-      trackEvent(eventId, "view", landingSource({ href: window.location.href, referrer: document.referrer }));
+      const src = landingSource({ href: window.location.href, referrer: document.referrer });
+      if (kind === "activity") trackActivity(eventId, "view", src);
+      else trackEvent(eventId, "view", src);
     };
     const start = () => {
       clear();
@@ -43,6 +45,6 @@ export function EventViewTracker({ eventId }: { eventId: string }) {
       clear();
       document.removeEventListener("visibilitychange", start);
     };
-  }, [eventId, pathname]);
+  }, [eventId, kind, pathname]);
   return null;
 }

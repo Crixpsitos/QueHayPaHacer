@@ -9,6 +9,7 @@ import { CategoryViewModelMapper } from "@/presentation/categories/mapper/Catego
 import type { CategoryViewModel } from "@/presentation/categories/view-models/CategoryViewModel";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel";
+import { toCardView, type ActivityCardView } from "@/presentation/activities/lib/publicView";
 import type { Events } from "@/domain/entities/events/Events";
 import type { SiteCategory } from "@/presentation/sites/view-models/SiteFormViewModel";
 
@@ -25,11 +26,13 @@ export interface ExploreFilters {
   maxPrice?: number;
   onlyEvents?: boolean;
   onlySites?: boolean;
+  onlyActivities?: boolean;
 }
 
 export interface ExploreSearchData {
   events: EventViewModel[];
   sites: SiteDetail[];
+  activities: ActivityCardView[];
   total: number;
   hasMoreEvents: boolean;
   hasMoreSites: boolean;
@@ -204,13 +207,21 @@ export async function fetchExploreResults(
   const toDate   = to   ? new Date(`${to}T00:00:00`)   : undefined;
   const now = new Date();
 
-  const [eventIds, siteIds] = await Promise.all([
-    filters.onlySites
+  const onlyOne = Boolean(filters.onlyEvents || filters.onlySites || filters.onlyActivities);
+  const [eventIds, siteIds, activityIds] = await Promise.all([
+    filters.onlySites || filters.onlyActivities
       ? Promise.resolve([] as string[])
       : fetchEvents(db, trimmed, fromDate, toDate, now, page, filters),
-    !filters.onlyEvents && trimmed && page === 0
+    !filters.onlyEvents && !filters.onlyActivities && trimmed && page === 0
       ? fetchSiteIds(db, trimmed, filters).catch((err) => {
           console.warn("[explore] sites search index not ready:", (err as Error).message);
+          return [] as string[];
+        })
+      : Promise.resolve([] as string[]),
+    // Actividades: solo con texto (índice tokenizado) y en la primera página.
+    (!onlyOne || filters.onlyActivities) && trimmed && page === 0
+      ? fetchActivityIds(db, trimmed).catch((err) => {
+          console.warn("[explore] activities search index not ready:", (err as Error).message);
           return [] as string[];
         })
       : Promise.resolve([] as string[]),
@@ -226,11 +237,17 @@ export async function fetchExploreResults(
     .map((e) => EventViewModelMapper.toViewModel(e!));
 
   const sites = siteDetails.filter((s): s is SiteDetail => Boolean(s));
+  // La visibilidad (sitio publicado, aprobada, activa) la decide el servicio: nunca se muestra algo que no sea público.
+  const activityService = createServerContainer().activityService;
+  const activities = (await Promise.all(activityIds.slice(0, EXPLORE_PAGE_SIZE).map((id) => activityService.getPublicById(id))))
+    .filter((a): a is NonNullable<typeof a> => Boolean(a))
+    .map(toCardView);
 
   return {
     events,
     sites,
-    total: events.length + sites.length,
+    activities,
+    total: events.length + sites.length + activities.length,
     hasMoreEvents: eventIds.length > EXPLORE_PAGE_SIZE,
     hasMoreSites: false, // los sitios se muestran solo en la primera página
   };
@@ -333,3 +350,16 @@ async function fetchSiteIds(
   return result.results.map((r) => r.ref?.id ?? "").filter(Boolean);
 }
 
+
+// ── IDs de Actividades ────────────────────────────────────────────────────────
+
+async function fetchActivityIds(db: FirebaseFirestore.Firestore, q: string): Promise<string[]> {
+  const result = await db
+    .pipeline()
+    .collection("activities")
+    .search({ query: documentMatches(q), sort: score().descending() })
+    .where(field("listable").equal(true))
+    .limit(EXPLORE_PAGE_SIZE)
+    .execute();
+  return result.results.map((r) => r.ref?.id ?? "").filter(Boolean);
+}

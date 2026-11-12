@@ -4,14 +4,17 @@ import { authMiddleware } from "next-firebase-auth-edge";
 import { removeCookies } from "next-firebase-auth-edge/next/cookies";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 
-const PRIVATE_PATHS = ["/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create"];
+const PRIVATE_PATHS = ["/mis-eventos", "/mis-inscripciones", "/mis-invitaciones", "/sites", "/eventos/create", "/actividades/crear", "/actividades/mis", "/mis-planes", "/resumen-semanal", "/sello", "/avisos"];
 // Editor y gestor de sesiones. /eventos/:id/sessions/:sessionId es público (detalle).
 const PRIVATE_EVENT_PATH = /^\/eventos\/[^/]+\/(edit(\/.*)?|sessions\/?)$/;
+// Editor y reservas de actividades. /actividades/:slug (ficha) es público.
+const PRIVATE_ACTIVITY_EDIT = /^\/actividades\/[^/]+\/(editar|inscritos)\/?$/;
 const PUBLIC_PATHS = ["contact", "/register", "/login", "/reset-password"];
 
 function isPrivatePath(pathname: string) {
   return pathname === "/profile" ||
     PRIVATE_EVENT_PATH.test(pathname) ||
+    PRIVATE_ACTIVITY_EDIT.test(pathname) ||
     PRIVATE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 

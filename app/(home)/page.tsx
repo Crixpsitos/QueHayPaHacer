@@ -13,6 +13,7 @@ import { Section } from "@/app/components/layout/shared/Section";
 import { CreatorVerificationBanner } from "@/app/components/feature/home/CreatorVerificationBanner";
 import { ContributionBanner } from "@/app/components/feature/home/ContributionBanner";
 import { VerifiedCreatorsSection } from "@/app/components/feature/home/VerifiedCreatorsSection";
+import { ActivityHomeBlock } from "@/presentation/activities/components/ActivityHomeBlock";
 import { PremiumBanner } from "@/app/components/feature/home/PremiumBanner";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function HomePage() {
           {[
             { href: "/que-hay-hoy-ibague", label: "Qué hacer hoy" },
             { href: "/eventos-este-fin-de-semana-ibague", label: "Este fin de semana" },
+            { href: "/actividades", label: "Actividades" },
             { href: "/donde-ir", label: "Dónde ir" },
           ].map((l) => (
             <Link
@@ -49,6 +51,9 @@ export default function HomePage() {
           ))}
         </nav>
       </Section>
+      <Suspense fallback={null}>
+        <ActivityHomeBlock />
+      </Suspense>
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesContainer />
       </Suspense>
