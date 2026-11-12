@@ -43,6 +43,8 @@ export interface ActivityPublicView {
   /** Coordenadas del punto de encuentro: solo si el punto es fijo (si se dice en el grupo, no se publica ningún pin). */
   meetingGeo: { latitude: number; longitude: number } | null
   sections: SiteSection[]
+  offerings: { name: string; description: string; price: string; priceCop: number; group: string }[]
+  spaces: { name: string; description: string; capacity: number; price: string; priceCop: number; unit: string; rules: string }[]
   cta: { kind: CtaKind; label: string; href: string } | null
 }
 
@@ -97,6 +99,8 @@ export function toPublicView(a: Activity): ActivityPublicView {
     meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode] },
     meetingGeo: mode === "fixed" && a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : null,
     sections: a.sections,
+    offerings: a.offerings.filter((x) => x.available).map((x) => ({ name: x.name, description: x.description, price: formatCop(x.priceCop), priceCop: x.priceCop, group: x.group })),
+    spaces: a.spaces.map((x) => ({ name: x.name, description: x.description, capacity: x.capacity, price: formatCop(x.priceCop), priceCop: x.priceCop, unit: ({ hora: "hora", dia: "día", persona: "persona", evento: "evento" } as Record<string, string>)[x.unit] ?? x.unit, rules: x.rules })),
     cta: a.cta ? { kind: a.cta.kind, label: ctaButtonLabel(a.cta), href: ctaHref(a.cta) } : null,
   }
 }

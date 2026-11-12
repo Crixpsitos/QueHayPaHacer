@@ -74,7 +74,13 @@ export interface ActivityForm {
   joinCapacity: string
   payInstructions: string
   sections: SiteSection[]
+  /** Menú y espacios: solo si la actividad es de un sitio. */
+  offerings: FormOffering[]
+  spaces: FormSpace[]
 }
+
+export interface FormOffering { name: string; description: string; price: string; available: boolean; group: string }
+export interface FormSpace { name: string; description: string; capacity: string; price: string; unit: "hora" | "dia" | "persona" | "evento"; rules: string }
 
 // ── Dinero ──
 
@@ -89,13 +95,15 @@ export const moneyToString = (n: number): string => formatCop(n).slice(1)
 
 export const blankRule = (): FormRule => ({ freq: "weekly", weekdays: [], start: "", end: "", n: "2", anchorDate: "", nth: "1", weekday: 6, dayOfMonth: "15", dates: [] })
 export const blankPrice = (): FormPrice => ({ label: "", amount: "", unit: "persona", includes: [], note: "" })
+export const blankOffering = (): FormOffering => ({ name: "", description: "", price: "", available: true, group: "" })
+export const blankSpace = (): FormSpace => ({ name: "", description: "", capacity: "10", price: "", unit: "hora", rules: "" })
 export const blankExtra = (): FormExtra => ({ label: "", amount: "", unit: "persona", note: "" })
 
 export const emptyForm = (): ActivityForm => ({
   kind: "global", siteId: null, title: "", tagline: "", description: "", category: "", companions: [], difficulty: "", durationMinutes: "", ageNote: "",
   meetingMode: "fixed", meetingText: "", meetingReferences: "",
   rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "",
-  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [],
+  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [], offerings: [], spaces: [],
 })
 
 export const addRule = (rules: FormRule[]): FormRule[] => (rules.length >= SCHEDULE_RULES_MAX ? rules : [...rules, blankRule()])
@@ -166,6 +174,8 @@ export function toRawInput(f: ActivityForm): unknown {
     priceOptions: priceFromForm(f),
     extras: extrasFromForm(f),
     sections: f.sections,
+    offerings: f.kind === "site" ? f.offerings.map((x) => ({ name: x.name, description: x.description, priceCop: parseMoney(x.price), available: x.available, group: x.group })) : [],
+    spaces: f.kind === "site" ? f.spaces.map((x) => ({ name: x.name, description: x.description, capacity: Number(x.capacity), priceCop: parseMoney(x.price), unit: x.unit, rules: x.rules })) : [],
     cta: f.ctaKind && optional(f.ctaValue) ? { kind: f.ctaKind, value: f.ctaValue, ...(optional(f.ctaLabel) ? { label: f.ctaLabel } : {}) } : null,
     join: f.joinEnabled ? { capacity: f.joinCapacity.trim() ? Number(f.joinCapacity) : null, payInstructions: f.payInstructions } : null,
   }
@@ -198,6 +208,8 @@ export function formFromActivity(a: Activity): ActivityForm {
     ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "",
     joinEnabled: a.join !== null, joinCapacity: a.join?.capacity == null ? "" : String(a.join.capacity), payInstructions: a.join?.payInstructions ?? "",
     sections: a.sections.map((s) => ({ ...s })),
+    offerings: a.offerings.map((x) => ({ name: x.name, description: x.description, price: moneyToString(x.priceCop), available: x.available, group: x.group })),
+    spaces: a.spaces.map((x) => ({ name: x.name, description: x.description, capacity: String(x.capacity), price: moneyToString(x.priceCop), unit: x.unit, rules: x.rules })),
   }
 }
 

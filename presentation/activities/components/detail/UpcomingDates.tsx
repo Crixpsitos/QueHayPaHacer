@@ -27,7 +27,8 @@ export function UpcomingDates({ schedule }: { schedule: ActivitySchedule }) {
     return () => clearTimeout(t)
   }, [schedule])
 
-  if (!slots?.length || (slots.length === 1 && slots[0].hhmm === null && schedule.rules.every((r) => r.kind === "always"))) return null
+  // «Siempre abierto»: una lista de días iguales no informa nada.
+  if (!slots?.length || schedule.rules.every((r) => r.kind === "always")) return null
   return (
     <section aria-labelledby="salidas" className="grid gap-3">
       <h2 id="salidas" className="font-heading text-2xl font-extrabold tracking-tight">Próximas salidas</h2>

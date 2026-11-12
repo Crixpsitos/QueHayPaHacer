@@ -10,6 +10,8 @@ import { HowItWorks } from "./HowItWorks"
 import { PublishBand } from "@/presentation/activities/components/PublishBand"
 import { ActivityHero } from "./ActivityHero"
 import { ActivityPlace } from "./ActivityPlace"
+import { OfferingsList } from "./OfferingsList"
+import { SpacesList } from "./SpacesList"
 import { MoreToDo } from "./MoreToDo"
 import { ReviewsSection } from "@/presentation/activities/components/reviews/ReviewsSection"
 import { UpcomingDates } from "./UpcomingDates"
@@ -107,6 +109,9 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
               </div>
             ) : null}
           </section>
+
+          <OfferingsList items={d.offerings} />
+          <SpacesList items={d.spaces} />
 
           <ActivityPlace d={d} />
 

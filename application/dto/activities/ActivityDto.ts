@@ -6,6 +6,7 @@ import { normalizeCta, type Cta } from "@/domain/entities/activities/value-objec
 import { AGE_NOTE_MAX, DESCRIPTION_MAX, DESCRIPTION_MIN, DURATION_MAX, DURATION_MIN, MEETING_REFERENCES_MAX, MEETING_TEXT_MAX, TAGLINE_MAX, TITLE_MAX, TITLE_MIN, plainTextError, type Difficulty, type MeetingPoint } from "@/domain/entities/activities/Activity"
 import { JOIN_CAPACITY_MAX, validatePayInstructions } from "@/domain/entities/activities/activityJoin"
 import { normalizeSections, type SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
+import { SPACE_UNITS, normalizeOfferings, normalizeSpaces, validateOfferings, validateSpaces, type Offering, type Space } from "@/domain/entities/activities/value-objects/Offerings"
 
 const text = (max: number, label: string) => v.pipe(v.string(`${label} inválido`), v.maxLength(max, `${label}: máximo ${max} caracteres`))
 const Time = v.string("Hora inválida (usa HH:mm).")
@@ -58,6 +59,8 @@ const ActivityInputSchema = v.object({
   priceOptions: v.array(v.object({ label: v.string("Nombre inválido."), amountCop: Money, unit: v.picklist(PRICE_UNITS, "Unidad de precio inválida."), includes: v.optional(v.array(v.string()), []), note: v.optional(v.string()) }), "Agrega al menos una opción de precio."),
   extras: v.optional(v.array(v.object({ label: v.string("Nombre inválido."), amountCop: Money, unit: v.picklist(EXTRA_UNITS, "Unidad de extra inválida."), note: v.optional(v.string()) }), "Extras inválidos."), []),
   sections: v.optional(v.array(v.unknown()), []),
+  offerings: v.optional(v.array(v.object({ name: v.string("Nombre de producto inválido."), description: v.optional(v.string(), ""), priceCop: Money, available: v.optional(v.boolean(), true), group: v.optional(v.string(), "") }), "Menú inválido."), []),
+  spaces: v.optional(v.array(v.object({ name: v.string("Nombre de espacio inválido."), description: v.optional(v.string(), ""), capacity: v.number("La capacidad debe ser un número."), priceCop: Money, unit: v.picklist(SPACE_UNITS, "Unidad de espacio inválida."), rules: v.optional(v.string(), "") }), "Espacios inválidos."), []),
   cta: v.optional(v.nullable(v.object({ kind: v.string(), value: v.string(), label: v.optional(v.string()) })), null),
   join: v.optional(v.nullable(v.object({ capacity: v.nullable(v.pipe(v.number("El cupo debe ser un número."), v.integer("El cupo debe ser un número entero."), v.minValue(1, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`), v.maxValue(JOIN_CAPACITY_MAX, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`))), payInstructions: v.optional(v.string("Cómo se paga debe ser texto."), "") }, "Los datos de inscripción son inválidos.")), null),
 })
@@ -78,6 +81,8 @@ export interface ActivityInput {
   priceOptions: PriceOption[]
   extras: Extra[]
   sections: SiteSection[]
+  offerings: Offering[]
+  spaces: Space[]
   cta: Cta | null
   /** Cupo por salida (null = sin tope). `join: null` = la actividad no recibe inscripciones. */
   join: { capacity: number | null; payInstructions: string } | null
@@ -96,7 +101,11 @@ export function parseActivityInput(raw: unknown): ParseResult {
   const priceOptions = d.priceOptions.map((p) => ({ ...p, label: p.label.trim() })) as PriceOption[]
   const extras = d.extras.map((x) => ({ ...x, label: x.label.trim() })) as Extra[]
   const payInstructions = d.join?.payInstructions.trim() ?? ""
-  const error = validateSchedule(schedule) ?? validatePayInstructions(payInstructions) ?? validatePriceOptions(priceOptions) ?? validateExtras(extras)
+  const offerings = normalizeOfferings(d.offerings as Offering[])
+  const spaces = normalizeSpaces(d.spaces as Space[])
+  // El menú y los espacios solo existen en actividades de sitio: una global los rechaza (no se descartan en silencio).
+  const siteOnly = d.siteId === null && (offerings.length > 0 || spaces.length > 0) ? "El menú y los espacios solo van en actividades de un sitio." : null
+  const error = validateSchedule(schedule) ?? validatePayInstructions(payInstructions) ?? validatePriceOptions(priceOptions) ?? validateExtras(extras) ?? siteOnly ?? validateOfferings(offerings) ?? validateSpaces(spaces)
   if (error) return { ok: false, error }
   let cta: Cta | null = null
   if (d.cta) {
@@ -121,6 +130,8 @@ export function parseActivityInput(raw: unknown): ParseResult {
       priceOptions,
       extras,
       sections: normalizeSections(d.sections),
+      offerings,
+      spaces,
       cta,
       join: d.join ? { capacity: d.join.capacity, payInstructions } : null,
     },

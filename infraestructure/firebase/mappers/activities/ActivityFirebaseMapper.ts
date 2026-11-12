@@ -40,6 +40,8 @@ export class ActivityFirebaseMapper {
       priceOptions: dto.priceOptions ?? [],
       extras: dto.extras ?? [],
       sections: dto.sections ?? [],
+      offerings: dto.offerings ?? [],
+      spaces: dto.spaces ?? [],
       cta: dto.cta ?? null,
       join: dto.join ?? null,
       media: dto.media ?? [],
