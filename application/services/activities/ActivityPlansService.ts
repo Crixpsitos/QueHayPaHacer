@@ -5,6 +5,7 @@ import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurr
 export interface PlansDeps {
   savedIds: (uid: string, limit: number) => Promise<string[]>
   visitedIds: (uid: string, limit: number) => Promise<string[]>
+  slots: (uid: string) => Promise<Record<string, { date: string; time: string | null }>>
   joins: (uid: string) => Promise<{ activityId: string; key: string; status: JoinStatusValue }[]>
   getPublic: (activityId: string) => Promise<Activity | null>
   clock: () => Date
@@ -17,6 +18,8 @@ export interface MyPlans {
   /** Guardadas que ya no son públicas: la persona puede quitarlas de su lista. */
   removedSaved: string[]
   done: Activity[]
+  /** Día y hora que la persona eligió para ir, por actividad guardada. */
+  slots: Record<string, { date: string; time: string | null }>
 }
 
 const LIMIT = 100
@@ -26,9 +29,9 @@ export class ActivityPlansService {
   constructor(private readonly d: PlansDeps) {}
 
   async mine(uid: string): Promise<MyPlans> {
-    if (!uid?.trim()) return { upcoming: [], saved: [], removedSaved: [], done: [] }
+    if (!uid?.trim()) return { upcoming: [], saved: [], removedSaved: [], done: [], slots: {} }
     const today = bogotaDateIso(this.d.clock())
-    const [savedIds, visitedIds, joins] = await Promise.all([this.d.savedIds(uid, LIMIT), this.d.visitedIds(uid, LIMIT), this.d.joins(uid)])
+    const [savedIds, visitedIds, joins, slots] = await Promise.all([this.d.savedIds(uid, LIMIT), this.d.visitedIds(uid, LIMIT), this.d.joins(uid), this.d.slots(uid)])
     const cache = new Map<string, Promise<Activity | null>>()
     const pub = (id: string) => (cache.has(id) ? cache.get(id)! : (cache.set(id, this.d.getPublic(id)), cache.get(id)!))
 
@@ -44,6 +47,7 @@ export class ActivityPlansService {
       saved: savedList.flatMap((s) => (s.a ? [s.a] : [])),
       removedSaved: savedList.filter((s) => !s.a).map((s) => s.id),
       done: doneList.flatMap((a) => (a ? [a] : [])),
+      slots,
     }
   }
 }

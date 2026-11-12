@@ -23,6 +23,19 @@ export class ActivityEngagementService {
     await this.repo.setSaved(uid, activityId, saved)
   }
 
+  /** Elegir el día y la hora de ir (solo de lo guardado; el día dentro de los próximos 7). `today` = hoy en Bogotá. */
+  async setPlanSlot(uid: string, activityId: string, slot: { date: string; time: string | null } | null, today: string): Promise<boolean> {
+    ActivityEngagementService.ids(uid, activityId)
+    if (slot) {
+      const ms = Date.parse(`${slot.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(slot.date) || !(ms >= 0 && ms <= 6 * 86_400_000)) throw new Error("Elige un día de esta semana.")
+      if (slot.time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time)) throw new Error("La hora no es válida.")
+    }
+    return this.repo.setPlanSlot(uid, activityId, slot)
+  }
+
+  planSlots(uid: string) { return uid?.trim() ? this.repo.listPlanSlots(uid) : Promise.resolve({}) }
+
   async savedAmong(uid: string, activityIds: string[]): Promise<string[]> {
     if (!uid?.trim() || activityIds.length === 0) return []
     return this.repo.savedAmong(uid, activityIds)

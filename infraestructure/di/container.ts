@@ -481,6 +481,7 @@ export const createServerContainer = () => {
   const activityPlansService = new ActivityPlansService({
     savedIds: (uid, n) => activityEngagementRepo.listSavedIds(uid, n),
     visitedIds: (uid, n) => activityEngagementRepo.listVisitedIds(uid, n),
+    slots: (uid) => activityEngagementRepo.listPlanSlots(uid),
     joins: (uid) => activityJoinRepo.listByUser(uid, 300),
     getPublic: (id) => activityService.getPublicById(id),
     clock: () => new Date(),

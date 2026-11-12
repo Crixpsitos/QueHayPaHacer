@@ -15,5 +15,6 @@ export async function getMyPlansAction(): Promise<MyPlansView | null> {
     saved: p.saved.map(toCardView),
     removedSaved: p.removedSaved,
     done: p.done.map(toCardView),
+    slots: p.slots,
   }
 }

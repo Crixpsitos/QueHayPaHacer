@@ -41,6 +41,20 @@ export class ActivityEngagementFirebaseRepository extends FirebaseBaseRepository
     })
   }
 
+  async setPlanSlot(uid: string, activityId: string, slot: { date: string; time: string | null } | null): Promise<boolean> {
+    const ref = this.savedRef(uid, activityId)
+    if (!(await ref.get()).exists) return false
+    await ref.update({ planSlot: slot ?? FieldValue.delete() })
+    return true
+  }
+
+  async listPlanSlots(uid: string): Promise<Record<string, { date: string; time: string | null }>> {
+    const s = await this.db.collection("users").doc(uid).collection("saved").orderBy("savedAt", "desc").limit(300).get()
+    const out: Record<string, { date: string; time: string | null }> = {}
+    for (const d of s.docs) { const p = d.get("planSlot"); if (d.get("type") === "activity" && p?.date) out[String(d.get("targetId"))] = { date: String(p.date), time: p.time ? String(p.time) : null } }
+    return out
+  }
+
   async savedAmong(uid: string, activityIds: string[]): Promise<string[]> {
     const refs = activityIds.slice(0, 100).map((id) => this.savedRef(uid, id))
     const snaps = await this.db.getAll(...refs)

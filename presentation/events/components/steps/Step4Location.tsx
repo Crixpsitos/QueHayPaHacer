@@ -14,6 +14,7 @@ import dynamic from "next/dynamic";
 import { SearchLocationInput } from "../ui/SearchLocationInput";
 import { SitePickerWidget } from "../ui/SitePickerWidget";
 import { reverseGeocode } from "@/presentation/sites/lib/geocoding";
+import { MapsLinkInput } from "@/presentation/shared/components/MapsLinkInput";
 
 interface Step4Props {
   form: UseFormReturn<FormEventDto>;
@@ -59,12 +60,14 @@ export const Step4Location = ({ form }: Step4Props) => {
   // Geocodificación inversa: al mover el marcador (o tocar el mapa) la dirección se completa sola con la del punto.
   const [findingAddress, setFindingAddress] = useState(false);
   const pinSeq = useRef(0);
+  // Si la persona escribió su propia dirección, mover el punto NO la reemplaza (la del mapa no siempre es exacta).
+  const manualAddress = useRef(false);
   const fillAddressFromPin = async (lat: number, lng: number) => {
     const mine = ++pinSeq.current;
     setFindingAddress(true);
     try {
       const address = await reverseGeocode(lat, lng, "default");
-      if (mine === pinSeq.current && address) form.setValue("location.address", address, { shouldValidate: true, shouldDirty: true });
+      if (mine === pinSeq.current && address && !manualAddress.current) form.setValue("location.address", address, { shouldValidate: true, shouldDirty: true });
     } catch { /* sin red: la dirección queda como estaba y se puede escribir */ }
     finally { if (mine === pinSeq.current) setFindingAddress(false); }
   };
@@ -147,6 +150,7 @@ export const Step4Location = ({ form }: Step4Props) => {
               </div>
               <Input
                 {...field}
+                onChange={(e) => { manualAddress.current = e.target.value.trim().length > 0; field.onChange(e); }}
                 value={field.value ?? ""}
                 placeholder="Cra 3 #10-52"
                 className="rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20 h-11"
@@ -182,8 +186,9 @@ export const Step4Location = ({ form }: Step4Props) => {
       <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
         <div className="mb-3">
           <p className="text-sm font-semibold text-[#09090B]">Ubicación exacta en el mapa</p>
-          <p className="text-xs text-[#71717A] mt-0.5">Toca el mapa o arrastra el marcador: la dirección se completa sola y puedes corregirla. {findingAddress ? <span className="font-medium text-[#9B0A26]">Buscando dirección…</span> : null}</p>
+          <p className="text-xs text-[#71717A] mt-0.5">Toca el mapa, arrastra el marcador o pega un enlace de Google Maps. Si no has escrito tu dirección, se completa sola; la tuya nunca se reemplaza. {findingAddress ? <span className="font-medium text-[#9B0A26]">Buscando dirección…</span> : null}</p>
         </div>
+        <MapsLinkInput className="mb-3 grid gap-1.5" onCoords={(lat, lng) => form.setValue("location.coordinates", { lat, lng }, { shouldValidate: true })} />
         <Controller
           name="location.coordinates"
           control={form.control}

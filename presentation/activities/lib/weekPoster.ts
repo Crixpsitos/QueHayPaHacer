@@ -80,10 +80,10 @@ export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPost
   const gap = story ? 16 : 12
   const more = i.plan.more > 0 ? 58 : 0
   const rh = Math.min(ROW_H[`${story ? "story" : "feed"}-${i.plan.tier}`], Math.floor((top - 16 - y - more - gap * (n - 1)) / n))
-  const th = rh - 20
+  const th = Math.round((rh - 20) * 0.78)
   y += Math.max(0, Math.floor((top - 16 - y - (rh * n + gap * (n - 1) + more)) / 2) * 0.6)
-  const tsz = Math.max(24, Math.min(story ? 54 : 46, Math.round(rh * 0.28)))
-  const msz = Math.max(18, Math.round(tsz * 0.72))
+  const tsz = Math.max(24, Math.min(story ? 46 : 40, Math.round(rh * 0.23)))
+  const msz = Math.max(20, Math.round(tsz * 0.68))
   i.plan.rows.forEach((r, k) => {
     g.fillStyle = CREAM; g.beginPath(); g.roundRect(64, y, W - 128, rh, 30); g.fill()
     // foto (o bloque dorado con la inicial)
@@ -93,18 +93,26 @@ export async function buildWeekPoster(i: { qr: HTMLCanvasElement; plan: WeekPost
     if (pic) cover(g, pic, tx, ty, th)
     else { const gg = g.createLinearGradient(tx, ty, tx + th, ty + th); gg.addColorStop(0, GOLD); gg.addColorStop(1, "#F08A00"); g.fillStyle = gg; g.fillRect(tx, ty, th, th); g.fillStyle = "#5C0011"; g.textAlign = "center"; g.font = `800 ${Math.round(th * 0.5)}px ${HEAD}`; g.fillText(r.title.charAt(0).toUpperCase(), tx + th / 2, ty + th / 2 + 2); g.textAlign = "left" }
     g.restore()
-    // precio (píldora a la derecha)
-    g.font = `700 ${msz}px ${BODY}`
-    const priceW = g.measureText(r.price).width + 36
+    // precio (píldora a la derecha, chica: lo importante es QUÉ es el plan)
+    const psz = Math.max(18, Math.round(msz * 0.85))
+    g.font = `700 ${psz}px ${BODY}`
+    const priceW = g.measureText(r.price).width + 28
     const free = r.price === "Gratis"
-    g.fillStyle = free ? "#E4F5E8" : WINE; g.beginPath(); g.roundRect(W - 64 - 22 - priceW, y + rh / 2 - msz, priceW, msz * 2, msz); g.fill()
-    g.fillStyle = free ? "#14532D" : "#FFFFFF"; g.textAlign = "center"; g.fillText(r.price, W - 64 - 22 - priceW / 2, y + rh / 2 + 1); g.textAlign = "left"
-    // título y cuándo
-    const x = tx + th + 24
-    g.fillStyle = INK; g.font = `800 ${tsz}px ${HEAD}`
-    g.fillText(fit(g, r.title, W - 64 - 22 - priceW - 20 - x), x, y + rh / 2 - tsz * 0.38)
+    g.fillStyle = free ? "#E4F5E8" : WINE; g.beginPath(); g.roundRect(W - 64 - 20 - priceW, y + 18, priceW, psz * 1.9, psz); g.fill()
+    g.fillStyle = free ? "#14532D" : "#FFFFFF"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(r.price, W - 64 - 20 - priceW / 2, y + 18 + psz * 0.95 + 1); g.textAlign = "left"
+    // título (hasta 2 líneas: se lee completo) y cuándo
+    const x = tx + th + 22
+    const maxW = W - 64 - 20 - x - 20
+    g.font = `800 ${tsz}px ${HEAD}`
+    const words = r.title.split(" "), lines: string[] = [""]
+    for (const w of words) { const t = lines[lines.length - 1] ? `${lines[lines.length - 1]} ${w}` : w; if (g.measureText(t).width <= maxW || !lines[lines.length - 1]) lines[lines.length - 1] = t; else lines.push(w) }
+    const shown = lines.slice(0, 2).map((l, n, all) => (n === 1 && lines.length > 2 ? fit(g, `${l} …`, maxW) : fit(g, l, maxW)))
+    const block = shown.length * tsz * 1.12 + msz * 1.5
+    let ty0 = y + (rh - block) / 2 + tsz * 0.9
+    g.textBaseline = "alphabetic"; g.fillStyle = INK
+    shown.forEach((l, n) => g.fillText(l, x, ty0 + n * tsz * 1.12))
     g.fillStyle = WINE; g.font = `700 ${msz}px ${BODY}`
-    g.fillText(fit(g, `${r.day} · ${r.time}`, W - 64 - 22 - priceW - 20 - x), x, y + rh / 2 + tsz * 0.78)
+    g.fillText(fit(g, `${r.day} · ${r.time}`, maxW), x, ty0 + shown.length * tsz * 1.12 + msz * 0.2)
     y += rh + gap
   })
   g.textBaseline = "middle"

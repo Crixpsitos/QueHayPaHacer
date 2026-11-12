@@ -1,7 +1,9 @@
 import type { ActivitySchedule } from "./value-objects/ActivitySchedule"
 import { occurrencesBetween } from "./value-objects/occurrences"
 
-export interface WeekItem { id: string; title: string; schedule: ActivitySchedule }
+/** Día y hora que la persona eligió para ir (p. ej. al cine, que no tiene hora fija). `time` "HH:MM" o null = ese día, sin hora. */
+export interface PlanSlot { date: string; time: string | null }
+export interface WeekItem { id: string; title: string; schedule: ActivitySchedule; slot?: PlanSlot }
 export interface WeekBlock { id: string; title: string; /** minutos desde medianoche (Bogotá) o null si no tiene hora fija */ startMin: number | null; endMin: number | null; conflictsWith: string[] }
 export interface WeekDay { date: string; blocks: WeekBlock[] }
 
@@ -16,6 +18,16 @@ const bogotaMinutes = (d: Date) => { const t = new Date(d.getTime() - 5 * 3_600_
 export function buildWeekPlan(items: readonly WeekItem[], fromDate: string, now: Date): WeekDay[] {
   const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => ({ date: addDays(fromDate, i), blocks: [] }))
   for (const it of items) {
+    // con día y hora elegidos, ese es el plan (el horario de la actividad no manda)
+    if (it.slot) {
+      const day = days.find((d) => d.date === it.slot!.date)
+      if (day) {
+        const [h, m] = (it.slot.time ?? "").split(":").map(Number)
+        const startMin = it.slot.time && Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null
+        day.blocks.push({ id: it.id, title: it.title, startMin, endMin: startMin === null ? null : startMin + 120, conflictsWith: [] })
+      }
+      continue
+    }
     for (const o of occurrencesBetween(it.schedule, fromDate, days[6].date)) {
       const day = days.find((d) => d.date === o.date)
       if (!day) continue

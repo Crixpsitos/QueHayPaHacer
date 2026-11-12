@@ -32,6 +32,7 @@ export function useSiteForm() {
   const [editId, setEditId] = useState<string | null>(null)
   const [siteId, setSiteId] = useState<string | null>(null)
   const reqRef = useRef(0)
+  const manualAddressRef = useRef(false)
   // ensures only one concurrent ensureDraftId call
   const ensureRef = useRef<Promise<string> | null>(null)
 
@@ -110,7 +111,7 @@ export function useSiteForm() {
       setForm((prev) => ({ ...prev, coordinates: coords }))
       const id = ++reqRef.current
       void reverseGeocode(coords.latitude, coords.longitude).then((addr) => {
-        if (id !== reqRef.current || !addr) return
+        if (id !== reqRef.current || !addr || manualAddressRef.current) return // la dirección escrita a mano no se reemplaza
         setForm((prev) => ({ ...prev, address: addr }))
         setAddressAutoDetected(true)
         clearError("address")
@@ -120,6 +121,7 @@ export function useSiteForm() {
   )
 
   const handleAddressChange = useCallback((value: string) => {
+    manualAddressRef.current = value.trim().length > 0
     setForm((prev) => ({ ...prev, address: value }))
     setAddressAutoDetected(false)
     clearError("address")
