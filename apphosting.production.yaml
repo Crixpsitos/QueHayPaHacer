@@ -95,3 +95,15 @@ env:
     value: rwBy8op3QSRseVwU7EeCnYneCHw1
     availability:
       - RUNTIME
+
+  # Correo (Resend): sin EMAIL_FROM el servicio queda apagado y no envía nada. Falta (cuando el dominio esté verificado en Resend):
+  # EMAIL_FROM, RESEND_WEBHOOK_SECRET y NEXT_PUBLIC_FIREBASE_VAPID_KEY (ver docs/36-correo-y-push-pasos.md).
+  - variable: RESEND_API_KEY
+    secret: resendApiKey
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_UNSUBSCRIBE_SECRET
+    secret: emailUnsubscribeSecret
+    availability:
+      - RUNTIME
