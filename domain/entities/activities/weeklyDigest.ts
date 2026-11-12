@@ -7,7 +7,8 @@ export interface DigestEvent { id: string; title: string; start: Date; end: Date
 export interface DigestActivity { id: string; title: string; schedule: ActivitySchedule; priceFrom: string; place: string; url: string; imageUrl?: string }
 export interface DigestItem { kind: "event" | "activity"; title: string; timeLabel: string; place: string; detail: string; url: string; sortMin: number; imageUrl?: string; score?: number }
 export interface DigestDay { date: string; label: string; items: DigestItem[] }
-export interface Digest { title: string; days: DigestDay[]; /** disponible todos los días sin hora (cines…): no es un plan con día, va como «Cuando quieras» */ anytime?: { title: string; url: string }[] }
+export interface DigestSite { title: string; url: string; place: string; imageUrl?: string }
+export interface Digest { title: string; days: DigestDay[]; /** disponible todos los días sin hora (cines…): no es un plan con día, va como «Cuando quieras» */ anytime?: { title: string; url: string }[]; /** sitios para ir cuando quieras (no tienen día): el correo elige unos pocos */ sites?: DigestSite[] }
 
 const OFFSET = 5 * 3_600_000
 const DAY = 86_400_000

@@ -1,4 +1,4 @@
-import type { Digest } from "@/domain/entities/activities/weeklyDigest"
+import type { Digest, DigestSite } from "@/domain/entities/activities/weeklyDigest"
 import type { ValueItem } from "./templates"
 
 export const WEEKLY_TOTAL = 12
@@ -20,7 +20,13 @@ function hash(s: string): number {
  * máx. {@link WEEKLY_PER_DAY} por día y {@link WEEKLY_TOTAL} en total; dentro del correo, por día y hora.
  */
 export function selectWeeklyItems(digest: Digest, seed: string): ValueItem[] {
-  const flat = digest.days.flatMap((d) => d.items.map((i) => ({ i, day: d.label, date: d.date })))
+  const all = digest.days.flatMap((d) => d.items.map((i) => ({ i, day: d.label, date: d.date })))
+  // Un plan que dura varios días (una feria) sale UNA vez, en su primer día y con su rango («sábado 14 al domingo 15»).
+  const byUrl = new Map<string, typeof all>()
+  for (const x of all) byUrl.set(x.i.url, [...(byUrl.get(x.i.url) ?? []), x])
+  const span = new Map<string, string>()
+  for (const [url, xs] of byUrl) if (xs.length > 1) span.set(url, `${xs[0].day} al ${xs[xs.length - 1].day}`)
+  const flat = [...byUrl.values()].map((xs) => xs[0])
   if (!flat.length) return []
   const rank = (x: (typeof flat)[number]) => hash(`${seed}|${x.i.url}|${x.date}`)
   const pool = flat.filter((x) => x.i.imageUrl).sort((a, b) => (b.i.score ?? 0) - (a.i.score ?? 0) || rank(a) - rank(b)).slice(0, STAR_POOL)
@@ -39,5 +45,12 @@ export function selectWeeklyItems(digest: Digest, seed: string): ValueItem[] {
   for (const x of shuffled) take(x)
   return [...picked]
     .sort((a, b) => a.date.localeCompare(b.date) || a.i.sortMin - b.i.sortMin)
-    .map((x): ValueItem => ({ title: x.i.title, when: `${x.day} · ${x.i.timeLabel}`, path: x.i.url, day: x.day, time: x.i.timeLabel, place: x.i.place, price: x.i.detail, imageUrl: x.i.imageUrl, star: x === star }))
+    .map((x): ValueItem => ({ title: x.i.title, when: `${span.get(x.i.url) ?? x.day} · ${x.i.timeLabel}`, path: x.i.url, day: x.day, time: span.has(x.i.url) ? `${span.get(x.i.url)} · ${x.i.timeLabel}` : x.i.timeLabel, place: x.i.place, price: x.i.detail, imageUrl: x.i.imageUrl, star: x === star }))
+}
+
+export const WEEKLY_SITES = 3
+/** Hasta {@link WEEKLY_SITES} sitios para «ir cuando quieras», distintos según `seed` (con foto primero). */
+export function selectWeeklySites(digest: Digest, seed: string): DigestSite[] {
+  const list = digest.sites ?? []
+  return [...list].sort((a, b) => Number(Boolean(b.imageUrl)) - Number(Boolean(a.imageUrl)) || hash(`${seed}|${a.url}`) - hash(`${seed}|${b.url}`)).slice(0, WEEKLY_SITES)
 }

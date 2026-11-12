@@ -101,6 +101,12 @@ function WeeklyLayout({ m, w }: { m: EmailModel; w: WeeklyBlock }) {
                   {g.items.map((c) => <WeeklyRow key={c.href + c.when} c={c} />)}
                 </Section>
               ))}
+              {w.sites.length ? (
+                <Section style={{ marginTop: 22 }}>
+                  <Text style={{ margin: "0 0 2px", fontSize: 22, fontWeight: 800, color: WINE }}>Lugares para ir cuando quieras</Text>
+                  {w.sites.map((s) => <WeeklyRow key={s.href} c={{ title: s.title, when: "", place: s.place, price: "", imageUrl: s.imageUrl, href: s.href }} />)}
+                </Section>
+              ) : null}
               {w.anytime.length ? (
                 <Section style={{ marginTop: 22, backgroundColor: CREAM, border: "1px solid #F6DDA0", borderRadius: 18, padding: "14px 16px" }}>
                   <Text style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#6E0A1D" }}>Cuando quieras</Text>
