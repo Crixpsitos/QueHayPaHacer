@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compactCount, plainText, registrationLabel, spotsInfo, timingBadge } from "./cardMeta";
+import { compactCount, plainText, registrationLabel, spotsInfo, timingBadge, goingLabel } from "./cardMeta";
 
 // 2026-10-11 12:00 en Bogotá
 const now = new Date("2026-10-11T17:00:00Z");
@@ -44,4 +44,10 @@ test("registrationLabel, compactCount y plainText", () => {
   assert.equal(compactCount(2000), "2 k");
   assert.equal(compactCount(12400), "12 k");
   assert.equal(plainText("<p>Hola   <b>mundo</b></p>"), "Hola mundo");
+});
+
+test("goingLabel: singular y plural de «van a ir», con cifras compactas", () => {
+  assert.equal(goingLabel(1), "1 va a ir");
+  assert.equal(goingLabel(2), "2 van a ir");
+  assert.equal(goingLabel(1200), "1,2 k van a ir");
 });

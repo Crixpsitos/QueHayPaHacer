@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, MapPin, Heart, Share2, Layers } from "lucide-react";
+import { Calendar, CalendarCheck, MapPin, Share2, Layers } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { analytics as ga } from "@/app/lib/analytics";
@@ -15,6 +15,7 @@ import { useStoredLiked } from "@/app/lib/clientCache/useStoredLiked";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { formatPrice } from "../detail/format";
 import { dateLine, PosterFallback } from "./EventCard";
+import { goingLabel } from "./cardMeta";
 
 interface FeaturedEventCardProps {
   event: EventViewModel;
@@ -135,7 +136,7 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                 type="button"
                 onClick={() => user && toggle()}
                 aria-pressed={liked}
-                aria-label={`${liked ? "Quitar «Voy a ir»" : "Voy a ir"} — ${likes.toLocaleString("es-CO")} likes`}
+                aria-label={`${liked ? "Quitar «Voy a ir»" : "Voy a ir"} — ${goingLabel(likes)}`}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
                   liked
@@ -143,8 +144,8 @@ export function FeaturedEventCard({ event, initialLiked = false, prioritizeImage
                     : "border border-border text-muted-foreground hover:bg-muted",
                 )}
               >
-                <Heart className={cn("size-4", liked && "fill-current")} />
-                {likes.toLocaleString("es-CO")}
+                <CalendarCheck className={cn("size-4", liked && "fill-current")} aria-hidden="true" />
+                {likes > 0 ? goingLabel(likes) : "Voy a ir"}
               </button>
               <button
                 type="button"

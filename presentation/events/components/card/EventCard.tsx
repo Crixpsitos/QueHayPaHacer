@@ -4,11 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
-import { Clock, Heart, MapPin, Users } from "lucide-react";
+import { CalendarCheck, Clock, MapPin, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { cn } from "@/app/lib/utils/cn";
 import { CardLikeButton } from "./CardLikeButton";
-import { compactCount, registrationLabel, spotsInfo, timingBadge } from "./cardMeta";
+import { compactCount, goingLabel, registrationLabel, spotsInfo, timingBadge } from "./cardMeta";
 import { EventViewModel } from "../../view-models/EventViewModel";
 import { eventJsonLdHtml } from "../../lib/eventJsonLd";
 import {
@@ -238,9 +238,8 @@ export const EventCard = ({
               )}
               {likes > 0 && (
                 <span className="inline-flex items-center gap-1">
-                  <Heart className="size-3.5" aria-hidden="true" />
-                  <span className="sr-only">Van a ir:</span>
-                  {compactCount(likes)}
+                  <CalendarCheck className="size-3.5" aria-hidden="true" />
+                  {goingLabel(likes)}
                 </span>
               )}
             </span>
