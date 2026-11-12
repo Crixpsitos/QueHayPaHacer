@@ -9,7 +9,7 @@ import { addExtra, addInclude, addPrice, parseMoney, removeExtra, removeInclude,
 import { Field, selectClass } from "./ui"
 import type { StepProps } from "./StepKind"
 
-const UNIT_LABEL: Record<string, string> = { persona: "persona", grupo: "grupo", hora: "hora", unidad: "unidad" }
+const UNIT_LABEL: Record<string, string> = { persona: "persona", grupo: "grupo", hora: "hora", unidad: "unidad", consultar: "a consultar (sin valor)" }
 const moneyInput = (v: string) => v.replace(/[^\d.]/g, "").slice(0, 12)
 
 function IncludesEditor({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
@@ -57,7 +57,7 @@ export function StepPrice({ form, patch }: StepProps) {
             </div>
             <div className="grid grid-cols-[1fr_8rem] gap-3">
               <Field label="Precio (COP)" hint="0 si es gratis.">{(id) => <Input id={id} inputMode="numeric" value={p.amount} placeholder="40.000" onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { amount: moneyInput(e.target.value) }) })} />}</Field>
-              <Field label="Por">{(id) => <select id={id} className={selectClass} value={p.unit} onChange={(e) => patch({ priceOptions: updatePrice(prices, i, { unit: e.target.value as PriceUnit }) })}>{PRICE_UNITS.map((u) => <option key={u} value={u}>{UNIT_LABEL[u]}</option>)}</select>}</Field>
+              <Field label="Por">{(id) => <select id={id} className={selectClass} value={p.unit} onChange={(e) => patch({ priceOptions: updatePrice(prices, i, e.target.value === "consultar" ? { unit: "consultar", amount: "0" } : { unit: e.target.value as PriceUnit }) })}>{PRICE_UNITS.map((u) => <option key={u} value={u}>{UNIT_LABEL[u]}</option>)}</select>}</Field>
             </div>
             <IncludesEditor value={p.includes} onChange={(includes) => patch({ priceOptions: updatePrice(prices, i, { includes }) })} />
           </fieldset>

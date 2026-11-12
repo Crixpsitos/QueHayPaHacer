@@ -157,6 +157,14 @@ export function StepSchedule({ form, patch }: StepProps) {
           <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={skips} onChange={(e) => { setSkips(e.target.checked); if (!e.target.checked) patch({ skipDates: [] }) }} />
         </label>
         {skips ? <div className="pb-3"><DateList dates={form.skipDates} max={SCHEDULE_SKIP_MAX} onChange={(skipDates) => patch({ skipDates })} label="Día sin actividad" /></div> : null}
+        <label className="flex min-h-14 items-center justify-between gap-3 border-b border-muted text-sm">
+          Festivos
+          <select aria-label="Festivos" className="h-11 rounded-2xl border border-transparent bg-input/50 px-3 text-base" value={form.holidays} onChange={(e) => patch({ holidays: e.target.value as "" | "skip" | "only" })}>
+            <option value="">Igual que los demás días</option>
+            <option value="skip">No hay en festivos</option>
+            <option value="only">Solo en festivos</option>
+          </select>
+        </label>
         <label className="flex min-h-14 items-center justify-between gap-3 text-sm">
           Hay que reservar antes
           <input type="checkbox" className="size-5 accent-[#9B0A26]" checked={form.requiresReservation} onChange={(e) => patch({ requiresReservation: e.target.checked })} />

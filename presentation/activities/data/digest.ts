@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { createServerContainer } from "@/infraestructure/di/container"
 import { buildWeekendDigest, type Digest, type DigestActivity, type DigestEvent } from "@/domain/entities/activities/weeklyDigest"
-import { priceFromCop, formatCop } from "@/domain/entities/activities/value-objects/Price"
+import { allOnRequest, priceFromCop, formatCop } from "@/domain/entities/activities/value-objects/Price"
 import { fetchEventDetailById } from "@/presentation/events/data/eventDetailFetchers"
 
 /** El resumen del fin de semana con datos reales y vigentes. Caché corta: se revisa a mano antes de publicarlo. */
@@ -18,7 +18,7 @@ export const fetchWeekendDigest = async (): Promise<Digest> => {
   for (const siteId of new Set(acts.items.map((a) => a.siteId).filter((x): x is string => !!x))) names.set(siteId, (await c.sitesService.getActivityLinkSnapshot(siteId))?.name ?? "")
   const activities: DigestActivity[] = acts.items.map((a) => {
     const from = priceFromCop(a.priceOptions)
-    return { id: a.id, title: a.title, schedule: a.schedule, priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`, place: (a.siteId && names.get(a.siteId)) || a.meetingPoint.text, url: `/actividades/${a.slug}` }
+    return { id: a.id, title: a.title, schedule: a.schedule, priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`, place: (a.siteId && names.get(a.siteId)) || a.meetingPoint.text, url: `/actividades/${a.slug}` }
   })
   return buildWeekendDigest(events, activities, new Date())
 }

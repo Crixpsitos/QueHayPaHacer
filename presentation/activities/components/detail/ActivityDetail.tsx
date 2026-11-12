@@ -95,7 +95,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
                 <li key={p.label} className="grid gap-3 rounded-3xl border border-border bg-card p-5 shadow-subtle">
                   <div className="flex items-start justify-between gap-4">
                     <span className="font-heading text-lg font-bold leading-snug">{p.label}</span>
-                    <span className="shrink-0 text-right"><span className="font-heading text-2xl font-extrabold tracking-tight">{p.amountCop === 0 ? "Gratis" : p.amount}</span>{p.amountCop === 0 ? null : <span className="block text-xs text-muted-foreground">por {p.unit}</span>}</span>
+                    <span className="shrink-0 text-right"><span className="font-heading text-2xl font-extrabold tracking-tight">{p.onRequest ? "Consultar" : p.amountCop === 0 ? "Gratis" : p.amount}</span>{p.amountCop === 0 || p.onRequest ? null : <span className="block text-xs text-muted-foreground">por {p.unit}</span>}</span>
                   </div>
                   {p.includes.length ? <ul className="grid gap-1.5 text-[0.9375rem]">{p.includes.map((x) => <li key={x} className="flex items-center gap-2"><Check className="size-4 shrink-0 text-[#14532D]" aria-hidden />{x}</li>)}</ul> : null}
                   {p.note ? <p className="text-sm text-muted-foreground">{p.note}</p> : null}

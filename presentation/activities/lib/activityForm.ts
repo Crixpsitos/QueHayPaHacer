@@ -63,6 +63,8 @@ export interface ActivityForm {
   skipDates: string[]
   requiresReservation: boolean
   scheduleNote: string
+  /** Festivos: "" = igual que los demás días. */
+  holidays: "" | "skip" | "only"
   priceOptions: FormPrice[]
   extras: FormExtra[]
   ctaKind: CtaKind | ""
@@ -106,7 +108,7 @@ export const blankExtra = (): FormExtra => ({ label: "", amount: "", unit: "pers
 export const emptyForm = (): ActivityForm => ({
   kind: "global", siteId: null, title: "", tagline: "", description: "", category: "", companions: [], difficulty: "", durationMinutes: "", ageNote: "",
   meetingMode: "fixed", meetingText: "", meetingReferences: "",
-  rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "",
+  rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "", holidays: "",
   priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [], offerings: [], spaces: [], promotions: [],
 })
 
@@ -153,6 +155,7 @@ export function scheduleFromForm(f: ActivityForm): ActivitySchedule {
     skipDates: f.skipDates,
     ...(f.scheduleNote.trim() ? { note: f.scheduleNote.trim() } : {}),
     requiresReservation: f.requiresReservation,
+    ...(f.holidays ? { holidays: f.holidays } : {}),
   }
 }
 
@@ -207,7 +210,7 @@ export function formFromActivity(a: Activity): ActivityForm {
     difficulty: a.difficulty ?? "", durationMinutes: a.durationMinutes === null ? "" : String(a.durationMinutes), ageNote: a.ageNote,
     meetingMode: a.meetingPoint.mode, meetingText: a.meetingPoint.text, meetingReferences: a.meetingPoint.references,
     rules: a.schedule.rules.map(ruleFromDomain), validFrom: a.schedule.validFrom ?? "", validUntil: a.schedule.validUntil ?? "", skipDates: [...a.schedule.skipDates],
-    requiresReservation: a.schedule.requiresReservation, scheduleNote: a.schedule.note ?? "",
+    requiresReservation: a.schedule.requiresReservation, scheduleNote: a.schedule.note ?? "", holidays: a.schedule.holidays ?? "",
     priceOptions: a.priceOptions.map((p) => ({ label: p.label, amount: moneyToString(p.amountCop), unit: p.unit, includes: [...p.includes], note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: moneyToString(x.amountCop), unit: x.unit, note: x.note ?? "" })),
     ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "",

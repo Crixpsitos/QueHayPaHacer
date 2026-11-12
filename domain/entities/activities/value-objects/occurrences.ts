@@ -1,3 +1,4 @@
+import { computeColombiaHolidays } from "@/domain/entities/holidays/colombiaHolidays"
 import type { ActivitySchedule, ScheduleRule, Weekday } from "./ActivitySchedule"
 
 /**
@@ -63,6 +64,15 @@ function matches(rule: ScheduleRule, n: number, iso: string): boolean {
   }
 }
 
+const holidayYears = new Map<number, Set<string>>()
+/** ¿Es festivo en Colombia (Ley Emiliani, calculado por regla)? Se guarda por año. */
+function isHoliday(iso: string): boolean {
+  const y = Number(iso.slice(0, 4))
+  let set = holidayYears.get(y)
+  if (!set) { set = new Set(computeColombiaHolidays(y).map((h) => h.date)); holidayYears.set(y, set) }
+  return set.has(iso)
+}
+
 /** Ocurrencias entre dos fechas civiles (inclusive), ordenadas. Máx. 400 días desde `from`. */
 export function occurrencesBetween(s: ActivitySchedule, from: string, to: string): Occurrence[] {
   const a = toDayNum(from)
@@ -72,6 +82,7 @@ export function occurrencesBetween(s: ActivitySchedule, from: string, to: string
   for (let n = a; n <= b; n++) {
     const iso = fromDayNum(n)
     if ((s.validFrom && iso < s.validFrom) || (s.validUntil && iso > s.validUntil) || skip.has(iso)) continue
+    if (s.holidays && (s.holidays === "only") !== isHoliday(iso)) continue
     const seen = new Set<string>()
     for (const rule of s.rules) {
       if (!matches(rule, n, iso)) continue

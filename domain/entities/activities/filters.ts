@@ -1,7 +1,7 @@
 import type { Activity, ActivityKind } from "./Activity"
 import { isActivityCategory, isCompanion, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
 import { BUDGET_BANDS, budgetBand, type BudgetBand } from "./value-objects/Budget"
-import { priceFromCop } from "./value-objects/Price"
+import { allOnRequest, priceFromCop } from "./value-objects/Price"
 import { isPromoLive } from "./value-objects/Promotion"
 import { dayRange, firstOccurrenceIn, parseDay, parseWhen, whenRange, type When } from "./when"
 
@@ -25,7 +25,7 @@ export const matchesFilters = (a: Pick<Activity, "category" | "kind" | "siteId" 
   (!f.siteId || a.siteId === f.siteId) &&
   (!f.when || firstOccurrenceIn(a.schedule, whenRange(f.when, now), now) !== null) &&
   (!f.day || firstOccurrenceIn(a.schedule, dayRange(f.day), now) !== null) &&
-  (!f.budget || budgetBand(priceFromCop(a.priceOptions)) === f.budget) &&
+  (!f.budget || (!allOnRequest(a.priceOptions) && budgetBand(priceFromCop(a.priceOptions)) === f.budget)) &&
   (!f.companion || a.companions.includes(f.companion)) &&
   (!f.promo || (a.promotions ?? []).some((p) => isPromoLive(p, now)))
 

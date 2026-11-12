@@ -32,6 +32,7 @@ const Schedule = v.object({
   skipDates: v.optional(v.array(DateStr, "Fechas de excepción inválidas."), []),
   note: v.optional(text(SCHEDULE_NOTE_MAX, "La nota del horario")),
   requiresReservation: v.optional(v.boolean(), false),
+  holidays: v.optional(v.picklist(["skip", "only"], "La regla de festivos no es válida.")),
 })
 
 const GEO_MSG = "La ubicación del punto de encuentro es inválida."

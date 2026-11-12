@@ -18,7 +18,7 @@ export function activityJsonLd(a: ActivityPageData, siteUrl: string): Record<str
       ...(a.gallery.length ? { image: a.gallery.slice(0, 5).map((g) => g.url) } : {}),
       provider: { "@type": "Organization", name: a.host.displayName },
       areaServed: { "@type": "City", name: "Ibagué" },
-      offers: a.prices.map((p) => ({ "@type": "Offer", name: p.label, price: p.amountCop, priceCurrency: "COP", url })),
+      offers: a.prices.filter((p) => !p.onRequest).map((p) => ({ "@type": "Offer", name: p.label, price: p.amountCop, priceCurrency: "COP", url })),
     },
     {
       "@context": "https://schema.org",

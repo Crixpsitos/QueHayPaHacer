@@ -3,7 +3,7 @@ import { ACTIVITY_CATEGORIES, type Companion } from "@/domain/entities/activitie
 import { describeSchedule, type ActivitySchedule } from "@/domain/entities/activities/value-objects/ActivitySchedule"
 import { ctaButtonLabel, ctaHref, type CtaKind } from "@/domain/entities/activities/value-objects/Cta"
 import { isPaidActivity } from "@/domain/entities/activities/activityJoin"
-import { formatCop, priceFromCop } from "@/domain/entities/activities/value-objects/Price"
+import { allOnRequest, formatCop, isOnRequest, priceFromCop } from "@/domain/entities/activities/value-objects/Price"
 import { promoRuleLabel, promoScheduleLabel, type Promotion } from "@/domain/entities/activities/value-objects/Promotion"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 
@@ -38,7 +38,7 @@ export interface ActivityPublicView {
   /** Todas las opciones cuestan: reservar pide WhatsApp. */
   paid: boolean
   priceFrom: string
-  prices: { label: string; amount: string; amountCop: number; unit: string; includes: string[]; note: string }[]
+  prices: { label: string; amount: string; amountCop: number; onRequest: boolean; unit: string; includes: string[]; note: string }[]
   extras: { label: string; amount: string; unit: string; note: string }[]
   meeting: { mode: "fixed" | "sharedAfterJoining" | "varies"; text: string; references: string; note: string | null }
   /** Coordenadas del punto de encuentro: solo si el punto es fijo (si se dice en el grupo, no se publica ningún pin). */
@@ -95,8 +95,8 @@ export function toPublicView(a: Activity): ActivityPublicView {
     schedule: a.schedule,
     joinEnabled: a.join !== null,
     paid: isPaidActivity(a.priceOptions),
-    priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
-    prices: a.priceOptions.map((p) => ({ label: p.label, amount: formatCop(p.amountCop), amountCop: p.amountCop, unit: p.unit, includes: p.includes, note: p.note ?? "" })),
+    priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
+    prices: a.priceOptions.map((p) => ({ label: p.label, amount: isOnRequest(p) ? "Consultar" : formatCop(p.amountCop), amountCop: p.amountCop, onRequest: isOnRequest(p), unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),
     meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode] },
     meetingGeo: mode === "fixed" && a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : null,
@@ -138,8 +138,8 @@ export function toCardView(a: Activity): ActivityCardView {
     categoryName: ACTIVITY_CATEGORIES.find((c) => c.slug === a.category)?.name ?? "",
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
     coverAlt: cover?.alt || a.title,
-    priceFrom: from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
-    badge: a.kind === "site" ? "En el sitio" : from === 0 ? "Gratis" : byAppointment ? "Con cita" : null,
+    priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
+    badge: a.kind === "site" ? "En el sitio" : from === 0 && !allOnRequest(a.priceOptions) ? "Gratis" : byAppointment ? "Con cita" : null,
     scheduleText: describeSchedule(a.schedule),
     schedule: a.schedule,
   }

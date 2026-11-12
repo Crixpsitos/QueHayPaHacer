@@ -27,6 +27,8 @@ export interface ActivitySchedule {
   skipDates: string[]
   note?: string
   requiresReservation: boolean
+  /** Festivos de Colombia: `skip` = no sale ese día; `only` = solo sale en festivos. Sin valor = igual que los demás días. */
+  holidays?: "skip" | "only"
 }
 
 export const SCHEDULE_RULES_MAX = 7
@@ -108,6 +110,7 @@ export function validateSchedule(s: ActivitySchedule): string | null {
   if (s.validFrom !== undefined && !isValidDate(s.validFrom)) return "La fecha de inicio de vigencia no es válida."
   if (s.validUntil !== undefined && !isValidDate(s.validUntil)) return "La fecha de fin de vigencia no es válida."
   if (s.validFrom && s.validUntil && s.validUntil < s.validFrom) return "La vigencia termina antes de empezar."
+  if (s.holidays !== undefined && s.holidays !== "skip" && s.holidays !== "only") return "La regla de festivos no es válida."
   if (s.note !== undefined && s.note.length > SCHEDULE_NOTE_MAX) return `La nota admite máximo ${SCHEDULE_NOTE_MAX} caracteres.`
   return null
 }
@@ -172,6 +175,8 @@ export function describeSchedule(s: ActivitySchedule): string {
   if (s.validFrom && s.validUntil) parts.push(`Del ${fullDate(s.validFrom)} al ${fullDate(s.validUntil)}`)
   else if (s.validFrom) parts.push(`Desde el ${fullDate(s.validFrom)}`)
   else if (s.validUntil) parts.push(`Hasta el ${fullDate(s.validUntil)}`)
+  if (s.holidays === "skip") parts.push("No hay en festivos")
+  if (s.holidays === "only") parts.push("Solo en festivos")
   if (s.requiresReservation) parts.push("Con reserva previa")
   let out = parts[0]
   for (const p of parts.slice(1)) out += `${out.endsWith(".") ? "" : "."} ${p}`

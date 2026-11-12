@@ -1,8 +1,12 @@
 /** Opciones de precio y extras de una actividad (spec 5.5). Todo en pesos colombianos enteros. */
-export const PRICE_UNITS = ["persona", "grupo", "hora", "unidad"] as const
+export const PRICE_UNITS = ["persona", "grupo", "hora", "unidad", "consultar"] as const
 export type PriceUnit = (typeof PRICE_UNITS)[number]
 export const EXTRA_UNITS = ["persona", "grupo", "unidad"] as const
 export type ExtraUnit = (typeof EXTRA_UNITS)[number]
+
+/** «Consultar»: el precio depende del día, el formato o el lugar (cines, tours): no se inventa un valor; se manda al sitio oficial. */
+export const isOnRequest = (o: { unit: string }) => o.unit === "consultar"
+export const allOnRequest = (opts: { unit: string }[]) => opts.length > 0 && opts.every(isOnRequest)
 
 export interface PriceOption {
   label: string
@@ -43,6 +47,7 @@ export function validatePriceOptions(opts: PriceOption[]): string | null {
     const e = commonError(o)
     if (e) return e
     if (!(PRICE_UNITS as readonly string[]).includes(o.unit)) return "Unidad de precio inválida."
+    if (isOnRequest(o) && o.amountCop !== 0) return "Una opción «a consultar» no lleva valor."
     if (!Array.isArray(o.includes) || o.includes.length > INCLUDES_MAX || o.includes.some((x) => typeof x !== "string" || !x.trim() || x.length > INCLUDE_ITEM_MAX))
       return `Lo que incluye admite hasta ${INCLUDES_MAX} ítems de máximo ${INCLUDE_ITEM_MAX} caracteres.`
   }
@@ -61,7 +66,10 @@ export function validateExtras(extras: Extra[]): string | null {
 }
 
 /** Precio "desde": la opción más barata. Los extras no cuentan. */
-export const priceFromCop = (opts: PriceOption[]): number => (opts.length ? Math.min(...opts.map((o) => o.amountCop)) : 0)
+export const priceFromCop = (opts: PriceOption[]): number => {
+  const known = opts.filter((o) => !isOnRequest(o))
+  return known.length ? Math.min(...known.map((o) => o.amountCop)) : 0
+}
 
 /** 40000 → "$40.000" */
 export const formatCop = (n: number): string => `$${Math.trunc(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`
