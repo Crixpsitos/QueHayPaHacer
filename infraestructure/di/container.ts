@@ -75,6 +75,8 @@ import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner"
 import { buildPool } from "@/domain/entities/email/selection";
 import { EmailEventsService } from "@/application/services/email/EmailEventsService";
 import { OrganizerEmailRunner } from "@/application/services/email/OrganizerEmailRunner";
+import { EventGuestService } from "@/application/services/events/EventGuestService";
+import { EventGuestFirebaseRepository } from "../firebase/repositories/EventRegistration/EventGuestFirebaseRepository";
 import { EmailQueueService } from "@/application/services/email/EmailQueueService";
 import { EmailOutboxFirebaseRepository } from "../firebase/repositories/email/EmailOutboxFirebaseRepository";
 import { ResendEmailService } from "../email/ResendEmailService";
@@ -179,6 +181,8 @@ export const createServerContainer = () => {
     new EventRegistrationFirebaseMapper(),
   );
   const eventRegistrationService = new EventRegistrationService(eventRegistrationRepository);
+  // personas sin cuenta que agrega quien organiza (entrada con QR)
+  const eventGuestService = new EventGuestService({ repo: new EventGuestFirebaseRepository(getFirebaseFirestore()), randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)) });
 
   const eventFeed = new EventFeed(
     eventsService,
@@ -517,6 +521,7 @@ export const createServerContainer = () => {
     eventSessionService,
     eventInteractionsService,
     eventRegistrationService,
+    eventGuestService,
     eventFeed,
     userPreferencesService,
     sitesService,
