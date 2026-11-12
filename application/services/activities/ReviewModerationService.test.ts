@@ -1,8 +1,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { ReviewModerationService } from "./ReviewModerationService"
-import { reviewKey } from "@/presentation/activities/lib/reviewView"
-import { applyReviewToRating, reviewId, type ActivityReview, type ReviewFlag } from "@/domain/entities/activities/review/ActivityReview"
+import { applyReviewToRating, type ActivityReview, type ReviewFlag } from "@/domain/entities/activities/review/ActivityReview"
+import { reviewId, reviewKey } from "@/domain/entities/activities/review/reviewIdentity"
 import type { Sanction } from "@/domain/entities/activities/moderation/reviewModeration"
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
@@ -15,7 +15,7 @@ const note = "x".repeat(30)
 
 function setup() {
   let clock = T0
-  const docs = new Map<string, ActivityReview>([[reviewId("a1", "r1"), review("r1")], [reviewId("a1", "r2", ), review("r2", 5)]])
+  const docs = new Map<string, ActivityReview>([[reviewId("a1", "r1"), review("r1")], [reviewId("a1", "r2"), review("r2", 5)]])
   let rating: ActivityRating = { count: 2, sum: 7, avg: 3.5, dist: [0, 1, 0, 0, 1] }
   const reviews: IActivityReviewRepository = {
     async get(a, u) { return docs.get(`${a}_${u}`) ?? null }, async save() { throw new Error("n/a") }, async remove() { throw new Error("n/a") },
@@ -42,7 +42,7 @@ const key = reviewKey
 test("el creador cuestiona: la reseña queda en verificación (sigue existiendo) y se registra el aviso para QHPA", async () => {
   const s = setup()
   await s.svc.flag("owner", "a1", key("a1", "r1"), { reason: "false_info", note })
-  assert.equal(s.docs.get("a1_r1")!.status, "flagged")
+  assert.equal(s.docs.get(reviewId("a1", "r1"))!.status, "flagged")
   assert.ok(s.logs.some((l) => l.includes("alert=qhpa_new_flag")))
 })
 test("el dueño del sitio también cuestiona; un tercero no; una reseña no se cuestiona dos veces", async () => {
@@ -62,7 +62,7 @@ test("cooldown de 30 s entre cuestionamientos y llave inexistente = error genér
 test("resolver «falsa»: se retira, sale del promedio, sanciona a la autora y avisa a ambos", async () => {
   const s = setup()
   await s.svc.flag("owner", "a1", key("a1", "r1"), { reason: "not_attended", note })
-  const r = await s.svc.resolve({ reviewId: "a1_r1", outcome: "removed", abusive: false, by: "qhpa" })
+  const r = await s.svc.resolve({ reviewId: reviewId("a1", "r1"), outcome: "removed", abusive: false, by: "qhpa" })
   assert.equal(r.review.status, "removed")
   assert.deepEqual([s.rating.count, s.rating.sum], [1, 5])
   assert.deepEqual(s.sanctions.map((x) => [x.uid, x.role, x.kind]), [["r1", "reviewer", "warning"]])
@@ -71,7 +71,7 @@ test("resolver «falsa»: se retira, sale del promedio, sanciona a la autora y a
 test("resolver «real»: queda verificada, sin sanción si no hubo abuso", async () => {
   const s = setup()
   await s.svc.flag("owner", "a1", key("a1", "r1"), { reason: "false_info", note })
-  const r = await s.svc.resolve({ reviewId: "a1_r1", outcome: "upheld", abusive: false, by: "qhpa" })
+  const r = await s.svc.resolve({ reviewId: reviewId("a1", "r1"), outcome: "upheld", abusive: false, by: "qhpa" })
   assert.equal(r.review.status, "published")
   assert.equal(r.review.flag?.resolution, "upheld")
   assert.equal(s.sanctions.length, 0)
@@ -79,14 +79,27 @@ test("resolver «real»: queda verificada, sin sanción si no hubo abuso", async
 test("no se resuelve dos veces", async () => {
   const s = setup()
   await s.svc.flag("owner", "a1", key("a1", "r1"), { reason: "spam", note })
-  await s.svc.resolve({ reviewId: "a1_r1", outcome: "upheld", abusive: false, by: "qhpa" })
-  await assert.rejects(s.svc.resolve({ reviewId: "a1_r1", outcome: "removed", abusive: false, by: "qhpa" }), /no está en verificación/)
+  await s.svc.resolve({ reviewId: reviewId("a1", "r1"), outcome: "upheld", abusive: false, by: "qhpa" })
+  await assert.rejects(s.svc.resolve({ reviewId: reviewId("a1", "r1"), outcome: "removed", abusive: false, by: "qhpa" }), /no está en verificación/)
 })
 test("respuesta del organizador: hasta 600 caracteres, solo quien organiza, editable", async () => {
   const s = setup()
   await s.svc.reply("owner", "a1", key("a1", "r2"), "¡Gracias por venir!")
-  assert.equal(s.docs.get("a1_r2")!.ownerReply?.text, "¡Gracias por venir!")
+  assert.equal(s.docs.get(reviewId("a1", "r2"))!.ownerReply?.text, "¡Gracias por venir!")
   await assert.rejects(s.svc.reply("tercero", "a1", key("a1", "r2"), "hola"), /organiza/)
   await assert.rejects(s.svc.reply("owner", "a1", key("a1", "r2"), "x".repeat(601)), /600/)
   await assert.rejects(s.svc.reply("owner", "a1", key("a1", "r2"), "   "), /escribe/i)
+})
+
+test("la respuesta del organizador tampoco puede llevar enlaces ni teléfonos", async () => {
+  const s = setup()
+  await assert.rejects(s.svc.reply("owner", "a1", key("a1", "r2"), "Escríbenos al 300 123 4567 o en www.tienda.co"), /enlaces|teléfonos/)
+})
+test("resolver un ocultado preventivo del sistema no sanciona ni avisa a un «anfitrión» inexistente", async () => {
+  const s = setup()
+  s.docs.get(reviewId("a1", "r1"))!.status = "flagged"
+  s.docs.get(reviewId("a1", "r1"))!.flag = { by: "system", reason: "reports", note: "", at: T0 }
+  await s.svc.resolve({ reviewId: reviewId("a1", "r1"), outcome: "upheld", abusive: true, by: "qhpa" })
+  assert.equal(s.sanctions.filter((x) => x.uid === "system").length, 0)
+  assert.ok(!s.notes.some((n) => n.uid === "system"))
 })

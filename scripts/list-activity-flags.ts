@@ -16,6 +16,9 @@ import { NotificationFirebaseRepository } from "@/infraestructure/firebase/repos
 import { NotificationService } from "@/application/services/notification/NotificationService";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 
+/** Texto de usuarios: sin caracteres de control (secuencias de escape) en la terminal de quien modera. */
+// eslint-disable-next-line no-control-regex
+const safe = (t: unknown) => String(t ?? "").replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
 const args = process.argv.slice(2);
 const flag = (name: string) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const APPLY = args.includes("--apply");
@@ -35,7 +38,7 @@ async function main() {
   if (!target) {
     const open = await svc.listOpen(100);
     if (!open.length) return console.log("(sin reseñas en verificación)");
-    for (const r of open) console.log(`${r.id}  ${"★".repeat(r.rating)}  desde ${r.flag?.at.toISOString().slice(0, 16)}  motivo=${r.flag?.reason}  por=${r.flag?.by}\n   nota: ${r.flag?.note}\n   reseña (${r.author.displayName}): ${r.body.slice(0, 160)}`);
+    for (const r of open) console.log(`${r.id}  ${"★".repeat(r.rating)}  desde ${r.flag?.at.toISOString().slice(0, 16)}  motivo=${r.flag?.reason}  por=${r.flag?.by}\n   nota: ${safe(r.flag?.note)}\n   reseña (${safe(r.author.displayName)}): ${safe(r.body.slice(0, 160))}`);
     return;
   }
   const outcome = flag("--outcome");

@@ -1,8 +1,9 @@
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
-import { canReview, publicAuthorName, reviewId, validateReviewInput, type ActivityReview, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
+import { canReview, containsContactInfo, publicAuthorName, validateReviewInput, type ActivityReview, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
+import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import { reviewReceivedNotification } from "@/domain/entities/notification/messages"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
-import type { ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
+import { mediaOwnershipError, mergeMedia, parseMediaInput, type ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 
 const COOLDOWN_MS = 30_000
@@ -21,6 +22,8 @@ export interface ReviewDeps {
   legalVersion: string
   /** Borra un archivo de Storage por ruta (reseñas borradas: no deben quedar fotos huérfanas). Opcional. */
   deleteFile?: (path: string) => Promise<void>
+  /** ¿La cuenta tiene una restricción o suspensión de reseñas vigente? (sanciones de QHPA) */
+  isRestricted?: (uid: string) => Promise<boolean>
   /** Último envío por persona (cooldown). Debe vivir a nivel de módulo en producción: el contenedor no se memoiza. */
   lastSubmit?: Map<string, number>
 }
@@ -42,14 +45,20 @@ export class ActivityReviewService {
       if (!a) throw new Error("Esa actividad no existe.")
       const blocked = canReview(a, uid)
       if (blocked) throw new Error(blocked)
+      if (this.d.isRestricted && (await this.d.isRestricted(uid))) throw new Error("Por ahora no puedes reseñar: tu cuenta tiene una restricción.")
       const account = await this.d.getAccount(uid)
       if (!account) throw new Error("No encontramos tu cuenta.")
       if (now.getTime() - account.createdAt.getTime() < MIN_ACCOUNT_AGE_MS) throw new Error("Tu cuenta es nueva: espera unos minutos para reseñar.")
-      const error = validateReviewInput({ ...input, photos: extra.media.filter((m) => m.type === "image").length, video: extra.media.filter((m) => m.type === "video").length }, now)
-      if (error) throw new Error(error)
-
+      const id = reviewId(activityId, uid)
       const existing = await this.d.repo.get(activityId, uid)
       if (existing?.status === "flagged") throw new Error("Tu reseña está en verificación: no se puede editar ahora.")
+      if (existing?.status === "removed") throw new Error("Tu reseña fue retirada. Si crees que fue un error, puedes apelar una vez.")
+      // Los medios llegan del cliente: se limpian, solo valen los de la carpeta de ESTA reseña y el estado lo fija el servidor.
+      const media = mergeMedia(existing?.media ?? [], parseMediaInput(extra.media))
+      const ownership = mediaOwnershipError(id, media.filter((m) => !(existing?.media ?? []).some((e) => e.id === m.id)), "activityReviews")
+      if (ownership) throw new Error(ownership)
+      const error = validateReviewInput({ ...input, photos: media.filter((m) => m.type === "image").length, video: media.filter((m) => m.type === "video").length }, now)
+      if (error) throw new Error(error)
       if (!existing) {
         const recent = await this.d.repo.listByAuthorSince(uid, new Date(now.getTime() - DUPLICATE_WINDOW_MS))
         if (recent.filter((r) => r.createdAt.getTime() >= now.getTime() - 86_400_000).length >= MAX_PER_DAY) throw new Error("Llegaste al tope de reseñas por hoy. Vuelve mañana.")
@@ -58,16 +67,18 @@ export class ActivityReviewService {
       }
 
       const review: ActivityReview = {
-        id: reviewId(activityId, uid), activityId, uid,
+        id, activityId, uid,
         rating: input.rating, title: input.title.trim(), body: input.body.trim(), visitedAt: input.visitedAt,
-        media: extra.media, coverIndex: Math.max(0, Math.min(extra.coverIndex, Math.max(0, extra.media.filter((m) => m.type === "image").length - 1))),
+        media, coverIndex: Math.max(0, Math.min(extra.coverIndex, Math.max(0, media.filter((m) => m.type === "image").length - 1))),
         author: { uid, displayName: publicAuthorName(account.displayName), photoURL: account.photoURL },
-        status: extra.media.some((m) => m.status === "processing") ? "pendingMedia" : "published",
+        status: media.some((m) => m.status === "processing") ? "pendingMedia" : "published",
         flag: null, ownerReply: existing?.ownerReply ?? null,
         createdAt: existing?.createdAt ?? now, updatedAt: now, editedAt: existing ? now : null,
         declarationVersion: this.d.legalVersion,
       }
       const saved = await this.d.repo.save(review)
+      // Medios que la persona quitó al editar: se borran del almacenamiento (no quedan fotos públicas huérfanas).
+      for (const old of existing?.media ?? []) if (!media.some((m) => m.id === old.id)) await this.removeFiles([old])
       if (saved.created) {
         await this.d.notify(a.ownerUid, reviewReceivedNotification({ title: a.title, slug: a.slug, rating: input.rating, who: review.author.displayName }), `review_${review.id}`).catch(() => undefined)
       }
@@ -79,10 +90,16 @@ export class ActivityReviewService {
     }
   }
 
+  private async removeFiles(media: { path: string; thumbnailPath?: string }[]): Promise<void> {
+    if (!this.d.deleteFile) return
+    for (const m of media) for (const path of [m.path, m.thumbnailPath]) if (path) await this.d.deleteFile(path).catch(() => undefined)
+  }
+
   async remove(uid: string, activityId: string): Promise<{ removed: boolean }> {
     if (!uid?.trim() || !activityId?.trim()) throw new Error("Falta la sesión o la actividad.")
     try {
       const r = await this.d.repo.remove(activityId, uid)
+      await this.removeFiles(r.media.map((m) => ({ path: m.path, thumbnailPath: m.thumbnailPath })))
       return { removed: r.removed }
     } catch (e) {
       if (e instanceof Error && e.message === "FLAGGED") throw new Error("Tu reseña está en verificación: no se puede borrar mientras tanto.")
@@ -93,13 +110,17 @@ export class ActivityReviewService {
   /** Al eliminar la cuenta: se borran las reseñas (también las cuestionadas), el promedio se ajusta y se borran sus fotos y videos. */
   async eraseUser(uid: string): Promise<number> {
     if (!uid?.trim()) return 0
-    const mine = await this.d.repo.listByAuthorSince(uid, new Date(0))
     let n = 0
-    for (const r of mine) {
-      const res = await this.d.repo.remove(r.activityId, uid, { force: true })
-      if (!res.removed) continue
-      n++
-      for (const m of res.media) for (const path of [m.path, m.thumbnailPath]) if (path && this.d.deleteFile) await this.d.deleteFile(path).catch(() => undefined)
+    // De a lotes hasta que no quede ninguna (el repositorio devuelve máximo 200 por consulta).
+    for (let round = 0; round < 50; round++) {
+      const mine = await this.d.repo.listByAuthorSince(uid, new Date(0))
+      if (!mine.length) break
+      for (const r of mine) {
+        const res = await this.d.repo.remove(r.activityId, uid, { force: true })
+        if (!res.removed) continue
+        n++
+        await this.removeFiles(res.media)
+      }
     }
     return n
   }

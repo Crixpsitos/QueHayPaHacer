@@ -4,7 +4,7 @@ import { filterReviews, reviewKey, toReviewView, visitedLabel } from "./reviewVi
 import type { ActivityReview } from "@/domain/entities/activities/review/ActivityReview"
 
 const base: ActivityReview = {
-  id: "act1_uid-secreto", activityId: "act1", uid: "uid-secreto", rating: 5, title: "Muy buena", body: "Salimos temprano.", visitedAt: "2026-10",
+  id: "act1_f3a9c2d41b7e08aa6c15", activityId: "act1", uid: "uid-secreto", rating: 5, title: "Muy buena", body: "Salimos temprano.", visitedAt: "2026-10",
   media: [
     { id: "i1", type: "image", path: "p/1", url: "https://x/1.jpg", thumbnailUrl: "https://x/1t.jpg", width: 10, height: 10, alt: "Sendero", isCover: true, status: "ready" },
     { id: "i2", type: "image", path: "p/2", url: "https://x/2.jpg", width: 10, height: 10, alt: "", isCover: false, status: "processing" },
@@ -18,7 +18,7 @@ test("la vista pública NO lleva el uid ni el id del documento; la clave es opac
   const v = toReviewView(base)
   const json = JSON.stringify(v)
   assert.ok(!json.includes("uid-secreto"))
-  assert.ok(!json.includes("act1_"))
+  assert.ok(!json.includes("act1_f3a9"))
   assert.equal(v.key, reviewKey("act1", "uid-secreto"))
   assert.notEqual(reviewKey("act1", "otro"), v.key)
 })

@@ -123,4 +123,3 @@ export interface ActivityReview {
   declarationVersion: string
 }
 
-export const reviewId = (activityId: string, uid: string) => `${activityId}_${uid}`

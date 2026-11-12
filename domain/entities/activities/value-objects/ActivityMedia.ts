@@ -43,9 +43,9 @@ const STORAGE_HOSTS = ["https://storage.googleapis.com/", "https://firebasestora
  * Los medios llegan del cliente: solo valen los que viven bajo `public/activities/{id}/{images|videos}/` y
  * se sirven desde Storage. Evita que alguien cuelgue medios de otro recurso o enlaces externos.
  */
-export function mediaOwnershipError(activityId: string, media: ActivityMedia[]): string | null {
+export function mediaOwnershipError(activityId: string, media: ActivityMedia[], entity: "activities" | "activityReviews" = "activities"): string | null {
   if (!Array.isArray(media)) return "Fotos inválidas."
-  const prefix = `public/activities/${activityId}/`
+  const prefix = `public/${entity}/${activityId}/`
   for (const m of media) {
     const folder = m.type === "image" ? "images" : m.type === "video" ? "videos" : null
     if (!folder || typeof m.path !== "string" || !m.path.startsWith(`${prefix}${folder}/`) || m.path.slice(prefix.length + folder.length + 1).includes("/") || m.path.includes(".."))

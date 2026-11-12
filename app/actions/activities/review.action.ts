@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache"
 import { getSessionUid } from "@/app/actions/_session"
 import { createServerContainer } from "@/infraestructure/di/container"
+import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import { FLAG_REASONS, type FlagReason } from "@/domain/entities/activities/moderation/reviewModeration"
 import { REVIEW_BODY_MAX, REVIEW_TITLE_MAX, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
 import type { ActivityMedia } from "@/domain/entities/activities/value-objects/ActivityMedia"
@@ -56,7 +57,7 @@ export async function getMyReviewAction(activityId: string): Promise<{ loggedIn:
   const c = createServerContainer()
   const [mine, a] = await Promise.all([c.activityReviewService.getMine(uid, activityId), c.activityService.getPublicById(activityId)])
   const blocked = !a ? "Esa actividad no existe." : a.ownerUid === uid ? "No puedes reseñar una actividad que publicaste." : null
-  return { loggedIn: true, blocked, docId: `${activityId}_${uid}`, mine: mine ? { rating: mine.rating, title: mine.title, body: mine.body, visitedAt: mine.visitedAt, media: mine.media, inVerification: mine.status === "flagged" } : null }
+  return { loggedIn: true, blocked, docId: reviewId(activityId, uid), mine: mine ? { rating: mine.rating, title: mine.title, body: mine.body, visitedAt: mine.visitedAt, media: mine.media, inVerification: mine.status === "flagged" } : null }
 }
 
 const validKey = (k: unknown): k is string => typeof k === "string" && /^[a-f0-9]{20}$/.test(k)
@@ -122,7 +123,7 @@ export async function appealReviewAction(activityId: string, explanation: string
   if (!uid) return { success: false, authRequired: true, error: "Inicia sesión." }
   if (!validId(activityId)) return { success: false, error: "Solicitud inválida." }
   try {
-    await createServerContainer().activityAppealService.submit(uid, `${activityId}_${uid}`, String(explanation ?? ""))
+    await createServerContainer().activityAppealService.submit(uid, reviewId(activityId, uid), String(explanation ?? ""))
     return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "No se pudo enviar la apelación." }

@@ -10,6 +10,9 @@ import { ActivityReviewFirebaseRepository } from "@/infraestructure/firebase/rep
 import { ActivityAppealFirebaseRepository } from "@/infraestructure/firebase/repositories/activities/ActivityAppealFirebaseRepository";
 import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
 
+/** Texto de usuarios: sin caracteres de control (secuencias de escape) en la terminal de quien modera. */
+// eslint-disable-next-line no-control-regex
+const safe = (t: unknown) => String(t ?? "").replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
 const args = process.argv.slice(2);
 const flag = (n: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
 const APPLY = args.includes("--apply");
@@ -23,7 +26,7 @@ async function main() {
   if (!target) {
     const open = await appeals.listOpen(100);
     if (!open.length) return console.log("(sin apelaciones abiertas)");
-    for (const a of open) { const r = await reviews.getById(a.reviewId); console.log(`${a.reviewId}  desde ${a.createdAt.toISOString().slice(0, 16)}\n   reseña: ${(r?.body ?? "").slice(0, 160)}\n   apelación: ${a.explanation}`); }
+    for (const a of open) { const r = await reviews.getById(a.reviewId); console.log(`${a.reviewId}  desde ${a.createdAt.toISOString().slice(0, 16)}\n   reseña: ${safe((r?.body ?? "").slice(0, 160))}\n   apelación: ${safe(a.explanation)}`); }
     return;
   }
   const d = flag("--decision");

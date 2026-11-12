@@ -57,9 +57,10 @@ import { ActivityPlansService } from "@/application/services/activities/Activity
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
-import { reviewKey } from "@/presentation/activities/lib/reviewView";
+import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity";
 import { ActivityReviewService } from "@/application/services/activities/ActivityReviewService";
 import { ActivityReviewFirebaseRepository } from "../firebase/repositories/activities/ActivityReviewFirebaseRepository";
+import { isRestricted } from "@/domain/entities/activities/moderation/reviewModeration";
 import { ReviewModerationService } from "@/application/services/activities/ReviewModerationService";
 import { ActivitySanctionFirebaseRepository } from "../firebase/repositories/activities/ActivitySanctionFirebaseRepository";
 import { ActivityAppealService } from "@/application/services/activities/ActivityAppealService";
@@ -300,6 +301,7 @@ export const createServerContainer = () => {
   });
 
   // reseñas de actividades (una por persona, agregado en la misma transacción)
+  const sanctionRepo = new ActivitySanctionFirebaseRepository(getFirebaseFirestore());
   const activityReviewService = new ActivityReviewService({
     repo: new ActivityReviewFirebaseRepository(getFirebaseFirestore()),
     getActivity: async (id) => {
@@ -317,13 +319,14 @@ export const createServerContainer = () => {
     legalVersion: LEGAL_VERSION,
     lastSubmit: REVIEW_LAST_SUBMIT,
     deleteFile: (path) => storageService.delete(path),
+    isRestricted: async (uid) => isRestricted(await sanctionRepo.listByUid(uid), uid, "reviewer", new Date()),
   });
 
   // cuestionar reseñas, responderlas y resolverlas (QHPA)
   const reviewRepo = new ActivityReviewFirebaseRepository(getFirebaseFirestore());
   const reviewModerationService = new ReviewModerationService({
     reviews: reviewRepo,
-    sanctions: new ActivitySanctionFirebaseRepository(getFirebaseFirestore()),
+    sanctions: sanctionRepo,
     getActivity: async (id) => {
       const a = await activityService.getPublicById(id);
       if (!a) return null;

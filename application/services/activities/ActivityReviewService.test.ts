@@ -2,6 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { ActivityReviewService } from "./ActivityReviewService"
 import { applyReviewToRating, type ActivityReview, type ReviewInput } from "@/domain/entities/activities/review/ActivityReview"
+import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
@@ -15,9 +16,9 @@ function setup(o: { now?: () => Date; accountAgeMin?: number; activityOwner?: st
   const docs = new Map<string, ActivityReview>()
   let rating: ActivityRating = { count: 0, sum: 0, avg: 0, dist: [0, 0, 0, 0, 0] }
   const repo: IActivityReviewRepository = {
-    async get(a, u) { return docs.get(`${a}_${u}`) ?? null },
+    async get(a, u) { return docs.get(reviewId(a, u)) ?? null },
     async save(r) { await Promise.resolve(); const prev = docs.get(r.id); rating = applyReviewToRating(rating, prev ? { type: "edit", from: prev.rating, to: r.rating } : { type: "add", rating: r.rating }); docs.set(r.id, r); return { created: !prev, rating } },
-    async remove(a, u) { const d = docs.get(`${a}_${u}`); if (!d) return { removed: false, rating, media: [] }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating, media: [] } },
+    async remove(a, u) { const d = docs.get(reviewId(a, u)); if (!d) return { removed: false, rating, media: [] }; if (d.status === "flagged") throw new Error("FLAGGED"); docs.delete(d.id); rating = applyReviewToRating(rating, { type: "remove", rating: d.rating }); return { removed: true, rating, media: [] } },
     async listByActivity(a) { return [...docs.values()].filter((d) => d.activityId === a) },
     async listByAuthorSince(u, since) { return [...docs.values()].filter((d) => d.uid === u && d.createdAt >= since) },
     async getById() { throw new Error("n/a") }, async setFlag() { throw new Error("n/a") }, async countOpenFlags() { throw new Error("n/a") },
@@ -39,7 +40,8 @@ test("crea la reseña con el nombre público (primer nombre + inicial) y sin cor
   const s = setup()
   const r = await s.svc.submit("u1", "a1", input, meta)
   assert.equal(r.review.author.displayName, "Ana P.")
-  assert.equal(r.review.id, "a1_u1")
+  assert.equal(r.review.id, reviewId("a1", "u1"))
+  assert.ok(!r.review.id.includes("u1"), "el id del documento no lleva el uid")
   assert.equal(r.review.declarationVersion, "2026-11-11")
   assert.ok(!JSON.stringify(r.review).includes("@x.co"), "no se filtra el correo")
   assert.deepEqual([s.rating.count, s.rating.avg], [1, 5])
@@ -50,7 +52,7 @@ test("una por persona: reseñar otra vez edita (5 → 2), no suma", async () => 
   await s.svc.submit("u1", "a1", input, meta)
   s.advance(60_000)
   const r = await s.svc.submit("u1", "a1", { ...input, rating: 2, body: "Cambié de opinión: el clima estuvo muy feo ese día." }, meta)
-  assert.equal(r.review.editedAt?.getTime(), s.docs.get("a1_u1")!.editedAt?.getTime())
+  assert.equal(r.review.editedAt?.getTime(), s.docs.get(reviewId("a1", "u1"))!.editedAt?.getTime())
   assert.deepEqual([s.rating.count, s.rating.sum], [1, 2])
 })
 
@@ -103,7 +105,7 @@ test("borrar: se puede, ajusta el agregado y no se puede si está cuestionada", 
   assert.equal(s.rating.count, 0)
   s.advance(31_000)
   await s.svc.submit("u1", "a1", input, meta)
-  s.docs.get("a1_u1")!.status = "flagged"
+  s.docs.get(reviewId("a1", "u1"))!.status = "flagged"
   await assert.rejects(s.svc.remove("u1", "a1"), /verificación/)
 })
 
@@ -116,4 +118,33 @@ test("eliminar la cuenta borra todas sus reseñas (incluida una en verificación
   assert.equal(await s.svc.eraseUser("u1"), 2)
   assert.equal(s.docs.size, 0)
   assert.equal(s.rating.count, 0)
+})
+
+const mediaOf = (uid: string, activity = "a1", over: Record<string, unknown> = {}) => ({ id: "m1", type: "image" as const, path: `public/activityReviews/${reviewId(activity, uid)}/images/foto.jpg-1`, url: `https://storage.googleapis.com/b/public/activityReviews/${reviewId(activity, uid)}/images/foto.jpg-1`, width: 10, height: 10, alt: "", isCover: true, ...over })
+
+test("medios: una ruta ajena se rechaza (no se puede apuntar al archivo de otro recurso)", async () => {
+  const s = setup()
+  const evil = mediaOf("u1", "a1", { path: "public/events/ev1/images/portada.jpg", url: "https://storage.googleapis.com/b/public/events/ev1/images/portada.jpg" })
+  await assert.rejects(s.svc.submit("u1", "a1", input, { media: [evil as never], coverIndex: 0 }), /no es válida/)
+  const external = mediaOf("u1", "a1", { url: "https://evil.example/track.png" })
+  await assert.rejects(setup().svc.submit("u1", "a1", input, { media: [external as never], coverIndex: 0 }), /no es válida/)
+})
+test("medios propios: entran como «procesando» aunque el cliente diga «ready»", async () => {
+  const s = setup()
+  const r = await s.svc.submit("u1", "a1", input, { media: [mediaOf("u1", "a1", { status: "ready", thumbnailPath: "public/events/x.jpg" }) as never], coverIndex: 0 })
+  assert.equal(r.review.media[0].status, "processing")
+  assert.equal(r.review.media[0].thumbnailPath, undefined)
+  assert.equal(r.review.status, "pendingMedia")
+})
+test("una reseña retirada no se puede editar (se apela)", async () => {
+  const s = setup()
+  await s.svc.submit("u1", "a1", input, meta)
+  s.docs.get(reviewId("a1", "u1"))!.status = "removed"
+  s.advance(31_000)
+  await assert.rejects(s.svc.submit("u1", "a1", input, meta), /apelar/)
+})
+test("una cuenta con restricción de reseñas no reseña", async () => {
+  const s = setup()
+  const svc2 = new ActivityReviewService({ ...(s.svc as unknown as { d: ConstructorParameters<typeof ActivityReviewService>[0] }).d, isRestricted: async () => true })
+  await assert.rejects(svc2.submit("u1", "a1", input, meta), /restricción/)
 })

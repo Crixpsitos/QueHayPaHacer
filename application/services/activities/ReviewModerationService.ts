@@ -4,7 +4,8 @@ import type { NewNotification } from "@/domain/entities/notification/Notificatio
 import type { ActivityReview } from "@/domain/entities/activities/review/ActivityReview"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 import type { IActivitySanctionRepository } from "@/domain/repository/activities/IActivitySanctionRepository"
-import { reviewKey } from "@/presentation/activities/lib/reviewView"
+import { containsContactInfo } from "@/domain/entities/activities/review/ActivityReview"
+import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity"
 
 const COOLDOWN_MS = 30_000
 const YEAR_MS = 365 * 86_400_000
@@ -61,6 +62,7 @@ export class ReviewModerationService {
     const t = text.trim()
     if (!t) throw new Error("Escribe tu respuesta.")
     if (t.length > REPLY_MAX) throw new Error(`La respuesta admite máximo ${REPLY_MAX} caracteres.`)
+    if (containsContactInfo(t)) throw new Error("No se pueden incluir enlaces, correos ni teléfonos.")
     const review = await this.findByKey(activityId, key)
     if (!review) throw new Error("Esa reseña no existe.")
     await this.d.reviews.setReply(review.id, { text: t, at: this.d.clock() })
@@ -74,11 +76,12 @@ export class ReviewModerationService {
     const a = await this.d.getActivity(review.activityId)
     const since = new Date(now.getTime() - YEAR_MS)
     const hostUid = review.flag.by
+    const bySystem = hostUid === "system" // ocultado preventivo por reportes: no hay anfitrión que sancionar ni avisar
     const [priorHost, priorReviewer] = await Promise.all([this.d.sanctions.countSince(hostUid, "host", since), this.d.sanctions.countSince(review.uid, "reviewer", since)])
     const fx = resolveFlag(o.outcome, { abusive: o.abusive, priorHost, priorReviewer }, now)
     const done = await this.d.reviews.resolveFlag(review.id, { status: fx.reviewStatus, resolution: o.outcome, resolvedBy: o.by, at: now })
     if (!done) throw new Error("Esa reseña no está en verificación.")
-    if (fx.sanction) {
+    if (fx.sanction && !(bySystem && fx.sanction.role === "host")) {
       const uid = fx.sanction.role === "reviewer" ? review.uid : hostUid
       const s: Sanction = { uid, role: fx.sanction.role, kind: fx.sanction.kind, reason: `review_flag_${o.outcome}`, activityId: review.activityId, reviewId: review.id, createdAt: now, expiresAt: sanctionExpiry(now, fx.sanction.days), createdBy: o.by }
       await this.d.sanctions.add(s)
@@ -86,7 +89,7 @@ export class ReviewModerationService {
     }
     const title = a?.title ?? "la actividad", slug = a?.slug ?? ""
     await Promise.all([
-      this.d.notify(hostUid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "host" }), `flagres_h_${review.id}`),
+      bySystem ? Promise.resolve() : this.d.notify(hostUid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "host" }), `flagres_h_${review.id}`),
       this.d.notify(review.uid, reviewFlagResolvedNotification({ title, slug, outcome: o.outcome, audience: "reviewer" }), `flagres_r_${review.id}`),
     ]).catch(() => undefined)
     return { review: done.review }

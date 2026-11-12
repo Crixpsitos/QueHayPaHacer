@@ -1,6 +1,7 @@
 import type { DocumentData, Firestore } from "firebase-admin/firestore"
 import type { ActivityRating } from "@/domain/entities/activities/Activity"
 import { applyReviewToRating, type ActivityReview, type ReviewFlag } from "@/domain/entities/activities/review/ActivityReview"
+import { reviewId } from "@/domain/entities/activities/review/reviewIdentity"
 import type { IActivityReviewRepository } from "@/domain/repository/activities/IActivityReviewRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
 
@@ -26,7 +27,7 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
   private activity(id: string) { return this.db.collection("activities").doc(id) }
 
   async get(activityId: string, uid: string): Promise<ActivityReview | null> {
-    const s = await this.collection.doc(`${activityId}_${uid}`).get()
+    const s = await this.collection.doc(reviewId(activityId, uid)).get()
     return s.exists ? fromDoc(s.id, s.data()!) : null
   }
 
@@ -37,6 +38,7 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
       const [mine, a] = await Promise.all([tx.get(ref), tx.get(act)])
       if (!a.exists) throw new Error("Esa actividad no existe.")
       const current: ActivityRating = a.get("rating") ?? EMPTY
+      if (mine.exists && !["published", "pendingMedia"].includes(mine.get("status"))) throw new Error(mine.get("status") === "flagged" ? "Tu reseña está en verificación: no se puede editar ahora." : "Esa reseña fue retirada: si crees que fue un error, puedes apelar.")
       const created = !mine.exists
       const rating = applyReviewToRating(current, created ? { type: "add", rating: review.rating } : { type: "edit", from: mine.get("rating"), to: review.rating })
       tx.set(ref, { ...review, flag: review.flag ?? null, ownerReply: review.ownerReply ?? null, editedAt: review.editedAt ?? null })
@@ -46,7 +48,7 @@ export class ActivityReviewFirebaseRepository extends FirebaseBaseRepository imp
   }
 
   async remove(activityId: string, uid: string, opts?: { force?: boolean }): Promise<{ removed: boolean; rating: ActivityRating; media: { path: string; thumbnailPath?: string }[] }> {
-    const ref = this.collection.doc(`${activityId}_${uid}`)
+    const ref = this.collection.doc(reviewId(activityId, uid))
     const act = this.activity(activityId)
     return this.db.runTransaction(async (tx) => {
       const [mine, a] = await Promise.all([tx.get(ref), tx.get(act)])

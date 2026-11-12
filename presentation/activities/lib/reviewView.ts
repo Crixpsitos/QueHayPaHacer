@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto"
+import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity"
 import type { ActivityReview } from "@/domain/entities/activities/review/ActivityReview"
 
 export type { ReviewFilter } from "./reviewFilters"
@@ -22,8 +22,7 @@ export interface ReviewView {
   reply: { text: string } | null
 }
 
-/** Clave pública estable por reseña: no se puede invertir hasta el uid. */
-export const reviewKey = (activityId: string, uid: string) => createHash("sha256").update(`${activityId}:${uid}`).digest("hex").slice(0, 20)
+export { reviewKey }
 
 const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 export const visitedLabel = (visitedAt: string) => { const [y, m] = visitedAt.split("-"); return `${MONTHS[Number(m) - 1] ?? ""} de ${y}` }

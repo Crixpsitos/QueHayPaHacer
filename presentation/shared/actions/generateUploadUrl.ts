@@ -2,6 +2,7 @@
 
 import { getSessionUid } from "@/app/actions/_session";
 
+import { reviewId } from "@/domain/entities/activities/review/reviewIdentity";
 import { createServerContainer } from "@/infraestructure/di/container";
 
 type UploadVisibility = "public" | "private";
@@ -51,7 +52,11 @@ export async function generateUploadUrl({
   if (!ENTITIES.has(entityName) || !SEGMENT.test(entityId)) throw new Error("Destino de subida no permitido");
   if (OWN_UID_ENTITIES.has(entityName) && entityId !== uid) throw new Error("Destino de subida no permitido");
   // Reseñas: el documento es `{actividad}_{uid}`; solo se sube a la carpeta de la propia reseña.
-  if (entityName === "activityReviews" && !entityId.endsWith(`_${uid}`)) throw new Error("Destino de subida no permitido");
+  // El id del documento no lleva el uid (sale en la URL pública): se recalcula con el uid de la sesión.
+  if (entityName === "activityReviews") {
+    const cut = entityId.lastIndexOf("_");
+    if (cut < 1 || entityId !== reviewId(entityId.slice(0, cut), uid)) throw new Error("Destino de subida no permitido");
+  }
   if (!CONTENT_TYPE.test(contentType)) throw new Error("Tipo de archivo no permitido");
   if (subFolder !== undefined && !SUBFOLDERS.has(subFolder)) throw new Error("Carpeta no permitida");
   if (customMetadata && Object.keys(customMetadata).some((k) => !/^[a-z0-9-]{1,64}$/.test(k))) {
