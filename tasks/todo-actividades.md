@@ -262,7 +262,7 @@ Estado inicial: todas sin marcar.
 
 ## Fase 3 — Reseñas y moderación
 
-- [~] **C0 Legal y privacidad (M)** — `legal-privacy`
+- [x] **C0 Legal y privacidad (M)** — `legal-privacy`
   - Aceptación: borrador de **Términos** (reglas de reseñas, licencia sobre textos/fotos/videos, reglas de "cuestionar" y sanciones, responsabilidad del autor, aviso y retiro, no verificamos asistencia) y de **Privacidad** (datos de reseñadores y anfitriones, finalidad y publicidad del nombre, conservación, derechos, Ley 1581, transmisión a Google); casilla de **autorización separada**; actualizar `docs/14-legal-y-cumplimiento.md` (art. 53 pasa a "implementado") y `docs/16`; **`LEGAL_VERSION` solo con OK del dueño** (preguntar antes).
   - Verifica: el dueño aprueba los textos; versión subida; declaración guarda la versión.
   - Archivos: `app/(home)/terminos/page.tsx`, `app/(home)/privacidad/page.tsx`, `app/lib/legal/version.ts`, docs.
@@ -277,7 +277,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de servicio, incluida **carrera simulada** de dos envíos; creador no reseña; no se filtra email/uid.
   - Archivos: `application/services/activities/ReviewService.ts`, `app/actions/activities/review*.action.ts` (≤2), DTO.
 
-- [~] **C3 `../functions`: procesar medios de actividades y reseñas (M)** — **repo hermano; preguntar antes**
+- [x] **C3 `../functions`: procesar medios de actividades y reseñas (M)** — **repo hermano; preguntar antes**
   - Aceptación: añadir `ACTIVITIES: "activities"` y `ACTIVITY_REVIEWS: "activityReviews"` a `OPTIMIZABLE_FOLDERS` en `../functions/src/triggers/storage/config/storageOptimization.config.ts` (el optimizador genérico `optimizeMedia` ya hace el resto: ruta `public/{coleccion}/{docId}/{images|videos}/…`, parche del `media[]` plano, recompresión con `processVideo`, miniatura); **resolver el borrado del original** (el optimizador no lo borra): cambio en el trigger o **regla de ciclo de vida del bucket**; tope de origen 200 MB y 3 min; imágenes por el optimizador existente; compatible hacia atrás. **Entregable adicional: cifras de peor caso de costo** (cómputo + egreso) con precios vigentes antes de activar el interruptor.
   - Verifica: pruebas unitarias del `patch`; prueba en develop subiendo un video de QA; el original desaparece; el resultado carga con `faststart`.
   - Archivos (repo `../functions`): `src/triggers/storage/config/storageOptimization.config.ts`, y si hace falta `onObjectFinalized.optimizeMedia.ts` (borrado del original), README. **Empujar su rama junto al despliegue.**
@@ -286,7 +286,7 @@ Estado inicial: todas sin marcar.
   - Aceptación: encabezado (promedio, distribución, "N personas fueron"), tarjetas **polaroid**, historia abierta (drawer/diálogo), formulario con Google y subida, estado **"En verificación"** en rojo suave (icono + texto, contraste AA), "Verificada por QHPA", flujo de cuestionar y de apelar, estado vacío. Tokens reales (sin `brand-violet`, que no está definido).
   - Verifica: aprobado por el dueño antes de C4/C8.
 
-- [ ] **C4 Interfaz de reseñas (M, se parte si crece)**
+- [x] **C4 Interfaz de reseñas (M, se parte si crece)**
   - Aceptación: sección en la ficha con encabezado, polaroid, historia abierta, filtros (con fotos, por estrellas, recientes), formulario con **"Continuar con Google"** (reutiliza `GoogleAuthButton` y `redirect_to`; vuelve con `?resena=1`); subida de fotos (≤3) y video (≤1) con estado de procesamiento; texto sin enlaces; accesible (estrellas como `radiogroup`, foco atrapado, Esc); respeta `reviewVideoEnabled`.
   - Verifica: guion de prueba; sin errores de consola; 320–1440 px; estrellas por teclado.
   - Archivos: `presentation/activities/components/reviews/*`, ficha de actividad.
@@ -296,43 +296,43 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de servicio; doble clic = 1.
   - Archivos: servicio, acción, componente.
 
-- [ ] **C6 Dominio de moderación de reseñas y sanciones (M)** — TDD.
+- [x] **C6 Dominio de moderación de reseñas y sanciones (M)** — TDD.
   - Aceptación: motivos cerrados; `canFlag(account, activity, review)` con topes (5 abiertos por cuenta, 3 por actividad, una vez por reseña, sin permiso si sancionado); `resolveFlag(outcome)` (`upheld`/`removed`) y efectos; escalera de sanciones y reincidencia a 12 meses; `activeSanctions` alimenta `isTrustedHost`; ocultado preventivo con 3 reportes distintos en 24 h.
   - Verifica: `pnpm test` con todas las ramas.
   - Archivos: `domain/entities/activities/moderation/*` (+ tests).
 
-- [ ] **C7 Acciones y scripts de QHPA (M)**
+- [x] **C7 Acciones y scripts de QHPA (M)**
   - Aceptación: `flagReviewAction`; `scripts/list-activity-flags.ts` (dry-run; `--resolve <id> --outcome upheld|removed --apply`) que actualiza reseña, agregados, sanciones y notifica (`review_flag_resolved`, `activity_sanction`); log `alert=qhpa_new_flag`.
   - Verifica: tests de servicio; en develop: cuestionar → rojo visible → resolver ambos desenlaces.
   - Archivos: `ReviewModerationService.ts`, acción, script, notificaciones.
 
-- [ ] **C8 Interfaz: estado rojo, respuesta del dueño y reportes (M)**
+- [x] **C8 Interfaz: estado rojo, respuesta del dueño y reportes (M)**
   - Aceptación: `FlaggedReviewBanner` (texto neutro, **sin motivo**), chip "Verificada por QHPA", respuesta del dueño (≤600, editable), botón **Reportar** de reseña y de actividad; no editar ni borrar si `flagged`.
   - Verifica: auditoría de contraste AA y que no dependa solo del color.
   - Archivos: componentes de reseñas.
 
-- [ ] **C9 Reportes de actividad y reseña (S)**
+- [x] **C9 Reportes de actividad y reseña (S)**
   - Aceptación: `ReportTargetType` incluye `"activity"` y `"review"` con motivos propios; `reportId` sin cambios; `scripts/list-reports.ts` los lista.
   - Verifica: `pnpm test` de `Report` existente + nuevos.
   - Archivos: `domain/entities/report/Report.ts`, `scripts/list-reports.ts`.
 
-- [ ] **C10 Apelaciones (S)**
+- [x] **C10 Apelaciones (S)**
   - Aceptación: una apelación por reseña removida o sanción, con explicación ≥30 y pruebas opcionales; usa el canal de soporte existente si sirve; sin fundamentos se cierra sin trámite; con fundamentos QHPA restituye si procede.
   - Verifica: prueba manual del flujo; tests de la regla "una sola vez".
   - Archivos: acción + componente + script de resolución.
 
-- [ ] **C11 Supresión de cuenta y retención (S)**
+- [x] **C11 Supresión de cuenta y retención (S)**
   - Aceptación: `scripts/anonymize-reviewer.ts` (dry-run) deja las reseñas como "Usuario eliminado" sin foto; borrar a solicitud; documentado en `docs/31-actividades.md`.
   - Verifica: dry-run lista lo que cambiaría; en develop anonimiza una cuenta de QA y restaura datos.
   - Archivos: script, doc.
 
-- [ ] **C12 Auditoría de seguridad de F3 (S)**
+- [x] **C12 Auditoría de seguridad de F3 (S)**
   - Aceptación: skill `security-and-hardening` + agente `security-auditor` sobre reseñas con medios, "cuestionar", subidas y datos personales; hallazgos críticos/altos cerrados.
   - Verifica: informe y tests de los casos negativos.
 
-- [ ] **C13 Tarjeta para compartir una reseña (S)** — imagen con `sharp`/`/og`, con enlace contado (`/r/…`) a la actividad; abre desde la historia abierta.
+- [x] **C13 Tarjeta para compartir una reseña (S)** — imagen con `sharp`/`/og`, con enlace contado (`/r/…`) a la actividad; abre desde la historia abierta.
   - Verifica: la imagen no incluye datos privados; el enlace atribuye el canal.
-- [ ] **C14 Insignias y pasaporte (M)** — reutiliza `badges`: "Primera historia", "Explorador de Ibagué" (5 actividades), "Pasaporte" (sellos); los sellos por QR del local cuentan como visita verificada; sin recompensas con dinero.
+- [~] **C14 Insignias y pasaporte (M)** — reutiliza `badges`: "Primera historia", "Explorador de Ibagué" (5 actividades), "Pasaporte" (sellos); los sellos por QR del local cuentan como visita verificada; sin recompensas con dinero.
   - Verifica: tests de reglas (idempotente, no se otorga dos veces); aparece en el perfil.
 
 ### Checkpoint CP-F3
@@ -347,19 +347,19 @@ Estado inicial: todas sin marcar.
 
 ## Fase 4 — Ofertas, promociones y medición
 
-- [ ] **D1 Menú/productos y espacios reservables (M)** — solo actividades de sitio.
+- [x] **D1 Menú/productos y espacios reservables (M)** — solo actividades de sitio.
   - Aceptación: `offerings` (máx. 30) y `spaces` (máx. 10) con límites y precio COP; el servidor **rechaza** ambos en actividades globales; aviso "Precios sujetos a cambio".
   - Verifica: tests (global rechaza; sitio acepta); round-trip del mapper.
   - Archivos: dominio, DTO, mapper.
 
-- [ ] **D2 Promociones (M)** — TDD.
+- [x] **D2 Promociones (M)** — TDD.
   - Aceptación: `ActivityPromotion` en `activityPromotions`, vigencia obligatoria, `schedule` reutilizado, caducan solas (barrido horario existente), nunca se muestra una vencida; filtro "Promos hoy"; solo creador/dueño/admin.
   - Verifica: `pnpm test`; promo vencida desaparece de actividad, sitio y filtros.
   - Archivos: dominio, repo, servicio, acción, barrido.
 
-- [ ] **P4 Prototipo (Artifact): menú, espacios, promociones, panel del creador (S)**
+- [~] **P4 Prototipo (Artifact): menú, espacios, promociones, panel del creador (S)**
 
-- [ ] **D3 Interfaz de bloques (M)**
+- [x] **D3 Interfaz de bloques (M)**
   - Aceptación: `OfferingsList`, `SpacesList`, `PromotionCard` en la actividad y promos vigentes en la ficha del sitio con horario legible; botón vía CTA externa; editor en el asistente (solo si hay sitio).
   - Verifica: guion y 320–1440 px.
 
@@ -368,7 +368,7 @@ Estado inicial: todas sin marcar.
   - Verifica: tests de la ruta (sin same-origin → 204 y 0 escrituras; repetido = 1).
   - Archivos: ruta, hook de cliente, repo.
 
-- [ ] **D5 Panel del creador y kit de compartir (M)**
+- [x] **D5 Panel del creador y kit de compartir (M)**
   - Aceptación: vistas, clics, "Yo fui", reseñas y origen por canal para el creador, **fuera de `/studio`**; enlaces `/r/…` y kit (QR, afiche, mensaje de WhatsApp) como en eventos/sitios.
   - Verifica: guion; los números coinciden con Firestore.
 
