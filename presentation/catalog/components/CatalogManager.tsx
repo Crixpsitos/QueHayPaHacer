@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { colombianNumber } from "@/domain/entities/activities/value-objects/Cta";
 import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog";
+import { catalogStats } from "@/domain/entities/catalog/completeness";
+import { isCatalogPromoCurrent } from "@/domain/entities/catalog/CatalogPromotion";
 import { saveSiteCatalogAction } from "@/app/actions/catalog/site-catalog.actions";
 import { ProductsTab } from "./ProductsTab";
 import { PromotionsTab, type CatalogActivityOption } from "./PromotionsTab";
@@ -20,6 +22,8 @@ export function CatalogManager({ siteId, siteName, initial, activities }: Props)
   const [reserve, setReserve] = useState(initial.reservePhone);
   const [saving, setSaving] = useState(false);
   const [contactMsg, setContactMsg] = useState<string | null>(null);
+  const [now] = useState(() => new Date());
+  const stats = catalogStats(catalog, catalog.promotions.filter((x) => isCatalogPromoCurrent(x, now)).length);
 
   /** Guarda la carta completa. Devuelve el error (para mostrarlo donde se editó) o null si se guardó. */
   const save = async (next: SiteCatalog): Promise<string | null> => {
@@ -45,11 +49,26 @@ export function CatalogManager({ siteId, siteName, initial, activities }: Props)
         <p className="text-muted-foreground">Lo que vendes en <strong>{siteName}</strong>. Se ve en tu sitio y en las actividades donde lo pongas. {saving && <span className="inline-flex items-center gap-1 text-xs"><Loader2 className="size-3 animate-spin" aria-hidden /> Guardando…</span>}</p>
       </div>
 
+      <section aria-label="Resumen de la carta" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          [String(stats.products), stats.products === 1 ? "producto en la carta" : "productos en la carta"],
+          [String(stats.available), "disponibles hoy"],
+          [String(stats.promotions), stats.promotions === 1 ? "promoción vigente" : "promociones vigentes"],
+        ].map(([n, t]) => (
+          <div key={t} className="grid gap-0.5 rounded-3xl border border-gray-200 bg-white px-5 py-4"><span className="font-heading text-3xl font-bold text-primary-dark">{n}</span><span className="text-sm text-muted-foreground">{t}</span></div>
+        ))}
+        <div className="grid gap-2 rounded-3xl border border-[#F5E3B0] bg-[#FFF8E7] px-5 py-4">
+          <span className="text-sm font-semibold text-[#7a5200]">Carta completa al {stats.percent}%</span>
+          <div className="h-2 rounded-full bg-[#F5E3B0]" role="progressbar" aria-valuenow={stats.percent} aria-valuemin={0} aria-valuemax={100} aria-label="Qué tan completa está la carta"><div className="h-2 rounded-full bg-primary-dark" style={{ width: `${stats.percent}%` }} /></div>
+          {stats.tip && <span className="text-xs text-[#7a5200]">{stats.tip}</span>}
+        </div>
+      </section>
+
       <section aria-label="Contacto de la carta" className="grid gap-4 rounded-3xl border border-gray-200 bg-white p-5">
         <div className="grid gap-1"><h2 className="font-heading text-lg font-bold">¿A dónde te preguntan?</h2><p className={hint}>No somos una tienda en línea: quien quiera algo te escribe por WhatsApp con un mensaje ya armado (con lo que eligió). El pago lo arreglas tú con cada cliente.</p></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={label}>WhatsApp para preguntas<input className={field} inputMode="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="316 000 0000" /></label>
-          <label className={label}>Número de reservas <span className={hint}>(opcional)</span><input className={field} inputMode="tel" value={reserve} onChange={(e) => setReserve(e.target.value)} placeholder="Si lo pones, sale el botón «Reservar»" /></label>
+          <label className={label}><span>Número de reservas <span className={hint}>(opcional)</span></span><input className={field} inputMode="tel" value={reserve} onChange={(e) => setReserve(e.target.value)} placeholder="Si lo pones, sale el botón «Reservar»" /></label>
         </div>
         <div className="flex flex-wrap items-center gap-3"><button type="button" className={outlineBtn} onClick={() => void saveContact()}>Guardar contacto</button>{contactMsg && <span role="status" className="text-sm text-muted-foreground">{contactMsg}</span>}</div>
         {!catalog.whatsapp && <p className="rounded-xl bg-[#FFF8E7] px-3 py-2 text-xs text-[#7a5200]">Sin WhatsApp la gente verá tu carta pero no podrá preguntarte desde aquí.</p>}

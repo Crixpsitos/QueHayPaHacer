@@ -6,6 +6,7 @@ import { MessageCircle, Phone, Tag } from "lucide-react";
 import { catalogPromoSchedule, cartTotal, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
 import { cop, discountPercent, groupBySection, productPrice, TAG_LABELS, todayBogota, UNIT_LABELS, WARNING_TAGS, PRICES_NOTE, type Product, type ProductTag } from "@/domain/entities/catalog/Product";
 import { askHref } from "@/domain/entities/catalog/whatsappAsk";
+import { sectionTone } from "@/presentation/catalog/lib/tone";
 import { colombianNumber } from "@/domain/entities/activities/value-objects/Cta";
 
 export interface CatalogViewProps {
@@ -76,7 +77,7 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
             {live.map((x) => { const pr = promoPricing(x, products, today); const acts = (activityTitles ? x.activityIds.map((id) => activityTitles[id]).filter(Boolean) : []);
               return (
                 <li key={x.id} className="overflow-hidden rounded-3xl border border-[#F6DDA0] bg-accent">
-                  <div className="relative flex h-28 items-end justify-between gap-2 bg-gradient-to-br from-[#FFB703] to-primary p-3">
+                  <div className="relative flex h-28 items-end justify-between gap-2 p-3" style={{ background: sectionTone(x.title).bg }}>
                     {x.imageUrl && <img src={x.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     <span className="relative flex flex-wrap gap-1.5">{now && isCatalogPromoLive(x, now) ? <span className={`${pill} bg-primary-dark text-white`}>Ahora</span> : <span className={`${pill} bg-white text-primary-dark`}>{catalogPromoSchedule(x)}</span>}</span>
                     {pr && pr.saves > 0 && <span className={`relative ${pill} bg-[#FFB703] text-[#5C0011]`}>Ahorras {cop(pr.saves)}</span>}
@@ -108,7 +109,7 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
               <ul className="grid gap-3">
                 {g.items.map((p) => { const pr = productPrice(p, today); const n = qty[p.id] ?? 0; return (
                   <li key={p.id} className={`flex gap-3 rounded-3xl border p-3 ${p.available ? "border-gray-200 bg-white" : "border-gray-200 bg-gray-100"}`}>
-                    <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFB703] to-primary">
+                    <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl" style={{ background: sectionTone(p.section).bg }}>
                       {p.photoUrl && <img src={p.photoUrl} alt={p.name} loading="lazy" className={`h-full w-full object-cover ${p.available ? "" : "opacity-60"}`} />}
                       {pr.was && p.available && <span className="absolute left-1 top-1 rounded-full bg-primary-dark px-2 py-0.5 text-[11px] font-bold text-white">-{discountPercent(pr.was, pr.now)}%</span>}
                     </div>

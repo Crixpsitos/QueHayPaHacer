@@ -8,6 +8,7 @@ import { canShowPromotions, promoBlockReason } from "@/domain/entities/catalog/c
 import { catalogPromoSchedule, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, PROMO_QTY_MAX, validateCatalogPromotions, type BenefitKind, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
 import { cop, todayBogota } from "@/domain/entities/catalog/Product";
 import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog";
+import { sectionTone } from "@/presentation/catalog/lib/tone";
 import { uploadCatalogImage } from "@/presentation/catalog/lib/uploadImage";
 import { chip, field, hint, label, outlineBtn, primaryBtn } from "./ui";
 
@@ -20,6 +21,7 @@ interface Props {
   onNeedProducts?: () => void
 }
 
+const niceDate = (iso: string) => new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 const DAYS = [["L", 1], ["M", 2], ["X", 3], ["J", 4], ["V", 5], ["S", 6], ["D", 0]] as const;
 const BENEFITS: { kind: BenefitKind; text: string }[] = [{ kind: "free", text: "Gratis" }, { kind: "percent", text: "% de descuento" }, { kind: "special", text: "Precio especial" }];
 
@@ -62,8 +64,8 @@ export function PromotionsTab({ siteId, catalog, activities, save, focusActivity
           const status = x.paused ? "Pausada" : !current ? (x.validFrom > todayBogota(now) ? "Programada" : "Vencida") : isCatalogPromoLive(x, now) ? "Vigente" : "Vigente (fuera de horario)";
           return (
             <li key={x.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4">
-              <div className="size-16 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFB703] to-primary">{x.imageUrl && <img src={x.imageUrl} alt="" className="h-full w-full object-cover" />}</div>
-              <div className="grid min-w-0 flex-1 gap-0.5"><strong className="font-heading text-base">{x.title}</strong><span className="text-sm text-muted-foreground">{describePromo(x, catalog.products)}</span><span className="text-xs text-muted-foreground">{catalogPromoSchedule(x)} · hasta el {x.validUntil} · {x.activityIds.length === 0 ? "sin actividades (solo en el sitio)" : `en ${x.activityIds.length} ${x.activityIds.length === 1 ? "actividad" : "actividades"}`}</span></div>
+              <div className="size-16 shrink-0 overflow-hidden rounded-2xl" style={{ background: sectionTone(x.title).bg }}>{x.imageUrl && <img src={x.imageUrl} alt="" className="h-full w-full object-cover" />}</div>
+              <div className="grid min-w-0 flex-1 gap-0.5"><strong className="font-heading text-base">{x.title}</strong><span className="text-sm text-muted-foreground">{describePromo(x, catalog.products)}</span><span className="text-xs text-muted-foreground">{catalogPromoSchedule(x)} · hasta el {niceDate(x.validUntil)} · {x.activityIds.length === 0 ? "sin actividades (solo en el sitio)" : `en ${x.activityIds.length} ${x.activityIds.length === 1 ? "actividad" : "actividades"}`}</span></div>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.startsWith("Vigente") ? "bg-[#E4F5E8] text-[#14532D]" : "bg-[#FFF8E7] text-[#7a5200]"}`}>{status}</span>
               <button type="button" className="min-h-11 px-2 text-sm font-semibold text-primary-dark underline" onClick={() => setEditing({ promo: x, isNew: false })}>Editar</button>
             </li>

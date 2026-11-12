@@ -5,6 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { cop, discountPercent, groupBySection, productPrice, TAG_LABELS, todayBogota, UNIT_LABELS, WARNING_TAGS, type Product } from "@/domain/entities/catalog/Product";
 import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog";
 import { newProduct, ProductEditor } from "./ProductEditor";
+import { sectionTone } from "@/presentation/catalog/lib/tone";
 import { chip, primaryBtn } from "./ui";
 
 interface Props { siteId: string; catalog: SiteCatalog; save: (c: SiteCatalog) => Promise<string | null> }
@@ -61,8 +62,8 @@ export function ProductsTab({ siteId, catalog, save }: Props) {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((p) => { const pr = productPrice(p, today); return (
             <li key={p.id} className="flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white">
-              <div className="relative flex h-32 items-end bg-gradient-to-br from-[#FFB703] to-[#F59E0B] p-3">
-                {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="absolute inset-0 h-full w-full object-cover" /> : <span className="text-xs font-semibold text-[#5C0011]">sin foto</span>}
+              <div className="relative flex h-32 items-end p-3" style={{ background: sectionTone(p.section).bg }}>
+                {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="absolute inset-0 h-full w-full object-cover" /> : <span className="text-xs font-semibold" style={{ color: sectionTone(p.section).ink }}>sin foto</span>}
                 {pr.was && <span className="absolute left-3 top-3 rounded-full bg-primary-dark px-2.5 py-1 text-xs font-bold text-white">-{discountPercent(pr.was, pr.now)}%</span>}
               </div>
               <div className="grid flex-1 gap-2 p-4">
