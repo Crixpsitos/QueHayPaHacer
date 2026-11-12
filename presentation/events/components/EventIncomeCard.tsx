@@ -46,9 +46,9 @@ export function EventIncomeCard({ eventId }: { eventId: string }) {
             <li key={t.tier} className="flex items-center justify-between gap-3 text-sm">
               <span className="min-w-0 truncate font-medium text-zinc-800">
                 {t.tier}
-                {t === top && income.byTier.length > 1 && <span className="ml-2 rounded-full bg-[#FFB703] px-2 py-0.5 text-[11px] font-bold text-[#5C0011]">Categoría más alta</span>}
+                {t === top && t.count > 0 && income.byTier.length > 1 && <span className="ml-2 rounded-full bg-[#FFB703] px-2 py-0.5 text-[11px] font-bold text-[#5C0011]">Categoría más alta</span>}
               </span>
-              <span className="shrink-0 text-zinc-700">{t.count} × {cop(t.unit)} = <strong>{cop(t.amount)}</strong></span>
+              <span className="shrink-0 text-zinc-700">{t.count === 0 ? <>Sin pagos · {cop(t.unit)}</> : <>{t.count} × {cop(t.unit)} = <strong>{cop(t.amount)}</strong></>}</span>
             </li>
           ))}
         </ul>

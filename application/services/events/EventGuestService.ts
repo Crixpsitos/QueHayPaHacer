@@ -8,14 +8,14 @@ export interface GuestDeps { repo: IEventGuestRepository; randomBytes: (n: numbe
 export class EventGuestService {
   constructor(private readonly d: GuestDeps) {}
 
-  async add(eventId: string, addedBy: string, input: GuestInput, tier?: string | null): Promise<{ ok: true; code: string; name: string; phone: string | null } | { ok: false; error: string }> {
+  async add(eventId: string, addedBy: string, input: GuestInput, tier?: string | null): Promise<{ ok: true; code: string; name: string; phone: string | null; email: string | null } | { ok: false; error: string }> {
     const g = cleanGuest(input)
     if (!g.ok) return g
     if ((await this.d.repo.count(eventId)) >= GUEST_MAX_PER_EVENT) return { ok: false, error: `Llegaste al máximo de ${GUEST_MAX_PER_EVENT} personas agregadas a mano en este evento.` }
     const code = generateCheckInCode(this.d.randomBytes)
     const id = `${GUEST_PREFIX}${Array.from(this.d.randomBytes(8), (b) => (b & 15).toString(16)).join("")}`
-    await this.d.repo.add(eventId, { id, name: g.name, phone: g.phone, code, addedBy, tier: tier ?? null })
-    return { ok: true, code, name: g.name, phone: g.phone }
+    await this.d.repo.add(eventId, { id, name: g.name, phone: g.phone, email: g.email, code, addedBy, tier: tier ?? null })
+    return { ok: true, code, name: g.name, phone: g.phone, email: g.email }
   }
 
   /** Para la página pública de la entrada: solo el nombre. null si el código no existe o la inscripción se canceló. */

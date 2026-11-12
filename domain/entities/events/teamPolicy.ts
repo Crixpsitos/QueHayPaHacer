@@ -5,15 +5,15 @@ import { can, isTeamRole, type EventAccessRole, type TeamAction, type TeamRole }
  * de inscritos por rol y reconciliación del equipo cuando se guarda el evento.
  */
 
-/** Quita datos de contacto (respuestas del formulario) si el rol no puede verlos. Aplicar SIEMPRE en servidor. */
-export function maskRegistrationsForRole<T extends { formResponses?: unknown }>(
+/** Quita datos de contacto (correo, teléfono y respuestas del formulario) si el rol no puede verlos. Aplicar SIEMPRE en servidor. */
+export function maskRegistrationsForRole<T extends { formResponses?: unknown; email?: unknown; phone?: unknown }>(
   registrations: T[],
   role: EventAccessRole | null | undefined,
 ): T[] {
   if (can(role, "view_attendee_contact")) return registrations;
   return registrations.map((r) => {
-    const { formResponses: _omit, ...rest } = r;
-    void _omit;
+    const { formResponses: _f, email: _e, phone: _p, ...rest } = r;
+    void _f; void _e; void _p;
     return rest as T;
   });
 }

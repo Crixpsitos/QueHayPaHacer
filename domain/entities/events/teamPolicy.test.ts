@@ -2,14 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { isRoleValidForKind, maskRegistrationsForRole, reconcileTeam } from "./teamPolicy";
 
-const rows = [{ userId: "a", formResponses: [{ label: "Email", value: "x@y.co" }] }];
+const rows = [{ userId: "a", email: "x@y.co", phone: "3001234567", formResponses: [{ label: "Email", value: "x@y.co" }] }];
 
 test("máscara: solo owner y editor ven contacto", () => {
   assert.equal(maskRegistrationsForRole(rows, "owner")[0].formResponses?.length, 1);
   assert.equal(maskRegistrationsForRole(rows, "editor")[0].formResponses?.length, 1);
+  assert.equal(maskRegistrationsForRole(rows, "owner")[0].email, "x@y.co");
   for (const r of ["viewer", "checkin", "credit", null] as const) {
     const out = maskRegistrationsForRole(rows, r)[0];
     assert.equal("formResponses" in out, false);
+    assert.equal("email" in out, false);
+    assert.equal("phone" in out, false);
     assert.equal(out.userId, "a");
   }
 });

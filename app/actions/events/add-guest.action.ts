@@ -16,7 +16,7 @@ export type AddGuestResult =
  * y su QR. Devuelve el enlace de la entrada (página pública, sin sesión) y un botón de WhatsApp con el mensaje listo.
  * Solo el dueño o su equipo con permiso de confirmar asistencia; cualquier cuenta, sin Premium.
  */
-export async function addGuestAction(eventId: string, input: { name: string; phone?: string; tier?: string }): Promise<AddGuestResult> {
+export async function addGuestAction(eventId: string, input: { name: string; phone?: string; email?: string; tier?: string }): Promise<AddGuestResult> {
   const id = eventId?.trim();
   if (!id || !/^[A-Za-z0-9_-]{1,128}$/.test(id)) return { success: false, error: "Evento inválido." };
   const access = await requireEventPermission(id, "confirm_attendance", { ownerNeedsPremium: false });

@@ -7,7 +7,7 @@ import { UserPlus } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { EventIncomeCard } from "@/presentation/events/components/EventIncomeCard";
 import { SeatsRebalance } from "./SeatsRebalance";
-import { EventAttendeesDialog } from "@/presentation/events/components/EventAttendeesDialog";
+import { AddGuestDialog } from "./AddGuestDialog";
 
 interface RegistrationsPanelProps {
   data: EventRegistrationsViewModel;
@@ -35,10 +35,10 @@ export function RegistrationsPanel({ data, sessionId, sortBy, sortDir, limit, qu
         <div className="space-y-6">
           <SeatsRebalance eventId={data.eventId} />
           <ExternalClicksPanel clicks={data.externalClicks ?? 0} url={data.externalUrl} />
-          {/* Personas sin cuenta: se agregan aquí, con su entrada QR (el diálogo lista, confirma y agrega). */}
-          <EventAttendeesDialog
+          {/* Personas sin cuenta: se agregan aquí. La lista, el escáner QR y el CSV son los de la tabla de abajo (un solo lugar). */}
+          <AddGuestDialog
             eventId={data.eventId}
-            eventTitle="Evento"
+            tiers={data.tiers ?? []}
             trigger={
               <Button type="button">
                 <UserPlus className="h-4 w-4" aria-hidden /> Agregar persona sin cuenta

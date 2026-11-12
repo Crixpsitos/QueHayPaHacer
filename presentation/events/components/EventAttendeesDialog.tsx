@@ -60,6 +60,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
   const [adding, setAdding] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestRes, setGuestRes] = useState<AddGuestResult | null>(null);
   const [query, setQuery] = useState("");
@@ -108,10 +109,10 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
 
   const addGuest = async () => {
     setGuestBusy(true);
-    const r = await addGuestAction(eventId, { name: guestName, phone: guestPhone, tier: tiers.length ? guestTier : undefined });
+    const r = await addGuestAction(eventId, { name: guestName, phone: guestPhone, email: guestEmail, tier: tiers.length ? guestTier : undefined });
     setGuestBusy(false);
     setGuestRes(r);
-    if (r.success) { setGuestName(""); setGuestPhone(""); void fetchFirstPage(); }
+    if (r.success) { setGuestName(""); setGuestPhone(""); setGuestEmail(""); void fetchFirstPage(); }
   };
   const confirmed = attendees.filter((a) => a.attendanceConfirmed).length;
   const confirm = async (userId: string) => {
@@ -191,6 +192,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                   <label className="grid gap-1 text-xs font-medium text-gray-700 sm:col-span-2">Categoría de la entrada<select value={guestTier} onChange={(e) => setGuestTier(e.target.value)} className="min-h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm font-normal">{tiers.map((t) => <option key={t.name} value={t.name}>{t.name} · {cop(t.amount)}</option>)}</select></label>
                 ) : null}
                 <label className="grid gap-1 text-xs font-medium text-gray-700">WhatsApp (opcional)<input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} inputMode="tel" placeholder="300 123 4567" className="min-h-10 rounded-lg border border-gray-200 px-3 text-sm font-normal outline-none focus:border-[#9B0A26]" /></label>
+                <label className="grid gap-1 text-xs font-medium text-gray-700">Correo (opcional)<input value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} type="email" inputMode="email" placeholder="ana@correo.com" className="min-h-10 rounded-lg border border-gray-200 px-3 text-sm font-normal outline-none focus:border-[#9B0A26]" /></label>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" disabled={guestBusy || guestName.trim().length < 2} onClick={() => void addGuest()} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#9B0A26] px-4 text-sm font-semibold text-white disabled:opacity-50">{guestBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Crear entrada</button>
