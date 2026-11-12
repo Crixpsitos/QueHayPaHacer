@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Suspense } from "react"
+import { Suspense, type ReactNode } from "react"
 import { Check, Clock, ExternalLink, Gauge, Info, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { SectionsAccordion } from "@/presentation/sites/components/detail/SectionsAccordion"
@@ -52,6 +52,21 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
   const lead = d.tagline || (leadAsDesc ? d.description : null)
   const reserveLabel = d.paid ? `Reservar cupo · ${d.priceFrom.replace("Desde ", "")}` : "Unirme"
 
+  const noPhoto = d.gallery.length === 0
+  const pills = (inHero: boolean): ReactNode => (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold" style={inHero ? { background: "rgba(255,255,255,.16)", color: "#fff" } : { background: cat.bg, color: cat.ink }}><cat.Icon className="size-4" aria-hidden /> {d.categoryName}</span>
+      {sparse && free ? <span className="rounded-full bg-[#FFB703] px-3 py-1.5 text-[0.8125rem] font-bold text-[#5C0011]">Gratis</span> : null}
+      {d.requiresReservation ? <span className={`rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold ${inHero ? "bg-white text-primary-dark" : "bg-primary-dark text-white"}`}>Con reserva</span> : null}
+    </div>
+  )
+  const heroText = (
+    <>
+      {pills(true)}
+      <p role="presentation" className="font-heading text-5xl font-extrabold leading-[1.02] tracking-tight text-white lg:text-[3.5rem]">{d.title}</p>
+      {lead ? <p className="max-w-xl whitespace-pre-line text-xl leading-snug text-white/85">{lead}</p> : null}
+    </>
+  )
   return (
     <article className="mx-auto grid w-full max-w-6xl gap-8 px-4 pb-32 pt-0 sm:px-6 sm:pt-4 lg:pb-14">
       {preview ? null : <EventViewTracker eventId={d.id} kind="activity" />}
@@ -62,15 +77,11 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
       </nav>
 
       <div className="grid gap-0">
-        <ActivityHero view={d} title={d.title} />
+        <ActivityHero view={d} title={d.title} overlay={noPhoto ? heroText : undefined} />
 
         {/* hoja que sube sobre la foto en el móvil */}
-        <header className="relative -mt-9 grid gap-3 rounded-t-[2rem] bg-background px-0 pt-7 sm:mt-6 sm:rounded-none sm:pt-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-semibold" style={{ background: cat.bg, color: cat.ink }}><cat.Icon className="size-4" aria-hidden /> {d.categoryName}</span>
-            {sparse && free ? <span className="rounded-full bg-[#FFB703] px-3 py-1.5 text-[0.8125rem] font-bold text-[#5C0011]">Gratis</span> : null}
-            {d.requiresReservation ? <span className="rounded-full bg-primary-dark px-3 py-1.5 text-[0.8125rem] font-semibold text-white">Con reserva</span> : null}
-          </div>
+        <header className={`relative -mt-9 grid gap-3 rounded-t-[2rem] bg-background px-0 pt-7 sm:mt-6 sm:rounded-none sm:pt-0 ${noPhoto ? "sm:sr-only" : ""}`}>
+          {pills(false)}
           <h1 className="font-heading text-[2.5rem] font-extrabold leading-[1.02] tracking-tight sm:text-5xl">{d.title}</h1>
           {lead ? <p className="max-w-xl whitespace-pre-line text-lg leading-snug text-muted-foreground">{lead}</p> : null}
         </header>
@@ -78,9 +89,9 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
       <div className="grid gap-10 lg:grid-cols-[1fr_23rem] lg:items-start lg:gap-14">
         <div className="grid gap-10">
-          <div className="lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} /></div>
+          <div className="lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} /></div>
 
-          {facts.length ? <ul className="grid gap-2.5 sm:grid-cols-2" aria-label="Datos rápidos">{facts.map((f) => <Fact key={f.label} {...f} />)}</ul> : null}
+          {facts.length && !sparse ? <ul className="grid gap-2.5 sm:grid-cols-2" aria-label="Datos rápidos">{facts.map((f) => <Fact key={f.label} {...f} />)}</ul> : null}
 
           <UpcomingDates schedule={d.schedule} />
 
@@ -120,7 +131,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           <OfferingsList items={d.offerings} />
           <SpacesList items={d.spaces} />
 
-          <ActivityPlace d={d} />
+          <ActivityPlace d={d} compact={sparse} />
 
           {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
 
@@ -140,7 +151,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
         </div>
 
         <aside className="hidden gap-3 lg:sticky lg:top-24 lg:grid">
-          <NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} />
+          <NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} />
           <div className="grid gap-2">
             {d.joinEnabled && !preview ? <Button asChild size="lg" className="h-12 text-base"><a href="#reservar">{reserveLabel}</a></Button> : null}
             {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</TrackedCta></Button> : null}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Images } from "lucide-react"
@@ -22,12 +23,13 @@ function DesktopMosaic({ gallery }: { gallery: ActivityPublicView["gallery"] }) 
 }
 
 /** Sin fotos: portada compacta con el color y el ícono de la categoría (no un recuadro gris de pantalla completa). */
-function NoPhotoCover({ slug }: { slug: string }) {
+function NoPhotoCover({ slug, overlay }: { slug: string; overlay?: ReactNode }) {
   const c = categoryStyle(slug)
   return (
-    <div className="relative grid h-64 place-items-center overflow-hidden sm:h-72 sm:rounded-[2rem]" style={{ background: c.bg, color: c.ink }} role="img" aria-label="Portada con el ícono de la categoría">
+    <div className="relative grid h-64 place-items-center overflow-hidden sm:h-auto sm:min-h-72 sm:place-items-end sm:rounded-[2rem]" style={{ background: c.bg, color: c.ink }} role="img" aria-label="Portada con el ícono de la categoría">
       <c.Icon className="absolute -right-6 -top-6 size-64 opacity-15" strokeWidth={1.25} aria-hidden />
-      <c.Icon className="size-16 opacity-70" aria-hidden />
+      <c.Icon className="size-16 opacity-70 sm:hidden" aria-hidden />
+      {overlay ? <div className="relative hidden w-full gap-3 p-10 sm:grid">{overlay}</div> : null}
     </div>
   )
 }
@@ -38,7 +40,7 @@ const glass = "grid size-11 place-items-center rounded-full bg-black/40 text-whi
  * Portada a pantalla completa. Móvil: fotos a sangre que se deslizan (scroll-snap, sin JS) con atrás y compartir flotando.
  * Escritorio: portada grande y hasta 4 fotos más. El título entra como una hoja que sube sobre la foto (ver ActivityDetail).
  */
-export function ActivityHero({ view, title }: { view: ActivityPublicView; title: string }) {
+export function ActivityHero({ view, title, overlay }: { view: ActivityPublicView; title: string; overlay?: ReactNode }) {
   const { gallery, video } = view
   return (
     <div className="relative -mx-4 sm:mx-0">
@@ -54,7 +56,7 @@ export function ActivityHero({ view, title }: { view: ActivityPublicView; title:
           <DesktopMosaic gallery={gallery} />
         </>
       ) : (
-        <NoPhotoCover slug={view.categorySlug} />
+        <NoPhotoCover slug={view.categorySlug} overlay={overlay} />
       )}
 
       {/* degradado para que los controles se lean sobre cualquier foto */}

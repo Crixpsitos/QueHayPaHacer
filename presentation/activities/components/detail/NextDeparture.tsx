@@ -9,7 +9,7 @@ import { nextDepartureLabel, type NextDepartureLabel } from "@/presentation/acti
  * "Próxima salida". El HTML de la ficha se cachea por horas, así que la fecha se calcula en el navegador con la hora
  * de hoy; mientras tanto (y para buscadores) se muestra el horario escrito ("Todos los domingos · 6:00 a. m.").
  */
-export function NextDeparture({ schedule, scheduleText, requiresReservation }: { schedule: ActivitySchedule; scheduleText: string; requiresReservation: boolean }) {
+export function NextDeparture({ schedule, scheduleText, requiresReservation, priceLine }: { schedule: ActivitySchedule; scheduleText: string; requiresReservation: boolean; priceLine?: string }) {
   const [label, setLabel] = useState<NextDepartureLabel | null | undefined>(undefined)
   useEffect(() => {
     // En un callback para no re-renderizar en cascada desde el cuerpo del efecto.
@@ -43,7 +43,7 @@ export function NextDeparture({ schedule, scheduleText, requiresReservation }: {
         {label ? (
           <>
             <div className="font-heading text-2xl font-bold leading-tight">{weekday}{label.timeLabel ? ` · ${label.timeLabel}` : ""}</div>
-            <div className="text-sm text-white/75">{scheduleText.split(" · ")[0]}</div>
+            <div className="text-sm text-white/75">{scheduleText.split(" · ")[0]}{priceLine ? ` · ${priceLine}` : ""}</div>
           </>
         ) : (
           <div className="font-heading text-xl font-bold leading-tight">{scheduleText}</div>

@@ -11,7 +11,7 @@ const h2 = "font-heading text-2xl font-extrabold tracking-tight"
  * «Dónde es»: el lugar como mapa. Sitio vinculado → mapa en el sitio y su tarjeta; actividad global con punto fijo → mapa en ese punto.
  * Si el punto «se dice en el grupo» o «cambia», no se publica ningún pin: queda el aviso de siempre.
  */
-export function ActivityPlace({ d }: { d: ActivityPageData }) {
+export function ActivityPlace({ d, compact }: { d: ActivityPageData; compact?: boolean }) {
   const geo = d.kind === "site" ? d.site?.geo ?? null : d.meetingGeo
   const cat = categoryStyle(d.categorySlug)
   if (!geo && d.kind === "site" && !d.site) return null
@@ -21,11 +21,13 @@ export function ActivityPlace({ d }: { d: ActivityPageData }) {
   return (
     <section aria-labelledby="donde" className="grid gap-3">
       <h2 id="donde" className={h2}>Dónde es</h2>
+      <div className={compact ? "grid gap-3 lg:grid-cols-[1.5fr_1fr]" : "contents"}>
       {geo ? (
-        <div className="h-56 overflow-hidden rounded-3xl border border-border bg-muted sm:h-72">
+        <div className={`overflow-hidden rounded-3xl border border-border bg-muted ${compact ? "h-56 lg:h-full lg:min-h-64" : "h-56 sm:h-72"}`}>
           <PlaceMapLazy latitude={geo.latitude} longitude={geo.longitude} bg={cat.bg} ink={cat.ink} label={`Mapa: ${where}`} />
         </div>
       ) : null}
+      <div className={compact ? "grid content-start gap-3" : "contents"}>
       {d.kind === "site" && d.site ? (
         <Link href={`/donde-ir/${d.site.slug}`} className="flex items-center gap-3 rounded-3xl border border-border bg-card p-3 outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/40">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl" style={{ background: cat.bg, color: cat.ink }}><MapPin className="size-5" aria-hidden /></span>
@@ -42,6 +44,8 @@ export function ActivityPlace({ d }: { d: ActivityPageData }) {
       </div>
       )}
       {geo ? <HowToGetThere destination={geo} /> : null}
+      </div>
+      </div>
     </section>
   )
 }

@@ -36,10 +36,10 @@ export function UpcomingDates({ schedule }: { schedule: ActivitySchedule }) {
         {slots.map((s, i) => {
           const d = new Date(`${s.date}T12:00:00Z`)
           return (
-            <li key={`${s.date}-${s.hhmm}`} className={`flex w-24 shrink-0 flex-col items-center gap-0.5 rounded-2xl border-[1.5px] px-2 py-3 text-center ${i === 0 ? "border-primary-dark bg-primary-dark text-white" : "border-border bg-card"}`}>
-              <span className={`text-xs font-medium ${i === 0 ? "text-white/80" : "text-muted-foreground"}`}>{i === 0 && s.date === bogotaDateIso(new Date()) ? "Hoy" : WD[d.getUTCDay()]}</span>
+            <li key={`${s.date}-${s.hhmm}`} className={`flex w-24 shrink-0 flex-col items-center gap-0.5 rounded-2xl border-[1.5px] px-2 py-3 text-center ${i === 0 ? "border-[#FFB703] bg-[#FFB703] text-[#27272A]" : "border-border bg-card"}`}>
+              <span className={`text-xs font-medium ${i === 0 ? "text-[#27272A]/75" : "text-muted-foreground"}`}>{i === 0 && s.date === bogotaDateIso(new Date()) ? "Hoy" : WD[d.getUTCDay()]}</span>
               <span className="font-heading text-2xl font-bold leading-none">{d.getUTCDate()}</span>
-              <span className={`text-xs ${i === 0 ? "text-white/80" : "text-muted-foreground"}`}>{MONTH[d.getUTCMonth()]}</span>
+              <span className={`text-xs ${i === 0 ? "text-[#27272A]/75" : "text-muted-foreground"}`}>{MONTH[d.getUTCMonth()]}</span>
               <span className="mt-1 text-xs font-semibold">{s.hhmm ? hourText(s.hhmm) : "Todo el día"}</span>
             </li>
           )
