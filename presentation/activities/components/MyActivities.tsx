@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Pencil, Plus, Share2, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { setActivityActiveAction } from "@/app/actions/activities/set-activity-active.action"
+import { getActivityChannelStatsAction } from "@/app/actions/activities/my-activities.action"
 import { cn } from "@/app/lib/utils/cn"
 import { ShareKit } from "@/presentation/shared/components/ShareKit"
 import type { MyActivitySummary, StatusKey } from "@/presentation/activities/lib/activityStatus"
@@ -23,6 +24,8 @@ function Row({ a }: { a: MyActivitySummary }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [kit, setKit] = useState(false)
+  const [origin, setOrigin] = useState<Awaited<ReturnType<typeof getActivityChannelStatsAction>> | undefined>(undefined)
+  const loadOrigin = async () => setOrigin(await getActivityChannelStatsAction(a.id))
 
   const toggle = async () => {
     setBusy(true)
@@ -48,15 +51,27 @@ function Row({ a }: { a: MyActivitySummary }) {
         </div>
         <p className="text-sm text-muted-foreground">{a.schedule}</p>
         <p className="text-sm">{a.status.help}</p>
+        {a.status.key === "live" || a.status.key === "paused" ? (
+          <dl className="grid grid-cols-4 gap-2 rounded-2xl bg-muted/70 p-2.5 text-center" aria-label="Números de la actividad">
+            {([["Vistas", a.stats.views], ["Clics", a.stats.clicks], ["Fueron", a.stats.visits], ["Reseñas", a.stats.reviews]] as const).map(([l, n]) => <div key={l} className="grid"><dt className="text-xs text-muted-foreground">{l}</dt><dd className="font-heading text-lg font-bold">{n.toLocaleString("es-CO")}</dd></div>)}
+          </dl>
+        ) : null}
+        {a.stats.rating ? <p className="text-sm font-semibold text-primary-dark">Calificación {a.stats.rating} de 5</p> : null}
         {error ? <p role="alert" className="text-sm font-medium text-destructive">{error}</p> : null}
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild variant="outline" size="lg" className="h-11"><Link href={`/actividades/${a.id}/editar`}><Pencil aria-hidden /> Editar</Link></Button>
           {a.joinEnabled ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.id}/inscritos`}><Users aria-hidden /> Reservas</Link></Button> : null}
           {a.status.key !== "draft" ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.slug}`}>{a.status.key === "live" ? "Ver" : "Vista previa"}</Link></Button> : null}
           {a.status.key === "live" || a.status.key === "review" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setKit(true)}><Share2 aria-hidden /> Compartir</Button> : null}
+          {a.status.key === "live" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => void loadOrigin()}>De dónde vienen</Button> : null}
           {a.canToggleActive ? <Button type="button" variant="ghost" size="lg" className="h-11" disabled={busy} onClick={() => void toggle()}>{a.isActive ? "Pausar" : "Reactivar"}</Button> : null}
         </div>
       </div>
+      {origin !== undefined ? (
+        <div className="rounded-2xl border border-border bg-card p-3 text-sm sm:col-span-2" role="status">
+          {origin && origin.rows.length ? <ul className="grid gap-1">{origin.rows.map((r) => <li key={r.label} className="flex justify-between gap-3"><span>{r.label}</span><span className="font-semibold">{r.views} {r.views === 1 ? "visita" : "visitas"} · {r.clicks} {r.clicks === 1 ? "clic" : "clics"}</span></li>)}</ul> : <p className="text-muted-foreground">Todavía no hay visitas por enlaces o QR en los últimos 30 días. Comparte tu actividad con su kit y aquí verás de dónde llegan.</p>}
+        </div>
+      ) : null}
       {kit ? <ShareKit open kind="activity" id={a.id} title={a.title} where={a.schedule} imageUrl={a.coverUrl ?? undefined} pendingReview={a.status.key === "review"} onClose={() => setKit(false)} /> : null}
     </li>
   )

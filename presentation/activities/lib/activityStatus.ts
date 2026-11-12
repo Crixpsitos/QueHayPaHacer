@@ -22,6 +22,8 @@ export interface MyActivitySummary {
   isActive: boolean
   /** Recibe reservas en QHPA: se muestra el acceso a "Reservas". */
   joinEnabled: boolean
+  /** Números propios de la actividad (los «guardados» son privados y no se muestran a nadie, tampoco aquí). */
+  stats: { views: number; clicks: number; visits: number; reviews: number; rating: string | null }
 }
 
 export function toMySummary(a: Activity): MyActivitySummary {
@@ -36,5 +38,6 @@ export function toMySummary(a: Activity): MyActivitySummary {
     canToggleActive: a.publicationStatus === "published" && a.moderationStatus === "approved",
     isActive: a.isActive,
     joinEnabled: a.join !== null,
+    stats: { views: a.analytics.views, clicks: a.analytics.clicks, visits: a.analytics.visits, reviews: a.rating.count, rating: a.rating.count ? (a.rating.sum / a.rating.count).toFixed(1).replace(".", ",") : null },
   }
 }
