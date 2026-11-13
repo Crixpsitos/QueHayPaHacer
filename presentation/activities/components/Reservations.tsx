@@ -109,7 +109,7 @@ export function Reservations({ initial, initialRequests }: { initial: ManagerVie
               <ul className="divide-y divide-border rounded-3xl border border-border bg-card px-4">
                 {waiting.map((r) => (
                   <li key={`${r.key}_${r.uid}`} className="flex flex-wrap items-center gap-2 py-3">
-                    <div className="min-w-0 flex-1"><div className="truncate font-semibold">{r.who}</div><div className="text-xs capitalize text-muted-foreground">{r.label}{r.extras.length ? ` · ${describeExtras(r.extras)}` : ""}</div></div>
+                    <div className="min-w-0 flex-1"><div className="truncate font-semibold">{r.who}</div><div className="text-xs text-muted-foreground first-letter:uppercase">{r.label}{r.extras.length ? ` · ${describeExtras(r.extras)}` : ""}</div></div>
                     <Button type="button" className="h-11" disabled={busy} onClick={() => void run(() => promoteRequestAction(view.id, r.key, r.uid))}>Reservar</Button>
                   </li>
                 ))}

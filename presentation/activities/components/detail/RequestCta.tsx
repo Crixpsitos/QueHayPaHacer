@@ -42,7 +42,7 @@ export function RequestCta({ activityId, kind, title, onClick, children, classNa
     const date = !key || key === "open" ? null : key
     void requestActivityAction(activityId, date, chosen).catch(() => undefined)
     const label = date ? (deps.find((d) => d.key === key)?.label ?? null) : null
-    const msg = buildReservationMessage({ activityTitle: title, activityUrl: window.location.origin + window.location.pathname, dateLabel: label, extras: chosen, paid: true })
+    const msg = buildReservationMessage({ activityTitle: title, activityUrl: window.location.origin + window.location.pathname, dateLabel: label, extras: chosen, paid: false })
     const wa = kind === "whatsapp" ? reservationWhatsappHref(href, msg) : null
     setDialog(null)
     if (wa) window.open(wa, "_blank", "noopener,noreferrer"); else go()
