@@ -28,6 +28,13 @@ export async function getCatalogBundleAction(siteId: string): Promise<{ catalog:
   return { catalog, activities };
 }
 
+/** ¿El sitio es mío? Para mostrar «Editar mi carta» solo a su dueño en las fichas públicas (que se cachean y no saben quién mira). */
+export async function canManageSiteAction(siteId: string): Promise<boolean> {
+  const uid = await getSessionUid();
+  if (!uid || !ID_RE.test(siteId ?? "")) return false;
+  return createServerContainer().sitesService.isOwner(uid, siteId).catch(() => false);
+}
+
 /** Guarda la carta completa (productos, promociones, contacto). Valida y normaliza en el servidor; solo el dueño. */
 export async function saveSiteCatalogAction(siteId: string, input: SiteCatalog): Promise<{ success: true; catalog: SiteCatalog } | { success: false; error: string }> {
   const uid = await getSessionUid();
