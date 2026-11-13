@@ -30,6 +30,7 @@ class FakeRepo implements IActivityJoinRepository {
     return "ok"
   }
   async counts(a: string, keys: string[]) { return Object.fromEntries(keys.map((key) => [key, this.taken(a, key)])) }
+  async availability(a: string, uid: string | null, keys: string[]) { return { counts: await this.counts(a, keys), mine: uid ? await this.mine(a, uid, keys) : {} } }
   async mine(a: string, uid: string, keys: string[]) { return Object.fromEntries(keys.flatMap((key) => { const r = this.rows.get(this.k(a, key, uid)); return r ? [[key, r.status] as const] : [] })) }
   async listByUser(uid: string) { return [...this.rows.values()].filter((r) => r.uid === uid).map((r) => ({ activityId: r.activityId, key: r.key, status: r.status })) }
   async list(a: string) { return [...this.rows.values()].filter((r) => r.activityId === a) }

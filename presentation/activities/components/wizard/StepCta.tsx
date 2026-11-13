@@ -31,7 +31,7 @@ export function StepCta({ form, patch }: StepProps) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 id="join-title" className="text-lg font-semibold">Reservas en Qué Hay Pa Hacer</h2>
-            <p className="text-xs text-muted-foreground">La gente aparta su cupo con su cuenta. Es gratis para ti. El pago lo coordinas tú, directo con cada persona.</p>
+            <p className="text-xs text-muted-foreground">La gente aparta su cupo con su cuenta. Es gratis para ti. El pago lo coordinas tú, directo con cada persona. Si lo apagas, la gente reserva por tu botón y tú llevas la lista a mano en «Reservas», sin tope de cupos.</p>
           </div>
           <Switch checked={form.joinEnabled} onCheckedChange={(v) => patch({ joinEnabled: v })} aria-label="Recibir reservas" />
         </div>

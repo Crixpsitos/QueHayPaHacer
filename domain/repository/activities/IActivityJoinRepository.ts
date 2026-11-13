@@ -37,6 +37,8 @@ export interface IActivityJoinRepository {
   counts(activityId: string, keys: string[]): Promise<Record<string, number>>
   /** De estas salidas, en cuáles está inscrita la persona y con qué estado. */
   mine(activityId: string, uid: string, keys: string[]): Promise<Record<string, JoinStatusValue>>
+  /** `counts` + `mine` en un solo viaje (la ficha pública los pide juntos). Sin `uid`, `mine` queda vacío. */
+  availability(activityId: string, uid: string | null, keys: string[]): Promise<{ counts: Record<string, number>; mine: Record<string, JoinStatusValue> }>
   /** Reservas de una persona (para borrar su cuenta). */
   listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string; status: JoinStatusValue }[]>
   /** Lista del creador: inscripciones de la actividad (todas las salidas, todos los estados). */

@@ -111,6 +111,16 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     return Object.fromEntries(keys.flatMap((k, n) => (snaps[n].exists ? [[k, statusOf(snaps[n].get("status"))] as const] : [])))
   }
 
+  async availability(activityId: string, uid: string | null, keys: string[]) {
+    if (!keys.length) return { counts: {}, mine: {} }
+    // un solo getAll: los contadores y (con sesión) mis inscripciones, en un mismo viaje y sin lecturas de más
+    const refs = [...keys.map((k) => this.counter(activityId, k)), ...(uid ? keys.map((k) => this.collection.doc(joinDocId(activityId, k, uid))) : [])]
+    const snaps = await this.db.getAll(...refs)
+    const counts = Object.fromEntries(keys.map((k, n) => [k, Math.max(0, Number(snaps[n].get("taken") ?? 0))]))
+    const mine = uid ? Object.fromEntries(keys.flatMap((k, n) => (snaps[keys.length + n].exists ? [[k, statusOf(snaps[keys.length + n].get("status"))] as const] : []))) : {}
+    return { counts, mine }
+  }
+
   async listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string; status: JoinStatusValue }[]> {
     const s = await this.collection.where("uid", "==", uid).limit(limit).get()
     return s.docs.map((d) => ({ activityId: String(d.get("activityId")), key: String(d.get("key")), status: statusOf(d.get("status")) }))

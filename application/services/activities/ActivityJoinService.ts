@@ -135,7 +135,7 @@ export class ActivityJoinService {
     if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [], extras: [] }
     const rows = this.shownRows(a)
     const keys = rows.map((r) => r.key)
-    const [counts, mine] = await Promise.all([this.d.repo.counts(activityId, keys), uid ? this.d.repo.mine(activityId, uid, keys) : Promise.resolve({} as Record<string, JoinStatusValue>)])
+    const { counts, mine } = await this.d.repo.availability(activityId, uid, keys)
     return {
       enabled: true,
       extras: a.extras.map((x) => ({ label: x.label, amountCop: x.amountCop })),
