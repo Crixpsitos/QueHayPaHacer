@@ -10,6 +10,8 @@ export interface CheckInByCodeActionResult {
   success: boolean;
   alreadyConfirmed?: boolean;
   name?: string;
+  /** Lo cobrado al confirmar (para sumar a «Ha entrado» sin releer todo). */
+  paid?: { tier: string | null; amount: number };
   error?: string;
 }
 
@@ -50,7 +52,7 @@ export async function checkInByCodeAction(input: {
     const res = await createServerContainer().studioService.checkInByCode(eventId, parsed.code, sessionId, access.uid);
     if (res.result !== "ok" && res.result !== "already") return { success: false, error: ERRORS[res.result] };
     if (res.result === "ok") updateTag(studioRegistrationsTag(eventId, sessionId));
-    return { success: true, name: res.name, ...(res.result === "already" ? { alreadyConfirmed: true } : {}) };
+    return { success: true, name: res.name, ...(res.result === "already" ? { alreadyConfirmed: true } : {}), ...(res.result === "ok" && res.paid ? { paid: res.paid } : {}) };
   } catch (error) {
     console.error("[CHECK-IN BY CODE ERROR]", error);
     return { success: false, error: "No se pudo confirmar la asistencia." };

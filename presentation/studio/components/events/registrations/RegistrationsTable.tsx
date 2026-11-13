@@ -173,7 +173,10 @@ export function RegistrationsTable({
     if (!res.success) {
       notify.error(res.error ?? "Error al confirmar.");
       router.refresh(); // revierte el optimista con la verdad del servidor
-    } else notifyIncomeChanged();
+    } else {
+      const t = tier ?? tiers[0]?.name;
+      notifyIncomeChanged(res.paid ?? (t && tierAmount(t) ? { tier: t, amount: tierAmount(t)! } : undefined));
+    }
   };
 
   const removeOne = async (userId: string) => {

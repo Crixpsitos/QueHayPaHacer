@@ -50,3 +50,14 @@ test("correo semanal con portada: destacado con foto, grupos por día y foto opt
   assert.equal(w.range, "viernes 13 al sábado 14"); assert.equal(w.total, 3)
   assert.ok(valueEmail("weekly", [{ title: "X", when: "hoy", path: "/x" }], ctx).model.weekly === undefined) // sin día: queda el formato simple
 })
+
+test("inscripción a un evento: correo para quien organiza y confirmación para quien se inscribió, con botón «Ver el evento»", () => {
+  for (const [t, reason] of [["event_registration", /organizas este evento/i], ["event_registration_confirmed", /te inscribiste/i]] as const) {
+    const e = transactionalEmailFor(n(t, { href: "/eventos/feria" }), ctx)!
+    assert.ok(e, t)
+    assert.match(e.text, reason)
+    assert.equal(e.model.cta!.label, "Ver el evento")
+    assert.match(e.model.cta!.href, /\/eventos\/feria\?ch=em/)
+  }
+  assert.equal(transactionalEmailFor(n("activity_join"), ctx)!.model.cta!.label, "Ver la actividad")
+})

@@ -130,7 +130,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger, canScanQr =
     if (!r || !r.success) return setCodeMsg({ ok: false, text: r?.error ?? "No se pudo confirmar." });
     setCodeMsg({ ok: true, text: r.alreadyConfirmed ? `${r.name} ya estaba confirmado` : `Asistencia confirmada: ${r.name}` });
     setCode("");
-    notifyIncomeChanged();
+    notifyIncomeChanged(r.paid);
     void fetchFirstPage();
   };
   const confirmed = attendees.filter((a) => a.attendanceConfirmed).length;
@@ -143,7 +143,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger, canScanQr =
     if (r.success) {
       const amount = tiers.find((t) => t.name === tier)?.amount;
       setAttendees((prev) => prev.map((x) => (x.userId === userId ? { ...x, attendanceConfirmed: true, ...(tier && amount ? { tier, paidAmount: amount } : {}) } : x)));
-      notifyIncomeChanged();
+      notifyIncomeChanged(r.paid);
     }
     else setError(r.error ?? "No se pudo confirmar.");
   };

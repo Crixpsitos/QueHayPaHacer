@@ -27,6 +27,8 @@ export function withEmailAttribution(url: string, medium: string): string {
 const REASON: Record<string, string> = {
   activity_join: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   activity_request: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
+  event_registration: "Recibes este correo porque organizas este evento en Qué Hay Pa Hacer.",
+  event_registration_confirmed: "Recibes este correo porque te inscribiste a un evento en Qué Hay Pa Hacer.",
   activity_join_confirmed: "Recibes este correo porque reservaste un cupo en una actividad de Qué Hay Pa Hacer.",
   activity_reminder: "Recibes este correo porque reservaste un cupo o guardaste esta actividad en Qué Hay Pa Hacer.",
   activity_last_spot: "Recibes este correo porque guardaste esta actividad en Qué Hay Pa Hacer.",
@@ -39,7 +41,7 @@ export function transactionalEmailFor(n: { type: string; title: string; body?: s
   const link = n.href ? withEmailAttribution(`${c.siteUrl}${n.href}`, "transactional") : c.siteUrl
   const body = n.body ?? ""
   const text = `${n.title}\n\n${body ? `${body}\n\n` : ""}Míralo aquí: ${link}\n\n—\n${reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl } }
+  return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: n.type.startsWith("event_") ? "Ver el evento" : "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl } }
 }
 
 export interface ValueItem { title: string; when: string; path: string; day?: string; time?: string; place?: string; price?: string; imageUrl?: string; /** el plan destacado del correo (si no, el primero con foto) */ star?: boolean }

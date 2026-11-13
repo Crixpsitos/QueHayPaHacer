@@ -40,6 +40,8 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   activity_last_spot: Ticket,
   event_seat: Ticket,
   activity_request: UserPlus,
+  event_registration: UserPlus,
+  event_registration_confirmed: Ticket,
 };
 
 const TITLE = "Notificaciones";

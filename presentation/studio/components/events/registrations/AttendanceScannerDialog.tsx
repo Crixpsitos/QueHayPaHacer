@@ -88,7 +88,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
           setOutcome({ kind: "success", text: `Asistencia confirmada: ${res.name}` });
           setRecent((r) => [res.name ?? "Asistente", ...r].slice(0, 5));
           router.refresh(); // actualiza la tabla y las estadísticas
-          notifyIncomeChanged();
+          notifyIncomeChanged(res.paid);
         }
         return Boolean(res?.success);
       } finally {
