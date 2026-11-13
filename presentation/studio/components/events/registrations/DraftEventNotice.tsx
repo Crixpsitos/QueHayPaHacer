@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { FileWarning, Rocket } from "lucide-react";
 
 interface DraftEventNoticeProps {

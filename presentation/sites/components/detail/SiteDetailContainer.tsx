@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import { notFound } from "next/navigation";
 import { MapPin, Clock, CalendarDays, ExternalLink, Star, Eye, Share2, TrendingUp, Sparkles, Globe, AlertTriangle } from "lucide-react";

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { CheckCircle2, Clock } from "lucide-react"
 import { useState } from "react"
 import { Share2 } from "lucide-react"

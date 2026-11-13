@@ -17,6 +17,8 @@ export interface MyActivitySummary {
   title: string
   coverUrl: string | null
   categorySlug: string
+  /** Sitio al que pertenece (null = global): de ahí sale el acceso a su carta. */
+  siteId: string | null
   schedule: string
   status: { key: StatusKey; label: string; help: string }
   canToggleActive: boolean
@@ -35,6 +37,7 @@ export function toMySummary(a: Activity): MyActivitySummary {
     title: a.title,
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
     categorySlug: a.category,
+    siteId: a.siteId,
     schedule: describeSchedule(a.schedule),
     status: activityStatus(a),
     canToggleActive: a.publicationStatus === "published" && a.moderationStatus === "approved",

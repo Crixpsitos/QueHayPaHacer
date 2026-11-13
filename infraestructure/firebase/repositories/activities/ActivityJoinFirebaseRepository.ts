@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore"
+import type { ExtraPick } from "@/domain/entities/activities/reservationExtras"
 import { holdsSpot, joinDocId, type JoinDecision, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
 import type { IActivityJoinRepository, JoinOutcome, JoinRow, SetStatusOutcome } from "@/domain/repository/activities/IActivityJoinRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
@@ -24,7 +25,7 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
   }
 
   async join(
-    i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null },
+    i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null; extras?: ExtraPick[]; manual?: boolean },
     decide: (taken: number) => JoinDecision,
   ): Promise<JoinOutcome> {
     const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
@@ -42,6 +43,8 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
         status: i.status,
         phone: i.phone,
         consentVersion: i.phone ? i.consentVersion : null,
+        extras: i.extras ?? [],
+        manual: i.manual === true,
         createdAt: FieldValue.serverTimestamp(),
       })
       tx.set(counter, { taken: FieldValue.increment(1) }, { merge: true })
@@ -76,6 +79,16 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     })
   }
 
+  async setExtras(i: { activityId: string; key: string; uid: string; extras: ExtraPick[] }): Promise<boolean> {
+    const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
+    return this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref)
+      if (!snap.exists || snap.get("activityId") !== i.activityId || snap.get("key") !== i.key) return false
+      tx.update(ref, { extras: i.extras })
+      return true
+    })
+  }
+
   async setClosed(activityId: string, closed: boolean): Promise<boolean> {
     const ref = this.db.collection("activities").doc(activityId)
     return this.db.runTransaction(async (tx) => {
@@ -98,6 +111,16 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     return Object.fromEntries(keys.flatMap((k, n) => (snaps[n].exists ? [[k, statusOf(snaps[n].get("status"))] as const] : [])))
   }
 
+  async availability(activityId: string, uid: string | null, keys: string[]) {
+    if (!keys.length) return { counts: {}, mine: {} }
+    // un solo getAll: los contadores y (con sesión) mis inscripciones, en un mismo viaje y sin lecturas de más
+    const refs = [...keys.map((k) => this.counter(activityId, k)), ...(uid ? keys.map((k) => this.collection.doc(joinDocId(activityId, k, uid))) : [])]
+    const snaps = await this.db.getAll(...refs)
+    const counts = Object.fromEntries(keys.map((k, n) => [k, Math.max(0, Number(snaps[n].get("taken") ?? 0))]))
+    const mine = uid ? Object.fromEntries(keys.flatMap((k, n) => (snaps[keys.length + n].exists ? [[k, statusOf(snaps[keys.length + n].get("status"))] as const] : []))) : {}
+    return { counts, mine }
+  }
+
   async listByUser(uid: string, limit: number): Promise<{ activityId: string; key: string; status: JoinStatusValue }[]> {
     const s = await this.collection.where("uid", "==", uid).limit(limit).get()
     return s.docs.map((d) => ({ activityId: String(d.get("activityId")), key: String(d.get("key")), status: statusOf(d.get("status")) }))
@@ -107,7 +130,7 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     // ponytail: una sola igualdad (sin índice compuesto); el volumen por actividad es pequeño y se ordena en memoria.
     const s = await this.collection.where("activityId", "==", activityId).limit(limit).get()
     return s.docs
-      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")), status: statusOf(d.get("status")), phone: typeof d.get("phone") === "string" ? (d.get("phone") as string) : null }))
+      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")), status: statusOf(d.get("status")), phone: typeof d.get("phone") === "string" ? (d.get("phone") as string) : null, extras: Array.isArray(d.get("extras")) ? (d.get("extras") as ExtraPick[]) : [], manual: d.get("manual") === true }))
       .sort((a, b) => a.key.localeCompare(b.key) || a.createdAt.getTime() - b.createdAt.getTime())
   }
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Section } from "@/app/components/layout/shared/Section";
 import { Orbs } from "@/app/components/feature/premium/motion";
 import { FOUNDER_LIMIT, FOUNDER_MONTHS, PREMIUM_PRICE_COP, formatCOP } from "@/presentation/profile/lib/membership";

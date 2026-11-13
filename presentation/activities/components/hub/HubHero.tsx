@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { UrlFilters } from "@/domain/entities/activities/filters"
 import type { HubMeta } from "@/presentation/activities/data/fetchers"
 import { filterHref } from "@/presentation/activities/lib/filterHref"

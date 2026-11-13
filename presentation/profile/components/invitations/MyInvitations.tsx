@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check, Loader2, MailPlus, X } from "lucide-react";
 import { respondCollaboratorInvitationAction } from "@/app/actions/studio/respond-collaborator-invitation.action";

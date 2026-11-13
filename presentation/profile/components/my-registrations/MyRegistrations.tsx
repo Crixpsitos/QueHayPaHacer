@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CountUp, EASE_OUT } from "@/app/components/motion/primitives";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useRouter } from "next/navigation";
 import { CalendarSearch, MapPin, QrCode } from "lucide-react";
 import { cancelRegistrationAction } from "@/app/actions/events/cancel-registration.action";

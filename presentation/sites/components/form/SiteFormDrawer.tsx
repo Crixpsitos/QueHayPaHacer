@@ -1,6 +1,7 @@
 "use client"
 
 import { SiteOwnerPicker } from "./SiteOwnerPicker"
+import { SitePolicyHelp } from "../SitePolicyHelp"
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AnimatePresence, animate, motion, useMotionValue } from "motion/react"
@@ -234,7 +235,7 @@ function BasicInfoContent({
         {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-foreground">Categoría</label>
+        <div className="flex items-center gap-1"><label className="text-xs font-medium text-foreground">Categoría</label><SitePolicyHelp /></div>
         <div className="flex flex-wrap gap-2">
           {CATEGORY_OPTIONS.map((opt) => (
             <button
@@ -1170,8 +1171,9 @@ export function SiteFormDrawer({
               <ArrowLeft className="size-3.5" aria-hidden />
               Volver
             </button>
-            <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-semibold text-foreground">
+            <span className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-0.5 text-sm font-semibold text-foreground">
               {isEdit ? "Editar sitio" : "Crear sitio"}
+              <span className="pointer-events-auto"><SitePolicyHelp /></span>
             </span>
             <button
               type="button"

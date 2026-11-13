@@ -1388,7 +1388,7 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         checkedInBy: actingUid,
         ...(pay && pay.amountCop > 0 ? { tier: pay.tier, paidAmount: pay.amountCop } : {}),
       });
-      return { result: "ok", name };
+      return { result: "ok", name, ...(pay && pay.amountCop > 0 ? { paid: { tier: pay.tier, amount: pay.amountCop } } : {}) };
     });
   }
 

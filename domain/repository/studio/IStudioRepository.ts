@@ -29,7 +29,7 @@ import type {
  * La implementación Firebase queda como stubs (la implementa el desarrollador).
  */
 export type CheckInByCodeResult =
-  | { result: "ok" | "already"; name: string }
+  | { result: "ok" | "already"; name: string; /** Lo cobrado al entrar (eventos externos de pago). */ paid?: { tier: string | null; amount: number } }
   | { result: "not_found" | "canceled" | "no_attendance" };
 
 export interface IStudioRepository {

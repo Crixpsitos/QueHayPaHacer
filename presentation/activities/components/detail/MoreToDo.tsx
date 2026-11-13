@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { fetchMoreToDo, type MoreLevelView, type MoreRow } from "@/presentation/activities/data/fetchers"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { NextLine } from "@/presentation/activities/components/NextLine"

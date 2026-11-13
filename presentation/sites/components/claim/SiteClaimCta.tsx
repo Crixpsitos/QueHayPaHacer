@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useState, useTransition } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { usePathname } from "next/navigation"
 import { BadgeCheck, Clock, XIcon } from "lucide-react"
 import { useAuth } from "@/app/store/auth/AuthContext"

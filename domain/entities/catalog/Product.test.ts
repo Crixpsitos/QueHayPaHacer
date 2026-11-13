@@ -44,3 +44,6 @@ test("agrupa por sección en orden de aparición y deja los sin sección al fina
   assert.deepEqual(g.map((x) => [x.section, x.items.length]), [["Bebidas", 2], ["Helados", 1], ["Otros", 1]])
 })
 test("formato de pesos", () => assert.equal(cop(1234567), "$1.234.567"))
+test("la etiqueta «Para llevar» existe y se puede combinar con las de dieta", () => {
+  assert.equal(validateProducts([p({ tags: ["para-llevar", "vegano"] })]), null)
+})

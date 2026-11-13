@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ACTIVITY_CATEGORIES, COMPANIONS, type Companion } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import type { BudgetBand } from "@/domain/entities/activities/value-objects/Budget"
 import type { When } from "@/domain/entities/activities/when"

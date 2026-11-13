@@ -2,7 +2,7 @@
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
 import { useEffect, useState, lazy, Suspense } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ExternalLink, Info, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";
@@ -175,15 +175,16 @@ export function EventDetailClient({
               <LayoutDashboard className="size-4" aria-hidden="true" />
               Ir a estudio
             </Link>
-          ) : usesModal ? (
-            // Cuenta normal → modal simple con la lista de inscritos.
+          ) : event.registrationType !== "none" ? (
+            // Cuenta normal → lista de inscritos o interesados, y confirmar con el código a mano (el escáner QR es Premium).
             <EventAttendeesDialog
               eventId={event.id}
               eventTitle={event.title}
+              canScanQr={false}
               trigger={
                 <button type="button" className={cn(secondaryBtn, "border-[#09090B] bg-[#09090B] text-white hover:bg-[#18181B]")}>
                   <Users className="size-4" aria-hidden="true" />
-                  Ver inscritos
+                  {event.registrationType === "external" ? "Ver interesados" : "Ver inscritos"}
                 </button>
               }
             />

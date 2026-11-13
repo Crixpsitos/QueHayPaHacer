@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ChevronRight, MapPin } from "lucide-react";
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants";
 import { cn } from "@/app/lib/utils/cn";

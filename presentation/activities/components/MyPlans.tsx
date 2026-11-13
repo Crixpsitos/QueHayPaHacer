@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Button } from "@/app/components/ui/button/button"
 import { cn } from "@/app/lib/utils/cn"
 import { setActivitySavedAction, setActivityPlanSlotAction } from "@/app/actions/activities/engagement.action"

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Plus } from "lucide-react";
 import type { StudioEventListItem } from "../../view-models/StudioEventsViewModel";
 import { CursorPagination } from "./CursorPagination";

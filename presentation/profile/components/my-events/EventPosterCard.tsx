@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { BarChart3, ExternalLink, Pencil } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { ShareButton } from "@/presentation/shared/components/ShareButton";

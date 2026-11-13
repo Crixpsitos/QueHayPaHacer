@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useState, useSyncExternalStore } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import { CalendarCheck, Clock, MapPin, Users } from "lucide-react";

@@ -57,6 +57,8 @@ import { holdsSpot } from "@/domain/entities/activities/activityJoin";
 import { ActivityPlansService } from "@/application/services/activities/ActivityPlansService";
 import { ActivityJoinService } from "@/application/services/activities/ActivityJoinService";
 import { ActivityJoinFirebaseRepository } from "../firebase/repositories/activities/ActivityJoinFirebaseRepository";
+import { ActivityRequestService } from "@/application/services/activities/ActivityRequestService";
+import { ActivityRequestFirebaseRepository } from "../firebase/repositories/activities/ActivityRequestFirebaseRepository";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 import { reviewKey } from "@/domain/entities/activities/review/reviewIdentity";
 import { isSiteSubject, siteIdOfSubject } from "@/domain/entities/activities/review/subject";
@@ -346,7 +348,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     enabled: Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
   });
-  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot", "event_seat"]);
+  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot", "event_seat", "activity_request", "event_registration", "event_registration_confirmed"]);
   const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
     await notificationService.notify(uid, n, id);
     await transactionalEmailBridge.fromNotification(uid, n, id);
@@ -354,14 +356,26 @@ export const createServerContainer = () => {
   };
 
   // unirse a una salida (cupo opcional) con avisos por la campanita
+  const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
   const activityJoinService = new ActivityJoinService({
-    repo: new ActivityJoinFirebaseRepository(getFirebaseFirestore()),
+    repo: activityJoinRepo,
     getPublic: (id) => activityService.getPublicById(id),
     getForManager: (id, viewer) => activityService.getForManager(id, viewer),
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
     notify: (uid, n, id) => notifyAndEmail(uid, n, id),
     clock: () => new Date(),
     legalVersion: LEGAL_VERSION,
+  });
+
+  // solicitudes de reserva (quien tiene cuenta toca el botón de reservar/preguntar): constancia para quien organiza
+  const activityRequestService = new ActivityRequestService({
+    repo: new ActivityRequestFirebaseRepository(getFirebaseFirestore()),
+    join: activityJoinRepo,
+    getPublic: (id) => activityService.getPublicById(id),
+    getForManager: (id, viewer) => activityService.getForManager(id, viewer),
+    displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
+    notify: (uid, n, id) => notifyAndEmail(uid, n, id),
+    clock: () => new Date(),
   });
 
   // reseñas de actividades (una por persona, agregado en la misma transacción)
@@ -507,7 +521,6 @@ export const createServerContainer = () => {
 
   // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
   const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
-  const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
   const activityPlansService = new ActivityPlansService({
     savedIds: (uid, n) => activityEngagementRepo.listSavedIds(uid, n),
     visitedIds: (uid, n) => activityEngagementRepo.listVisitedIds(uid, n),
@@ -560,6 +573,7 @@ export const createServerContainer = () => {
     activityReviewRepo: reviewRepo,
     activityAppealRepoGet: (id: string) => activityAppealRepo.get(id),
     activityJoinService,
+    activityRequestService,
     notifyUser: notifyAndEmail,
     siteCatalogService,
     activityPlansService,

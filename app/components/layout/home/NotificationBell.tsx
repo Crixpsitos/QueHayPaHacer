@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRightLeft, Bell, BadgeCheck, Bus, CalendarDays, CalendarPlus, Compass, MailPlus, Ticket, MapPin, MessageSquareDiff, UserCheck, UserMinus, UserPlus, UserX, Users, XIcon } from "lucide-react";
 
@@ -39,6 +39,9 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   activity_reminder: CalendarDays,
   activity_last_spot: Ticket,
   event_seat: Ticket,
+  activity_request: UserPlus,
+  event_registration: UserPlus,
+  event_registration_confirmed: Ticket,
 };
 
 const TITLE = "Notificaciones";

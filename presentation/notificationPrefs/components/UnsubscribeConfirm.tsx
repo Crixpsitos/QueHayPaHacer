@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useState } from "react"
 import { Button } from "@/app/components/ui/button/button"
 import { unsubscribeFromEmailAction } from "@/app/actions/notificationPrefs/unsubscribe.action"

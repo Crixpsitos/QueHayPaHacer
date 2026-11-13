@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ChevronLeft, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { SocialShareBar } from "@/presentation/shared/components/SocialShareBar";

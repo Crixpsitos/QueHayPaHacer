@@ -3,7 +3,7 @@
 import type { TeamRole } from "@/domain/entities/events/teamAccess";
 import { publicCredits } from "@/domain/entities/events/publicCredits";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { AtSign, ChevronRight, Globe, Link2, Loader2, Music2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/app/components/ui/avatar";
 import {

@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense, type ReactNode } from "react"
 import { Check, Clock, ExternalLink, Gauge, Info, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
@@ -25,6 +25,8 @@ import { ActivityEngagement } from "./ActivityEngagement"
 import { ActivityHostBadge } from "./ActivityHostBadge"
 import { ActivityJoin } from "./ActivityJoin"
 import { TrackedCta } from "./TrackedCta"
+import { RequestCta } from "./RequestCta"
+import { isRequestCta } from "@/domain/entities/activities/activityRequest"
 import { EventViewTracker } from "@/app/components/analytics/EventViewTracker"
 
 const h2 = "font-heading text-2xl font-extrabold tracking-tight"
@@ -154,7 +156,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           <NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} />
           <div className="grid gap-2">
             {d.joinEnabled && !preview ? <Button asChild size="lg" className="h-12 text-base"><a href="#reservar">{reserveLabel}</a></Button> : null}
-            {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</TrackedCta></Button> : null}
+            {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 text-base">{!preview && !d.joinEnabled && isRequestCta(d.cta.kind) ? <RequestCta activityId={d.id} title={d.title} kind={d.cta.kind} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</RequestCta> : <TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label} {d.cta.kind === "phone" ? null : <ExternalLink aria-hidden />}</TrackedCta>}</Button> : null}
             <ShareButton title={d.title} activityId={d.id} className="h-11 w-full" />
             {preview ? null : <ActivityPosterButton slug={d.slug} title={d.title} when={d.scheduleText} where={d.site?.name || d.meeting.text} coverUrl={d.gallery[0]?.url} />}
           </div>
@@ -175,7 +177,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
         {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={null} variant="icon" />}
         {d.joinEnabled && !preview ? <Button asChild size="lg" className="h-12 flex-1 text-base"><a href="#reservar">{reserveLabel}</a></Button> : null}
-        {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 flex-1 text-base"><TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</TrackedCta></Button> : null}
+        {d.cta ? <Button asChild size="lg" variant={d.joinEnabled && !preview ? "outline" : "default"} className="h-12 flex-1 text-base">{!preview && !d.joinEnabled && isRequestCta(d.cta.kind) ? <RequestCta activityId={d.id} title={d.title} kind={d.cta.kind} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</RequestCta> : <TrackedCta activityId={d.id} href={d.cta.href} target={d.cta.kind === "phone" ? undefined : "_blank"} rel="noopener noreferrer">{d.cta.label}</TrackedCta>}</Button> : null}
       </div>
     </article>
   )

@@ -5,7 +5,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/infraestructure/firebase/config/client/firebase";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { googleAuthAction } from "@/app/actions/auth/google-auth.action";
 import { cn } from "@/app/lib/utils/cn";

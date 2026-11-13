@@ -10,6 +10,8 @@ import { studioRegistrationsTag } from "@/presentation/studio/lib/cachedStudioDa
 interface ActionResult {
   success: boolean;
   error?: string;
+  /** Lo cobrado al confirmar (para sumar a «Ha entrado» sin releer las inscripciones). */
+  paid?: { tier: string | null; amount: number };
 }
 
 export async function confirmAttendanceAction(
@@ -37,7 +39,7 @@ export async function confirmAttendanceAction(
     // Solo cambia la fila (checkedInAt), no los contadores → basta con la tabla.
     updateTag(studioRegistrationsTag(eventId, sessionId));
     updateTag(`event-income-${eventId}`);
-    return { success: true };
+    return { success: true, ...(payment && payment.amountCop > 0 ? { paid: { tier: payment.tier, amount: payment.amountCop } } : {}) };
   } catch (error) {
     console.error("[CONFIRM ATTENDANCE ERROR]", error);
     return { success: false, error: "No se pudo confirmar la asistencia." };

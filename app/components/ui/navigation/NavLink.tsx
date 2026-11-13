@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from 'react'
 import { cn } from '@/app/lib/utils/cn'
 
@@ -24,7 +24,7 @@ function NavLinkActive({
     : pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <Link
+    <Link prefetch={false}
       href={href}
       aria-current={isActive ? 'page' : undefined}
       className={cn(className, isActive && activeClassName)}

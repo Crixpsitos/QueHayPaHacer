@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Bookmark, CalendarDays, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { AddToPlanButton } from "@/presentation/shared/components/AddToPlanButton"

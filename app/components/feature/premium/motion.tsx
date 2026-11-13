@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Check, Minus, Plus } from "lucide-react";
 import {
   animate,

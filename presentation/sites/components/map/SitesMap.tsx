@@ -10,7 +10,7 @@ import Map, {
 } from "react-map-gl/maplibre"
 import { AnimatePresence, motion } from "motion/react"
 import { Home, Minus, MousePointerClick, Plus } from "lucide-react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import "maplibre-gl/dist/maplibre-gl.css"
 
 import { MapSearch } from "./MapSearch"

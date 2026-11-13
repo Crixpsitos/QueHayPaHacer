@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import type { JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 import { departureSummaries, funnelFor, rowsFor, whatsappHref, MIN_RESERVATIONS_FOR_PERCENT } from "./reservations"
 
-const row = (uid: string, key: string, status: JoinRow["status"], phone: string | null = null): JoinRow => ({ uid, name: uid, key, status, phone, createdAt: new Date("2026-11-10T12:00:00Z") })
+const row = (uid: string, key: string, status: JoinRow["status"], phone: string | null = null): JoinRow => ({ uid, name: uid, key, status, phone, createdAt: new Date("2026-11-10T12:00:00Z"), extras: [], manual: false })
 const rows = [row("a", "2026-11-15", "pending", "3001234567"), row("b", "2026-11-15", "confirmed"), row("c", "2026-11-15", "noShow"), row("d", "2026-11-22", "confirmed")]
 
 test("resumen por salida: ocupan cupo pendientes y confirmadas, 'No pagó' no", () => {

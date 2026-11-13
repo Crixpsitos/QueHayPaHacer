@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ChevronRight } from "lucide-react";
 import type { SessionViewModel } from "../../view-models/SessionViewModel";
 import { cn } from "@/app/lib/utils/cn";

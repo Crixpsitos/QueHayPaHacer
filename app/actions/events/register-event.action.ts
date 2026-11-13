@@ -4,6 +4,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { updateTag } from "next/cache";
+import { eventRegistrationConfirmedNotification, eventRegistrationNotification } from "@/domain/entities/notification/messages";
 import { cookies } from "next/headers";
 
 export interface RegisterEventActionInput {
@@ -92,6 +93,22 @@ export async function registerEventAction(
       updateTag(`preference-events-${uid}`);
     } catch (e) {
       console.warn("[register-event] no se pudo marcar «Voy a ir»:", e instanceof Error ? e.message : "error");
+    }
+
+    // Avisos (campanita, push y correo según sus preferencias): a quien organiza y a quien se inscribió. Nunca rompen la inscripción.
+    try {
+      if (event) {
+        const { notifyUser } = createServerContainer();
+        const ref = event.slug || event.id;
+        const base = `${eventId.trim()}${sessionId ? `_${sessionId}` : ""}_${uid}`;
+        const whenLabel = event.startDate ? new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }).format(new Date(event.startDate)) : null;
+        await Promise.all([
+          event.author?.id ? notifyUser(event.author.id, eventRegistrationNotification({ title: event.title, ref, who: (name ?? "Alguien").slice(0, 40) }), `evreg_${base}`) : Promise.resolve(),
+          notifyUser(uid, eventRegistrationConfirmedNotification({ title: event.title, ref, whenLabel }), `evregok_${base}`),
+        ]);
+      }
+    } catch (e) {
+      console.warn("[register-event] no se pudo avisar:", e instanceof Error ? e.message : "error");
     }
 
     return { success: true };

@@ -52,9 +52,9 @@ test("promoción: los más antiguos de la lista de espera ocupan los huecos libr
 })
 test("posición en la lista de espera (1 = el primero)", () => {
   const rows = [row("w2", { waitlist: true, hoursAgo: 2 }), row("w1", { waitlist: true, hoursAgo: 9 }), row("a")]
-  assert.equal(waitlistPosition(rows, "w1"), 1)
-  assert.equal(waitlistPosition(rows, "w2"), 2)
-  assert.equal(waitlistPosition(rows, "a"), null)
+  assert.equal(waitlistPosition(rows, "w1", NOW), 1)
+  assert.equal(waitlistPosition(rows, "w2", NOW), 2)
+  assert.equal(waitlistPosition(rows, "a", NOW), null)
 })
 
 test("una espera de más de 24 h se deniega y no cuenta en la fila", () => {

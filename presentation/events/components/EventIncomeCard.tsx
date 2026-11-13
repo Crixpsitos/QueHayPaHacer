@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getEventIncomeAction } from "@/app/actions/events/get-event-income.action";
-import type { IncomeSummary } from "@/domain/entities/EventRegistration/payment";
+import { applyPaid, type IncomeSummary } from "@/domain/entities/EventRegistration/payment";
 
 export const INCOME_EVENT = "qhpa:income";
 /** Avisa a las tarjetas de ingresos abiertas que alguien se confirmó (botón, QR o lote). */
-export const notifyIncomeChanged = () => typeof window !== "undefined" && window.dispatchEvent(new Event(INCOME_EVENT));
+/**
+ * `paid` = lo que se acaba de cobrar: la tarjeta lo suma sin releer. Sin `paid` (confirmaciones en lote, altas) se vuelve a leer todo,
+ * que cuesta una lectura por inscripción: por eso el escaneo uno a uno ya no lo hace.
+ */
+export const notifyIncomeChanged = (paid?: { tier: string | null; amount: number }) => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent(INCOME_EVENT, { detail: paid ?? null }));
 
 const cop = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
@@ -22,8 +26,13 @@ export function EventIncomeCard({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     void load();
-    window.addEventListener(INCOME_EVENT, load);
-    return () => window.removeEventListener(INCOME_EVENT, load);
+    const onChange = (e: Event) => {
+      const paid = (e as CustomEvent<{ tier: string | null; amount: number } | null>).detail;
+      if (paid) setIncome((cur) => (cur ? applyPaid(cur, paid) : cur));
+      else void load();
+    };
+    window.addEventListener(INCOME_EVENT, onChange);
+    return () => window.removeEventListener(INCOME_EVENT, onChange);
   }, [load]);
 
   if (failed) return null;

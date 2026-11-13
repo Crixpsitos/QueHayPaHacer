@@ -1,7 +1,7 @@
 "use client";
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { LayoutDashboard } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";

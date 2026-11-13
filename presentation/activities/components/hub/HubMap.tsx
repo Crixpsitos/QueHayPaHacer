@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import Map, { Marker, NavigationControl } from "react-map-gl/maplibre"
 import "maplibre-gl/dist/maplibre-gl.css"
 import { cn } from "@/app/lib/utils/cn"

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { CalendarDays, ImageIcon } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { TEAM_ROLE_LABEL, type TeamRole } from "@/domain/entities/events/teamAccess";

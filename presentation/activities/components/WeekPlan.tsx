@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { AlertTriangle, ImageIcon, Share2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { buildWeekPlan, weekPlanText, type PlanSlot, type WeekDay } from "@/domain/entities/activities/weekPlan"

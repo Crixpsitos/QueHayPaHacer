@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Calendar, CalendarCheck, MapPin, Share2, Layers } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { likeEventAction } from "@/app/actions/events/like-event.action";

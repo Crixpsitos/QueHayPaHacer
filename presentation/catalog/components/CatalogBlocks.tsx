@@ -19,6 +19,7 @@ export async function SiteCatalogBlock({ siteId, siteName, siteSlug }: { siteId:
       reservePhone={catalog.reservePhone}
       context={{ title: siteName, url: `${SITE_URL}/donde-ir/${siteSlug || siteId}` }}
       activityTitles={activityTitles}
+      siteId={siteId}
     />
   )
 }
@@ -40,6 +41,7 @@ export async function ActivityCatalogBlock({ siteId, activity }: { siteId: strin
       whatsapp={catalog.whatsapp}
       reservePhone={catalog.reservePhone}
       context={{ title: activity.title, url: `${SITE_URL}/actividades/${activity.slug}` }}
+      siteId={siteId}
     />
   )
 }

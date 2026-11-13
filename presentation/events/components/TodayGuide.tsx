@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Section } from "@/app/components/layout/shared/Section";
 
 /** Texto propio y visible de «Qué hay hoy»: es lo que lee Google. Sin datos que cambien: se cachea con la página. */

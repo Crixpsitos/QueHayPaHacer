@@ -43,3 +43,14 @@ export function summarizeIncome(rows: IncomeRow[], tiers: PayTier[] = []): Incom
   }
   return { total, paidCount, byTier: [...map.values()].sort((x, y) => y.unit - x.unit || y.amount - x.amount) }
 }
+
+/** Suma un pago recién confirmado al resumen (sin releer las inscripciones). Un pago de 0 no cambia nada. No muta el original. */
+export function applyPaid(s: IncomeSummary, paid: { tier: string | null; amount: number }): IncomeSummary {
+  if (!(paid.amount > 0)) return s
+  const key = paid.tier || "General"
+  const by = s.byTier.map((t) => ({ ...t }))
+  const cur = by.find((t) => t.tier === key)
+  if (cur) { cur.count++; cur.amount += paid.amount; cur.unit = Math.max(cur.unit, paid.amount) }
+  else by.push({ tier: key, unit: paid.amount, count: 1, amount: paid.amount })
+  return { total: s.total + paid.amount, paidCount: s.paidCount + 1, byTier: by.sort((x, y) => y.unit - x.unit || y.amount - x.amount) }
+}

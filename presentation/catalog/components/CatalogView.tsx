@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { MessageCircle, Phone, Tag } from "lucide-react";
 import { catalogPromoSchedule, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, promosInList, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
 import { cop, discountPercent, groupBySection, productPrice, TAG_LABELS, todayBogota, UNIT_LABELS, WARNING_TAGS, PRICES_NOTE, type Product, type ProductTag } from "@/domain/entities/catalog/Product";
+import { useAuth } from "@/app/store/auth/AuthContext";
+import { canManageSiteAction } from "@/app/actions/catalog/site-catalog.actions";
 import { askHref } from "@/domain/entities/catalog/whatsappAsk";
 import { sectionTone } from "@/presentation/catalog/lib/tone";
 import { colombianNumber } from "@/domain/entities/activities/value-objects/Cta";
@@ -19,8 +21,8 @@ export interface CatalogViewProps {
   context: { title: string; url: string };
   /** En la ficha del sitio cada promoción dice en qué actividades está. */
   activityTitles?: Record<string, string>;
-  /** Enlace al panel (solo si quien mira es el dueño). */
-  manageHref?: string;
+  /** Sitio de la carta: si quien mira es su dueño, aparece «Editar mi carta» (se comprueba aquí: la ficha se cachea). */
+  siteId?: string;
 }
 
 const until = (iso: string) => new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
@@ -30,7 +32,16 @@ const pill = "rounded-full px-2.5 py-0.5 text-xs font-semibold";
  * Carta + promociones de un sitio o de una actividad. La ficha se cachea por minutos, así que la vigencia y los descuentos se
  * recomprueban en el navegador (una promoción o descuento vencido NUNCA se muestra). Sin pagos: se arma una lista y se pregunta por WhatsApp.
  */
-export function CatalogView({ title, products, promotions, whatsapp, reservePhone, context, activityTitles, manageHref }: CatalogViewProps) {
+export function CatalogView({ title, products, promotions, whatsapp, reservePhone, context, activityTitles, siteId }: CatalogViewProps) {
+  const { user } = useAuth();
+  const [isOwner, setIsOwner] = useState(false);
+  useEffect(() => {
+    if (!user || !siteId) return;
+    let live = true;
+    void canManageSiteAction(siteId).then((ok) => live && setIsOwner(ok));
+    return () => { live = false; };
+  }, [user, siteId]);
+  const manageHref = isOwner && siteId ? `/carta/${siteId}` : undefined;
   const [now, setNow] = useState<Date | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [section, setSection] = useState("");

@@ -32,3 +32,22 @@ test("ingresos: un cobro de una categoría que ya no existe en el evento se cons
   const s = summarizeIncome([{ tier: "Antigua", paidAmount: 10000 }], [{ name: "General", amount: 30000 }])
   assert.deepEqual(s.byTier.map((t) => t.tier), ["General", "Antigua"])
 })
+
+import { applyPaid } from "./payment"
+test("sumar un pago al resumen sin releer nada: suma total, conteo y la categoría (nueva o existente)", () => {
+  const tiers = [{ name: "General", amount: 30000 }, { name: "VIP", amount: 80000 }]
+  const base = summarizeIncome([{ tier: "General", paidAmount: 30000 }], tiers)
+  const a = applyPaid(base, { tier: "VIP", amount: 80000 })
+  assert.equal(a.total, 110000)
+  assert.equal(a.paidCount, 2)
+  assert.deepEqual(a.byTier.map((t) => [t.tier, t.count, t.amount]), [["VIP", 1, 80000], ["General", 1, 30000]])
+  const b = applyPaid(a, { tier: "General", amount: 30000 })
+  assert.deepEqual(b.byTier.map((t) => [t.tier, t.count, t.amount]), [["VIP", 1, 80000], ["General", 2, 60000]])
+  assert.equal(base.total, 30000, "no muta el resumen original")
+})
+test("pago sin categoría o categoría que no existía: entra como «General» o como categoría nueva", () => {
+  const e = summarizeIncome([])
+  assert.deepEqual(applyPaid(e, { tier: null, amount: 10000 }).byTier.map((t) => t.tier), ["General"])
+  assert.deepEqual(applyPaid(e, { tier: "Antigua", amount: 5000 }).byTier.map((t) => t.tier), ["Antigua"])
+  assert.equal(applyPaid(e, { tier: "VIP", amount: 0 }).total, 0)
+})

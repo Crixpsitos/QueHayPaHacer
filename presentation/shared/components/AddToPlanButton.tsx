@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { CalendarCheck, CalendarPlus, Check, Loader2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog"
 import { cn } from "@/app/lib/utils/cn"

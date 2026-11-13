@@ -89,3 +89,18 @@ export function eventSeatNotification(i: { title: string; ref: string; notice: "
   if (i.notice === "denied") return { type: "event_seat", title: `No alcanzamos a darte un cupo en "${i.title}"`, body: "Estuviste 24 horas en la lista de espera y los cupos siguen completos.", href };
   return { type: "event_seat", title: `Venció tu lugar en "${i.title}"`, body: "Pasaron 24 horas sin confirmarse. Si todavía quieres ir, vuelve a entrar al evento.", href };
 }
+
+/** Aviso a quien organiza: alguien con cuenta tocó «reservar» o «preguntar» en su actividad (tiene el nombre y la salida). */
+export function activityRequestNotification(i: { title: string; activityId: string; who: string; dateLabel: string | null }): NewNotification {
+  return { type: "activity_request", title: `${i.who} quiere reservar "${i.title}"`, body: i.dateLabel ? `Para la salida del ${i.dateLabel}. Contáctale por el medio que pusiste en el botón.` : "Contáctale por el medio que pusiste en el botón.", href: `/actividades/${i.activityId}/inscritos` };
+}
+
+/** Aviso a quien organiza: alguien se inscribió a su evento (inscripción normal o con formulario). */
+export function eventRegistrationNotification(i: { title: string; ref: string; who: string }): NewNotification {
+  return { type: "event_registration", title: `${i.who} se inscribió a "${i.title}"`, body: "Míralo en la lista de inscritos de tu evento.", href: `/eventos/${i.ref}` };
+}
+
+/** Confirmación para quien se inscribió. */
+export function eventRegistrationConfirmedNotification(i: { title: string; ref: string; whenLabel: string | null }): NewNotification {
+  return { type: "event_registration_confirmed", title: `Quedaste inscrito en "${i.title}"`, body: i.whenLabel ? `Te esperan el ${i.whenLabel}. Si no puedes ir, avísale a quien organiza.` : "Te esperan. Si no puedes ir, avísale a quien organiza.", href: `/eventos/${i.ref}` };
+}
