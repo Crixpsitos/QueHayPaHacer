@@ -181,7 +181,7 @@ export function NavbarAccountMenu({
         {showHome && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/" className={cn("flex items-center gap-2")}>
                 <Home className="size-4" aria-hidden="true" />
                 Volver al inicio
               </Link>
@@ -193,10 +193,10 @@ export function NavbarAccountMenu({
         {!user && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/login">Iniciar sesión</Link>
+              <Link prefetch={false} href="/login">Iniciar sesión</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/register">Crear cuenta</Link>
+              <Link prefetch={false} href="/register">Crear cuenta</Link>
             </DropdownMenuItem>
           </>
         )}
@@ -204,43 +204,43 @@ export function NavbarAccountMenu({
         {user && (
           <>
             <DropdownMenuItem asChild>
-              <Link href="/profile" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/profile" className={cn("flex items-center gap-2")}>
                 <UserIcon className="size-4" aria-hidden="true" />
                 Mi perfil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/mis-eventos" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/mis-eventos" className={cn("flex items-center gap-2")}>
                 <CalendarDays className="size-4" aria-hidden="true" />
                 Mis eventos
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/mis-inscripciones" className={cn("flex items-center gap-2")}>
                 <Ticket className="size-4" aria-hidden="true" />
                 Mis inscripciones
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/actividades/mis" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/actividades/mis" className={cn("flex items-center gap-2")}>
                 <Compass className="size-4" aria-hidden="true" />
                 Mis actividades
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/mis-planes" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/mis-planes" className={cn("flex items-center gap-2")}>
                 <Bookmark className="size-4" aria-hidden="true" />
                 Mis planes
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/avisos" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/avisos" className={cn("flex items-center gap-2")}>
                 <Bell className="size-4" aria-hidden="true" />
                 Mis avisos
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/mis-invitaciones" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/mis-invitaciones" className={cn("flex items-center gap-2")}>
                 <MailPlus className="size-4" aria-hidden="true" />
                 Mis invitaciones
                 {pendingInvites > 0 && (
@@ -252,14 +252,14 @@ export function NavbarAccountMenu({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/sites" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/sites" className={cn("flex items-center gap-2")}>
                 <MapPin className="size-4" aria-hidden="true" />
                 Mis sitios
               </Link>
             </DropdownMenuItem>
             {pendingSuggestions > 0 && (
               <DropdownMenuItem asChild>
-                <Link href="/sites?sugerencias=1" className={cn("flex items-center gap-2")}>
+                <Link prefetch={false} href="/sites?sugerencias=1" className={cn("flex items-center gap-2")}>
                   <MessageSquareDiff className="size-4" aria-hidden="true" />
                   Sugerencias recibidas
                   <span className="ml-auto rounded-full bg-[#D42F3C] px-1.5 text-xs font-semibold text-white">
@@ -271,7 +271,7 @@ export function NavbarAccountMenu({
             )}
             {isPremium ? (
               <DropdownMenuItem asChild>
-                <Link href="/studio" className={cn("flex items-center gap-2")}>
+                <Link prefetch={false} href="/studio" className={cn("flex items-center gap-2")}>
                   <LayoutDashboard className="size-4" aria-hidden="true" />
                   Ir a estudio
                 </Link>
@@ -280,14 +280,14 @@ export function NavbarAccountMenu({
               <>
               {hasTeamEvents && (
                 <DropdownMenuItem asChild>
-                  <Link href="/studio/events" className={cn("flex items-center gap-2")}>
+                  <Link prefetch={false} href="/studio/events" className={cn("flex items-center gap-2")}>
                     <LayoutDashboard className="size-4" aria-hidden="true" />
                     Eventos del equipo
                   </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
+                <Link prefetch={false} href="/premium" className={cn("flex items-center gap-2 font-medium text-primary")}>
                   <Sparkles className="size-4" aria-hidden="true" />
                   Mejorar a Premium
                 </Link>
@@ -296,7 +296,7 @@ export function NavbarAccountMenu({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile?ajustes=1" className={cn("flex items-center gap-2")}>
+              <Link prefetch={false} href="/profile?ajustes=1" className={cn("flex items-center gap-2")}>
                 <Settings className="size-4" aria-hidden="true" />
                 Ajustes
               </Link>

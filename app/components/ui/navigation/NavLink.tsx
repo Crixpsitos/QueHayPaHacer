@@ -24,7 +24,7 @@ function NavLinkActive({
     : pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <Link
+    <Link prefetch={false}
       href={href}
       aria-current={isActive ? 'page' : undefined}
       className={cn(className, isActive && activeClassName)}

@@ -104,7 +104,7 @@ export const Navbar = () => {
       <Container as="nav" aria-label="Principal" className="text-sm font-medium">
         <div className="flex h-16 items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr]">
           <div className="justify-self-start">
-            <Link
+            <Link prefetch={false}
               href="/"
               className="flex items-center gap-2 whitespace-nowrap font-bold tracking-tight text-primary transition-colors hover:text-primary/80"
               style={{ fontFamily: 'var(--font-heading)' }}
@@ -143,15 +143,15 @@ export const Navbar = () => {
               <DropdownMenuContent align="end" sideOffset={10} className="w-56 md:hidden">
                 {routes.map((route) => (
                   <DropdownMenuItem asChild key={route.name}>
-                    <Link href={route.href}>{route.name}</Link>
+                    <Link prefetch={false} href={route.href}>{route.name}</Link>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
+                  <Link prefetch={false} href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
+                  <Link prefetch={false} href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -172,14 +172,14 @@ export const Navbar = () => {
                 <DropdownMenuContent align="end" sideOffset={8}>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
+                      <Link prefetch={false} href="/eventos/create">{isCreator ? "Crear evento" : "Aportar evento"}</Link>
                     ) : (
                       <button type="button" onClick={openLoginModal}>{isCreator ? "Crear evento" : "Aportar evento"}</button>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     {user ? (
-                      <Link href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
+                      <Link prefetch={false} href="/sites/create">{isCreator ? "Crear sitio" : "Proponer sitio"}</Link>
                     ) : (
                       <button type="button" onClick={openLoginModal}>{isCreator ? "Crear sitio" : "Proponer sitio"}</button>
                     )}
