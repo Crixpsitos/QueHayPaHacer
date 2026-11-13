@@ -68,7 +68,7 @@ export function SiteDiscoveryCard({ site, prioritize = false }: { site: SiteDeta
   const closedForNow = site.temporarilyClosed?.isClosed === true;
 
   return (
-    <Link
+    <Link warmOnView
       href={`/donde-ir/${site.slug || site.id}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white transition-[transform,border-color,box-shadow] duration-300 motion-reduce:transition-none hover:border-[#09090B] hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2"
     >

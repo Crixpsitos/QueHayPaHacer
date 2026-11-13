@@ -67,6 +67,7 @@ import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { NewVersionNotice } from "@/app/components/feature/NewVersionNotice";
+import { IdlePrefetch } from "@/app/components/feature/IdlePrefetch";
 import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
 import { AvisosPrompt } from "@/presentation/notificationPrefs/components/AvisosPrompt";
 import { ServiceWorkerRegister } from "@/app/components/pwa/ServiceWorkerRegister";
@@ -117,6 +118,7 @@ export default function RootLayout({
         </AuthProvider>
         <Toaster />
         <NewVersionNotice />
+        <IdlePrefetch />
         <Suspense fallback={null}>
           <ConsentBanner />
         </Suspense>

@@ -1,7 +1,6 @@
 "use server";
 
-import { createServerContainer } from "@/infraestructure/di/container";
-import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper";
+import { fetchSiteLinkedEvents } from "@/presentation/sites/data/siteDetailFetchers";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 
 type Result =
@@ -9,11 +8,10 @@ type Result =
   | { success: false; error: string };
 
 export async function getEventsBySiteAction(siteId: string): Promise<Result> {
-  if (!siteId?.trim()) return { success: false, error: "siteId requerido." };
+  if (typeof siteId !== "string" || !siteId.trim() || siteId.length > 128) return { success: false, error: "siteId requerido." };
   try {
-    const { eventsService } = createServerContainer();
-    const events = await eventsService.getEventsBySiteId(siteId, 8);
-    return { success: true, events: events.map((e) => EventViewModelMapper.toViewModel(e)) };
+    // Misma lectura cacheada (horas, etiquetas `site-<id>` y `event-list`) que el itinerario de la ficha.
+    return { success: true, events: await fetchSiteLinkedEvents(siteId.trim()) };
   } catch (err) {
     console.error("getEventsBySiteAction error:", err);
     return { success: false, error: "No se pudieron obtener los eventos." };
