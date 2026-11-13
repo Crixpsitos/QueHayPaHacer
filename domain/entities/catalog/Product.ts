@@ -36,7 +36,6 @@ export interface Product {
   section: string
   /** https de nuestro almacenamiento; vacío = sin foto (sale con el color de su sección). */
   photoUrl: string
-  available: boolean
   tags: ProductTag[]
   /** «Puede contener trazas de…» */
   traces: string

@@ -4,7 +4,7 @@ import { catalogStats } from "./completeness"
 import { emptyCatalog, type SiteCatalog } from "./SiteCatalog"
 import type { Product } from "./Product"
 
-const prod = (id: string, o: Partial<Product> = {}): Product => ({ id, name: id, description: "Algo", priceCop: 1000, unit: "unidad", section: "", photoUrl: "https://x.co/a.jpg", available: true, tags: [], traces: "", discount: null, ...o })
+const prod = (id: string, o: Partial<Product> = {}): Product => ({ id, name: id, description: "Algo", priceCop: 1000, unit: "unidad", section: "", photoUrl: "https://x.co/a.jpg", tags: [], traces: "", discount: null, ...o })
 const cat = (o: Partial<SiteCatalog> = {}): SiteCatalog => ({ ...emptyCatalog("s"), whatsapp: "3160000000", ...o })
 
 test("carta vacía: 0 % y sin productos", () => {
@@ -21,8 +21,8 @@ test("sin foto en uno de dos baja el porcentaje y avisa", () => {
   assert.equal(s.tip, "Faltan fotos en 1 producto")
   assert.equal(s.withoutPhoto, 1)
 })
-test("sin WhatsApp el primer consejo es ponerlo; cuenta solo disponibles", () => {
-  const s = catalogStats(cat({ whatsapp: "", products: [prod("a"), prod("b", { available: false })] }), 0)
+test("sin WhatsApp el primer consejo es ponerlo; cuenta las secciones distintas", () => {
+  const s = catalogStats(cat({ whatsapp: "", products: [prod("a", { section: "Helados" }), prod("b", { section: "Helados" }), prod("c", { section: "Postres" }), prod("d")] }), 0)
   assert.match(s.tip ?? "", /WhatsApp/)
-  assert.equal(s.available, 1)
+  assert.equal(s.sections, 2)
 })

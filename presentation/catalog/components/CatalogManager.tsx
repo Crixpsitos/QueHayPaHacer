@@ -52,7 +52,7 @@ export function CatalogManager({ siteId, siteName, initial, activities }: Props)
       <section aria-label="Resumen de la carta" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           [String(stats.products), stats.products === 1 ? "producto en la carta" : "productos en la carta"],
-          [String(stats.available), "disponibles hoy"],
+          [String(stats.sections), stats.sections === 1 ? "sección" : "secciones"],
           [String(stats.promotions), stats.promotions === 1 ? "promoción vigente" : "promociones vigentes"],
         ].map(([n, t]) => (
           <div key={t} className="grid gap-0.5 rounded-3xl border border-gray-200 bg-white px-5 py-4"><span className="font-heading text-3xl font-bold text-primary-dark">{n}</span><span className="text-sm text-muted-foreground">{t}</span></div>

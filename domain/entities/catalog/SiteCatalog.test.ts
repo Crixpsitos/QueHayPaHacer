@@ -4,7 +4,7 @@ import { emptyCatalog, normalizeCatalog, validateCatalog, type SiteCatalog } fro
 import type { Product } from "./Product"
 
 const NOW = new Date("2026-11-20T20:00:00Z")
-const prod = (id: string, price = 10000): Product => ({ id, name: `P ${id}`, description: "", priceCop: price, unit: "unidad", section: "", photoUrl: "", available: true, tags: [], traces: "", discount: null })
+const prod = (id: string, price = 10000): Product => ({ id, name: `P ${id}`, description: "", priceCop: price, unit: "unidad", section: "", photoUrl: "", tags: [], traces: "", discount: null })
 const cat = (o: Partial<SiteCatalog> = {}): SiteCatalog => ({ ...emptyCatalog("s1"), products: [prod("a"), prod("b", 5000)], ...o })
 
 test("una carta vacía es válida", () => assert.equal(validateCatalog(emptyCatalog("s1"), NOW), null))

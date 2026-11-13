@@ -2,7 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { discountPercent, groupBySection, productPrice, validateProducts, cop, type Product } from "./Product"
 
-const p = (o: Partial<Product> = {}): Product => ({ id: "a", name: "Helado de maracuyá", description: "Dos bolas.", priceCop: 8500, unit: "porcion", section: "Helados", photoUrl: "", available: true, tags: ["sin-gluten"], traces: "", discount: null, ...o })
+const p = (o: Partial<Product> = {}): Product => ({ id: "a", name: "Helado de maracuyá", description: "Dos bolas.", priceCop: 8500, unit: "porcion", section: "Helados", photoUrl: "", tags: ["sin-gluten"], traces: "", discount: null, ...o })
 
 test("un producto válido pasa", () => assert.equal(validateProducts([p()]), null))
 test("rechaza nombre vacío, precio no entero o negativo, unidad inventada", () => {

@@ -10,7 +10,7 @@ import { chip, field, hint, label, outlineBtn, primaryBtn } from "./ui";
 
 const UNIT_NAMES: Record<ProductUnit, string> = { unidad: "Unidad", porcion: "Porción", kilo: "Kilo", libra: "Libra", docena: "Docena", bulto: "Bulto", litro: "Litro" };
 
-export const newProduct = (section = ""): Product => ({ id: crypto.randomUUID().slice(0, 12), name: "", description: "", priceCop: 0, unit: "unidad", section, photoUrl: "", available: true, tags: [], traces: "", discount: null });
+export const newProduct = (section = ""): Product => ({ id: crypto.randomUUID().slice(0, 12), name: "", description: "", priceCop: 0, unit: "unidad", section, photoUrl: "", tags: [], traces: "", discount: null });
 
 interface Props {
   siteId: string;
@@ -130,7 +130,6 @@ export function ProductEditor({ siteId, product, isNew, sections, onSave, onDele
             <p className="rounded-xl bg-[#FFF8E7] px-3 py-2 text-xs leading-relaxed text-[#7a5200]">Estas etiquetas las declaras tú: la plataforma no las certifica. Con alergias graves, la gente confirma con el lugar.</p>
           </div>
 
-          <label className="flex min-h-12 items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold">Disponible hoy<input type="checkbox" role="switch" className="size-6 accent-primary-dark" checked={p.available} onChange={(e) => set("available", e.target.checked)} /></label>
 
           {price && <p className="text-xs text-muted-foreground">Así se verá el precio: <strong>{cop(discounted && now > 0 && now < was ? now : was)}</strong></p>}
           {error && <p role="alert" className="text-sm font-medium text-red-600">{error}</p>}

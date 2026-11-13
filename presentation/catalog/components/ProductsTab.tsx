@@ -35,7 +35,6 @@ export function ProductsTab({ siteId, catalog, save }: Props) {
     setEditing(null);
     setNotice((await persistProducts(catalog.products.filter((x) => x.id !== p.id))) ?? null);
   };
-  const toggle = async (p: Product) => setNotice((await persistProducts(catalog.products.map((x) => (x.id === p.id ? { ...x, available: !x.available } : x)))) ?? null);
 
   return (
     <div className="grid gap-5">
@@ -71,8 +70,7 @@ export function ProductsTab({ siteId, catalog, save }: Props) {
                 {p.description && <p className="line-clamp-2 text-sm text-muted-foreground">{p.description}</p>}
                 <div className="flex flex-wrap gap-1.5">{p.tags.map((t) => <span key={t} className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}{p.section && <span className="rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-dark">{p.section}</span>}</div>
                 <p className="flex items-baseline gap-2"><span className="font-heading text-xl font-bold text-primary-dark">{cop(pr.now)}</span><span className="text-xs text-muted-foreground">{UNIT_LABELS[p.unit]}</span>{pr.was && <span className="text-sm text-muted-foreground line-through">{cop(pr.was)}</span>}</p>
-                <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-3">
-                  <label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" className="size-5 accent-primary-dark" checked={p.available} onChange={() => void toggle(p)} />{p.available ? "Disponible" : "Agotado"}</label>
+                <div className="mt-auto flex justify-end border-t border-gray-100 pt-2">
                   <button type="button" className="min-h-11 px-2 text-sm font-semibold text-primary-dark underline" onClick={() => setEditing({ product: p, isNew: false })}>Editar</button>
                 </div>
               </div>

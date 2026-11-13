@@ -109,27 +109,9 @@ export function describePromo(x: Pick<CatalogPromotion, "buy" | "get" | "benefit
 }
 
 export interface CartLine { productId: string; qty: number }
-export interface CartTotal { subtotal: number; total: number; applied: { id: string; title: string; times: number; saves: number }[] }
 
-/**
- * Total aproximado de una lista con las promociones que aplican AHORA (día y hora). Cada promoción se aplica las veces que
- * cabe en la lista. Es una estimación para el mensaje de WhatsApp: el sitio confirma el valor real.
- */
-export function cartTotal(lines: CartLine[], promos: CatalogPromotion[], products: Product[], today: string, now: Date): CartTotal {
-  const price = new Map(products.map((p) => [p.id, productPrice(p, today).now]))
-  const qty = new Map<string, number>()
-  for (const l of lines) qty.set(l.productId, (qty.get(l.productId) ?? 0) + l.qty)
-  const subtotal = [...qty].reduce((s, [id, q]) => s + (price.get(id) ?? 0) * q, 0)
-  const applied: CartTotal["applied"] = []
-  for (const x of promos) {
-    if (!isCatalogPromoLive(x, now)) continue
-    const one = promoPricing(x, products, today)
-    if (!one || one.saves <= 0) continue
-    const b = qty.get(x.buy.productId) ?? 0
-    const g = qty.get(x.get.productId) ?? 0
-    const times = x.buy.productId === x.get.productId ? Math.floor(b / (x.buy.qty + x.get.qty)) : Math.min(Math.floor(b / x.buy.qty), Math.floor(g / x.get.qty))
-    if (times > 0) applied.push({ id: x.id, title: x.title, times, saves: one.saves * times })
-  }
-  const saves = applied.reduce((s, a) => s + a.saves, 0)
-  return { subtotal, total: Math.max(0, subtotal - saves), applied }
+/** Las promociones que aplican AHORA y usan productos de esta lista (para decir «promoción que vi» en el mensaje). */
+export function promosInList(lines: CartLine[], promos: CatalogPromotion[], now: Date): CatalogPromotion[] {
+  const ids = new Set(lines.filter((l) => l.qty > 0).map((l) => l.productId))
+  return promos.filter((x) => isCatalogPromoLive(x, now) && ids.has(x.buy.productId) && ids.has(x.get.productId))
 }

@@ -1,43 +1,35 @@
-import { cop, UNIT_LABELS, type ProductUnit } from "./Product"
 import { colombianNumber } from "@/domain/entities/activities/value-objects/Cta"
 
 /**
- * Mensaje de WhatsApp para PREGUNTAR por productos (no somos una tienda en línea: no hay pagos ni pedidos). Va ya escrito,
- * con la lista, el total aproximado, la promoción que se vio y el enlace de la actividad. La persona puede editarlo antes de enviar.
+ * Mensaje de WhatsApp para PREGUNTAR por una actividad económica (no somos una tienda en línea: no hay precios cotizados, ni
+ * pedidos, ni pagos). Va ya escrito con lo que le interesó a la persona, la promoción que vio y el enlace de la actividad; la
+ * persona puede editarlo antes de enviar. El precio y la disponibilidad los habla ella con el sitio.
  */
-export interface AskItem { name: string; qty: number; unit: ProductUnit; unitPriceCop: number }
+export interface AskItem { name: string; qty: number }
 export interface AskInput {
   activityTitle: string
   activityUrl: string
   items: AskItem[]
   promoTitles?: string[]
-  /** Total aproximado ya calculado (con promociones). Si falta, se suma sin promociones. */
-  totalCop?: number
 }
 
 const MAX_ITEMS = 12
 /** wa.me acepta enlaces largos, pero muchos clientes cortan por encima de ~2000 caracteres. */
 const MAX_URL = 1800
 
-const line = (i: AskItem) => `• ${i.qty} × ${i.name} · ${cop(i.unitPriceCop)} ${UNIT_LABELS[i.unit]}`
-
 export function buildAskMessage(i: AskInput): string {
   const head = `Hola, vengo de Que Hay Pa Hacer. Vi tu actividad «${i.activityTitle}»`
-  const tail = i.items.length === 1 ? "¿Lo tienen disponible? ¿Cuándo puedo pasar a verlo?" : "¿Los tienen disponibles? ¿Cuándo puedo pasar a verlos?"
-  if (!i.items.length) return `${head} y quisiera hacerte una pregunta.\n\n${i.activityUrl}`
+  if (!i.items.length) return `${head} y me gustaría saber más.\n\n${i.activityUrl}`
   const shown = i.items.slice(0, MAX_ITEMS)
   const more = i.items.length - shown.length
-  const total = i.totalCop ?? i.items.reduce((s, x) => s + x.qty * x.unitPriceCop, 0)
   const promos = (i.promoTitles ?? []).filter(Boolean)
   return [
-    `${head} y quisiera preguntar por:`,
-    ...shown.map(line),
+    `${head} y me interesa:`,
+    ...shown.map((x) => `• ${x.qty} × ${x.name}`),
     ...(more > 0 ? [`• …y ${more} más`] : []),
+    ...(promos.length ? ["", `Promoción que vi: ${promos.join(", ")}`] : []),
     "",
-    `Total aproximado: ${cop(total)}`,
-    ...(promos.length ? [`Promoción que vi: ${promos.join(", ")}`] : []),
-    "",
-    tail,
+    "¿Me cuentas más?",
     "",
     i.activityUrl,
   ].join("\n")

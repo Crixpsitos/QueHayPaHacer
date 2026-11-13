@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MessageCircle, Phone, Tag } from "lucide-react";
-import { catalogPromoSchedule, cartTotal, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
+import { catalogPromoSchedule, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, promosInList, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
 import { cop, discountPercent, groupBySection, productPrice, TAG_LABELS, todayBogota, UNIT_LABELS, WARNING_TAGS, PRICES_NOTE, type Product, type ProductTag } from "@/domain/entities/catalog/Product";
 import { askHref } from "@/domain/entities/catalog/whatsappAsk";
 import { sectionTone } from "@/presentation/catalog/lib/tone";
@@ -49,9 +49,9 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
   const groups = groupBySection(shown);
 
   const lines = Object.entries(qty).filter(([, n]) => n > 0).map(([productId, n]) => ({ productId, qty: n }));
-  const totals = now ? cartTotal(lines, live, products, today, now) : null;
-  const items = lines.flatMap((l) => { const p = products.find((x) => x.id === l.productId); return p ? [{ name: p.name, qty: l.qty, unit: p.unit, unitPriceCop: productPrice(p, today).now }] : []; });
-  const href = canAsk ? askHref(whatsapp, { activityTitle: context.title, activityUrl: context.url, items, promoTitles: totals?.applied.map((a) => a.title), totalCop: totals?.total }) : null;
+  const inList = now ? promosInList(lines, live, now) : [];
+  const items = lines.flatMap((l) => { const p = products.find((x) => x.id === l.productId); return p ? [{ name: p.name, qty: l.qty }] : []; });
+  const href = canAsk ? askHref(whatsapp, { activityTitle: context.title, activityUrl: context.url, items, promoTitles: inList.map((x) => x.title) }) : null;
   const step = (id: string, d: number) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(99, (q[id] ?? 0) + d)) }));
 
   if (!products.length && !live.length) return null;
@@ -108,20 +108,20 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
               {groups.length > 1 && <h3 className="font-heading text-lg font-bold text-primary-dark">{g.section}</h3>}
               <ul className="grid gap-3">
                 {g.items.map((p) => { const pr = productPrice(p, today); const n = qty[p.id] ?? 0; return (
-                  <li key={p.id} className={`flex gap-3 rounded-3xl border p-3 ${p.available ? "border-gray-200 bg-white" : "border-gray-200 bg-gray-100"}`}>
+                  <li key={p.id} className="flex gap-3 rounded-3xl border border-gray-200 bg-white p-3">
                     <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl" style={{ background: sectionTone(p.section).bg }}>
-                      {p.photoUrl && <img src={p.photoUrl} alt={p.name} loading="lazy" className={`h-full w-full object-cover ${p.available ? "" : "opacity-60"}`} />}
-                      {pr.was && p.available && <span className="absolute left-1 top-1 rounded-full bg-primary-dark px-2 py-0.5 text-[11px] font-bold text-white">-{discountPercent(pr.was, pr.now)}%</span>}
+                      {p.photoUrl && <img src={p.photoUrl} alt={p.name} loading="lazy" className="h-full w-full object-cover" />}
+                      {pr.was && <span className="absolute left-1 top-1 rounded-full bg-primary-dark px-2 py-0.5 text-[11px] font-bold text-white">-{discountPercent(pr.was, pr.now)}%</span>}
                     </div>
                     <div className="grid min-w-0 flex-1 content-start gap-1">
                       <strong className="font-heading text-base">{p.name}</strong>
                       {p.description && <span className="text-sm leading-snug text-muted-foreground">{p.description}</span>}
-                      <span className="flex flex-wrap gap-1">{p.tags.map((t) => <span key={t} className={`${pill} text-[11px] ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}{!p.available && <span className={`${pill} text-[11px] bg-gray-200 text-gray-700`}>Agotado hoy</span>}</span>
+                      <span className="flex flex-wrap gap-1">{p.tags.map((t) => <span key={t} className={`${pill} text-[11px] ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}</span>
                       {p.traces && <span className="text-xs text-muted-foreground">Puede contener trazas de {p.traces}.</span>}
                     </div>
                     <div className="grid content-between justify-items-end gap-2">
                       <span className="grid justify-items-end"><span className="font-heading text-lg font-bold text-primary-dark">{cop(pr.now)}</span><span className="text-xs text-muted-foreground">{UNIT_LABELS[p.unit]}</span>{pr.was && <span className="text-xs text-muted-foreground line-through">{cop(pr.was)}</span>}</span>
-                      {canAsk && p.available && (n === 0 ? <button type="button" onClick={() => step(p.id, 1)} className="min-h-11 rounded-full border-[1.5px] border-primary-dark px-4 text-sm font-semibold text-primary-dark">Agregar</button> : (
+                      {canAsk && (n === 0 ? <button type="button" onClick={() => step(p.id, 1)} className="min-h-11 rounded-full border-[1.5px] border-primary-dark px-4 text-sm font-semibold text-primary-dark">Me interesa</button> : (
                         <span className="flex items-center gap-1"><button type="button" aria-label={`Menos ${p.name}`} onClick={() => step(p.id, -1)} className="size-11 rounded-full border border-gray-300 text-lg">-</button><span className="min-w-5 text-center font-bold">{n}</span><button type="button" aria-label={`Más ${p.name}`} onClick={() => step(p.id, 1)} className="size-11 rounded-full bg-primary-dark text-lg text-white">+</button></span>
                       ))}
                     </div>
@@ -134,13 +134,12 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
         </div>
       )}
 
-      {lines.length > 0 && href && totals && (
+      {lines.length > 0 && href && (
         <div className="sticky bottom-3 z-10 grid gap-3 rounded-3xl border border-gray-200 bg-white p-4 shadow-[0_-12px_32px_-12px_rgba(155,10,38,.25)]" role="region" aria-label="Mi lista">
-          <div className="flex items-center justify-between gap-3"><strong className="font-heading text-lg">Mi lista ({lines.reduce((s, l) => s + l.qty, 0)})</strong><button type="button" onClick={() => setQty({})} className="min-h-11 px-2 text-sm font-semibold text-primary-dark underline">Vaciar</button></div>
+          <div className="flex items-center justify-between gap-3"><strong className="font-heading text-lg">Lo que te interesa ({lines.reduce((s, l) => s + l.qty, 0)})</strong><button type="button" onClick={() => setQty({})} className="min-h-11 px-2 text-sm font-semibold text-primary-dark underline">Vaciar</button></div>
           <p className="text-sm text-muted-foreground">{items.map((i) => `${i.qty} ${i.name}`).join(" · ")}</p>
-          <p className="flex flex-wrap items-baseline gap-2"><strong className="font-heading text-xl text-primary-dark">Aprox. {cop(totals.total)}</strong>{totals.applied.length > 0 && <span className="text-xs text-[#7a5200]">con {totals.applied.map((a) => a.title).join(", ")} (ahorras {cop(totals.subtotal - totals.total)})</span>}</p>
           <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-primary to-primary-dark px-5 font-semibold text-white"><MessageCircle className="size-4" aria-hidden /> Preguntar por WhatsApp</a>
-          <p className="text-xs text-muted-foreground">Se abre WhatsApp con el mensaje ya escrito. Aquí no se paga: el sitio te confirma precio y disponibilidad.</p>
+          <p className="text-xs text-muted-foreground">Se abre WhatsApp con el mensaje ya escrito. Aquí no se hacen pedidos ni pagos: lo hablas directo con el sitio.</p>
         </div>
       )}
     </section>
