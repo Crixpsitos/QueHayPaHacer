@@ -15,11 +15,11 @@ export const PRODUCT_UNITS = ["unidad", "porcion", "kilo", "libra", "docena", "b
 export type ProductUnit = (typeof PRODUCT_UNITS)[number]
 export const UNIT_LABELS: Record<ProductUnit, string> = { unidad: "c/u", porcion: "la porción", kilo: "por kilo", libra: "por libra", docena: "la docena", bulto: "el bulto", litro: "por litro" }
 
-export const PRODUCT_TAGS = ["vegano", "vegetariano", "sin-gluten", "sin-lacteos", "sin-lactosa", "sin-azucar", "sin-frutos-secos", "contiene-nueces", "picante", "para-compartir", "organico", "hecho-a-mano", "segura-mascotas", "toxica-mascotas"] as const
+export const PRODUCT_TAGS = ["vegano", "vegetariano", "sin-gluten", "sin-lacteos", "sin-lactosa", "sin-azucar", "sin-frutos-secos", "contiene-nueces", "picante", "para-compartir", "para-llevar", "organico", "hecho-a-mano", "segura-mascotas", "toxica-mascotas"] as const
 export type ProductTag = (typeof PRODUCT_TAGS)[number]
 export const TAG_LABELS: Record<ProductTag, string> = {
   vegano: "Vegano", vegetariano: "Vegetariano", "sin-gluten": "Sin gluten", "sin-lacteos": "Sin lácteos", "sin-lactosa": "Sin lactosa", "sin-azucar": "Sin azúcar añadida",
-  "sin-frutos-secos": "Sin frutos secos", "contiene-nueces": "Contiene nueces", picante: "Picante", "para-compartir": "Para compartir", organico: "Orgánico",
+  "sin-frutos-secos": "Sin frutos secos", "contiene-nueces": "Contiene nueces", picante: "Picante", "para-compartir": "Para compartir", "para-llevar": "Para llevar", organico: "Orgánico",
   "hecho-a-mano": "Hecho a mano", "segura-mascotas": "Segura para mascotas", "toxica-mascotas": "Tóxica para mascotas",
 }
 /** Etiquetas que avisan de un riesgo (se pintan en ámbar, no en verde). */
