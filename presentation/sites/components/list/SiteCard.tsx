@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { motion } from "motion/react"
-import { AlertTriangle, CalendarDays, Eye, EyeOff, Heart, Loader2, MessageSquareDiff, MousePointerClick, Pencil, Share2, Trash2 } from "lucide-react"
+import { AlertTriangle, CalendarDays, Eye, EyeOff, Heart, Loader2, MessageSquareDiff, MousePointerClick, Pencil, Share2, Store, Trash2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -125,6 +126,17 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden />
           <p className="text-[11px] leading-relaxed text-destructive/90">{site.rejectionReason}</p>
         </div>
+      )}
+
+      {isApproved && (
+        <Link
+          href={`/carta/${site.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2.5 flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-[#F6DDA0] bg-[#FFF8E7] px-3 text-left text-xs font-semibold text-[#7a5200]"
+        >
+          <span className="flex items-center gap-2"><Store className="size-4 shrink-0" aria-hidden />Mi carta y promociones</span>
+          <span aria-hidden>→</span>
+        </Link>
       )}
 
       {pendingSuggestions > 0 && onOpenSuggestions && (

@@ -15,7 +15,7 @@ export class DailyStatsFirebaseRepository {
     return snap.docs.map((d) => ({ ...(d.data() as DailyStatsDoc), day: d.id }))
   }
 
-  async sumSince(collection: "events" | "sites", id: string, sinceDay: string): Promise<StatsTotals> {
+  async sumSince(collection: "events" | "sites" | "activities", id: string, sinceDay: string): Promise<StatsTotals> {
     return sumStats(await this.readDays(collection, id, sinceDay))
   }
 

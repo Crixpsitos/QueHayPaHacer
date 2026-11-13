@@ -76,6 +76,11 @@ export function compactCount(n: number): string {
   return `${(n < 10_000 ? k.toFixed(1) : String(Math.round(k))).replace(".", ",").replace(/,0$/, "")} k`;
 }
 
+/** «12 van a ir» (las personas que marcaron «Voy a ir»). */
+export function goingLabel(n: number): string {
+  return `${compactCount(n)} ${Math.round(n) === 1 ? "va" : "van"} a ir`;
+}
+
 /** Texto plano de una descripción que pudo venir con etiquetas HTML. */
 export function plainText(value: string | undefined | null): string {
   return (value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();

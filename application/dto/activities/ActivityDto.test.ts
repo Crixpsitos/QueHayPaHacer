@@ -107,21 +107,14 @@ test("inscripciones: 'cómo se paga' opcional, una línea de máximo 200 caracte
   assert.equal(ok("a\nb").ok, false)
 })
 
-const menu = [{ name: "  Helado de mora ", description: "Dos bolas", priceCop: 6000, available: true, group: "Helados" }]
 const rooms = [{ name: "Sala de lectura", description: "", capacity: 12, priceCop: 40000, unit: "hora", rules: "" }]
 
-test("menú y espacios: una actividad GLOBAL los rechaza (no los descarta en silencio)", () => {
-  assert.match(fail({ offerings: menu }), /solo van en actividades de un sitio/)
+test("espacios: una actividad GLOBAL los rechaza (no los descarta en silencio)", () => {
   assert.match(fail({ spaces: rooms }), /solo van en actividades de un sitio/)
 })
-test("menú y espacios: una actividad de sitio los acepta y normaliza", () => {
-  const r = parseActivityInput({ ...valid(), siteId: "s1", offerings: menu, spaces: rooms })
+test("espacios: una actividad de sitio los acepta y normaliza", () => {
+  const r = parseActivityInput({ ...valid(), siteId: "s1", spaces: rooms })
   assert.equal(r.ok, true)
   if (!r.ok) return
-  assert.equal(r.value.offerings[0].name, "Helado de mora")
   assert.equal(r.value.spaces[0].capacity, 12)
-})
-test("menú: con enlace o precio inválido se rechaza con mensaje claro", () => {
-  assert.match(fail({ siteId: "s1", offerings: [{ ...menu[0], description: "pide en www.tienda.com" }] }), /enlaces/)
-  assert.match(fail({ siteId: "s1", offerings: [{ ...menu[0], priceCop: -5 }] }), /precio|entero/i)
 })

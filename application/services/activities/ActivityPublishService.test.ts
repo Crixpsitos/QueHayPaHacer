@@ -36,7 +36,7 @@ const input = (p: Partial<ActivityInput> = {}): ActivityInput => ({
   schedule: { rules: [{ kind: "weekly", weekdays: [0], start: "06:00" }], skipDates: [], requiresReservation: false },
   priceOptions: [{ label: "Completa", amountCop: 40000, unit: "persona", includes: ["Almuerzo"] }],
   extras: [],
-  sections: [], offerings: [], spaces: [], promotions: [],
+  sections: [], spaces: [],
   cta: null,
   join: null,
   ...p,

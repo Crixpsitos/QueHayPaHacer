@@ -219,14 +219,18 @@ export function RegistrationsTable({
   };
 
   const exportCsv = () => {
-    const headers = ["Nombre", "Registrado", "Asistencia", ...formColumns];
+    const withContact = data.some((r) => r.email || r.phone);
+    const headers = ["Nombre", ...(withContact ? ["Correo", "Teléfono"] : []), "Registrado", ...(tiers.length ? ["Categoría"] : []), "Asistencia", ...formColumns];
+    const seatText = (r: RegistrationRow) => (r.seat === "interested" ? "Interesado" : r.seat === "expired" ? "Vencido" : r.seat === "waitlist" ? "En espera" : "");
     const csvRows = data.map((r) => [
       r.name,
+      ...(withContact ? [r.email ?? "", r.phone ?? ""] : []),
       formatDateTime(r.registeredAt),
+      ...(tiers.length ? [r.tier ?? ""] : []),
       requiresAttendance
         ? r.attendanceConfirmed
           ? "Confirmada"
-          : "Pendiente"
+          : seatText(r) || "Pendiente"
         : "No se requiere asistencia",
       ...formColumns.map((label) => r.formResponses?.find((f) => f.label === label)?.value ?? ""),
     ]);
@@ -652,6 +656,9 @@ function RegistrationRowItem({
             )}
           </span>
         </div>
+        {(row.email || row.phone) && (
+          <p className="mt-0.5 truncate pl-[2.375rem] text-[11px] text-slate-500">{[row.email, row.phone].filter(Boolean).join(" · ")}</p>
+        )}
       </td>
       <td className="px-3 py-2.5 text-slate-500" suppressHydrationWarning>
         {formatDateTime(row.registeredAt)}
@@ -669,6 +676,18 @@ function RegistrationRowItem({
             <Check className="h-3 w-3" />
             Confirmada{row.paidAmount ? ` · ${row.tier ? `${row.tier} ` : ""}${formatCop(row.paidAmount)}` : ""}
           </motion.span>
+        ) : row.seat === "interested" ? (
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+            Interesado · {row.seatHoursLeft === 0 ? "vence ya" : `vence en ${row.seatHoursLeft} h`}
+          </span>
+        ) : row.seat === "expired" ? (
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500" title="Pasaron 24 h sin confirmarse: su cupo ya no cuenta, pero puedes confirmarlo.">
+            Vencido
+          </span>
+        ) : row.seat === "waitlist" ? (
+          <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary-dark" title="Cupos completos: entra solo si se libera uno.">
+            En espera
+          </span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
             Pendiente

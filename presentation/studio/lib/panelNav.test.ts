@@ -47,3 +47,9 @@ test("nextNav: cambiar el filtro reselecciona dentro del tipo y conserva el per�
   const nav = nextNav(opts, { f: "site:s1", d: 90, t: "all" }, { t: "event" });
   assert.deepEqual(nav, { f: "event:e1", d: 90, t: "event" });
 });
+
+test("el filtro «activity» selecciona la actividad más visitada", () => {
+  const o = [...opts, { key: "activity:a1", type: "activity" as const, views30: 7 }, { key: "activity:a2", type: "activity" as const, views30: 30 }];
+  assert.deepEqual(resolveNav(o, { t: "activity" }), { f: "activity:a2", d: 30, t: "activity" });
+  assert.equal(navToSearch({ f: "activity:a2", d: 30, t: "activity" }), "f=activity%3Aa2&d=30&t=activity");
+});

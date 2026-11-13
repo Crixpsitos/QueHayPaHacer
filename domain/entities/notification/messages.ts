@@ -81,3 +81,11 @@ export function activitySanctionNotification(i: { kind: "warning" | "restriction
   if (i.kind === "restriction") return { type: "activity_sanction", title: `Restricción: no puedes ${what} por ${i.days} días`, body: "Por reincidir en incumplir las reglas de reseñas.", href: "/terminos#resenas" };
   return { type: "activity_sanction", title: "Tu cuenta fue suspendida en reseñas y actividades", body: "QHPA revisará tu caso. Puedes escribirnos desde Contáctanos.", href: "/contactanos" };
 }
+
+/** Cupos de un evento con enlace externo: venció el interés (24 h), se denegó la espera o se liberó un cupo para quien esperaba. */
+export function eventSeatNotification(i: { title: string; ref: string; notice: "expired" | "denied" | "promoted" }): NewNotification {
+  const href = `/eventos/${i.ref}`;
+  if (i.notice === "promoted") return { type: "event_seat", title: `¡Se liberó un cupo en "${i.title}"!`, body: "Ya estás como interesado. Entra al evento para ir al enlace de inscripción: tu lugar se guarda 24 horas.", href };
+  if (i.notice === "denied") return { type: "event_seat", title: `No alcanzamos a darte un cupo en "${i.title}"`, body: "Estuviste 24 horas en la lista de espera y los cupos siguen completos.", href };
+  return { type: "event_seat", title: `Venció tu lugar en "${i.title}"`, body: "Pasaron 24 horas sin confirmarse. Si todavía quieres ir, vuelve a entrar al evento.", href };
+}

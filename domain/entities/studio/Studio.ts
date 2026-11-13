@@ -192,6 +192,11 @@ export interface EventRegistration {
   paidAmount?: number;
   /** Persona sin cuenta agregada por quien organiza. */
   isGuest?: boolean;
+  /** Contacto (solo lo ve quien tiene `view_attendee_contact`). */
+  email?: string;
+  phone?: string;
+  /** Estado guardado de la inscripción (`registered`, `waitlist`, `accepted`…): de él sale el estado del cupo. */
+  status?: string;
   /** Respuestas del formulario (solo para eventos tipo "form"). */
   formResponses?: FormResponseAnswer[];
 }

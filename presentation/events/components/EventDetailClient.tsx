@@ -1,7 +1,7 @@
 "use client";
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
-import { useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import Link from "next/link";
 import { ExternalLink, Info, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
@@ -12,6 +12,8 @@ import { trackEventAction } from "@/app/lib/eventTrack";
 import { eventOutHref } from "@/app/r/_lib/outHref";
 import { EventAttendeesDialog } from "./EventAttendeesDialog";
 import { expressInterestAction } from "@/app/actions/events/express-interest.action";
+import { ExternalInterestGate, type InterestGate } from "./ExternalInterestGate";
+import { rebalanceEventSeatsAction } from "@/app/actions/events/rebalance-event-seats.action";
 import { PastEventState } from "./PastEventState";
 import { isEventPast } from "../utils/eventTemporalUtils";
 import { EventHero } from "./detail/EventHero";
@@ -68,6 +70,7 @@ export function EventDetailClient({
 }: EventDetailClientProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
+  const [gate, setGate] = useState<InterestGate>(null);
   // La página es igual para todos (cacheable); lo de la persona (like, inscripción, dueño, equipo) llega aparte.
   const viewer = useEventViewer(event.id, sessionId);
   const { isOwner, teamRole, isPremiumOwner, liked: initialLiked, registered: initialRegistered, ready } = viewer;
@@ -76,6 +79,12 @@ export function EventDetailClient({
   const setIsRegistered = setRegisteredOverride;
 
   const isPast = isEventPast(event.endDate);
+  // Evento con enlace externo y cupos: al abrir el detalle se ponen al día los vencimientos (24 h) y la lista de espera, y se
+  // avisa a quienes cambiaron de estado. Sin escribir durante el render; el servidor lo limita a una revisión cada 5 minutos.
+  const watchSeats = event.registrationType === "external" && (event.capacity ?? 0) > 0 && !isPast;
+  useEffect(() => {
+    if (watchSeats) void rebalanceEventSeatsAction(event.id).catch(() => undefined);
+  }, [watchSeats, event.id]);
   const registrations = event.analytics?.registrations ?? 0;
   const capacity = event.capacity ?? 0;
   const isOverCapacity = capacity > 0 && registrations >= capacity;
@@ -95,13 +104,33 @@ export function EventDetailClient({
   const alreadyIn = isRegistered && usesModal;
   const showCta = !pastBlocked && !isOwner && event.registrationType !== "none" && !alreadyIn;
 
+  const externalTiers = priceTiers(event.price);
+  const goExternal = async (tier?: string) => {
+    const out = eventOutHref(event.id, "register");
+    // /r/e/[id] cuenta el clic en el servidor (contador del estudio + stats diarias) y redirige al externalUrl guardado.
+    if (!(event.capacity && event.capacity > 0)) {
+      void expressInterestAction(event.id, tier); // sin cupos: queda como «interesado» sin bloquear el enlace
+      window.open(out, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // Con cupos hay que saber el resultado antes de salir: se abre la pestaña ya (gesto del clic) y se redirige o se cierra.
+    const w = window.open("", "_blank");
+    if (w) w.opener = null;
+    const r = await expressInterestAction(event.id, tier).catch(() => ({ recorded: false }) as { recorded: boolean; outcome?: "waitlist" | "interested"; position?: number | null });
+    if (r.outcome === "waitlist") {
+      w?.close();
+      setGate({ kind: "waitlist", position: r.position ?? null });
+      return;
+    }
+    if (w) w.location.href = out;
+    else window.location.href = out;
+  };
+
   const register = () => {
     if (event.registrationType === "external") {
-      if (event.externalUrl) {
-        // /r/e/[id] cuenta el clic en el servidor (contador del estudio + stats diarias) y redirige al externalUrl guardado.
-        void expressInterestAction(event.id); // queda como «interesado» para quien organiza (no bloquea el enlace)
-        window.open(eventOutHref(event.id, "register"), "_blank", "noopener,noreferrer");
-      }
+      if (!event.externalUrl) return;
+      if (externalTiers.length) setGate({ kind: "tier" });
+      else void goExternal();
     } else {
       setRegistrationModalOpen(true);
     }
@@ -221,6 +250,14 @@ export function EventDetailClient({
       }}
     >
       {lightboxIndex !== null && <Lightbox slides={slides} initial={lightboxIndex} onClose={() => setLightboxIndex(null)} />}
+
+      <ExternalInterestGate
+        gate={gate}
+        tiers={externalTiers}
+        money={(a) => formatTierAmount(event.price, a)}
+        onPick={(t) => { setGate(null); void goExternal(t); }}
+        onClose={() => setGate(null)}
+      />
 
       {registrationModalOpen && (
         <Suspense fallback={null}>

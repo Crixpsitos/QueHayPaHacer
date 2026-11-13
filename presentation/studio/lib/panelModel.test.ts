@@ -60,6 +60,14 @@ test("filtro por tipo: la seleccionada es de ese tipo y los conteos siguen siend
   const p = buildPanel({ ...base, typeFilter: "event", selectedKey: "site:s1", stats30: stats, docs: [] });
   assert.deepEqual(p.fichas.map((f) => [f.key, f.selected]), [["site:s1", false], ["event:e1", true]]); // todas, la seleccionada es del tipo filtrado
   assert.equal(p.detail?.id, "e1");
-  assert.deepEqual(p.counts, { all: 2, event: 1, site: 1 });
+  assert.deepEqual(p.counts, { all: 2, event: 1, site: 1, activity: 0 });
   assert.equal(p.typeFilter, "event");
+});
+
+test("una actividad aparece en el panel con su enlace público por slug", () => {
+  const p = buildPanel({ fichas: [{ type: "activity", id: "a1", slug: "senderismo-domingos", name: "Senderismo" }], stats30: {}, selectedKey: "activity:a1", period: 30, today: "2026-11-12", docs: [], links: [] });
+  assert.equal(p.counts.activity, 1);
+  assert.equal(p.detail?.type, "activity");
+  assert.equal(p.detail?.publicHref, "/actividades/senderismo-domingos");
+  assert.deepEqual(p.detail?.customLinks, []);
 });

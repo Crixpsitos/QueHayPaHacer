@@ -8,6 +8,7 @@ import {
   AlertTriangle, CalendarDays, ChevronLeft, ChevronRight,
   Clock, Eye, EyeOff, ExternalLink, Globe, Heart,
   ImageOff, Loader2, MapPin, Pencil, Play, Share2, X,
+  Store,
 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { CATEGORY_OPTIONS, STATUS_COLORS, STATUS_LABELS, WEEK_DAYS, getDisplayStatus } from "../lib/constants"
@@ -587,13 +588,21 @@ function Body({ site, onEdit, siteEvents, eventsLoading }: {
             <p className="text-sm font-semibold text-[#09090B]">{site.author.displayName}</p>
           </div>
         </div>
-        <Button
-          onClick={() => onEdit(site.id)}
-          className="gap-1.5 bg-[#D42F3C] text-white shadow-primary-glow hover:bg-[#9B0A26]"
-        >
-          <Pencil className="size-4" aria-hidden />
-          {status === "rejected" ? "Editar y reenviar" : "Editar sitio"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {status === "approved" && (
+            <a href={`/carta/${site.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#F6DDA0] bg-[#FFF8E7] px-3 text-sm font-semibold text-[#7a5200] hover:bg-[#FFF1C9]">
+              <Store className="size-4" aria-hidden />
+              Mi carta
+            </a>
+          )}
+          <Button
+            onClick={() => onEdit(site.id)}
+            className="gap-1.5 bg-[#D42F3C] text-white shadow-primary-glow hover:bg-[#9B0A26]"
+          >
+            <Pencil className="size-4" aria-hidden />
+            {status === "rejected" ? "Editar y reenviar" : "Editar sitio"}
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -73,6 +73,8 @@ import { getAccountCreatedAt } from "@/app/actions/_accountCreatedAt";
 import { PushService } from "@/application/services/push/PushService";
 import { PushTokenFirebaseRepository } from "../firebase/repositories/push/PushTokenFirebaseRepository";
 import { FcmPushSender } from "../push/FcmPushSender";
+import { SiteCatalogService } from "@/application/services/catalog/SiteCatalogService";
+import { SiteCatalogFirebaseRepository } from "../firebase/repositories/catalog/SiteCatalogFirebaseRepository";
 import { TransactionalEmailBridge } from "@/application/services/email/TransactionalEmailBridge";
 import { ValueEmailRunner } from "@/application/services/email/ValueEmailRunner";
 import { buildPool } from "@/domain/entities/email/selection";
@@ -211,6 +213,8 @@ export const createServerContainer = () => {
   const sitesFirebaseRepository = new SitesFirebaseRepository(getFirebaseFirestore());
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
+  // carta y promociones del sitio (un documento por sitio; edita solo su dueño)
+  const siteCatalogService = new SiteCatalogService({ repo: new SiteCatalogFirebaseRepository(getFirebaseFirestore()), isOwner: (uid, id) => sitesService.isOwner(uid, id), clock: () => new Date() });
 
   // actividades (el estado del sitio vinculado decide la visibilidad de las actividades de sitio)
   const activityService = new ActivityService(new ActivityFirebaseRepository(getFirebaseFirestore()), async (siteId) => {
@@ -342,7 +346,7 @@ export const createServerContainer = () => {
     clock: () => new Date(),
     enabled: Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY),
   });
-  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot"]);
+  const PUSHED = new Set(["activity_join", "activity_join_confirmed", "activity_reminder", "activity_last_spot", "event_seat"]);
   const notifyAndEmail = async (uid: string, n: Parameters<typeof notificationService.notify>[1], id?: string) => {
     await notificationService.notify(uid, n, id);
     await transactionalEmailBridge.fromNotification(uid, n, id);
@@ -556,6 +560,8 @@ export const createServerContainer = () => {
     activityReviewRepo: reviewRepo,
     activityAppealRepoGet: (id: string) => activityAppealRepo.get(id),
     activityJoinService,
+    notifyUser: notifyAndEmail,
+    siteCatalogService,
     activityPlansService,
     activityReminderService,
     hostIdentityService,

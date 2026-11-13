@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Bookmark, CalendarDays, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
+import { AddToPlanButton } from "@/presentation/shared/components/AddToPlanButton"
 import { getMyActivityEngagementAction, markActivityVisitedAction, setActivitySavedAction } from "@/app/actions/activities/engagement.action"
 
 /**
  * Guardar (privado) y "Yo fui". La ficha se cachea por horas, así que lo de cada persona se pide aquí, tras montar.
  * Sin sesión: el primer toque lleva a iniciar sesión y vuelve a esta misma página.
  */
-export function ActivityEngagement({ activityId, visitedLabel, className, variant = "full" }: { activityId: string; visitedLabel: string | null; className?: string; variant?: "full" | "icon" }) {
+export function ActivityEngagement({ activityId, visitedLabel, className, variant = "full", title, hasSchedule }: { activityId: string; visitedLabel: string | null; className?: string; variant?: "full" | "icon"; title?: string; hasSchedule?: boolean }) {
   const [state, setState] = useState({ saved: false, visited: false })
   const [error, setError] = useState<string | null>(null)
   const busy = useRef(false) // un toque a la vez: un doble toque rápido no debe mandar dos cambios iguales
@@ -58,9 +59,7 @@ export function ActivityEngagement({ activityId, visitedLabel, className, varian
   return (
     <div className={className ?? "grid gap-2"}>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant={state.saved ? "default" : "outline"} size="lg" className="h-11" aria-pressed={state.saved} onClick={() => void toggleSaved()}>
-          <Bookmark className={state.saved ? "fill-current" : undefined} aria-hidden /> {state.saved ? "Guardada" : "Guardar"}
-        </Button>
+        <AddToPlanButton kind="activity" id={activityId} title={title ?? "esta actividad"} hasSchedule={hasSchedule} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary px-4 text-sm font-semibold text-primary-dark outline-none hover:bg-primary-light focus-visible:ring-3 focus-visible:ring-ring/40 data-[planned=true]:border-[#14532D]" />
         <Button type="button" variant={state.visited ? "default" : "outline"} size="lg" className="h-11" aria-pressed={state.visited} onClick={() => void markVisited()}>
           <Check aria-hidden /> {state.visited ? "Fuiste" : "Yo fui"}
         </Button>

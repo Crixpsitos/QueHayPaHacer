@@ -100,6 +100,8 @@ interface PipelineRegistrationRow {
   tier?: string;
   paidAmount?: number;
   guest?: boolean;
+  email?: string;
+  phone?: string;
   formData?: Record<string, unknown>;
   userData?: RegistrationUserInfo | null;
 }
@@ -906,6 +908,8 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
           "tier",
           "paidAmount",
           "guest",
+          "email",
+          "phone",
           "formData",
           "userData",
         )
@@ -1001,6 +1005,9 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
       tier: entry.tier,
       paidAmount: entry.paidAmount,
       isGuest: entry.guest === true,
+      ...(entry.email ? { email: entry.email } : {}),
+      ...(entry.phone ? { phone: entry.phone } : {}),
+      ...(entry.status ? { status: entry.status } : {}),
       formResponses,
     };
   }

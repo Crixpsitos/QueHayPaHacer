@@ -39,6 +39,13 @@ export interface RegistrationRow {
   tier?: string;
   paidAmount?: number;
   isGuest?: boolean;
+  /** Contacto: solo con permiso `view_attendee_contact` (si no, el servidor lo quita). */
+  email?: string;
+  phone?: string;
+  /** Estado del cupo en eventos con enlace externo: interesado vigente, vencido (>24 h) o en lista de espera. */
+  seat?: "interested" | "expired" | "waitlist";
+  /** Horas que le quedan a un interesado vigente. */
+  seatHoursLeft?: number;
   /** Solo en eventos tipo "form". */
   formResponses?: { label: string; value: string }[];
 }

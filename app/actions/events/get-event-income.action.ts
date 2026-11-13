@@ -2,7 +2,7 @@
 
 import { requireEventPermission } from "@/app/actions/_session";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { summarizeIncome, type IncomeSummary } from "@/domain/entities/EventRegistration/payment";
+import { payTiers, summarizeIncome, type IncomeSummary } from "@/domain/entities/EventRegistration/payment";
 
 export type EventIncomeResult = { success: true; income: IncomeSummary } | { success: false; error: string };
 
@@ -13,7 +13,9 @@ export async function getEventIncomeAction(eventId: string): Promise<EventIncome
   const access = await requireEventPermission(id, "confirm_attendance", { ownerNeedsPremium: false });
   if (!access) return { success: false, error: "No tienes permiso en este evento." };
   try {
-    return { success: true, income: summarizeIncome(await createServerContainer().studioService.getPaymentRows(id)) };
+    const { studioService, eventsService } = createServerContainer();
+    const [rows, event] = await Promise.all([studioService.getPaymentRows(id), eventsService.getEventById(id)]);
+    return { success: true, income: summarizeIncome(rows, payTiers(event?.price)) };
   } catch (e) {
     console.error("[event-income]", e instanceof Error ? e.message : "error");
     return { success: false, error: "No se pudieron cargar los ingresos." };

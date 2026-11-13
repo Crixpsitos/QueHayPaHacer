@@ -20,9 +20,13 @@ export function resolvePayment(price: PriceLike | null | undefined, tier?: strin
 export interface IncomeRow { tier?: string | null; paidAmount?: number | null }
 export interface IncomeSummary { total: number; paidCount: number; byTier: { tier: string; unit: number; count: number; amount: number }[] }
 
-/** Ingresos de las personas confirmadas con pago: total y por categoría, de la más alta (mayor valor) a la más baja. */
-export function summarizeIncome(rows: IncomeRow[]): IncomeSummary {
+/**
+ * Ingresos de las personas confirmadas con pago: total y por categoría, de la más alta (mayor valor) a la más baja.
+ * Con las `tiers` del evento salen TODAS las categorías (también las que aún no venden, en 0).
+ */
+export function summarizeIncome(rows: IncomeRow[], tiers: PayTier[] = []): IncomeSummary {
   const map = new Map<string, { tier: string; unit: number; count: number; amount: number }>()
+  for (const t of tiers) map.set(t.name, { tier: t.name, unit: t.amount, count: 0, amount: 0 })
   let total = 0
   let paidCount = 0
   for (const r of rows) {

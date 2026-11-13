@@ -2,7 +2,7 @@ import type { Activity, ActivityKind } from "./Activity"
 import { isActivityCategory, isCompanion, type ActivityCategory, type Companion } from "./value-objects/ActivityCategory"
 import { BUDGET_BANDS, budgetBand, type BudgetBand } from "./value-objects/Budget"
 import { allOnRequest, priceFromCop } from "./value-objects/Price"
-import { isPromoLive } from "./value-objects/Promotion"
+import { canShowPromotions } from "@/domain/entities/catalog/catalogRules"
 import { dayRange, firstOccurrenceIn, parseDay, parseWhen, whenRange, type When } from "./when"
 
 /** Filtros públicos del hub. Los de "cuándo", presupuesto y "con quién" se suman en la fase 2. */
@@ -15,11 +15,13 @@ export interface ActivityFilters {
   day?: string
   budget?: BudgetBand
   companion?: Companion
-  /** Solo actividades con una promoción que aplica en este momento. */
+  /** Solo actividades que tienen una promoción vigente (de la carta de su sitio). Con `promoActivityIds` ya resuelto por quien llama. */
   promo?: boolean
+  /** Ids de actividades elegidas por alguna promoción vigente (se resuelven fuera: la carta vive aparte). */
+  promoActivityIds?: string[]
 }
 
-export const matchesFilters = (a: Pick<Activity, "category" | "kind" | "siteId" | "schedule" | "priceOptions" | "companions"> & { promotions?: Activity["promotions"] }, f: ActivityFilters, now: Date = new Date()): boolean =>
+export const matchesFilters = (a: Pick<Activity, "id" | "category" | "kind" | "siteId" | "schedule" | "priceOptions" | "companions">, f: ActivityFilters, now: Date = new Date()): boolean =>
   (!f.category || a.category === f.category) &&
   (!f.kind || a.kind === f.kind) &&
   (!f.siteId || a.siteId === f.siteId) &&
@@ -27,7 +29,7 @@ export const matchesFilters = (a: Pick<Activity, "category" | "kind" | "siteId" 
   (!f.day || firstOccurrenceIn(a.schedule, dayRange(f.day), now) !== null) &&
   (!f.budget || (!allOnRequest(a.priceOptions) && budgetBand(priceFromCop(a.priceOptions)) === f.budget)) &&
   (!f.companion || a.companions.includes(f.companion)) &&
-  (!f.promo || (a.promotions ?? []).some((p) => isPromoLive(p, now)))
+  (!f.promo || ((f.promoActivityIds ?? []).includes(a.id) && canShowPromotions(a.category)))
 
 export interface UrlFilters {
   category?: ActivityCategory

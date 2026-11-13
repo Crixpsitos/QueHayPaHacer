@@ -21,3 +21,14 @@ test("ingresos: total, conteo y categoría más alta primero; ignora sin pago", 
   assert.equal(s.paidCount, 3)
   assert.deepEqual(s.byTier.map((t) => [t.tier, t.count, t.amount]), [["VIP", 1, 80000], ["General", 2, 60000]])
 })
+test("ingresos: lista todas las categorías del evento, también las que aún no venden", () => {
+  const tiers = [{ name: "General", amount: 30000 }, { name: "VIP", amount: 80000 }, { name: "Estudiante", amount: 15000 }]
+  const s = summarizeIncome([{ tier: "General", paidAmount: 30000 }], tiers)
+  assert.deepEqual(s.byTier.map((t) => [t.tier, t.count, t.amount]), [["VIP", 0, 0], ["General", 1, 30000], ["Estudiante", 0, 0]])
+  assert.equal(s.total, 30000)
+  assert.equal(s.paidCount, 1)
+})
+test("ingresos: un cobro de una categoría que ya no existe en el evento se conserva", () => {
+  const s = summarizeIncome([{ tier: "Antigua", paidAmount: 10000 }], [{ name: "General", amount: 30000 }])
+  assert.deepEqual(s.byTier.map((t) => t.tier), ["General", "Antigua"])
+})

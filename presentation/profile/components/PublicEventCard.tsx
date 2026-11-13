@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Calendar, Eye, Heart, Layers, MapPin, Share2 } from "lucide-react";
+import { ArrowRight, Calendar, CalendarCheck, Eye, Layers, MapPin, Share2 } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import type { UserEvent } from "@/domain/repository/profile/IProfileRepository";
 import { EventStatusBadge } from "./EventStatusBadge";
+import { goingLabel } from "@/presentation/events/components/card/cardMeta";
 
 interface PublicEventCardProps {
   event: UserEvent;
@@ -186,8 +187,8 @@ export function PublicEventCard({ event, priority = false }: PublicEventCardProp
             )}
             {likes > 0 && (
               <span className="flex items-center gap-1">
-                <Heart className="size-3.5" />
-                {formatCompactNumber(likes)}
+                <CalendarCheck className="size-3.5" aria-hidden="true" />
+                {goingLabel(likes)}
               </span>
             )}
             {shares > 0 && (

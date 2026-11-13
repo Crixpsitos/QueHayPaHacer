@@ -39,17 +39,23 @@ async function PanelData({ searchParams }: { searchParams: Promise<{ f?: string;
   const uid = await getPremiumSessionUid()
   if (!uid) return null
 
-  const { linksService, studioService, sitesService, dailyStatsRepository } = createServerContainer()
-  const [links, eventsPage, sites] = await Promise.all([
+  const { linksService, studioService, sitesService, activityService, dailyStatsRepository } = createServerContainer()
+  const [links, eventsPage, sites, activities] = await Promise.all([
     linksService.listWithClicks(uid),
     studioService.getOrganizerEvents(uid, { limit: 25 }),
     sitesService.getMySites(uid),
+    activityService.listMine(uid),
   ])
 
   // Solo fichas publicadas (un enlace a un borrador no lleva a nada).
   const fichas: FichaRef[] = [
     ...eventsPage.events.filter((e) => e.status === "published").map((e) => ({ type: "event" as const, id: e.eventId, name: e.name, image: e.image })),
     ...sites.filter((s) => s.publicationStatus === "published").slice(0, 25).map((s) => ({ type: "site" as const, id: s.id, name: s.name, image: s.coverUrl || undefined })),
+    // Actividades que ya se ven en la plataforma (publicadas, aprobadas y activas): son las que tienen enlace y visitas.
+    ...activities
+      .filter((a) => a.publicationStatus === "published" && a.moderationStatus === "approved" && a.isActive)
+      .slice(0, 25)
+      .map((a) => ({ type: "activity" as const, id: a.id, slug: a.slug, name: a.title, image: a.media.find((m) => m.type === "image" && m.isCover)?.url })),
   ]
   const rows: LinkRow[] = links.map((l) => ({ code: l.code, label: l.label, targetType: l.target.type, targetId: l.target.id, targetName: "", clicks: l.clicks }))
 
@@ -59,6 +65,6 @@ async function PanelData({ searchParams }: { searchParams: Promise<{ f?: string;
   // Un solo lugar decide qué se mira (ficha, período, tipo): el mismo que usa el cliente para resaltar al instante.
   const nav = resolveNav(fichas.map((f) => ({ key: `${f.type}:${f.id}`, type: f.type, views30: stats30[`${f.type}:${f.id}`]?.views ?? 0 })), sp)
   const selected = fichas.find((f) => `${f.type}:${f.id}` === nav.f)
-  const docs = selected ? await dailyStatsRepository.readDays(selected.type === "event" ? "events" : "sites", selected.id, dayRange(today, nav.d * 2)[0]) : []
+  const docs = selected ? await dailyStatsRepository.readDays(selected.type === "event" ? "events" : selected.type === "activity" ? "activities" : "sites", selected.id, dayRange(today, nav.d * 2)[0]) : []
   return <PanelView baseUrl={SITE_URL} panel={buildPanel({ fichas, stats30, selectedKey: nav.f, period: nav.d, typeFilter: nav.t, today, links: rows, docs })} />
 }

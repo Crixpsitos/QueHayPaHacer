@@ -48,13 +48,13 @@ test("parseFilters: cuando, presupuesto y con", () => {
   assert.deepEqual(parseFilters({ cuando: "ayer", presupuesto: "caro", con: "extraterrestres" }), {})
 })
 
-test("filtro «Promos hoy»: solo con una promoción que aplica ahora; vencida o pausada no cuenta", () => {
-  const now = new Date("2026-11-11T21:00:00Z") // miércoles 4 p. m. Bogotá
-  const promo = { id: "p", title: "Tardes felices", description: "", rule: { kind: "twoForOne" as const }, weekdays: [3], start: "15:00", end: "18:00", validFrom: "2026-11-01", validUntil: "2026-12-01", termsNote: "", paused: false }
-  const base = { category: "comida-y-bebida" as const, kind: "site" as const, siteId: "s", schedule: { rules: [{ kind: "always" as const }], skipDates: [], requiresReservation: false }, priceOptions: [], companions: [] }
-  assert.equal(matchesFilters({ ...base, promotions: [promo] }, { promo: true }, now), true)
-  assert.equal(matchesFilters({ ...base, promotions: [] }, { promo: true }, now), false)
-  assert.equal(matchesFilters({ ...base, promotions: [{ ...promo, validUntil: "2026-11-10" }] }, { promo: true }, now), false)
-  assert.equal(matchesFilters({ ...base, promotions: [{ ...promo, paused: true }] }, { promo: true }, now), false)
-  assert.equal(matchesFilters({ ...base, promotions: [promo] }, {}, now), true)
+test("filtro «Promos hoy»: solo actividades que una promoción vigente de su carta eligió, y de categoría que admite promociones", () => {
+  const now = new Date("2026-11-11T20:00:00Z")
+  const ids = ["a1"]
+  const mk = (id: string, category: string) => makeActivity({ id, category } as never)
+  assert.equal(matchesFilters(mk("a1", "comida-y-bebida"), { promo: true, promoActivityIds: ids }, now), true)
+  assert.equal(matchesFilters(mk("a2", "comida-y-bebida"), { promo: true, promoActivityIds: ids }, now), false)
+  assert.equal(matchesFilters(mk("a1", "voluntariado-y-comunidad"), { promo: true, promoActivityIds: ids }, now), false)
+  assert.equal(matchesFilters(mk("a1", "comida-y-bebida"), { promo: true }, now), false)
+  assert.equal(matchesFilters(mk("a2", "comida-y-bebida"), {}, now), true)
 })

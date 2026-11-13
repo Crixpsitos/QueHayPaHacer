@@ -53,7 +53,7 @@ export function PanelView({ panel, baseUrl }: { panel: PanelVM; baseUrl: string 
                 </>
               ) : (
                 <div role="status" className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-                  <p className="text-sm font-medium text-slate-900">No tienes {panel.typeFilter === "site" ? "sitios" : "eventos"} publicados</p>
+                  <p className="text-sm font-medium text-slate-900">No tienes {panel.typeFilter === "site" ? "sitios" : panel.typeFilter === "activity" ? "actividades" : "eventos"} publicados</p>
                 </div>
               )}
             </PanelBody>

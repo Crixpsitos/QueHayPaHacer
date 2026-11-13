@@ -38,6 +38,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   activity_join_confirmed: UserCheck,
   activity_reminder: CalendarDays,
   activity_last_spot: Ticket,
+  event_seat: Ticket,
 };
 
 const TITLE = "Notificaciones";

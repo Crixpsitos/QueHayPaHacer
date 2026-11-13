@@ -6,6 +6,8 @@ import Link from "next/link"
 import { Button } from "@/app/components/ui/button/button"
 import { cn } from "@/app/lib/utils/cn"
 import { setActivitySavedAction, setActivityPlanSlotAction } from "@/app/actions/activities/engagement.action"
+import { addToPlanAction, removeFromPlanAction } from "@/app/actions/activities/plan-items.action"
+import { parsePlanKey } from "@/domain/entities/activities/planItem"
 import type { PlanSlot } from "@/domain/entities/activities/weekPlan"
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
@@ -58,8 +60,11 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
   const [savedGone, setSavedGone] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [slots, setSlots] = useState<Record<string, PlanSlot>>({ ...initial.slots, ...initial.extra.slots })
+  const [extraGone, setExtraGone] = useState<string[]>([])
   const setSlot = async (id: string, slot: PlanSlot | null): Promise<string | null> => {
-    const r = await setActivityPlanSlotAction(id, slot)
+    const key = parsePlanKey(id)
+    // un sitio guarda su día y hora en el plan; una actividad, en lo que guardó
+    const r = key?.kind === "site" ? await addToPlanAction("site", key.refId, slot) : await setActivityPlanSlotAction(id, slot)
     if (!r.success) return r.error
     setSlots((p) => { const n = { ...p }; if (slot) n[id] = slot; else delete n[id]; return n })
     return null
@@ -67,17 +72,19 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
 
   const gone = initial.removedSaved.filter((id) => !removed.includes(id))
   const saved = initial.saved.filter((a) => !savedGone.includes(a.id))
+  const extraCards = initial.extra.cards.filter((c) => !extraGone.includes(c.id))
   const unsave = async (id: string, onDone: () => void) => {
     setError(null)
-    const r = await setActivitySavedAction(id, false)
+    const key = parsePlanKey(id)
+    const r = key ? await removeFromPlanAction(key.kind, key.refId) : await setActivitySavedAction(id, false)
     if (r.success) onDone(); else setError(r.error ?? "No se pudo quitar. Intenta de nuevo.")
   }
 
-  const weekCards = [...initial.upcoming.map((u) => u.card), ...saved, ...initial.extra.cards].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i)
+  const weekCards = [...initial.upcoming.map((u) => u.card), ...saved, ...extraCards].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i)
   const tabs: { id: Tab; label: string; n: number }[] = [
     { id: "week", label: "Semana", n: weekCards.length },
     { id: "upcoming", label: "Próximo", n: initial.upcoming.length },
-    { id: "saved", label: "Guardado", n: saved.length + gone.length + initial.extra.cards.length },
+    { id: "saved", label: "Guardado", n: saved.length + gone.length + extraCards.length },
     { id: "done", label: "Hecho", n: initial.done.length },
     { id: "passport", label: "Pasaporte", n: -1 },
   ]
@@ -85,6 +92,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-5">
       <h1 className="font-heading text-3xl font-bold">Mis planes</h1>
+      <p className="-mt-3 rounded-2xl bg-muted/70 px-4 py-3 text-sm leading-relaxed text-muted-foreground">Arma tu semana: en cualquier <strong className="text-foreground">actividad, evento o sitio</strong> toca <strong className="text-foreground">«Agregar a mi plan»</strong>, elige el día y la hora, y aquí lo verás ordenado. Los cruces de horario se marcan solos.</p>
       <RemovedReviews />
       <div role="tablist" aria-label="Mis planes" className="flex gap-1 overflow-x-auto rounded-full bg-muted p-1">
         {tabs.map((t) => (
@@ -95,7 +103,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="grid gap-3">
-        {tab === "week" ? <WeekPlan cards={weekCards} slots={slots} onSlot={setSlot} removableIds={saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id)} onRemove={(id) => void unsave(id, () => setSavedGone((x) => [...x, id]))} /> : null}
+        {tab === "week" ? <WeekPlan cards={weekCards} slots={slots} onSlot={setSlot} removableIds={[...saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id), ...extraCards.map((c) => c.id)]} slotEditableIds={[...saved.filter((a) => !initial.upcoming.some((u) => u.card.id === a.id)).map((a) => a.id), ...extraCards.filter((c) => c.id.startsWith("site_")).map((c) => c.id)]} onRemove={(id) => void unsave(id, () => (parsePlanKey(id) ? setExtraGone((x) => [...x, id]) : setSavedGone((x) => [...x, id])))} /> : null}
         {tab === "passport" ? <PassportTab /> : null}
 
         {tab === "upcoming" ? (
@@ -118,7 +126,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
         ) : null}
 
         {tab === "saved" ? (
-          saved.length + gone.length + initial.extra.cards.length ? (
+          saved.length + gone.length + extraCards.length ? (
             <>
               <ul className="grid gap-3">
                 {saved.map((a) => (
@@ -127,10 +135,10 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
                     <p className="text-sm text-muted-foreground">{a.hostName} · <button type="button" onClick={() => void unsave(a.id, () => setSavedGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
                   </Row>
                 ))}
-                {initial.extra.cards.map((a) => (
+                {extraCards.map((a) => (
                   <Row key={a.id} a={a}>
                     <p className="text-sm font-medium">{a.categoryName}{a.scheduleText ? ` · ${a.scheduleText}` : ""}</p>
-                    <p className="text-sm text-muted-foreground">{a.hostName} · <Link href={a.href ?? "#"} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Abrir para quitarlo</Link></p>
+                    <p className="text-sm text-muted-foreground">{a.hostName} · <button type="button" onClick={() => void unsave(a.id, () => setExtraGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
                   </Row>
                 ))}
                 {gone.map((id) => (
@@ -142,7 +150,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
               </ul>
               <p className="text-xs text-muted-foreground">Guardar es privado: solo tú ves esta lista.</p>
             </>
-          ) : <Empty title="Todavía no tienes planes guardados" text="Guarda lo que te interese con el marcador de cada actividad y vuelve cuando quieras decidir." cta={{ href: "/actividades", label: "Ver actividades" }} />
+          ) : <Empty title="Todavía no tienes planes guardados" text="Toca «Agregar a mi plan» en lo que te interese y vuelve cuando quieras decidir." cta={{ href: "/actividades", label: "Ver actividades" }} />
         ) : null}
 
         {tab === "done" ? (

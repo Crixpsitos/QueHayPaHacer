@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { readLikedIds, saveFreshLikes, setLikedId } from "@/app/lib/clientCache/likedIds";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
 import { Heart, X } from "lucide-react";
-import { PlanLink } from "@/presentation/shared/components/PlanLink";
+import { AddToPlanButton } from "@/presentation/shared/components/AddToPlanButton";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils/cn";
 import { recordSiteInteractionAction } from "@/app/actions/sites/record-site-interaction.action";
@@ -19,7 +19,7 @@ interface SiteDetailActionsProps {
   initialShares: number;
 }
 
-export function SiteDetailActions({ siteId, initialLikes }: SiteDetailActionsProps) {
+export function SiteDetailActions({ siteId, siteName, initialLikes }: SiteDetailActionsProps) {
   const { user, isHydrating, refreshUser } = useAuth();
   const uid = user?.uid ?? null;
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -113,7 +113,7 @@ export function SiteDetailActions({ siteId, initialLikes }: SiteDetailActionsPro
         <span className="tabular-nums">{likes > 0 ? likes.toLocaleString("es-CO") : "Me gusta"}</span>
       </Button>
 
-      <PlanLink kind="site" />
+      <AddToPlanButton kind="site" id={siteId} title={siteName} />
 
       {isLoginOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

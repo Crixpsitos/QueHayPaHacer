@@ -1,3 +1,4 @@
+import { INTEREST_TTL_MS, seatKind } from "@/domain/entities/EventRegistration/interest";
 import type { EventAccessRole } from "@/domain/entities/events/teamAccess";
 import { maskRegistrationsForRole, permissionsFor } from "@/domain/entities/events/teamPolicy";
 import type {
@@ -31,7 +32,14 @@ export function toEventRegistrationsViewModel(
     };
   }
 
+  const now = Date.now();
+  const isExternal = result.registrationType === "external";
   const rows: RegistrationRow[] = maskRegistrationsForRole(result.registrations, viewerRole).map((r) => {
+    // Estado del cupo (solo eventos con enlace externo): se calcula al leer, con la misma regla que usa el servidor al interesarse.
+    const kind = isExternal
+      ? seatKind({ status: "pending", registeredAt: r.registeredAt, checkedInAt: r.attendanceConfirmed || undefined, paidAmount: r.paidAmount, guest: r.isGuest, waitlist: r.status === "waitlist" }, now)
+      : null;
+    const seat = kind === "interested" || kind === "expired" || kind === "waitlist" ? kind : kind === "denied" ? "expired" : undefined;
     const fullName = `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
     return {
       userId: r.userId,
@@ -47,6 +55,10 @@ export function toEventRegistrationsViewModel(
       tier: r.tier,
       paidAmount: r.paidAmount,
       isGuest: r.isGuest,
+      email: r.email,
+      phone: r.phone,
+      ...(seat ? { seat } : {}),
+      ...(seat === "interested" ? { seatHoursLeft: Math.max(0, Math.ceil((INTEREST_TTL_MS - (now - r.registeredAt.getTime())) / 3_600_000)) } : {}),
       formResponses: r.formResponses?.map((f) => ({
         label: f.label,
         value: f.value,

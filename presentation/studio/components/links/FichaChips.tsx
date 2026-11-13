@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, Compass, MapPin } from "lucide-react";
 import type { PanelFicha } from "@/presentation/studio/lib/panelModel";
 import { cn } from "@/app/lib/utils/cn";
 import { fmt } from "./format";
@@ -30,12 +30,12 @@ export function FichaChips({ fichas }: { fichas: PanelFicha[] }) {
               <img src={f.image} alt="" className="size-11 shrink-0 rounded-[10px] bg-slate-100 object-cover" />
             ) : (
               <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-400">
-                {f.type === "event" ? <CalendarDays className="size-5" /> : <MapPin className="size-5" />}
+                {f.type === "event" ? <CalendarDays className="size-5" /> : f.type === "activity" ? <Compass className="size-5" /> : <MapPin className="size-5" />}
               </span>
             )}
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="max-w-52 truncate text-sm font-semibold text-slate-900">{f.name}</span>
-              <span className="text-xs text-slate-500">{f.type === "event" ? "Evento" : "Sitio"} · {fmt(f.views30)} visitas (30 d)</span>
+              <span className="text-xs text-slate-500">{f.type === "event" ? "Evento" : f.type === "activity" ? "Actividad" : "Sitio"} · {fmt(f.views30)} visitas (30 d)</span>
             </span>
           </button>
         );
