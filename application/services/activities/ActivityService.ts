@@ -16,6 +16,12 @@ export interface Viewer {
 
 /** Tope de candidatas que se traen para ordenar en memoria (ver nota en IActivityRepository.findListable). */
 const LISTABLE_CAP = 500
+/**
+ * Cuánto se reutiliza la lista pública ya leída (y visible). Una sola página del hub, el home o el sitemap piden la lista varias
+ * veces seguidas (resumen, destacada, lista, mapa, agenda, una búsqueda por colección…) y cada vez eran hasta 500 lecturas más
+ * las de cada sitio. Corto a propósito: tras guardar una actividad el cambio se ve en segundos.
+ */
+const LISTABLE_TTL_MS = 15_000
 
 export class ActivityService {
   constructor(
@@ -23,6 +29,19 @@ export class ActivityService {
     private readonly siteLookup: SiteLookup,
     private readonly clock: () => Date = () => new Date(),
   ) {}
+
+  private listable: { at: number; items: Promise<Activity[]> } | null = null
+
+  /** La lista pública visible, sin ordenar, compartida por quienes la piden en el mismo instante. Un fallo no se guarda. */
+  private visibleListable(): Promise<Activity[]> {
+    const nowMs = this.clock().getTime()
+    if (this.listable && nowMs - this.listable.at < LISTABLE_TTL_MS) return this.listable.items
+    const items = this.repo.findListable(LISTABLE_CAP).then((list) => this.keepVisible(list))
+    const entry = { at: nowMs, items }
+    this.listable = entry
+    items.catch(() => { if (this.listable === entry) this.listable = null })
+    return items
+  }
 
   /** Un lookup por sitio distinto aunque haya muchas actividades. */
   private siteResolver() {
@@ -65,7 +84,7 @@ export class ActivityService {
   /** Públicas ordenadas por próxima salida (las que no tienen, como "solo con cita", al final). */
   async listPublic(limit: number): Promise<Activity[]> {
     const now = this.clock()
-    const visible = await this.keepVisible(await this.repo.findListable(LISTABLE_CAP))
+    const visible = [...(await this.visibleListable())]
     const next = new Map(visible.map((a) => [a.id, nextOccurrence(a.schedule, now)?.startsAt?.getTime() ?? Number.POSITIVE_INFINITY]))
     return visible.sort((x, y) => next.get(x.id)! - next.get(y.id)! || x.title.localeCompare(y.title, "es")).slice(0, limit)
   }

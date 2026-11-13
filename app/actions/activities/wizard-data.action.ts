@@ -9,7 +9,7 @@ import type { ActivityMedia } from "@/domain/entities/activities/value-objects/A
 
 export interface WizardContext {
   /** Sitios propios (publicados como dueño y aprobados) a los que se puede vincular una actividad. */
-  sites: { id: string; name: string }[]
+  sites: { id: string; name: string; coverUrl: string; address: string; category: string }[]
   /** ¿Ya dejó sus datos de identificación (Ley 1480 art. 53)? Si no, el paso 9 se los pide. */
   identity: { ok: true } | { ok: false; message: string }
   isAdmin: boolean
@@ -32,7 +32,7 @@ export async function getActivityWizardContextAction(): Promise<WizardContext | 
   const isAdmin = isQhpaAdmin(uid)
   const [sites, gate] = await Promise.all([getUserSitesForPickerAction(), createServerContainer().hostIdentityService.gate(uid)])
   return {
-    sites: sites.map((s) => ({ id: s.id, name: s.name })),
+    sites: sites.map((s) => ({ id: s.id, name: s.name, coverUrl: s.coverUrl ?? "", address: s.address ?? "", category: s.category ?? "" })),
     identity: isAdmin || gate.ok ? { ok: true } : { ok: false, message: gate.message },
     isAdmin,
   }
