@@ -27,7 +27,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
   slots?: Record<string, PlanSlot>
   onSlot?: (id: string, slot: PlanSlot | null) => Promise<string | null> | void
    cards: ActivityCardView[]; /** Guardados que se pueden sacar del plan (las reservas se cancelan desde su actividad). */ removableIds?: string[]; onRemove?: (id: string) => void }) {
-  const [week, setWeek] = useState<WeekDay[] | null>(null)
+  const [rawWeek, setWeek] = useState<WeekDay[] | null>(null)
   const [poster, setPoster] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   useEffect(() => {
@@ -35,8 +35,10 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
     return () => clearTimeout(t)
   }, [cards, slots])
 
-  if (!week) return <div className="h-40 animate-pulse rounded-3xl bg-muted" aria-hidden />
+  if (!rawWeek) return <div className="h-40 animate-pulse rounded-3xl bg-muted" aria-hidden />
   const byId = new Map(cards.map((c) => [c.id, c]))
+  // La semana se calcula en un efecto: tras quitar algo, un render intermedio aún trae su bloque. Se descarta lo que ya no está en `cards` (antes esto tumbaba la página).
+  const week = rawWeek.map((d) => ({ ...d, blocks: d.blocks.filter((b) => byId.has(b.id)).map((b) => ({ ...b, conflictsWith: b.conflictsWith.filter((id) => byId.has(id)) })) }))
   // Lo que está disponible todos los días sin hora (cines, «siempre abierto»): una sola vez, no repetido en cada jornada.
   const daysOf = new Map<string, { n: number; timed: boolean }>()
   for (const d of week) for (const b of d.blocks) { const x = daysOf.get(b.id) ?? { n: 0, timed: false }; x.n++; if (b.startMin !== null) x.timed = true; daysOf.set(b.id, x) }
@@ -84,8 +86,8 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
         ))}
       </ol>
       {anytime.length ? (
-        <section aria-label="Disponible toda la semana" className="grid gap-2">
-          <h2 className="font-heading text-lg font-bold">Cuando quieras esta semana</h2>
+        <section aria-label="Sin día elegido" className="grid gap-2">
+          <div className="grid gap-0.5"><h2 className="font-heading text-lg font-bold">Sin día elegido</h2><p className="text-sm text-muted-foreground">Están disponibles todos los días y no tienen hora fija, así que no caen en un día de tu semana. Toca «Elegir día y hora» para ponerlas donde vayas.</p></div>
           <ul className="grid gap-2">
             {anytime.map((id) => {
               const c = byId.get(id)!, st = categoryStyle(c.categorySlug)
