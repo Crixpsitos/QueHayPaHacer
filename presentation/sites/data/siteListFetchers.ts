@@ -34,3 +34,17 @@ export const fetchAllSitesPage = async (size: number = SITES_PAGE_SIZE): Promise
   const { ids, nextCursor } = await createServerContainer().sitesService.getAllSitesPage(size, null)
   return { sites: present(await Promise.all(ids.map(fetchSiteDetailById))), nextCursor }
 }
+
+/**
+ * Página siguiente de «Cargar más» (todos o por tipo), con detalles. Cacheada por (tipo, cursor): antes cada clic leía
+ * la consulta y un documento por sitio; ahora los detalles salen de `fetchSiteDetailById` y la página de la caché.
+ * Se invalida con `site-list` (publicar/editar/dar de baja) y con `site-<id>` por detalle.
+ */
+export const fetchSitesMore = async (category: string, cursor: string | null, size: number): Promise<{ sites: SiteDetail[]; nextCursor: string | null }> => {
+  "use cache"
+  cacheLife("days")
+  cacheTag("site-list")
+  const { sitesService } = createServerContainer()
+  const { ids, nextCursor } = category === "all" ? await sitesService.getAllSitesPage(size, cursor) : await sitesService.getSitesByCategory(category, size, cursor)
+  return { sites: present(await Promise.all(ids.map(fetchSiteDetailById))), nextCursor }
+}

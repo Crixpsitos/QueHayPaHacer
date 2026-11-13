@@ -35,13 +35,9 @@ export class SiteInteractionFirebaseRepository
 
   async findLikedByUser(siteIds: string[], userId: string): Promise<Record<string, boolean>> {
     if (siteIds.length === 0) return {};
-    const results = await Promise.all(
-      siteIds.map(async (siteId) => {
-        const doc = await this.interactionDoc(siteId, userId).get();
-        return { siteId, liked: doc.exists ? (doc.data()?.liked ?? false) : false };
-      }),
-    );
-    return Object.fromEntries(results.map(({ siteId, liked }) => [siteId, liked as boolean]));
+    // Un solo viaje (getAll) en vez de un get por sitio: mismas lecturas facturadas, sin N idas y vueltas.
+    const docs = await this.db.getAll(...siteIds.map((siteId) => this.interactionDoc(siteId, userId)));
+    return Object.fromEntries(docs.map((doc, n) => [siteIds[n], doc.exists ? Boolean(doc.data()?.liked) : false]));
   }
 
   async registerLike(siteId: string, userId: string, liked: boolean): Promise<void> {
