@@ -22,11 +22,11 @@ const EMPTY_OVERVIEW: StudioOverviewViewModel = {
   interactivity: [],
 };
 
-// MVP: los datos del overview no cambian mucho, así que se cachean 5 minutos.
+// El overview no cambia minuto a minuto: perfil `hub` (10 min). Cada fallo de caché cuesta ahora 1 lectura de los eventos + la línea de tiempo.
 // Sin cacheTag por ahora — no hay ningún flujo que necesite invalidarlo a demanda.
 async function getCachedOrganizerOverview(uid: string): Promise<OrganizerOverview | null> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hub");
 
   const { studioService } = createServerContainer();
   return studioService.getOrganizerOverview(uid);
