@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { CategoryViewModel } from "../view-models/CategoryViewModel";
 import { CATEGORY_ICON_MAP } from "../lib/categoryIconMap";
 

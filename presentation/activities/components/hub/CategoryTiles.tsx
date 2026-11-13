@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ACTIVITY_CATEGORIES } from "@/domain/entities/activities/value-objects/ActivityCategory"
 import type { UrlFilters } from "@/domain/entities/activities/filters"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"

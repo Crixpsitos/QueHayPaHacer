@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 

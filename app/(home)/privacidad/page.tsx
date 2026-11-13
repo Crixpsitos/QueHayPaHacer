@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { LEGAL_ENTITY, LegalDocument, responsibleLine } from "@/app/components/layout/shared/LegalDocument";
 
 export const metadata: Metadata = {

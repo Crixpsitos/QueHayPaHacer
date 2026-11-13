@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowLeft, Images } from "lucide-react"
 import type { ActivityPublicView } from "@/presentation/activities/lib/publicView"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"

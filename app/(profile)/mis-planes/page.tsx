@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Container } from "@/app/components/layout/shared/Container";

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowDown,

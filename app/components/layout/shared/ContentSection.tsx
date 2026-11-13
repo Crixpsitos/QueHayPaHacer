@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowRight } from "lucide-react";
 import { Section } from "./Section";
 

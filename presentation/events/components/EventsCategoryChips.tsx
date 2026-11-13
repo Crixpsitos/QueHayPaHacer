@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { CATEGORY_ICON_MAP } from "@/presentation/categories/lib/categoryIconMap";
 import type { CollectionDef } from "../lib/eventCollections";
 

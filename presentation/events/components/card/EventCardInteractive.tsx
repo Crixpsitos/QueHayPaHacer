@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { likeEventAction } from "@/app/actions/events/like-event.action";
 import { analytics as ga } from "@/app/lib/analytics";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useAuth } from "@/app/store/auth/AuthContext";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { X } from "lucide-react";

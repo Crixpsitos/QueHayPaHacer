@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Compass, ArrowRight } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { Separator } from "@/app/components/ui/separator";

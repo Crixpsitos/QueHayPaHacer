@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { usePathname } from "next/navigation";
 import { useConsent } from "@/app/lib/analytics/useConsent";
 import { isTrackablePath } from "@/app/lib/analytics/events";

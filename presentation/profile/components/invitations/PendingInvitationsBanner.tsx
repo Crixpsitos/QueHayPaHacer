@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { MailPlus, X } from "lucide-react";
 import { getPendingInvitationsCountAction } from "@/app/actions/studio/get-pending-invitations-count.action";
 

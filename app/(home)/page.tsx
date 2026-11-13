@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { CampaignCarouselContainer } from "@/app/components/feature/home/campaign/CampaignCarouselContainer";
 import { CampaignCarouselSkeleton } from "@/app/components/feature/home/campaign/CampaignCarouselSkeleton";
 import { HomeSearchBar } from "@/app/components/feature/home/HomeSearchBar";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from "react";
 import { CategoriesContainer } from "@/presentation/categories/components/CategoriesContainer";
 import { CategoriesSkeleton } from "@/presentation/categories/components/CategoriesSkeleton";

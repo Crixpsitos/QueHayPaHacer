@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { MapPin } from "lucide-react"
 import { HowToGetThere } from "@/presentation/sites/components/detail/HowToGetThere"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"

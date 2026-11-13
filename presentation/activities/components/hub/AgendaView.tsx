@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { AgendaDayView } from "@/presentation/activities/data/fetchers"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 

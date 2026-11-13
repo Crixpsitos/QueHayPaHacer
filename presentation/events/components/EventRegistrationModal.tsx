@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition, lazy, Suspense } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { motion, useReducedMotion } from "motion/react";
 import { AlertTriangle, CalendarCheck, Loader2, Users, X, PartyPopper } from "lucide-react";
 import { EASE_OUT, SuccessCheck } from "@/app/components/motion/primitives";

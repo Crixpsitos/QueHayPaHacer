@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/app/components/ui/avatar"

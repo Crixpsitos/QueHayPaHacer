@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { UserX } from "lucide-react";
 import { Container } from "@/app/components/layout/shared/Container";
 import { Button } from "@/app/components/ui/button";

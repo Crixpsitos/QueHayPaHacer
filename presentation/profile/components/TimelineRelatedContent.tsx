@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Award, BadgeCheck, CalendarDays, MapPin, UserRound } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";

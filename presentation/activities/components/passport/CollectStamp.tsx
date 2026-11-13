@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useState } from "react"
 import { Stamp } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"

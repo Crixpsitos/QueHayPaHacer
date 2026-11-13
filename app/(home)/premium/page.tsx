@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { BarChart3, CalendarRange, ClipboardList, LifeBuoy, ListChecks, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { Ticket, ctaClass } from "@/presentation/events/components/detail/Ticket";

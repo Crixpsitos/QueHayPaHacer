@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import Image from "next/image";
 import { Menu, Plus, X } from "lucide-react";
 import { NavLink } from "../../ui/navigation/NavLink";

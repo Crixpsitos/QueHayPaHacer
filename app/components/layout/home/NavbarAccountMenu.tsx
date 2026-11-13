@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, ChevronDown, Home, LayoutDashboard, LogOut, MailPlus, MapPin, MessageSquareDiff, Settings, Sparkles, Ticket, User as UserIcon } from "lucide-react";

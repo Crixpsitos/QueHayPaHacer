@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { WizardContext } from "@/app/actions/activities/wizard-data.action"
 import type { ActivityForm } from "@/presentation/activities/lib/activityForm"
 import { RadioCard } from "./ui"

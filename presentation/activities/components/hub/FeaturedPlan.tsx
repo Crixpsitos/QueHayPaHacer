@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowRight } from "lucide-react"
 import { fetchFeaturedPlan } from "@/presentation/activities/data/fetchers"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"

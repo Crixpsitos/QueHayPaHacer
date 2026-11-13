@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowLeft, CalendarDays, Pencil } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import { can, type EventAccessRole } from "@/domain/entities/events/teamAccess";

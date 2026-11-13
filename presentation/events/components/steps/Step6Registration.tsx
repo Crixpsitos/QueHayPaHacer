@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { FormEventDto } from "@/application/dto/events/EventDto";

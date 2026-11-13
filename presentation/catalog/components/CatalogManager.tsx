@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { colombianNumber } from "@/domain/entities/activities/value-objects/Cta";
 import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog";

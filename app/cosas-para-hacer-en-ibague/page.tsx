@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from "react"
 import { Section } from "@/app/components/layout/shared/Section"
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from "@/app/lib/site"

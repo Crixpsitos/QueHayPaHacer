@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { MessageCircle, Phone, Tag } from "lucide-react";
 import { catalogPromoSchedule, describePromo, isCatalogPromoCurrent, isCatalogPromoLive, promoPricing, promosInList, type CatalogPromotion } from "@/domain/entities/catalog/CatalogPromotion";
 import { cop, discountPercent, groupBySection, productPrice, TAG_LABELS, todayBogota, UNIT_LABELS, WARNING_TAGS, PRICES_NOTE, type Product, type ProductTag } from "@/domain/entities/catalog/Product";

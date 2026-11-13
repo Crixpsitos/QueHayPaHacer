@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 
 /** Invitación a publicar: cierre de la ficha y del hub. Vinotinto de marca con el dorado como acento. */
 export function PublishBand({ title = "¿Organizas algo en Ibagué?", text = "Publica tu actividad gratis. Se repite sola cada semana y la gente reserva su cupo." }: { title?: string; text?: string }) {

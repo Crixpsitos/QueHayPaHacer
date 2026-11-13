@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { motion } from "motion/react"
 import { AlertTriangle, CalendarDays, Eye, EyeOff, Heart, Loader2, MessageSquareDiff, MousePointerClick, Pencil, Share2, Store, Trash2 } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"

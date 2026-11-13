@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense, type ReactNode } from "react"
 import { Check, Clock, ExternalLink, Gauge, Info, Users } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"

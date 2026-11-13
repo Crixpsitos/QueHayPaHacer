@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { fetchSiteActivities } from "@/presentation/activities/data/fetchers"
 import { ActivityCard } from "./ActivityCard"
 

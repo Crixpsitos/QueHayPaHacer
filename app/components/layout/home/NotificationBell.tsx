@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRightLeft, Bell, BadgeCheck, Bus, CalendarDays, CalendarPlus, Compass, MailPlus, Ticket, MapPin, MessageSquareDiff, UserCheck, UserMinus, UserPlus, UserX, Users, XIcon } from "lucide-react";
 

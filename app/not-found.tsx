@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Compass } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 

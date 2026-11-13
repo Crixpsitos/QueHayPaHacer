@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/app/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 import { getInitials } from "@/app/lib/utils/getInitials"

@@ -1,6 +1,6 @@
 "use client";
 import { Loader2 } from "lucide-react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 
 import { useState, useTransition } from "react";
 

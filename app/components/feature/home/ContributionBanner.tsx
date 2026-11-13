@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowRight, CalendarPlus, MapPin, X } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Section } from "@/app/components/layout/shared/Section";

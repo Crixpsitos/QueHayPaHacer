@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { BadgeCheck } from "lucide-react";
 import { cacheLife, cacheTag } from "next/cache";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/utils/cn";
 import { STUDIO_NAV } from "../lib/navigation";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import Image from "next/image";
 import { Container } from "../shared/Container";
 import { FooterYear } from "./FooterYear";

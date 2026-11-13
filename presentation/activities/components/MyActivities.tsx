@@ -1,7 +1,7 @@
 "use client"
 
 import { canShowCatalog } from "@/domain/entities/catalog/catalogRules"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Pencil, Plus, Share2, Store, Users } from "lucide-react"

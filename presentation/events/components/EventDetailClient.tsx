@@ -2,7 +2,7 @@
 
 import { can, TEAM_ROLE_LABEL } from "@/domain/entities/events/teamAccess";
 import { useEffect, useState, lazy, Suspense } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ExternalLink, Info, LayoutDashboard, MapPin, Pencil, Users } from "lucide-react";
 import { Section } from "@/app/components/layout/shared/Section";
 import { cn } from "@/app/lib/utils/cn";

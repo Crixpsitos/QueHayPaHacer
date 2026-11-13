@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Calendar, MapPin, Tag } from "lucide-react";
 import type { EventViewModel } from "@/presentation/events/view-models/EventViewModel";
 import { cn } from "@/app/lib/utils/cn";

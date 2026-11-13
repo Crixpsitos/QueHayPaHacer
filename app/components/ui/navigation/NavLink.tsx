@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from 'next/navigation'
-import Link from 'next/link'
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from 'react'
 import { cn } from '@/app/lib/utils/cn'
 

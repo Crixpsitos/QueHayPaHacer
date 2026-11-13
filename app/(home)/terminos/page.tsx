@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { LEGAL_ENTITY, LegalDocument, TE_PROTEJO_URL, responsibleLine } from "@/app/components/layout/shared/LegalDocument";
 import { FOUNDER_LIMIT, FOUNDER_MONTHS, PREMIUM_PRICE_COP, formatCOP } from "@/presentation/profile/lib/membership";
 

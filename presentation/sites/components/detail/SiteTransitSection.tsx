@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useSyncExternalStore, useTransition } from "react"
-import Link from "next/link"
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { usePathname } from "next/navigation"
 import { Bus, CheckCircle2, Flag, TriangleAlert } from "lucide-react"
 import { useAuth } from "@/app/store/auth/AuthContext"

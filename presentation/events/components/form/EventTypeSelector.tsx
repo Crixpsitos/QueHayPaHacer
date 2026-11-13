@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 
 import { useRouter } from "next/navigation";
 import { CalendarIcon, CalendarRangeIcon, ArrowRight, Lock, X } from "lucide-react";

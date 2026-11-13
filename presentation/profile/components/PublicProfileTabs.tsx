@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Activity, MapPin, Award, Calendar, Eye, Heart, Building2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import type { UserBadge, UserEvent, UserSite } from "@/domain/repository/profile/IProfileRepository";
 import { PublicEventCard } from "./PublicEventCard";
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants";

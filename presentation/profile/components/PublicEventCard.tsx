@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowRight, Calendar, CalendarCheck, Eye, Layers, MapPin, Share2 } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
 import type { UserEvent } from "@/domain/repository/profile/IProfileRepository";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import Link from "@/app/components/ui/navigation/IntentLink"
 import { Section } from "./Section";
 import { LEGAL_VERSION } from "@/app/lib/legal/version";
 
