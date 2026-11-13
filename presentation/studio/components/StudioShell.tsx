@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { StudioHeader } from "./StudioHeader";
 import { StudioSidebar } from "./StudioSidebar";
+import { StudioMobileNav } from "./StudioMobileNav";
 
 interface StudioShellProps {
   displayName: string;
@@ -29,10 +30,11 @@ export function StudioShell({
       <StudioHeader displayName={displayName} email={email} photoURL={photoURL} limited={limited} />
       <div className="flex flex-1">
         <StudioSidebar premiumLabel={premiumLabel} limited={limited} />
-        <main className="min-w-0 flex-1 bg-gray-50/40">
+        <main className={`min-w-0 flex-1 bg-gray-50/40 ${limited ? "" : "pb-20 lg:pb-0"}`}>
           <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6">{children}</div>
         </main>
       </div>
+      <StudioMobileNav limited={limited} />
     </div>
   );
 }
