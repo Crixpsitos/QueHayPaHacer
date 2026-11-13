@@ -1,5 +1,6 @@
 "use client"
 
+import { SitePolicyHelp } from "./SitePolicyHelp"
 import { AnimatePresence, motion } from "motion/react"
 import { ArrowLeft, MapPin, Plus } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
@@ -33,8 +34,9 @@ export function PanelHeader({ panelMode, formMode, onCreate, onBack }: PanelHead
               <ArrowLeft className="size-3.5" aria-hidden />
               Volver
             </button>
-            <p className="text-base font-semibold text-foreground">
+            <p className="flex items-center gap-1 text-base font-semibold text-foreground">
               {formMode === "edit" ? "Editar sitio" : "Agregar nuevo sitio"}
+              <SitePolicyHelp />
             </p>
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
               {formMode === "edit"
