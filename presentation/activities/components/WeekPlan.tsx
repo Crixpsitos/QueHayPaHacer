@@ -20,7 +20,9 @@ const dayLabel = (iso: string) => new Intl.DateTimeFormat("es-CO", { weekday: "l
  * «Tu semana»: lo que reservaste o guardaste, acomodado por día y hora, con los cruces marcados.
  * Todo se calcula en el navegador con lo que ya hay en tu cuenta (no se guarda nada nuevo) y se puede mandar por WhatsApp.
  */
-export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlot }: {
+export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlot, slotEditableIds }: {
+  /** Qué se puede mover de día/hora (por defecto, lo mismo que se puede quitar; los eventos tienen horario fijo). */
+  slotEditableIds?: string[]
   /** Día y hora elegidos por actividad, y cómo cambiarlos (el guardado lo hace quien lo monta). */
   slots?: Record<string, PlanSlot>
   onSlot?: (id: string, slot: PlanSlot | null) => Promise<string | null> | void
@@ -42,7 +44,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
   const canRemove = (id: string) => Boolean(onRemove) && removableIds.includes(id)
   const removeBtn = (id: string, title: string) => canRemove(id) ? <button type="button" onClick={() => onRemove!(id)} aria-label={`Quitar ${title} de mi plan`} className="shrink-0 self-start rounded-full border border-current/40 px-2.5 py-1 text-xs font-semibold outline-none hover:bg-black/5 focus-visible:ring-2">Quitar</button> : null
   const editor = (id: string) => editing === id && onSlot ? <SlotEditor days={week.map((d) => d.date)} current={slots[id] ?? null} onClose={() => setEditing(null)} onSave={async (sl) => { const err = await onSlot(id, sl); if (!err) setEditing(null); return err ?? null }} /> : null
-  const slotBtn = (id: string, label: string) => onSlot && removableIds.includes(id) ? <button type="button" onClick={() => setEditing(editing === id ? null : id)} className="shrink-0 self-start rounded-full bg-black/10 px-2.5 py-1 text-xs font-semibold outline-none hover:bg-black/15 focus-visible:ring-2">{label}</button> : null
+  const slotBtn = (id: string, label: string) => onSlot && (slotEditableIds ?? removableIds).includes(id) ? <button type="button" onClick={() => setEditing(editing === id ? null : id)} className="shrink-0 self-start rounded-full bg-black/10 px-2.5 py-1 text-xs font-semibold outline-none hover:bg-black/15 focus-visible:ring-2">{label}</button> : null
   const unplaced = cards.filter((c) => !daysOf.has(c.id)) // guardadas que no caen en estos 7 días (p. ej. una mensual)
   const total = week.reduce((n, d) => n + d.blocks.length, 0)
   if (!total && !unplaced.length) return (
@@ -58,7 +60,7 @@ export function WeekPlan({ cards, removableIds = [], onRemove, slots = {}, onSlo
       <ol className="grid gap-4">
         {week.map((d) => ({ ...d, blocks: d.blocks.filter((b) => !anytime.includes(b.id)) })).map((d) => (
           <li key={d.date} className="grid gap-2">
-            <h2 className="font-heading text-lg font-bold capitalize">{dayLabel(d.date)}</h2>
+            <h2 className="font-heading text-lg font-bold first-letter:uppercase">{dayLabel(d.date)}</h2>
             <ul className="grid gap-2">
               {d.blocks.length === 0 ? <li className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-card px-3 py-3 text-sm text-muted-foreground"><span>Día libre</span><Link href={`/actividades?dia=${d.date}`} prefetch={false} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Ver qué hay</Link></li> : null}
               {d.blocks.map((b) => {

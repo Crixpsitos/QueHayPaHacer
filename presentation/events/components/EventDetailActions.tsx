@@ -9,7 +9,7 @@ import { analytics as ga } from "@/app/lib/analytics";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { HeartLikeButton } from "./card/HeartLikeButton";
-import { PlanLink } from "@/presentation/shared/components/PlanLink";
+import { AddToPlanButton } from "@/presentation/shared/components/AddToPlanButton";
 import { Eye, X } from "lucide-react";
 import type { EventViewModel } from "../view-models/EventViewModel";
 
@@ -87,7 +87,7 @@ export function EventDetailActions({ event, initialLiked, sessionId }: EventDeta
           />
         )}
 
-        {!sessionId && <PlanLink kind="event" />}
+        {!sessionId && <AddToPlanButton kind="event" id={event.id} title={event.title} when={new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }).format(new Date(event.startDate))} />}
 
         {/* Vistas — pill solo en el evento padre, no en sesiones */}
         {!sessionId && (

@@ -135,7 +135,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
           {preview || !d.joinEnabled ? null : <ActivityJoin activityId={d.id} hostName={d.host.displayName} priceFrom={d.paid ? d.priceFrom : "Gratis"} />}
 
-          {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} />}
+          {preview ? null : <ActivityEngagement activityId={d.id} visitedLabel={d.visitedLabel} title={d.title} hasSchedule={d.schedule.rules.some((r) => r.kind !== "always")} />}
           {preview ? null : <Suspense fallback={null}><FollowChannel /></Suspense>}
 
           {sparse ? <HowItWorks joinEnabled={d.joinEnabled} /> : null}
