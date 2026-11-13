@@ -138,3 +138,31 @@ test("sitemapEntries: solo públicas, con slug y última edición", async () => 
   ], { s9: { published: false, active: true } })
   assert.deepEqual(await s.sitemapEntries(), [{ slug: "a", updatedAt: new Date("2026-11-05T00:00:00Z") }])
 })
+
+test("lecturas: varias búsquedas seguidas comparten UNA lectura de la lista (y una por sitio); pasado el plazo se vuelve a leer", async () => {
+  let clock = NOW.getTime()
+  let listReads = 0, siteReads = 0
+  const repo = new FakeRepo([makeActivity({ id: "1", slug: "a" }), makeActivity({ id: "2", slug: "b", kind: "site", siteId: "s1" } as never)])
+  const origList = repo.findListable.bind(repo)
+  repo.findListable = async (n: number) => { listReads++; return origList(n) }
+  const s = new ActivityService(repo, async () => { siteReads++; return okSite }, () => new Date(clock))
+  await Promise.all([s.search({}, 0, 12), s.search({ category: "otros" }, 0, 12), s.listPublic(500), s.sitemapEntries()])
+  assert.equal(listReads, 1)
+  assert.equal(siteReads, 1)
+  clock += 10_000
+  await s.search({}, 0, 12)
+  assert.equal(listReads, 1, "dentro de 15 s sigue la misma lectura")
+  clock += 10_000
+  await s.search({}, 0, 12)
+  assert.equal(listReads, 2, "a los 20 s se vuelve a leer")
+})
+test("lecturas: un fallo al leer no se queda guardado", async () => {
+  const repo = new FakeRepo([makeActivity({ id: "1", slug: "a" })])
+  let fail = true
+  const orig = repo.findListable.bind(repo)
+  repo.findListable = async (n: number) => { if (fail) throw new Error("boom"); return orig(n) }
+  const s = new ActivityService(repo, async () => okSite, () => NOW)
+  await assert.rejects(() => s.listPublic(10))
+  fail = false
+  assert.equal((await s.listPublic(10)).length, 1)
+})

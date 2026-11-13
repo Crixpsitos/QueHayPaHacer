@@ -83,7 +83,15 @@ export function EventDetailClient({
   // avisa a quienes cambiaron de estado. Sin escribir durante el render; el servidor lo limita a una revisión cada 5 minutos.
   const watchSeats = event.registrationType === "external" && (event.capacity ?? 0) > 0 && !isPast;
   useEffect(() => {
-    if (watchSeats) void rebalanceEventSeatsAction(event.id).catch(() => undefined);
+    if (!watchSeats) return;
+    // un navegador pregunta como mucho cada 5 minutos por evento (el servidor también limita, pero así ni siquiera hay viaje)
+    const key = `qhpa-seats-${event.id}`;
+    try {
+      const last = Number(localStorage.getItem(key) ?? 0);
+      if (Date.now() - last < 5 * 60_000) return;
+      localStorage.setItem(key, String(Date.now()));
+    } catch { /* sin almacenamiento: se pregunta igual */ }
+    void rebalanceEventSeatsAction(event.id).catch(() => undefined);
   }, [watchSeats, event.id]);
   const registrations = event.analytics?.registrations ?? 0;
   const capacity = event.capacity ?? 0;
