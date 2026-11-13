@@ -39,6 +39,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   activity_reminder: CalendarDays,
   activity_last_spot: Ticket,
   event_seat: Ticket,
+  activity_request: UserPlus,
 };
 
 const TITLE = "Notificaciones";

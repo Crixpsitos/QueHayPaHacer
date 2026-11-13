@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Award, Check, Loader2, MessageCircle, ScanLine, Search, UserPlus, Users } from "lucide-react";
+import { Award, Check, Loader2, Lock, MessageCircle, ScanLine, Search, UserPlus, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
   type EventAttendeeVM,
 } from "@/app/actions/events/get-event-attendees.action";
 import { confirmAttendanceAction } from "@/app/actions/studio/confirm-attendance.action";
+import { checkInByCodeAction } from "@/app/actions/studio/check-in-by-code.action";
 import { addGuestAction, type AddGuestResult } from "@/app/actions/events/add-guest.action";
 import { isGuestId } from "@/domain/entities/EventRegistration/guest";
 import { AttendanceScannerDialog } from "@/presentation/studio/components/events/registrations/AttendanceScannerDialog";
@@ -24,6 +25,8 @@ import type { PayTier } from "@/domain/entities/EventRegistration/payment";
 import { CopyButton } from "@/presentation/shared/components/CopyButton";
 
 interface EventAttendeesDialogProps {
+  /** El escáner con cámara (QR) es de Premium; confirmar escribiendo el código o con el botón es para todas las cuentas. */
+  canScanQr?: boolean;
   eventId: string;
   eventTitle: string;
   /** Botón disparador (estilado por el llamador). Se usa con `asChild`. */
@@ -43,7 +46,7 @@ const initials = (name: string) => name.slice(0, 2).toUpperCase();
  * NO Premium, que no tienen acceso al Estudio). Muestra la lista de
  * personas inscritas con buen detalle visual y "cargar más" por cursor.
  */
-export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAttendeesDialogProps) {
+export function EventAttendeesDialog({ eventId, eventTitle, trigger, canScanQr = false }: EventAttendeesDialogProps) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,6 +71,9 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [guestTier, setGuestTier] = useState("");
   const [scanOpen, setScanOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeMsg, setCodeMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const fetchFirstPage = async () => {
     setLoading(true);
@@ -113,6 +119,19 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
     setGuestBusy(false);
     setGuestRes(r);
     if (r.success) { setGuestName(""); setGuestPhone(""); setGuestEmail(""); void fetchFirstPage(); }
+  };
+  const confirmByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim() || codeBusy) return;
+    setCodeBusy(true);
+    setCodeMsg(null);
+    const r = await checkInByCodeAction({ eventId, input: code }).catch(() => null);
+    setCodeBusy(false);
+    if (!r || !r.success) return setCodeMsg({ ok: false, text: r?.error ?? "No se pudo confirmar." });
+    setCodeMsg({ ok: true, text: r.alreadyConfirmed ? `${r.name} ya estaba confirmado` : `Asistencia confirmada: ${r.name}` });
+    setCode("");
+    notifyIncomeChanged();
+    void fetchFirstPage();
   };
   const confirmed = attendees.filter((a) => a.attendanceConfirmed).length;
   const confirm = async (userId: string) => {
@@ -169,12 +188,30 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
           </div>
         ) : null}
 
-        {isExternal && !loading && !error ? (
+        {!loading && !error && (isExternal || requiresAttendance) ? (
           <div className="grid gap-3 border-b border-gray-100 px-5 py-3">
-            {tiers.length ? <EventIncomeCard eventId={eventId} /> : null}
-            <button type="button" onClick={() => setScanOpen(true)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#9B0A26] px-4 text-sm font-semibold text-white">
-              <ScanLine className="h-4 w-4" aria-hidden /> Escanear QR de entrada
-            </button>
+            {isExternal && tiers.length ? <EventIncomeCard eventId={eventId} /> : null}
+            {requiresAttendance ? (
+              <form onSubmit={(e) => void confirmByCode(e)} className="grid gap-1.5">
+                <label htmlFor="attendees-code" className="text-sm font-semibold text-gray-900">Confirmar con el código del asistente</label>
+                <div className="flex gap-2">
+                  <input id="attendees-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="XXXX-XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} className="h-11 min-w-0 flex-1 rounded-xl border border-gray-200 px-3 font-mono text-sm uppercase tracking-wider outline-none focus-visible:ring-2 focus-visible:ring-[#9B0A26]" />
+                  <button type="submit" disabled={codeBusy || !code.trim()} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#9B0A26] px-4 text-sm font-semibold text-white disabled:opacity-50">{codeBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}Confirmar</button>
+                </div>
+                {codeMsg ? <p role="status" className={`text-xs font-medium ${codeMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{codeMsg.text}</p> : <p className="text-xs text-gray-500">El código está en la entrada de cada asistente. Escanearlo con la cámara es de Premium.</p>}
+              </form>
+            ) : null}
+            {requiresAttendance ? (
+              canScanQr ? (
+                <button type="button" onClick={() => setScanOpen(true)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#9B0A26] px-4 text-sm font-semibold text-[#9B0A26] hover:bg-[#FDF2F4]">
+                  <ScanLine className="h-4 w-4" aria-hidden /> Escanear QR con la cámara
+                </button>
+              ) : (
+                <a href="/premium" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-gray-200 px-4 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                  <Lock className="h-4 w-4" aria-hidden /> Escanear con QR · Premium
+                </a>
+              )
+            ) : null}
           </div>
         ) : null}
 
@@ -309,8 +346,9 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
                       </button>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
-                        Pendiente
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">Pendiente</span>
+                        <button type="button" disabled={confirming === a.userId} onClick={() => void confirm(a.userId)} className="inline-flex min-h-9 items-center rounded-full bg-[#9B0A26] px-3 text-xs font-semibold text-white disabled:opacity-60">{confirming === a.userId ? "Confirmando…" : "Confirmar"}</button>
                       </span>
                     ))}
                 </li>
@@ -334,7 +372,7 @@ export function EventAttendeesDialog({ eventId, eventTitle, trigger }: EventAtte
           </div>
         )}
       </DialogContent>
-      {isExternal ? <AttendanceScannerDialog eventId={eventId} open={scanOpen} onOpenChange={(o) => { setScanOpen(o); if (!o) void fetchFirstPage(); }} /> : null}
+      {canScanQr && requiresAttendance ? <AttendanceScannerDialog eventId={eventId} open={scanOpen} onOpenChange={(o) => { setScanOpen(o); if (!o) void fetchFirstPage(); }} /> : null}
     </Dialog>
   );
 }

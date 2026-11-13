@@ -1,6 +1,6 @@
 import type { Activity } from "@/domain/entities/activities/Activity"
 import { JOIN_HORIZON_DAYS, initialJoinStatus, isPaidActivity, joinDecision, normalizePhoneCo, resolveOccurrenceKey, spotsLeft, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
-import { bogotaDateIso, occurrencesBetween } from "@/domain/entities/activities/value-objects/occurrences"
+import { upcomingDepartures } from "@/domain/entities/activities/activityRequest"
 import type { IActivityJoinRepository, JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
 import { activityJoinConfirmedNotification, activityJoinNotification } from "@/domain/entities/notification/messages"
@@ -58,7 +58,6 @@ export interface ManagerView {
   rows: JoinRow[]
 }
 
-const SHOWN = 4
 const ID = /^[A-Za-z0-9-]{1,128}$/ // sin "_": el id de inscripción usa "_" como separador
 const KEY = /^(open|\d{4}-\d{2}-\d{2})$/
 const NOT_FOUND = "Esa actividad no existe."
@@ -114,27 +113,9 @@ export class ActivityJoinService {
     return { ok: true }
   }
 
-  /** Las próximas salidas que se ofrecen (máx. SHOWN): también son las únicas reservables, así nadie acapara todo el calendario. */
+  /** Las próximas salidas que se ofrecen (máx. 4): también son las únicas reservables, así nadie acapara todo el calendario. */
   private shownRows(a: Activity): { key: string; date: string | null }[] {
-    const now = this.d.clock()
-    const today = bogotaDateIso(now)
-    const dated = a.schedule.rules.some((r) => r.kind !== "always" && r.kind !== "byAppointment")
-    let rows: { key: string; date: string | null }[]
-    if (!dated) rows = [{ key: "open", date: null }]
-    else {
-      const to = bogotaDateIso(new Date(now.getTime() + JOIN_HORIZON_DAYS * 86_400_000))
-      const seen = new Set<string>()
-      rows = []
-      for (const o of occurrencesBetween(a.schedule, today, to)) {
-        if (seen.has(o.date)) continue
-        // la de hoy solo si no terminó
-        if (o.date === today && (o.endsAt ?? o.startsAt) && (o.endsAt ?? o.startsAt)!.getTime() < now.getTime()) continue
-        seen.add(o.date)
-        rows.push({ key: o.date, date: o.date })
-        if (rows.length >= SHOWN) break
-      }
-    }
-    return rows
+    return upcomingDepartures(a.schedule, this.d.clock())
   }
 
   /** Lo que muestra la ficha: próximas salidas con cupos y si la persona ya está dentro. null = actividad no pública. */

@@ -26,6 +26,7 @@ export function withEmailAttribution(url: string, medium: string): string {
 
 const REASON: Record<string, string> = {
   activity_join: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
+  activity_request: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   activity_join_confirmed: "Recibes este correo porque reservaste un cupo en una actividad de Qué Hay Pa Hacer.",
   activity_reminder: "Recibes este correo porque reservaste un cupo o guardaste esta actividad en Qué Hay Pa Hacer.",
   activity_last_spot: "Recibes este correo porque guardaste esta actividad en Qué Hay Pa Hacer.",
