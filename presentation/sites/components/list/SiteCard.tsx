@@ -129,7 +129,7 @@ export function SiteCard({ site, active, onEdit, onOpen, onHover, pendingSuggest
       )}
 
       {isApproved && (
-        <Link
+        <Link warmOnView
           href={`/carta/${site.id}`}
           onClick={(e) => e.stopPropagation()}
           className="mt-2.5 flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-[#F6DDA0] bg-[#FFF8E7] px-3 text-left text-xs font-semibold text-[#7a5200]"

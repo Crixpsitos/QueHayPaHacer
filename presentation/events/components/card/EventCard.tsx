@@ -180,7 +180,7 @@ export const EventCard = ({
 
         <h3 className="font-heading line-clamp-2 text-lg font-semibold leading-snug text-[#09090B] decoration-[#D42F3C] decoration-2 underline-offset-4 group-hover:underline group-has-[a:focus-visible]:underline">
           {/* Enlace estirado: toda la tarjeta es clickeable; el like queda encima (z-10). */}
-          <Link href={detailUrl} className="after:absolute after:inset-0 focus-visible:outline-none">
+          <Link warmOnView href={detailUrl} className="after:absolute after:inset-0 focus-visible:outline-none">
             {event.title}
           </Link>
         </h3>
