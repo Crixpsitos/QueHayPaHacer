@@ -37,6 +37,7 @@ import { notifyIncomeChanged } from "@/presentation/events/components/EventIncom
 import { AttendanceScannerDialog } from "./AttendanceScannerDialog";
 import { toCsv, downloadCsv } from "../../../lib/csv";
 import { EventsSearchInput } from "../EventsSearchInput";
+import { filterRows } from "@/presentation/studio/lib/rowFilter";
 import type { RegistrationRow } from "../../../view-models/StudioEventsViewModel";
 import type { RegistrationSortBy } from "@/domain/entities/studio/Studio";
 import type { TeamAction } from "@/domain/entities/events/teamAccess";
@@ -97,6 +98,7 @@ export function RegistrationsTable({
   const hasRowActions = showResponses || canConfirm || canRemove;
   const selectable = canConfirm || canRemove;
   const colCount = 3 + (hasRowActions ? 1 : 0) + (selectable ? 1 : 0);
+  const [local, setLocal] = useState("");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -146,6 +148,8 @@ export function RegistrationsTable({
     [withFormResponses, data],
   );
 
+  // filtro local (sin consultas): sobre las filas ya cargadas, también por correo y teléfono
+  const visible = filterRows(data, permissions.view_attendee_contact ? local : "");
   const allFilteredSelected = data.length > 0 && data.every((r) => selected.has(r.userId));
 
   const toggleAll = () =>
@@ -289,6 +293,9 @@ export function RegistrationsTable({
       {/* Toolbar: búsqueda (server-side, escribe ?q= y resetea el cursor) + límite */}
       <div className="flex flex-wrap items-center gap-2">
         <EventsSearchInput query={query} placeholder="Buscar por nombre…" />
+        {permissions.view_attendee_contact && data.length > 0 ? (
+          <input type="search" value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Filtrar esta página por teléfono o correo…" aria-label="Filtrar esta página por teléfono o correo" className="h-9 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-zinc-400" />
+        ) : null}
         {isPending && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
         <label className="flex items-center gap-1.5 text-xs text-slate-500">
           Mostrar
@@ -390,7 +397,7 @@ export function RegistrationsTable({
               </tr>
             </thead>
             <tbody className={cn(isPending && "opacity-60 transition-opacity")}>
-              {data.map((row, i) => (
+              {visible.map((row, i) => (
                 <RegistrationRowItem
                   key={row.userId}
                   row={row}
@@ -409,7 +416,7 @@ export function RegistrationsTable({
                   onRemove={() => void removeOne(row.userId)}
                 />
               ))}
-              {data.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
                   <td colSpan={colCount} className="px-3 py-10 text-center text-sm text-slate-400">
                     {query ? "Sin resultados para tu búsqueda." : "No hay registros."}
