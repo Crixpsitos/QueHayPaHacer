@@ -219,7 +219,7 @@ export function Reservations({ initial, initialRequests }: { initial: ManagerVie
             <Input type="tel" inputMode="tel" maxLength={20} value={form.phone} placeholder="300 123 4567" onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </label>
           <label className="grid gap-1.5 text-sm font-semibold">Día
-            <select value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="min-h-11 rounded-xl border border-border bg-card px-3 capitalize">
+            <select value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="min-h-11 rounded-xl border border-border bg-card px-3">
               {view.departures.length === 0 ? <option value="open">Sin fecha fija</option> : null}
               {view.departures.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
             </select>
