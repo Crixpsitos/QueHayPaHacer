@@ -6,6 +6,7 @@ import { SITE_URL } from "@/app/lib/site";
 import { entryMessage, entryPath } from "@/domain/entities/EventRegistration/guest";
 import { resolvePayment, payTiers } from "@/domain/entities/EventRegistration/payment";
 import { updateTag } from "next/cache";
+import { studioRegistrationsTag } from "@/presentation/studio/lib/cachedStudioData";
 
 export type AddGuestResult =
   | { success: true; name: string; url: string; whatsappHref: string }
@@ -34,6 +35,7 @@ export async function addGuestAction(eventId: string, input: { name: string; pho
     const r = await eventGuestService.add(id, access.uid, input, pay?.tier ?? null);
     if (!r.ok) return { success: false, error: r.error };
     updateTag(`event-${id}`);
+    updateTag(studioRegistrationsTag(id)); // la tabla de Studio la trae de caché: sin esto la persona agregada no aparece
     const url = `${SITE_URL}${entryPath(id, r.code)}`;
     const text = encodeURIComponent(entryMessage({ name: r.name, eventTitle: event.title, url }));
     return { success: true, name: r.name, url, whatsappHref: r.phone ? `https://wa.me/57${r.phone}?text=${text}` : `https://wa.me/?text=${text}` };

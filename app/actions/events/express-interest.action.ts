@@ -4,6 +4,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { authConfig } from "@/infraestructure/firebase/config/admin/firebase";
 import { getTokens } from "next-firebase-auth-edge";
 import { updateTag } from "next/cache";
+import { studioRegistrationsTag } from "@/presentation/studio/lib/cachedStudioData";
 import { payTiers } from "@/domain/entities/EventRegistration/payment";
 import { cookies } from "next/headers";
 
@@ -28,6 +29,7 @@ export async function expressInterestAction(eventId: string, tier?: string): Pro
     const r = await eventRegistrationService.registerExternalInterest({ userId: uid, eventId: id, name: name ?? "Usuario", email: email ?? "", registrationType: "internal", formData: { origen: "enlace externo", ...(chosen ? { categoria: chosen } : {}) } });
     if (!r.already && r.outcome === "interested") await eventInteractionsService.registerLike(id, uid, true).catch(() => undefined); // «Voy a ir»
     updateTag(`event-${id}`);
+    updateTag(studioRegistrationsTag(id));
     updateTag(`event-registration-${uid}-${id}`);
     return { recorded: !r.already, outcome: r.outcome, position: r.position };
   } catch (e) {
