@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore"
+import type { ExtraPick } from "@/domain/entities/activities/reservationExtras"
 import { holdsSpot, joinDocId, type JoinDecision, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
 import type { IActivityJoinRepository, JoinOutcome, JoinRow, SetStatusOutcome } from "@/domain/repository/activities/IActivityJoinRepository"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
@@ -24,7 +25,7 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
   }
 
   async join(
-    i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null },
+    i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null; extras?: ExtraPick[]; manual?: boolean },
     decide: (taken: number) => JoinDecision,
   ): Promise<JoinOutcome> {
     const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
@@ -42,6 +43,8 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
         status: i.status,
         phone: i.phone,
         consentVersion: i.phone ? i.consentVersion : null,
+        extras: i.extras ?? [],
+        manual: i.manual === true,
         createdAt: FieldValue.serverTimestamp(),
       })
       tx.set(counter, { taken: FieldValue.increment(1) }, { merge: true })
@@ -76,6 +79,16 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     })
   }
 
+  async setExtras(i: { activityId: string; key: string; uid: string; extras: ExtraPick[] }): Promise<boolean> {
+    const ref = this.collection.doc(joinDocId(i.activityId, i.key, i.uid))
+    return this.db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref)
+      if (!snap.exists || snap.get("activityId") !== i.activityId || snap.get("key") !== i.key) return false
+      tx.update(ref, { extras: i.extras })
+      return true
+    })
+  }
+
   async setClosed(activityId: string, closed: boolean): Promise<boolean> {
     const ref = this.db.collection("activities").doc(activityId)
     return this.db.runTransaction(async (tx) => {
@@ -107,7 +120,7 @@ export class ActivityJoinFirebaseRepository extends FirebaseBaseRepository imple
     // ponytail: una sola igualdad (sin índice compuesto); el volumen por actividad es pequeño y se ordena en memoria.
     const s = await this.collection.where("activityId", "==", activityId).limit(limit).get()
     return s.docs
-      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")), status: statusOf(d.get("status")), phone: typeof d.get("phone") === "string" ? (d.get("phone") as string) : null }))
+      .map((d) => ({ uid: String(d.get("uid")), name: String(d.get("name") ?? ""), key: String(d.get("key")), createdAt: toDate(d.get("createdAt")), status: statusOf(d.get("status")), phone: typeof d.get("phone") === "string" ? (d.get("phone") as string) : null, extras: Array.isArray(d.get("extras")) ? (d.get("extras") as ExtraPick[]) : [], manual: d.get("manual") === true }))
       .sort((a, b) => a.key.localeCompare(b.key) || a.createdAt.getTime() - b.createdAt.getTime())
   }
 }

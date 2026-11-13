@@ -65,7 +65,7 @@ function Row({ a }: { a: MyActivitySummary }) {
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild variant="outline" size="lg" className="h-11"><Link href={`/actividades/${a.id}/editar`}><Pencil aria-hidden /> Editar</Link></Button>
           {a.siteId && canShowCatalog(a.categorySlug as never) ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/carta/${a.siteId}`}><Store aria-hidden /> Carta</Link></Button> : null}
-          {a.joinEnabled ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.id}/inscritos`}><Users aria-hidden /> Reservas</Link></Button> : null}
+          <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.id}/inscritos`}><Users aria-hidden /> Reservas</Link></Button>
           {a.status.key !== "draft" ? <Button asChild variant="ghost" size="lg" className="h-11"><Link href={`/actividades/${a.slug}`}>{a.status.key === "live" ? "Ver" : "Vista previa"}</Link></Button> : null}
           {a.status.key === "live" || a.status.key === "review" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => setKit(true)}><Share2 aria-hidden /> Compartir</Button> : null}
           {a.status.key === "live" ? <Button type="button" variant="ghost" size="lg" className="h-11" onClick={() => void loadOrigin()}>De dónde vienen</Button> : null}

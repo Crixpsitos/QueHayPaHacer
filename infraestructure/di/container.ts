@@ -356,8 +356,9 @@ export const createServerContainer = () => {
   };
 
   // unirse a una salida (cupo opcional) con avisos por la campanita
+  const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
   const activityJoinService = new ActivityJoinService({
-    repo: new ActivityJoinFirebaseRepository(getFirebaseFirestore()),
+    repo: activityJoinRepo,
     getPublic: (id) => activityService.getPublicById(id),
     getForManager: (id, viewer) => activityService.getForManager(id, viewer),
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
@@ -369,6 +370,7 @@ export const createServerContainer = () => {
   // solicitudes de reserva (quien tiene cuenta toca el botón de reservar/preguntar): constancia para quien organiza
   const activityRequestService = new ActivityRequestService({
     repo: new ActivityRequestFirebaseRepository(getFirebaseFirestore()),
+    join: activityJoinRepo,
     getPublic: (id) => activityService.getPublicById(id),
     getForManager: (id, viewer) => activityService.getForManager(id, viewer),
     displayName: async (uid) => (await userService.getUserById(uid))?.displayName ?? "",
@@ -519,7 +521,6 @@ export const createServerContainer = () => {
 
   // "Mis planes": reservas, guardados y «Yo fui» de la propia cuenta
   const activityEngagementRepo = new ActivityEngagementFirebaseRepository(getFirebaseFirestore());
-  const activityJoinRepo = new ActivityJoinFirebaseRepository(getFirebaseFirestore());
   const activityPlansService = new ActivityPlansService({
     savedIds: (uid, n) => activityEngagementRepo.listSavedIds(uid, n),
     visitedIds: (uid, n) => activityEngagementRepo.listVisitedIds(uid, n),

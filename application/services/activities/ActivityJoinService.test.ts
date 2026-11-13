@@ -5,6 +5,7 @@ import { makeActivity } from "@/domain/entities/activities/activity.fixture"
 import type { IActivityJoinRepository, JoinOutcome, JoinRow, SetStatusOutcome } from "@/domain/repository/activities/IActivityJoinRepository"
 import { holdsSpot, type JoinDecision, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
+import type { ExtraPick } from "@/domain/entities/activities/reservationExtras"
 import { ActivityJoinService } from "./ActivityJoinService"
 
 const NOW = new Date("2026-11-10T15:00:00Z") // martes; próxima salida: domingo 15
@@ -13,11 +14,11 @@ class FakeRepo implements IActivityJoinRepository {
   rows = new Map<string, JoinRow & { activityId: string }>()
   private k = (a: string, key: string, uid: string) => `${a}|${key}|${uid}`
   private taken = (a: string, key: string) => [...this.rows.values()].filter((r) => r.activityId === a && r.key === key && holdsSpot(r.status)).length
-  async join(i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null }, decide: (t: number) => JoinDecision): Promise<JoinOutcome> {
+  async join(i: { activityId: string; key: string; uid: string; name: string; status: JoinStatusValue; phone: string | null; consentVersion: string | null; extras?: ExtraPick[]; manual?: boolean }, decide: (t: number) => JoinDecision): Promise<JoinOutcome> {
     if (this.rows.has(this.k(i.activityId, i.key, i.uid))) return "already"
     const d = decide(this.taken(i.activityId, i.key))
     if (!d.ok) return d.reason
-    this.rows.set(this.k(i.activityId, i.key, i.uid), { activityId: i.activityId, key: i.key, uid: i.uid, name: i.name, status: i.status, phone: i.phone, createdAt: NOW })
+    this.rows.set(this.k(i.activityId, i.key, i.uid), { activityId: i.activityId, key: i.key, uid: i.uid, name: i.name, status: i.status, phone: i.phone, createdAt: NOW, extras: i.extras ?? [], manual: i.manual === true })
     return "joined"
   }
   async cancel(i: { activityId: string; key: string; uid: string }) { return { changed: this.rows.delete(this.k(i.activityId, i.key, i.uid)) } }
@@ -32,6 +33,7 @@ class FakeRepo implements IActivityJoinRepository {
   async mine(a: string, uid: string, keys: string[]) { return Object.fromEntries(keys.flatMap((key) => { const r = this.rows.get(this.k(a, key, uid)); return r ? [[key, r.status] as const] : [] })) }
   async listByUser(uid: string) { return [...this.rows.values()].filter((r) => r.uid === uid).map((r) => ({ activityId: r.activityId, key: r.key, status: r.status })) }
   async list(a: string) { return [...this.rows.values()].filter((r) => r.activityId === a) }
+  async setExtras(i: { activityId: string; key: string; uid: string; extras: ExtraPick[] }) { const r = this.rows.get(this.k(i.activityId, i.key, i.uid)); if (!r) return false; r.extras = i.extras; return true }
   closedCalls: [string, boolean][] = []
   async setClosed(a: string, closed: boolean) { this.closedCalls.push([a, closed]); return true }
 }
@@ -41,6 +43,7 @@ function setup(over: Partial<Activity> = {}) {
   const activity = makeActivity({ id: "a1", slug: "senderismo", ownerUid: "owner", join: { capacity: 2, closed: false, payInstructions: "Nequi 300 765 4321" }, priceOptions: [{ label: "Gratis", amountCop: 0, unit: "persona", includes: [] }], ...over })
   const notes: { uid: string; n: NewNotification }[] = []
   const seenIds = new Set<string>()
+  let idCount = 0
   const svc = new ActivityJoinService({
     repo,
     getPublic: async (id) => (id === "a1" && activity.publicationStatus === "published" ? activity : null),
@@ -49,6 +52,7 @@ function setup(over: Partial<Activity> = {}) {
     notify: async (uid, n, id) => { if (id && seenIds.has(id)) return; if (id) seenIds.add(id); notes.push({ uid, n }) },
     clock: () => NOW,
     legalVersion: "2026-11-05",
+    newId: () => `abc${122 + ++idCount}`,
   })
   return { svc, repo, notes, activity }
 }
@@ -234,4 +238,56 @@ test("borrar cuenta: elimina todas las reservas de la persona y libera sus cupos
   assert.equal(await svc.eraseUser("u1"), 1)
   assert.deepEqual([...repo.rows.values()].map((r) => r.uid), ["u2"])
   assert.equal((await svc.join("u3", "a1", "2026-11-15")).ok, true)
+})
+
+const withExtras = { extras: [{ label: "Almuerzo", amountCop: 18000, unit: "persona" as const }, { label: "Botella de agua", amountCop: 3000, unit: "unidad" as const }] }
+
+test("unirse con servicios aparte: se guardan solo los que la actividad ofrece, con su cantidad", async () => {
+  const { svc, repo } = setup(withExtras)
+  const r = await svc.join("u1", "a1", null, { phone: "300 111 2233", consent: true }, [{ label: "Almuerzo", qty: 2 }, { label: "Inventado", qty: 1 }])
+  assert.equal(r.ok, true)
+  assert.deepEqual([...repo.rows.values()][0].extras, [{ label: "Almuerzo", qty: 2 }])
+})
+test("agregar a mano (organizador): persona sin cuenta con su salida, teléfono y servicios; por pagar si la actividad cuesta", async () => {
+  const { svc, repo } = setup(withExtras)
+  const r = await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "  Marta   Ruiz ", phone: "+57 300 111 2233", date: "2026-11-15", extras: [{ label: "Botella de agua", qty: 3 }] })
+  assert.deepEqual(r, { ok: true })
+  const row = [...repo.rows.values()][0]
+  assert.deepEqual([row.uid, row.name, row.phone, row.key, row.status, row.manual], ["guest_abc123", "Marta Ruiz", "3001112233", "2026-11-15", "confirmed", true])
+  assert.deepEqual(row.extras, [{ label: "Botella de agua", qty: 3 }])
+})
+test("agregar a mano: solo el dueño, con nombre, teléfono válido y respetando el cupo", async () => {
+  const { svc } = setup()
+  assert.equal((await svc.addManual({ uid: "otro", isAdmin: false }, "a1", { name: "Ana", date: null, extras: [] })).ok, false)
+  assert.equal((await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "A", date: null, extras: [] })).ok, false)
+  assert.equal((await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Ana", phone: "123", date: null, extras: [] })).ok, false)
+  await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Ana", date: null, extras: [] })
+  await svc.join("u2", "a1", null)
+  const lleno = await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Beto", date: null, extras: [] })
+  assert.deepEqual(lleno, { ok: false, error: "Se acabaron los cupos de esta salida." })
+})
+test("agregar a mano en una actividad sin «Unirme»: sin tope de cupo", async () => {
+  const { svc, repo } = setup({ join: null })
+  const r1 = await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Ana", date: null, extras: [] })
+  const r2 = await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Beto", date: null, extras: [] })
+  assert.deepEqual([r1.ok, r2.ok], [true, true])
+  assert.equal(repo.rows.size, 2)
+})
+test("el organizador ajusta los servicios de una reserva (y solo los que se ofrecen)", async () => {
+  const { svc, repo } = setup(withExtras)
+  await svc.join("u1", "a1", null, { phone: "300 111 2233", consent: true })
+  const ok = await svc.setExtras({ uid: "owner", isAdmin: false }, "a1", "2026-11-15", "u1", [{ label: "Almuerzo", qty: 4 }, { label: "Otro", qty: 1 }])
+  assert.deepEqual(ok, { ok: true })
+  assert.deepEqual([...repo.rows.values()][0].extras, [{ label: "Almuerzo", qty: 4 }])
+  assert.equal((await svc.setExtras({ uid: "otro", isAdmin: false }, "a1", "2026-11-15", "u1", [])).ok, false)
+  assert.equal((await svc.setExtras({ uid: "owner", isAdmin: false }, "a1", "2026-11-15", "nadie", [])).ok, false)
+})
+test("«Reservas» sirve también sin «Unirme»: lista, servicios ofrecidos y salidas para agregar", async () => {
+  const { svc } = setup({ join: null, ...withExtras })
+  await svc.addManual({ uid: "owner", isAdmin: false }, "a1", { name: "Ana", date: null, extras: [] })
+  const v = await svc.managerView({ uid: "owner", isAdmin: false }, "a1")
+  assert.equal(v?.rows.length, 1)
+  assert.equal(v?.join, null)
+  assert.deepEqual(v?.offeredExtras.map((x) => x.label), ["Almuerzo", "Botella de agua"])
+  assert.ok((v?.departures.length ?? 0) >= 1)
 })

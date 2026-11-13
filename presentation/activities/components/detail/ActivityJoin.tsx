@@ -7,6 +7,8 @@ import { Input } from "@/app/components/ui/input"
 import { cancelJoinAction, getJoinStatusAction, joinActivityAction } from "@/app/actions/activities/join.action"
 import type { JoinStatus, OccurrenceStatus } from "@/application/services/activities/ActivityJoinService"
 import { cn } from "@/app/lib/utils/cn"
+import type { ExtraPick } from "@/domain/entities/activities/reservationExtras"
+import { ExtrasPicker } from "../ExtrasPicker"
 
 const dateLabel = (o: OccurrenceStatus) =>
   o.date ? new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bogota" }).format(new Date(`${o.date}T12:00:00-05:00`)) : "Cuando quieras"
@@ -29,6 +31,8 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
   const [status, setStatus] = useState<JoinStatus | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [asking, setAsking] = useState(false)
+  const [extrasStep, setExtrasStep] = useState(false)
+  const [picks, setPicks] = useState<ExtraPick[]>([])
   const [phone, setPhone] = useState("")
   const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -55,7 +59,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
     const done: string[] = []
     for (const key of picked) {
       const o = status.occurrences.find((x) => x.key === key)
-      const r = await joinActivityAction(activityId, o?.date ?? null, status.paid ? { phone, consent } : undefined)
+      const r = await joinActivityAction(activityId, o?.date ?? null, status.paid ? { phone, consent } : undefined, picks)
       if (r.success) { done.push(key); continue }
       if (r.authRequired) { lock.current = false; goLogin(); return }
       setError(`${o?.date ? cap(dateLabel(o)) + ": " : ""}${r.error}`)
@@ -63,13 +67,14 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
     }
     await load()
     setPicked((p) => p.filter((k) => !done.includes(k)))
-    if (done.length) { setAsking(false); setConsent(false) }
+    if (done.length) { setAsking(false); setConsent(false); setExtrasStep(false); setPicks([]) }
     setBusy(false)
     lock.current = false
   }
 
   const start = () => {
     if (!picked.length) { setError("Elige al menos una salida."); return }
+    if (status.extras.length && !extrasStep && !asking) { setExtrasStep(true); return }
     if (status.paid && !asking) { setAsking(true); return }
     void submit()
   }
@@ -148,6 +153,16 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
           {status.paid ? <div className="flex items-baseline justify-between px-1 text-sm"><span className="text-muted-foreground">Entrada</span><span className="font-heading text-xl font-bold">{priceFrom}</span></div> : null}
           {status.paid && !asking ? <p className="rounded-2xl border border-[#F6DDA0] bg-accent p-3 text-sm leading-relaxed text-[#7a5200]"><strong>El pago no es aquí.</strong> Reservas el cupo y {hostName} te escribe por WhatsApp para coordinar el pago.</p> : null}
 
+          {extrasStep && !asking ? (
+            <div className="grid gap-3 rounded-2xl border border-border p-3" role="group" aria-label="Servicios aparte">
+              <div>
+                <div className="font-heading text-lg font-semibold">¿Quieres agregar algo más?</div>
+                <p className="text-sm text-muted-foreground">Servicios que se pagan aparte. {hostName} los tendrá listos.</p>
+              </div>
+              <ExtrasPicker offered={status.extras} value={picks} onChange={setPicks} />
+            </div>
+          ) : null}
+
           {asking ? (
             <div className="grid gap-3 rounded-2xl border border-border p-3" role="group" aria-label="Datos para la reserva">
               <div className="font-heading text-lg font-semibold">Para que te escriban</div>
@@ -165,7 +180,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
             </div>
           ) : (
             <Button type="button" size="lg" className="h-12 text-base" disabled={busy || !free.length} onClick={start}>
-              {busy ? "Un momento…" : picked.length > 1 ? `${status.paid ? "Reservar" : "Unirme a"} ${picked.length} salidas` : status.paid ? "Reservar mi cupo" : "Unirme"}
+              {busy ? "Un momento…" : extrasStep && !picks.length && status.extras.length ? "Continuar sin agregar" : picked.length > 1 ? `${status.paid ? "Reservar" : "Unirme a"} ${picked.length} salidas` : status.paid ? "Reservar mi cupo" : "Unirme"}
             </Button>
           )}
           {!status.paid ? <p className="text-xs text-muted-foreground">Actividad gratis: quedas confirmado al instante y no se comparte tu teléfono.</p> : null}

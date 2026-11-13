@@ -3,22 +3,22 @@
 import { getSessionUid } from "@/app/actions/_session"
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin"
 import { createServerContainer } from "@/infraestructure/di/container"
-import type { DepartureView, RequestView } from "@/application/services/activities/ActivityRequestService"
+import type { RequestOptions, RequestView } from "@/application/services/activities/ActivityRequestService"
 
 const validId = (id: unknown): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id)
 
 /** Salidas entre las que se puede elegir al reservar (pública: se pregunta antes de iniciar sesión). */
-export async function getRequestOptionsAction(activityId: string): Promise<DepartureView[]> {
-  if (!validId(activityId)) return []
+export async function getRequestOptionsAction(activityId: string): Promise<RequestOptions> {
+  if (!validId(activityId)) return { departures: [], extras: [] }
   return createServerContainer().activityRequestService.options(activityId)
 }
 
 /** «Quiero reservar»: deja constancia (quién, qué salida, cuándo) para quien organiza. Silenciosa: sin sesión no hace nada. */
-export async function requestActivityAction(activityId: string, date: string | null): Promise<{ recorded: boolean }> {
+export async function requestActivityAction(activityId: string, date: string | null, extras?: { label: string; qty: number }[]): Promise<{ recorded: boolean }> {
   const uid = await getSessionUid()
   if (!uid || !validId(activityId) || (date !== null && (typeof date !== "string" || date.length > 10))) return { recorded: false }
   try {
-    const r = await createServerContainer().activityRequestService.request(uid, activityId, date)
+    const r = await createServerContainer().activityRequestService.request(uid, activityId, date, Array.isArray(extras) ? extras.slice(0, 20) : [])
     return { recorded: r.ok && r.created }
   } catch (e) {
     console.warn("[request-activity]", e instanceof Error ? e.message : "error")

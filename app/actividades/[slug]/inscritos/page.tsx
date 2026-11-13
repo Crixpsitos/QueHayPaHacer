@@ -5,7 +5,6 @@ import { Container } from "@/app/components/layout/shared/Container"
 import { getSessionUid } from "@/app/actions/_session"
 import { getReservationsAction } from "@/app/actions/activities/join.action"
 import { listActivityRequestsAction } from "@/app/actions/activities/request.action"
-import { ActivityRequests } from "@/presentation/activities/components/ActivityRequests"
 import { Reservations } from "@/presentation/activities/components/Reservations"
 
 export const metadata: Metadata = { title: "Reservas", robots: { index: false, follow: false } }
@@ -18,8 +17,7 @@ async function Loader({ params }: { params: Promise<{ slug: string }> }) {
   if (!initial) notFound() // ajena o inexistente: misma respuesta (no revela que existe)
   return (
     <div className="grid gap-8">
-      <Reservations initial={initial} />
-      {requests ? <ActivityRequests rows={requests} /> : null}
+      <Reservations initial={initial} initialRequests={requests ?? []} />
     </div>
   )
 }

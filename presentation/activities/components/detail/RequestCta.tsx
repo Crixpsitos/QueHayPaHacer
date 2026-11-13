@@ -6,9 +6,11 @@ import { cn } from "@/app/lib/utils/cn"
 import { useAuth } from "@/app/store/auth/AuthContext"
 import { landingSource, trackActivity } from "@/app/lib/eventTrack"
 import { getRequestOptionsAction, requestActivityAction } from "@/app/actions/activities/request.action"
-import type { DepartureView } from "@/application/services/activities/ActivityRequestService"
+import type { RequestOptions } from "@/application/services/activities/ActivityRequestService"
+import { buildReservationMessage, reservationWhatsappHref, type ExtraPick } from "@/domain/entities/activities/reservationExtras"
+import { ExtrasPicker } from "../ExtrasPicker"
 
-type Props = { activityId: string; kind: string } & AnchorHTMLAttributes<HTMLAnchorElement>
+type Props = { activityId: string; kind: string; title: string } & AnchorHTMLAttributes<HTMLAnchorElement>
 
 /**
  * Botón de reservar o preguntar (WhatsApp, teléfono o enlace de reserva) de una actividad SIN «Unirme».
@@ -16,23 +18,36 @@ type Props = { activityId: string; kind: string } & AnchorHTMLAttributes<HTMLAnc
  * Con cuenta: deja constancia para quien organiza (quién eres, qué salida) y sigue al botón; si hay varias salidas, pregunta cuál.
  * Lo de cada persona se pide aquí tras montar: la ficha se cachea por horas.
  */
-export function RequestCta({ activityId, kind, onClick, children, className, ...rest }: Props) {
+export function RequestCta({ activityId, kind, title, onClick, children, className, ...rest }: Props) {
   const { user, isHydrating } = useAuth()
-  const [options, setOptions] = useState<DepartureView[] | null>(null)
-  const [dialog, setDialog] = useState<"login" | "day" | null>(null)
+  const [options, setOptions] = useState<RequestOptions | null>(null)
+  const [dialog, setDialog] = useState<"login" | "day" | "extras" | null>(null)
   const [day, setDay] = useState<string>("")
+  const [picks, setPicks] = useState<ExtraPick[]>([])
 
   // Con sesión se traen las salidas ya, para que el toque abra el botón sin esperar (si no, el navegador bloquea la pestaña nueva).
   useEffect(() => {
     if (!user) return
     let live = true
-    void getRequestOptionsAction(activityId).then((o) => live && (setOptions(o), setDay(o[0]?.key ?? "")))
+    void getRequestOptionsAction(activityId).then((o) => live && (setOptions(o), setDay(o.departures[0]?.key ?? "")))
     return () => { live = false }
   }, [user, activityId])
 
   const href = (rest.href as string) ?? "#"
   const go = () => { if (kind === "phone") window.location.href = href; else window.open(href, "_blank", "noopener,noreferrer") }
-  const record = (date: string | null) => { void requestActivityAction(activityId, date).catch(() => undefined) }
+  const deps = options?.departures ?? []
+  const extras = options?.extras ?? []
+  /** Deja constancia y abre el botón; si es WhatsApp, con el mensaje ya escrito (día y servicios). */
+  const finish = (key: string, chosen: ExtraPick[]) => {
+    const date = !key || key === "open" ? null : key
+    void requestActivityAction(activityId, date, chosen).catch(() => undefined)
+    const label = date ? (deps.find((d) => d.key === key)?.label ?? null) : null
+    const msg = buildReservationMessage({ activityTitle: title, activityUrl: window.location.origin + window.location.pathname, dateLabel: label, extras: chosen, paid: true })
+    const wa = kind === "whatsapp" ? reservationWhatsappHref(href, msg) : null
+    setDialog(null)
+    if (wa) window.open(wa, "_blank", "noopener,noreferrer"); else go()
+  }
+  const next = () => (extras.length ? setDialog("extras") : finish(day, []))
 
   const click = (e: React.MouseEvent<HTMLAnchorElement>) => {
     onClick?.(e)
@@ -41,9 +56,9 @@ export function RequestCta({ activityId, kind, onClick, children, className, ...
     if (isHydrating) return go()
     if (!user) return setDialog("login")
     // si las salidas aún no llegaron (primer toque muy rápido) también se abre el diálogo: así el botón siempre se abre con un toque real
-    if (!options || options.length > 1) return setDialog("day")
-    record(options?.[0] && options[0].key !== "open" ? options[0].key : null)
-    go()
+    if (!options || deps.length > 1) return setDialog("day")
+    if (extras.length) return setDialog("extras")
+    finish(deps[0]?.key ?? "", [])
   }
 
   const chip = (on: boolean) => cn("min-h-12 rounded-2xl border px-4 text-left text-sm font-semibold capitalize outline-none focus-visible:ring-3 focus-visible:ring-ring/40", on ? "border-primary-dark bg-primary-light text-primary-dark" : "border-border bg-card")
@@ -72,9 +87,18 @@ export function RequestCta({ activityId, kind, onClick, children, className, ...
               </DialogHeader>
               {!options ? <p role="status" className="text-sm text-muted-foreground">Cargando los días…</p> : null}
               <div role="radiogroup" aria-label="Día" className="grid gap-2">
-                {(options ?? []).map((o) => <button key={o.key} type="button" role="radio" aria-checked={day === o.key} onClick={() => setDay(o.key)} className={chip(day === o.key)}>{o.label}</button>)}
+                {deps.map((o) => <button key={o.key} type="button" role="radio" aria-checked={day === o.key} onClick={() => setDay(o.key)} className={chip(day === o.key)}>{o.label}</button>)}
               </div>
-              <button type="button" disabled={!options} onClick={() => { record(!day || day === "open" ? null : day); setDialog(null); go() }} className="inline-flex min-h-12 disabled:opacity-50 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark px-5 text-sm font-semibold text-white">Continuar</button>
+              <button type="button" disabled={!options} onClick={next} className="inline-flex min-h-12 disabled:opacity-50 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark px-5 text-sm font-semibold text-white">Continuar</button>
+            </>
+          ) : dialog === "extras" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>¿Quieres agregar algo más?</DialogTitle>
+                <DialogDescription>Servicios que se pagan aparte. Los incluimos en el mensaje para que quien organiza los tenga listos.</DialogDescription>
+              </DialogHeader>
+              <ExtrasPicker offered={extras} value={picks} onChange={setPicks} />
+              <button type="button" onClick={() => finish(day, picks)} className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark px-5 text-sm font-semibold text-white">{picks.length ? "Continuar con mi pedido" : "Continuar sin agregar"}</button>
             </>
           ) : null}
         </DialogContent>

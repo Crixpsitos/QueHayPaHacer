@@ -1,6 +1,8 @@
 import type { Activity } from "@/domain/entities/activities/Activity"
 import { JOIN_HORIZON_DAYS, initialJoinStatus, isPaidActivity, joinDecision, normalizePhoneCo, resolveOccurrenceKey, spotsLeft, type JoinStatusValue } from "@/domain/entities/activities/activityJoin"
 import { upcomingDepartures } from "@/domain/entities/activities/activityRequest"
+import { normalizeExtraPicks, type ExtraPick } from "@/domain/entities/activities/reservationExtras"
+import type { Extra } from "@/domain/entities/activities/value-objects/Price"
 import type { IActivityJoinRepository, JoinRow } from "@/domain/repository/activities/IActivityJoinRepository"
 import type { NewNotification } from "@/domain/entities/notification/Notification"
 import { activityJoinConfirmedNotification, activityJoinNotification } from "@/domain/entities/notification/messages"
@@ -18,6 +20,8 @@ export interface JoinDeps {
   clock: () => Date
   /** Versión de Términos/Política vigente: prueba de qué texto vio quien autorizó su WhatsApp. */
   legalVersion: string
+  /** Id corto para las personas anotadas a mano (`guest_<id>`). */
+  newId?: () => string
 }
 
 /** Lo que la persona entrega al reservar una actividad de pago. */
@@ -45,6 +49,8 @@ export interface JoinStatus {
   /** Solo se entrega a quien tiene una reserva por pagar. */
   payInstructions: string | null
   occurrences: OccurrenceStatus[]
+  /** Servicios aparte que la actividad ofrece (para el «¿quieres agregar algo más?»). */
+  extras: { label: string; amountCop: number }[]
 }
 
 export interface ManagerView {
@@ -56,6 +62,10 @@ export interface ManagerView {
   views: number
   visits: number
   rows: JoinRow[]
+  /** Servicios aparte que ofrece la actividad (para elegirlos al anotar o ajustar). */
+  offeredExtras: Extra[]
+  /** Próximas salidas entre las que se puede anotar a alguien a mano. */
+  departures: { key: string; label: string }[]
 }
 
 const ID = /^[A-Za-z0-9-]{1,128}$/ // sin "_": el id de inscripción usa "_" como separador
@@ -67,7 +77,7 @@ const dateLabel = (key: string) => (key === "open" ? null : new Intl.DateTimeFor
 export class ActivityJoinService {
   constructor(private readonly d: JoinDeps) {}
 
-  async join(uid: string, activityId: string, requestedDate: string | null, contact: JoinContact = {}): Promise<Result & { key?: string }> {
+  async join(uid: string, activityId: string, requestedDate: string | null, contact: JoinContact = {}, extras: unknown = []): Promise<Result & { key?: string }> {
     if (!uid?.trim() || !activityId?.trim()) return { ok: false, error: "Inicia sesión para unirte." }
     const a = await this.d.getPublic(activityId)
     if (!a) return { ok: false, error: NOT_FOUND }
@@ -86,7 +96,7 @@ export class ActivityJoinService {
       if (!phone) return { ok: false, error: "Escribe un WhatsApp válido de 10 dígitos (empieza por 3)." }
     }
     const name = (await this.d.displayName(uid)) || "Alguien"
-    const outcome = await this.d.repo.join({ activityId, key: k.key, uid, name, status: initialJoinStatus(paid), phone, consentVersion: this.d.legalVersion }, (taken) => joinDecision(join, taken))
+    const outcome = await this.d.repo.join({ activityId, key: k.key, uid, name, status: initialJoinStatus(paid), phone, consentVersion: this.d.legalVersion, extras: normalizeExtraPicks(extras, a.extras) }, (taken) => joinDecision(join, taken))
     if (outcome === "closed") return { ok: false, error: "Las inscripciones están cerradas." }
     if (outcome === "full") return { ok: false, error: "Se acabaron los cupos de esta salida." }
     if (outcome === "joined") {
@@ -122,12 +132,13 @@ export class ActivityJoinService {
   async status(uid: string | null, activityId: string): Promise<JoinStatus | null> {
     const a = await this.d.getPublic(activityId)
     if (!a) return null
-    if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [] }
+    if (!a.join) return { enabled: false, closed: false, paid: false, payInstructions: null, occurrences: [], extras: [] }
     const rows = this.shownRows(a)
     const keys = rows.map((r) => r.key)
     const [counts, mine] = await Promise.all([this.d.repo.counts(activityId, keys), uid ? this.d.repo.mine(activityId, uid, keys) : Promise.resolve({} as Record<string, JoinStatusValue>)])
     return {
       enabled: true,
+      extras: a.extras.map((x) => ({ label: x.label, amountCop: x.amountCop })),
       closed: a.join.closed,
       paid: isPaidActivity(a.priceOptions),
       payInstructions: Object.values(mine).includes("pending") ? a.join.payInstructions ?? null : null,
@@ -150,8 +161,10 @@ export class ActivityJoinService {
     if (!ID.test(activityId)) return null
     const a = await this.d.getForManager(activityId, viewer)
     if (!a) return null
-    const rows = a.join ? await this.d.repo.list(activityId, 2000) : []
-    return { id: a.id, title: a.title, slug: a.slug, join: a.join, paid: isPaidActivity(a.priceOptions), views: a.analytics.views, visits: a.analytics.visits, rows }
+    // sin «Unirme» también hay reservas: las anota a mano quien organiza (o vienen de una solicitud)
+    const rows = await this.d.repo.list(activityId, 2000)
+    const departures = upcomingDepartures(a.schedule, this.d.clock()).map((r) => ({ key: r.key, label: dateLabel(r.key) ?? "Cuando quiera" }))
+    return { id: a.id, title: a.title, slug: a.slug, join: a.join, paid: isPaidActivity(a.priceOptions), views: a.analytics.views, visits: a.analytics.visits, rows, offeredExtras: a.extras, departures }
   }
 
   /** Confirmar pago / "No pagó" / deshacer: solo dueño o QHPA. `noShow` libera el cupo; deshacerlo lo vuelve a pedir. */
@@ -164,6 +177,35 @@ export class ActivityJoinService {
     if (r === "missing") return { ok: false, error: "No encontramos esa reserva." }
     if (r === "full") return { ok: false, error: "Ya no hay cupo en esa salida para devolverla." }
     return { ok: true }
+  }
+
+  /** Anota a mano a una persona (sin cuenta) en una salida. Sirve también sin «Unirme»: entonces no hay tope de cupo. */
+  async addManual(viewer: Viewer, activityId: string, p: { name: string; phone?: string; date: string | null; extras: unknown }): Promise<Result> {
+    if (!ID.test(activityId)) return { ok: false, error: "Datos inválidos." }
+    const a = await this.d.getForManager(activityId, viewer)
+    if (!a) return { ok: false, error: "No encontramos esa actividad." }
+    const name = (p.name ?? "").replace(/\s+/g, " ").trim().slice(0, 80)
+    if (name.length < 2) return { ok: false, error: "Escribe el nombre de la persona." }
+    let phone: string | null = null
+    if (p.phone && p.phone.trim()) { phone = normalizePhoneCo(p.phone); if (!phone) return { ok: false, error: "El WhatsApp debe tener 10 dígitos y empezar por 3." } }
+    const k = resolveOccurrenceKey(a.schedule, p.date, this.d.clock())
+    if (!k.ok) return k
+    if (!this.shownRows(a).some((r) => r.key === k.key)) return { ok: false, error: "Esa salida todavía no está disponible." }
+    const settings = a.join ?? { capacity: null, closed: false }
+    const uid = `guest_${(this.d.newId ?? (() => crypto.randomUUID().replace(/-/g, "").slice(0, 10)))()}`
+    const outcome = await this.d.repo.join({ activityId, key: k.key, uid, name, status: initialJoinStatus(isPaidActivity(a.priceOptions)), phone, consentVersion: null, extras: normalizeExtraPicks(p.extras, a.extras), manual: true }, (taken) => joinDecision({ ...settings, closed: false }, taken))
+    if (outcome === "full") return { ok: false, error: "Se acabaron los cupos de esta salida." }
+    if (outcome !== "joined") return { ok: false, error: "No se pudo anotar. Intenta de nuevo." }
+    return { ok: true }
+  }
+
+  /** Ajusta los servicios aparte de una reserva (solo dueño o QHPA). */
+  async setExtras(viewer: Viewer, activityId: string, key: string, uid: string, picks: unknown): Promise<Result> {
+    if (!ID.test(activityId) || !KEY.test(key) || !uid?.trim() || uid.includes("/")) return { ok: false, error: "Datos inválidos." }
+    const a = await this.d.getForManager(activityId, viewer)
+    if (!a) return { ok: false, error: "No encontramos esa actividad." }
+    const ok = await this.d.repo.setExtras({ activityId, key, uid, extras: normalizeExtraPicks(picks, a.extras) })
+    return ok ? { ok: true } : { ok: false, error: "No encontramos esa reserva." }
   }
 
   async setClosed(viewer: Viewer, activityId: string, closed: boolean): Promise<Result> {
