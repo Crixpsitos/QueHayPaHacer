@@ -23,7 +23,7 @@ async function cardsOf(list: CardSource[]): Promise<ActivityCardView[]> {
 /** Actividades elegidas por alguna promoción vigente de la carta de su sitio (filtro «Promos hoy»). Caché corta; el panel de carta la invalida. */
 export const fetchPromoActivityIds = async (): Promise<string[]> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("promo-activity-ids", "activity-list")
   return createServerContainer().siteCatalogService.promoActivityIds()
 }
@@ -84,7 +84,7 @@ export interface ActivityPage {
  */
 export const fetchActivityPage = async (filters: ActivityFilters, offset: number, pageSize: number = HUB_PAGE_SIZE): Promise<ActivityPage> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list")
   const r = await createServerContainer().activityService.search(await withPromoIds(filters), offset, pageSize)
   return { items: await cardsOf(r.items), total: r.total, nextOffset: r.nextOffset }
@@ -101,7 +101,7 @@ export const SITE_BLOCK_MAX = 6
 /** Actividades públicas de un sitio para su ficha (máx. 6). Se invalida con `site-<id>-activities` o `activity-list`. */
 export const fetchSiteActivities = async (siteId: string): Promise<ActivityCardView[]> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag(`site-${siteId}-activities`, "activity-list")
   const list = await createServerContainer().activityService.listForSite(siteId)
   return cardsOf(list.slice(0, SITE_BLOCK_MAX))
@@ -135,7 +135,7 @@ export interface RelatedData { sameSite: ActivityCardView[]; similar: ActivityCa
 /** Cierre de la ficha: más actividades del mismo sitio y parecidas (misma categoría; si no hay, lo de esta semana). */
 export const fetchRelatedActivities = async (id: string, categorySlug: string, siteId: string | null): Promise<RelatedData> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list")
   const svc = createServerContainer().activityService
   const sameSite = siteId ? (await svc.listForSite(siteId)).filter((a) => a.id !== id).slice(0, 6) : []
@@ -154,7 +154,7 @@ export interface HubMeta { days: { date: string; count: number }[]; categories: 
 /** Lo que necesita la cabecera del hub: cuántas actividades salen cada día de la semana y por categoría. */
 export const fetchHubMeta = async (): Promise<HubMeta> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list")
   const all = await createServerContainer().activityService.listPublic(500)
   const categories: Record<string, number> = {}
@@ -179,7 +179,7 @@ export interface AgendaDayView { date: string; /** Grupo «sin hora fija» de un
 /** Agenda por día para un «cuándo» o un día suelto (con los demás filtros aplicados). */
 export const fetchAgenda = async (filters: ActivityFilters): Promise<AgendaDayView[]> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list")
   const range = filters.day ? dayRange(filters.day) : filters.when ? whenRange(filters.when, new Date()) : null
   if (!range) return []
@@ -203,7 +203,7 @@ export interface MoreLevelView { key: LevelKey; total: number; rows: MoreRow[] }
  */
 export const fetchMoreToDo = async (id: string): Promise<MoreLevelView[]> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list", `activity-${id}`)
   const c = createServerContainer()
   const [current, pool] = await Promise.all([c.activityService.getPublicById(id), c.activityService.listPublic(60)])
@@ -224,7 +224,7 @@ export interface HubMapData { date: string; pins: MapPin[]; withoutPlace: number
 /** Mapa del hub: las actividades de UN día con coordenadas (punto de encuentro fijo o sitio). Las demás se cuentan aparte. */
 export const fetchHubMap = async (day: string, filters: ActivityFilters): Promise<HubMapData> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag("activity-list")
   const c = createServerContainer()
   const { items } = await c.activityService.search(await withPromoIds({ ...filters, when: undefined, day }), 0, 200)

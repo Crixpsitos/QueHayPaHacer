@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
   // El handler Redis anterior no implementaba updateTags/refreshTags (P0-D). Volver a un
   // handler compartido solo con invalidación por tags real + fallback si Redis cae.
   cacheLife: {
+    // Hub de actividades y carta: se revisa a lo sumo cada 10 min por instancia (con «minutes» eran 60 s: cada página del hub repetía
+    // sus lecturas cada minuto). Lo que se guarda desde la app invalida por tag al instante; solo lo cargado por script espera.
+    hub: {
+      stale: 300,
+      revalidate: 600,
+      expire: 3600,
+    },
     campaigns: {
       stale: 120,
       revalidate: 60,

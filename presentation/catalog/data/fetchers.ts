@@ -8,7 +8,7 @@ import type { SiteCatalog } from "@/domain/entities/catalog/SiteCatalog"
  */
 export const fetchSiteCatalog = async (siteId: string): Promise<SiteCatalog> => {
   "use cache"
-  cacheLife("minutes")
+  cacheLife("hub")
   cacheTag(`site-catalog-${siteId}`)
   return createServerContainer().siteCatalogService.get(siteId)
 }
