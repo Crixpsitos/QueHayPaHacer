@@ -100,8 +100,16 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
     [eventId, sessionId, router],
   );
 
+  // `submit` cambia de identidad si cambian sus dependencias: el bucle de la cámara la lee de aquí y NO se reinicia por eso.
+  const submitRef = useRef(submit);
   useEffect(() => {
-    if (camera !== "starting") return;
+    submitRef.current = submit;
+  }, [submit]);
+
+  // La cámara se enciende UNA vez al montar. Antes el efecto dependía de `camera`: al pasar de "starting" a "on" React corría la
+  // limpieza del primer efecto, que detenía la pista (se veía medio segundo y quedaba oscuro) y el nuevo efecto no la volvía a abrir.
+  useEffect(() => {
+    if (!hasCameraApi()) return;
     let stopped = false;
     let raf = 0;
     let stream: MediaStream | undefined;
@@ -134,7 +142,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
           const t = Date.now();
           if (found.data === last.current.text && t - last.current.at < DEBOUNCE_MS) return;
           last.current = { text: found.data, at: t };
-          void submit(found.data);
+          void submitRef.current(found.data);
         };
         raf = requestAnimationFrame(tick);
       } catch (e) {
@@ -149,7 +157,7 @@ function ScannerBody({ eventId, sessionId }: { eventId: string; sessionId?: stri
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [camera, submit]);
+  }, []);
 
   const onManual = async (e: React.FormEvent) => {
     e.preventDefault();
