@@ -30,7 +30,7 @@ export function InteractivityTable({ data }: InteractivityTableProps) {
           <tr className="text-left text-xs text-zinc-500">
             <th scope="col" className="pb-2 font-normal">Evento</th>
             {METRICS.map((m) => (
-              <th key={m.key} scope="col" className="w-[22%] pb-2 font-normal">
+              <th key={m.key} scope="col" className="w-[22%] border-l border-transparent pb-2 pl-3 font-medium text-zinc-700">
                 {m.label}
               </th>
             ))}
@@ -47,25 +47,17 @@ export function InteractivityTable({ data }: InteractivityTableProps) {
                 {row.eventName}
               </th>
               {METRICS.map((m) => (
-                <td key={m.key} className="border-t border-zinc-100 py-2.5 align-middle">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 rounded-full" style={{ background: CHART.track }}>
-                      {row[m.key] > 0 && (
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(row[m.key] / max[m.key]) * 100}%`,
-                            background: CHART.primary,
-                          }}
-                        />
-                      )}
-                    </div>
-                    <span
-                      className="w-12 shrink-0 text-right tabular-nums text-zinc-900"
-                      title={formatNumber(row[m.key])}
-                    >
+                <td key={m.key} className="border-l border-t border-zinc-100 py-2.5 pl-3 align-top">
+                  {/* el número va ARRIBA y a la izquierda, bajo su encabezado: a la derecha de la barra se leía como parte de la columna vecina */}
+                  <div className="grid gap-1.5">
+                    <span className="text-base font-semibold tabular-nums text-zinc-900" title={formatNumber(row[m.key])}>
                       {formatCompact(row[m.key])}
                     </span>
+                    <div className="h-2 rounded-full" style={{ background: CHART.track }}>
+                      {row[m.key] > 0 && (
+                        <div className="h-full rounded-full" style={{ width: `${(row[m.key] / max[m.key]) * 100}%`, background: CHART.primary }} />
+                      )}
+                    </div>
                   </div>
                 </td>
               ))}
