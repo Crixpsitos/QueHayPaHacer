@@ -1,5 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { IStudioFirebaseRepository } from "./IStudioFirebaseRepository";
+import { overviewFromEvents, type OverviewEventRow } from "@/domain/entities/studio/overviewFromEvents";
 import type { CheckInByCodeResult } from "@/domain/repository/studio/IStudioRepository";
 import type {
   FirebaseSupportTicketDto,
@@ -11,11 +12,7 @@ import type {
 } from "@/infraestructure/firebase/dto/studio/FirebaseStudioDto";
 import type {
   OrganizerOverview,
-  OrganizerKpis,
-  EventComparisonPoint,
   RegistrationTimelinePoint,
-  TopEvent,
-  InteractivityPoint,
   GetOrganizerEventsParams,
   OrganizerEventsPage,
   OrganizerEventListItem,
@@ -131,84 +128,53 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
   constructor(private readonly db: Firestore) {}
 
   async getOrganizerOverview(uid: string): Promise<OrganizerOverview | null> {
-    // Batch 1: KPIs (views, registrations, likes, activeEvents)
-    const [
-      viewsKpiResult,
-      registrationsKpiResult,
-      likesKpiResult,
-      activeEventsKpiResult,
-    ] = await Promise.allSettled([
-      this.getViewsKpi(uid),
-      this.getRegistrationsKpi(uid),
-      this.getLikesKpi(uid),
-      this.getActiveEventsKpi(uid),
+    // Una sola lectura de los eventos del organizador (KPIs, conversión, top e interactividad se calculan en memoria:
+    // eran 7 pipelines que leían los mismos eventos, ~2,3 unidades de lectura por documento cada uno) + la línea de
+    // tiempo, que sí necesita la subcolección de inscripciones.
+    const [rowsResult, timelineResult] = await Promise.allSettled([
+      this.getOverviewEventRows(uid),
+      this.getRegistrationsTimeline(uid),
     ]);
+    this.logSettledError("getOverviewEventRows", rowsResult);
+    this.logSettledError("getRegistrationsTimeline", timelineResult);
 
-    this.logSettledError("getViewsKpi", viewsKpiResult);
-    this.logSettledError("getRegistrationsKpi", registrationsKpiResult);
-    this.logSettledError("getLikesKpi", likesKpiResult);
-    this.logSettledError("getActiveEventsKpi", activeEventsKpiResult);
-
-    const viewsKpi = this.unwrapSettled(viewsKpiResult, {
-      totalViews: 0,
-      previousMonthViews: 0,
-      viewsChangePct: 0,
+    const computed = overviewFromEvents(this.unwrapSettled(rowsResult, []), {
+      startOfPreviousMonth: this.startOfPreviousMonth,
+      startOfCurrentMonth: this.startOfCurrentMonth,
+      startOfNextMonth: this.startOfNextMonth,
+      now: new Date(),
     });
-    const registrationsKpi = this.unwrapSettled(registrationsKpiResult, {
-      totalRegistrations: 0,
-      previousMonthRegistrations: 0,
-      registrationsChangePct: 0,
-    });
-    const likesKpi = this.unwrapSettled(likesKpiResult, {
-      totalLikes: 0,
-      previousMonthLikes: 0,
-      likesChangePct: 0,
-    });
-    const activeEventsKpi = this.unwrapSettled(activeEventsKpiResult, {
-      activeEvents: 0,
-      previousMonthActiveEvents: 0,
-      activeEventsChangePct: 0,
-    });
-
-    const kpis: OrganizerKpis = {
-      ...viewsKpi,
-      ...registrationsKpi,
-      ...likesKpi,
-      ...activeEventsKpi,
-    };
-
-    // Batch 2: Charts (viewsVsRegistrations, registrationsTimeline)
-    const [viewsVsRegistrationsResult, registrationsTimelineResult] =
-      await Promise.allSettled([
-        this.getViewsVsRegistrations(uid),
-        this.getRegistrationsTimeline(uid),
-      ]);
-
-    this.logSettledError("getViewsVsRegistrations", viewsVsRegistrationsResult);
-    this.logSettledError(
-      "getRegistrationsTimeline",
-      registrationsTimelineResult,
-    );
-
-    // Batch 3: Rankings (topEvents, interactivity)
-    const [topEventsResult, interactivityResult] = await Promise.allSettled([
-      this.getTopEvents(uid),
-      this.getInteractivity(uid),
-    ]);
-
-    this.logSettledError("getTopEvents", topEventsResult);
-    this.logSettledError("getInteractivity", interactivityResult);
 
     return {
-      kpis,
-      viewsVsRegistrations: this.unwrapSettled(viewsVsRegistrationsResult, []),
-      registrationsTimeline: this.unwrapSettled(
-        registrationsTimelineResult,
-        [],
-      ),
-      topEvents: this.unwrapSettled(topEventsResult, []),
-      interactivity: this.unwrapSettled(interactivityResult, []),
+      ...computed,
+      registrationsTimeline: this.unwrapSettled(timelineResult, []),
     };
+  }
+
+  private async getOverviewEventRows(uid: string): Promise<OverviewEventRow[]> {
+    const snap = await this.db
+      .collection("events")
+      .where("author.id", "==", uid)
+      .select("title", "status", "createdAt", "endDate", "registrationType", "analytics")
+      .get();
+    const date = (v: unknown): Date | null =>
+      v && typeof (v as { toDate?: () => Date }).toDate === "function" ? (v as { toDate: () => Date }).toDate() : null;
+    return snap.docs.map((d) => {
+      const an = (d.get("analytics") ?? {}) as Record<string, unknown>;
+      return {
+        id: d.id,
+        title: String(d.get("title") ?? ""),
+        status: String(d.get("status") ?? ""),
+        createdAt: date(d.get("createdAt")),
+        endDate: date(d.get("endDate")),
+        registrationType: String(d.get("registrationType") ?? ""),
+        views: Number(an.views ?? 0),
+        registrations: Number(an.registrations ?? 0),
+        likes: Number(an.likes ?? 0),
+        shares: Number(an.shares ?? 0),
+        score: Number(an.score ?? 0),
+      };
+    });
   }
 
   private unwrapSettled<T>(result: PromiseSettledResult<T>, fallback: T): T {
@@ -249,241 +215,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         return ref.path.split("/").pop() ?? ref.path;
     }
     return String(value ?? "");
-  }
-
-  private async getViewsKpi(uid: string): Promise<{
-    totalViews: number;
-    previousMonthViews: number;
-    viewsChangePct: number;
-  }> {
-    const { startOfCurrentMonth, startOfNextMonth, startOfPreviousMonth } = this;
-
-    const memoryDebugEnabled = process.env.STUDIO_PIPELINE_MEM_DEBUG === "1";
-    const heapBefore = memoryDebugEnabled ? process.memoryUsage().heapUsed : 0;
-
-    let viewsData: { results: Array<{ data: () => unknown }> };
-    try {
-      viewsData = await this.db
-        .pipeline()
-        .collection("events")
-        .addFields(
-          field("createdAt")
-            .greaterThanOrEqual(startOfCurrentMonth)
-            .as("isCurrentMonth"),
-        )
-        .where(field("author.id").equal(uid))
-        .where(field("createdAt").greaterThanOrEqual(startOfPreviousMonth))
-        .where(field("createdAt").lessThan(startOfNextMonth))
-        .aggregate({
-          accumulators: [sum(field("analytics.views")).as("totalViews")],
-          groups: ["isCurrentMonth"],
-        })
-        .execute();
-    } catch (error) {
-      console.error("[StudioOverview] getViewsKpi pipeline failed", {
-        uid,
-        startOfPreviousMonth,
-        startOfCurrentMonth,
-        startOfNextMonth,
-        error,
-      });
-      throw error;
-    }
-
-    if (memoryDebugEnabled) {
-      const heapAfter = process.memoryUsage().heapUsed;
-      console.log("[StudioOverview] getViewsKpi pipeline memory", {
-        uid,
-        heapBefore,
-        heapAfter,
-        heapDelta: heapAfter - heapBefore,
-      });
-    }
-
-    let currentMonthViews = 0;
-    let previousMonthViews = 0;
-
-    viewsData.results.forEach((result) => {
-      const row = result.data() as {
-        isCurrentMonth?: boolean;
-        totalViews?: number;
-      };
-
-      const totalViews = Number(row.totalViews ?? 0);
-      if (row.isCurrentMonth) {
-        currentMonthViews = totalViews;
-      } else {
-        previousMonthViews = totalViews;
-      }
-    });
-
-    return {
-      totalViews: currentMonthViews,
-      previousMonthViews,
-      viewsChangePct: this.calculateChangePct(
-        currentMonthViews,
-        previousMonthViews,
-      ),
-    };
-  }
-
-  private async getRegistrationsKpi(uid: string): Promise<{
-    totalRegistrations: number;
-    previousMonthRegistrations: number;
-    registrationsChangePct: number;
-  }> {
-    const data = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .where(field("registrationType").notEqual("none"))
-      .addFields(
-        field("createdAt")
-          .greaterThanOrEqual(this.startOfCurrentMonth)
-          .as("isCurrentMonth"),
-      )
-      .aggregate({
-        accumulators: [sum(field("analytics.registrations")).as("total")],
-        groups: [field("isCurrentMonth").as("isCurrentMonth")],
-      })
-      .execute();
-
-    let totalRegistrations = 0;
-    let previousMonthRegistrations = 0;
-
-    data.results.forEach((result) => {
-      const row = result.data() as {
-        isCurrentMonth?: boolean;
-        total?: number;
-      };
-
-      const total = Number(row.total ?? 0);
-      if (row.isCurrentMonth) {
-        totalRegistrations += total;
-      } else {
-        previousMonthRegistrations += total;
-      }
-    });
-
-    return {
-      totalRegistrations,
-      previousMonthRegistrations,
-      registrationsChangePct: this.calculateChangePct(
-        totalRegistrations,
-        previousMonthRegistrations,
-      ),
-    };
-  }
-
-  private async getLikesKpi(uid: string): Promise<{
-    totalLikes: number;
-    previousMonthLikes: number;
-    likesChangePct: number;
-  }> {
-    const data = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .addFields(
-        field("createdAt")
-          .greaterThanOrEqual(this.startOfCurrentMonth)
-          .as("isCurrentMonth"),
-      )
-      .aggregate({
-        accumulators: [sum(field("analytics.likes")).as("total")],
-        groups: [field("isCurrentMonth").as("isCurrentMonth")],
-      })
-      .execute();
-
-    let totalLikes = 0;
-    let previousMonthLikes = 0;
-    data.results.forEach((result) => {
-      const row = result.data() as {
-        isCurrentMonth?: boolean;
-        total?: number;
-      };
-
-      const total = Number(row.total ?? 0);
-      if (row.isCurrentMonth) {
-        totalLikes += total;
-      } else {
-        previousMonthLikes += total;
-      }
-    });
-
-    return {
-      totalLikes,
-      previousMonthLikes,
-      likesChangePct: this.calculateChangePct(totalLikes, previousMonthLikes),
-    };
-  }
-
-  private async getActiveEventsKpi(uid: string): Promise<{
-    activeEvents: number;
-    previousMonthActiveEvents: number;
-    activeEventsChangePct: number;
-  }> {
-    // Activos = publicados que aún no terminan. Sin comparativa mensual: no hay
-    // histórico de "activos" por mes, y la UI la oculta con previous = 0.
-    const data = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("status").equal("published"))
-      .where(field("endDate").greaterThanOrEqual(new Date()))
-      .aggregate(countAll().as("total"))
-      .execute();
-
-    const activeEvents = Number((data.results[0]?.data() as { total?: number } | undefined)?.total ?? 0);
-    return { activeEvents, previousMonthActiveEvents: 0, activeEventsChangePct: 0 };
-  }
-
-
-  private async getViewsVsRegistrations(
-    uid: string,
-  ): Promise<EventComparisonPoint[]> {
-    const result = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("status").equal("published"))
-      // Desempate por id: mismo orden en cada render aunque empaten en vistas.
-      .sort(field("analytics.views").descending(), field("__name__").ascending())
-      .select(
-        field("__name__").as("eventId"),
-        field("title").as("eventName"),
-        field("analytics.views").as("views"),
-        field("analytics.registrations").as("registrations"),
-        field("registrationType").as("registrationType"),
-      )
-      // Tope de 10: la lista deja de ser legible con más filas; sin tope lee todos los eventos.
-      .limit(10)
-      .execute();
-
-    return result.results.flatMap((r) => {
-      const row = r.data() as {
-        eventId: unknown;
-        eventName: string;
-        views: number;
-        registrations: number;
-        registrationType?: string;
-      };
-      // Externos: la inscripción ocurre fuera (registrations = 0 siempre), así
-      // que su "conversión" sería falsa. ponytail: se filtran en memoria (puede
-      // quedar < 10 filas); mover al where si la mezcla lo vuelve notorio.
-      if (row.registrationType === "external") return [];
-
-      return [{
-        eventId: this.toDocId(row.eventId),
-        eventName: row.eventName,
-        views: Number(row.views ?? 0),
-        registrations: Number(row.registrations ?? 0),
-      }];
-    });
   }
 
   private async getRegistrationsTimeline(
@@ -543,78 +274,6 @@ export class StudioFirebaseRepository implements IStudioFirebaseRepository {
         .split("T")[0],
       registrations: dayMap.get(i + 1) ?? 0,
     }));
-  }
-
-  private async getTopEvents(uid: string): Promise<TopEvent[]> {
-    const topEvents = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .sort(field("analytics.score").descending(), field("__name__").ascending())
-      .limit(5)
-      .select(
-        field("__name__").as("eventId"),
-        field("title").as("name"),
-        field("analytics.views").as("views"),
-        field("analytics.score").as("score"),
-      )
-      .execute();
-
-    return topEvents.results.map((r) => {
-      const row = r.data() as {
-        eventId: unknown;
-        name: string;
-        views: number;
-        score: number;
-      };
-
-      return {
-        eventId: this.toDocId(row.eventId),
-        name: row.name,
-        views: Number(row.views ?? 0),
-        score: Number(row.score ?? 0),
-      };
-    });
-  }
-
-  private async getInteractivity(uid: string): Promise<InteractivityPoint[]> {
-    const interactivityData = await this.db
-      .pipeline()
-      .collection("events")
-      .where(field("author.id").equal(uid))
-      .where(field("createdAt").greaterThanOrEqual(this.startOfPreviousMonth))
-      .where(field("createdAt").lessThan(this.startOfNextMonth))
-      .where(field("status").equal("published"))
-      .sort(field("analytics.score").descending(), field("__name__").ascending())
-      .select(
-        field("__name__").as("eventId"),
-        field("title").as("eventName"),
-        field("analytics.views").as("views"),
-        field("analytics.likes").as("likes"),
-        field("analytics.shares").as("shares"),
-      )
-      // 6 filas: suficiente para comparar sin que la tabla de barras se alargue.
-      .limit(6)
-      .execute();
-
-    return interactivityData.results.map((r) => {
-      const row = r.data() as {
-        eventId: unknown;
-        eventName: string;
-        views: number;
-        likes: number;
-        shares: number;
-      };
-
-      return {
-        eventName: row.eventName,
-        views: Number(row.views ?? 0),
-        likes: Number(row.likes ?? 0),
-        shares: Number(row.shares ?? 0),
-      };
-    });
   }
 
   /**
