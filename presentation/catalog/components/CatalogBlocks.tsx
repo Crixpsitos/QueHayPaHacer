@@ -1,6 +1,7 @@
 import { SITE_URL } from "@/app/lib/site"
 import { canShowCatalog, canShowPromotions } from "@/domain/entities/catalog/catalogRules"
 import type { ActivityCategory } from "@/domain/entities/activities/value-objects/ActivityCategory"
+import { pickProducts } from "@/domain/entities/catalog/pickProducts"
 import { fetchSiteCatalog } from "@/presentation/catalog/data/fetchers"
 import { fetchSiteActivities } from "@/presentation/activities/data/fetchers"
 import { CatalogView } from "./CatalogView"
@@ -28,9 +29,9 @@ export async function SiteCatalogBlock({ siteId, siteName, siteSlug }: { siteId:
  * La carta y las promociones del sitio en la ficha de una actividad. Los productos salen solo si la categoría de la actividad admite
  * catálogo; las promociones, solo las que el dueño eligió para ESTA actividad y si la categoría admite promociones.
  */
-export async function ActivityCatalogBlock({ siteId, activity }: { siteId: string; activity: { id: string; title: string; slug: string; category: ActivityCategory } }) {
+export async function ActivityCatalogBlock({ siteId, activity }: { siteId: string; activity: { id: string; title: string; slug: string; category: ActivityCategory; productIds?: string[] } }) {
   const catalog = await fetchSiteCatalog(siteId)
-  const products = canShowCatalog(activity.category) ? catalog.products : []
+  const products = canShowCatalog(activity.category) ? pickProducts(catalog.products, activity.productIds) : []
   const promotions = canShowPromotions(activity.category) ? catalog.promotions.filter((x) => x.activityIds.includes(activity.id)) : []
   if (!products.length && !promotions.length) return null
   return (
