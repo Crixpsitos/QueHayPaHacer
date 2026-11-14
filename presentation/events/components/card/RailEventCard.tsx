@@ -35,7 +35,7 @@ export function RailEventCard({ event, initialLiked, onLike, index = 0 }: { even
   const spots = spotsInfo(event.capacity, event.analytics?.registrations ?? 0);
   const views = event.analytics?.views ?? 0;
   const place = !multi && event.location ? [event.location.venue, event.location.address].filter(Boolean).join(", ") : "";
-  const price = formatPrice(event.price);
+  const price = formatPrice(event.price) || "Ver precios"; // varias fechas: el precio está en cada función
   const when = timing?.label ?? (stub ? `${stub.weekdayShort.charAt(0).toUpperCase()}${stub.weekdayShort.slice(1)} ${stub.day}` : "");
   const href = `/eventos/${event.slug || event.id}`;
 

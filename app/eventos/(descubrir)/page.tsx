@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "@/app/components/ui/navigation/IntentLink";
 import { Section } from "@/app/components/layout/shared/Section";
 import { HomeSearchBar } from "@/app/components/feature/home/HomeSearchBar";
 import { AdSlot, adsEnabled } from "@/presentation/home/components/AdSlot";
 import { Cartelera } from "@/presentation/events/components/Cartelera";
 import { fetchCartelera } from "@/presentation/events/data/fetchCartelera";
+import { HomeFeatured } from "@/presentation/home/components/HomeFeatured";
 
 export const metadata: Metadata = {
   title: "Eventos en Ibagué",
@@ -32,7 +34,7 @@ export default async function EventosIndexPage() {
           </div>
           <div className="w-full sm:w-85"><HomeSearchBar /></div>
         </div>
-        <Cartelera view={view} cats={cats} ad={adsEnabled() ? <AdSlot format="rectangle" /> : null} />
+        <Cartelera view={view} cats={cats} featured={<Suspense fallback={null}><HomeFeatured /></Suspense>} ad={adsEnabled() ? <AdSlot format="rectangle" /> : null} />
       </Section>
 
       <Section spacing="sm" className="pt-2 sm:pt-4">
