@@ -97,6 +97,8 @@ export function SiteDetailActions({ siteId, siteName, initialLikes }: SiteDetail
 
   return (
     <>
+      {/* Un solo grupo: como hijos sueltos del `justify-between` del padre se separaban en escritorio. */}
+      <div className="flex flex-wrap items-center gap-2">
       <Button
         variant={liked ? "default" : "outline"}
         size="lg"
@@ -114,6 +116,7 @@ export function SiteDetailActions({ siteId, siteName, initialLikes }: SiteDetail
       </Button>
 
       <AddToPlanButton kind="site" id={siteId} title={siteName} />
+      </div>
 
       {isLoginOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
