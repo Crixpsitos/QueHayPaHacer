@@ -8,6 +8,12 @@ export type ExtraUnit = (typeof EXTRA_UNITS)[number]
 export const isOnRequest = (o: { unit: string }) => o.unit === "consultar"
 export const allOnRequest = (opts: { unit: string }[]) => opts.length > 0 && opts.every(isOnRequest)
 
+/** Nombre de la opción «el precio está en la carta»: es una opción «a consultar» que la tarjeta muestra como «Ver la carta». */
+export const MENU_PRICE_LABEL = "Ver la carta"
+export const isMenuPrice = (opts: { label: string; unit: string }[]) => opts.length === 1 && isOnRequest(opts[0]) && opts[0].label === MENU_PRICE_LABEL
+/** Texto del precio en tarjetas y avisos cuando todo es «a consultar». */
+export const onRequestLabel = (opts: { label: string; unit: string }[]) => (isMenuPrice(opts) ? MENU_PRICE_LABEL : "Consultar precio")
+
 export interface PriceOption {
   label: string
   amountCop: number

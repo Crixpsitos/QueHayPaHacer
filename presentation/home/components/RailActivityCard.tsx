@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import { cn } from "@/app/lib/utils/cn"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
-import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
+import { cardTitle, type ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "@/presentation/activities/components/NextLine"
 
 /** Tarjeta de actividad de los carriles del Home: categoría, quién la hace, cuándo es la próxima salida y el precio. */
@@ -16,8 +16,8 @@ export function RailActivityCard({ a, priority }: { a: ActivityCardView; priorit
         <span className="absolute left-3 top-3 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-wine">{a.categoryName}</span>
       </span>
       <span className="block px-0.5 pt-3">
-        <span className="block truncate text-base font-semibold leading-snug group-hover:underline">{a.title}</span>
-        <span className="block truncate text-sm text-muted-foreground">{a.owner ? `Con ${a.owner.displayName}` : `Con ${a.hostName}`}</span>
+        <span className="block truncate text-base font-semibold leading-snug group-hover:underline">{cardTitle(a.title, a.place)}</span>
+        <span className="block truncate text-sm text-muted-foreground">{a.place?.address || (a.owner ? `Con ${a.owner.displayName}` : `Con ${a.hostName}`)}</span>
         <span className="block truncate text-muted-foreground [&_p]:truncate [&_p]:text-sm [&_p]:font-normal"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></span>
         <span className={cn("mt-1.5 block text-[0.9375rem] font-semibold")}>{price}</span>
       </span>

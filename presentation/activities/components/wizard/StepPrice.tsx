@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Plus, Trash2, X } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
 import { Input } from "@/app/components/ui/input"
-import { EXTRA_UNITS, INCLUDES_MAX, INCLUDE_ITEM_MAX, PRICE_LABEL_MAX, PRICE_UNITS, formatCop, type ExtraUnit, type PriceUnit } from "@/domain/entities/activities/value-objects/Price"
-import { addExtra, addInclude, addPrice, parseMoney, removeExtra, removeInclude, removePrice, updateExtra, updatePrice } from "@/presentation/activities/lib/activityForm"
+import { MENU_PRICE_LABEL, isMenuPrice, EXTRA_UNITS, INCLUDES_MAX, INCLUDE_ITEM_MAX, PRICE_LABEL_MAX, PRICE_UNITS, formatCop, type ExtraUnit, type PriceUnit } from "@/domain/entities/activities/value-objects/Price"
+import { addExtra, addInclude, addPrice, blankPrice, parseMoney, removeExtra, removeInclude, removePrice, updateExtra, updatePrice } from "@/presentation/activities/lib/activityForm"
 import { cn } from "@/app/lib/utils/cn"
 import { Field, selectClass } from "./ui"
 import type { StepProps } from "./StepKind"
@@ -46,9 +46,18 @@ function IncludesEditor({ value, onChange }: { value: string[]; onChange: (v: st
 export function StepPrice({ form, patch }: StepProps) {
   const prices = form.priceOptions
   const lowest = Math.min(...prices.map((p) => parseMoney(p.amount)).filter((n) => Number.isFinite(n)))
+  const inMenu = isMenuPrice(prices.map((p) => ({ label: p.label, unit: p.unit })))
+  const toggleMenu = (on: boolean) => patch({ priceOptions: on ? [{ label: MENU_PRICE_LABEL, amount: "0", unit: "consultar", includes: [], note: "" }] : [blankPrice()] })
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4">
+      <label className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+        <input type="checkbox" className="mt-1 size-5 accent-primary-dark" checked={inMenu} onChange={(e) => toggleMenu(e.target.checked)} />
+        <span className="grid gap-0.5">
+          <span className="font-semibold">El precio está en la carta</span>
+          <span className="text-sm text-muted-foreground">No pongas un precio: la tarjeta dirá «Ver la carta». Úsalo si vendes productos con sus propios precios (café, plantas, comida).</span>
+        </span>
+      </label>
+      {inMenu ? null : <div className="grid gap-4">
         {prices.map((p, i) => (
           <fieldset key={i} className="grid gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
             <legend className="px-1 text-xs font-semibold tracking-wide text-muted-foreground">OPCIÓN {i + 1}</legend>
@@ -77,7 +86,7 @@ export function StepPrice({ form, patch }: StepProps) {
           </fieldset>
         ))}
         <Button type="button" variant="outline" size="lg" className="h-12 border-dashed" onClick={() => patch({ priceOptions: addPrice(prices) })}><Plus aria-hidden /> Agregar otra opción</Button>
-      </div>
+      </div>}
 
       <div className="grid gap-4">
         <div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
+import { useRemountOnReveal } from "@/app/lib/hooks/useRemountOnReveal"
 import { saveActivityAction } from "@/app/actions/activities/save-activity.action"
 import type { EditableActivity, WizardContext } from "@/app/actions/activities/wizard-data.action"
 import { WIZARD_STEPS, emptyForm, stepError, toRawInput, type ActivityForm } from "@/presentation/activities/lib/activityForm"
@@ -48,8 +49,25 @@ export function ActivityWizard({ context, initial }: Props) {
   const [step, setStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const [done, setDone] = useState<{ slug: string; moderationStatus: "pending" | "approved" | "rejected" } | null>(null)
   const alertRef = useRef<HTMLDivElement>(null)
+
+  /** Vuelve a un asistente en blanco (crear) o a la edición con lo ya guardado. */
+  const reset = useCallback(() => {
+    setDone(null)
+    setError(null)
+    setStep(1)
+    if (initial) return
+    setForm(emptyForm())
+    setMedia([])
+    setActivityId(undefined)
+  }, [initial])
+  // Cache Components deja esta página viva en un `Activity` oculto: al volver a «Crear actividad» reaparecía la pantalla «ya se creó».
+  const revealed = useRemountOnReveal()
+  useEffect(() => {
+    if (revealed > 0 && done) reset()
+  }, [revealed]) // eslint-disable-line react-hooks/exhaustive-deps
   /** El borrador local solo se escribe después de haberlo leído: si no, el formulario vacío pisaría el guardado. */
   const draftLoaded = useRef(Boolean(initial))
   const patch = useCallback((p: Partial<ActivityForm>) => setForm((f) => ({ ...f, ...p })), [])
@@ -118,6 +136,17 @@ export function ActivityWizard({ context, initial }: Props) {
     return null
   }, [form, media, activityId])
 
+  /** «Guardar borrador» cuando quiera. Al servidor solo va lo que ya es válido (pasos 1–5); si falta algo, queda en este dispositivo y se dice qué falta. */
+  const saveDraft = async () => {
+    setError(null)
+    setNotice(null)
+    for (let s = 1; s <= LAST_LOCAL_STEP; s++) {
+      const e = stepError(s, form)
+      if (e) return fail(`Se guardó en este dispositivo. Para guardarlo en tu cuenta falta (paso ${s}): ${e}`)
+    }
+    if (await persist()) setNotice("Borrador guardado en tu cuenta.")
+  }
+
   const next = async () => {
     const e = stepError(step, form, { coverCount: step === 6 ? media.filter((m) => m.type === "image" && m.isCover).length : undefined })
     if (e) return fail(e)
@@ -134,7 +163,7 @@ export function ActivityWizard({ context, initial }: Props) {
     else setStep((s) => s - 1)
   }
 
-  if (done) return <Submitted id={activityId!} title={form.title} slug={done.slug} coverUrl={media.find((m) => m.type === "image" && m.isCover)?.url} moderationStatus={done.moderationStatus} />
+  if (done) return <Submitted id={activityId!} title={form.title} slug={done.slug} coverUrl={media.find((m) => m.type === "image" && m.isCover)?.url} moderationStatus={done.moderationStatus} onAnother={initial ? undefined : reset} />
 
   const head = TITLES[step]
   let body: ReactNode
@@ -162,7 +191,7 @@ export function ActivityWizard({ context, initial }: Props) {
         <div className="flex items-center justify-between gap-2">
           <Button type="button" variant="secondary" size="icon-lg" aria-label="Volver" onClick={back}><ArrowLeft aria-hidden /></Button>
           <span className="text-sm font-semibold text-muted-foreground">Paso {step} de {WIZARD_STEPS}</span>
-          <span className="min-w-28 text-right text-xs text-muted-foreground" aria-live="polite">{activityId ? "Borrador guardado" : "Se guarda en este dispositivo"}</span>
+          <Button type="button" variant="outline" size="sm" disabled={saving} onClick={saveDraft}>{saving ? "Guardando…" : "Guardar borrador"}</Button>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={1} aria-valuemax={WIZARD_STEPS} aria-valuenow={step} aria-label="Progreso">
           <div className="h-full bg-grad-primary transition-[width]" style={{ width: `${(step / WIZARD_STEPS) * 100}%` }} />
@@ -177,7 +206,7 @@ export function ActivityWizard({ context, initial }: Props) {
       {body}
 
       <div ref={alertRef} tabIndex={-1} role="alert" className="outline-none">
-        {error ? <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{error}</p> : null}
+        {error ? <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{error}</p> : notice ? <p className="rounded-2xl bg-[#E4F5E8] px-4 py-3 text-sm font-medium text-[#14532D]">{notice}</p> : null}
       </div>
 
       <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border">

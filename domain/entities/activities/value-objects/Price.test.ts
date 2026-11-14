@@ -50,3 +50,12 @@ test("formatCop pone puntos de miles", () => {
   assert.equal(formatCop(40000), "$40.000")
   assert.equal(formatCop(1250000), "$1.250.000")
 })
+
+test("«precio en la carta»: una sola opción a consultar llamada «Ver la carta»", async () => {
+  const { isMenuPrice, onRequestLabel } = await import("./Price")
+  const menu = [{ label: "Ver la carta", unit: "consultar" }]
+  assert.equal(isMenuPrice(menu), true)
+  assert.equal(onRequestLabel(menu), "Ver la carta")
+  assert.equal(onRequestLabel([{ label: "Entrada", unit: "consultar" }]), "Consultar precio")
+  assert.equal(isMenuPrice([{ label: "Ver la carta", unit: "persona" }]), false)
+})

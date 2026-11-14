@@ -12,6 +12,7 @@ import { uploadMediaPersistFirst } from "@/presentation/events/lib/upload/upload
 import { getImageData } from "@/presentation/events/lib/image/getImageData"
 import { getVideoData } from "@/presentation/events/lib/video/getVideoData"
 import { cn } from "@/app/lib/utils/cn"
+import { getActivityForEditAction } from "@/app/actions/activities/wizard-data.action"
 
 interface Props {
   activityId: string
@@ -33,6 +34,24 @@ export function StepMedia({ activityId, media, setMedia, persist, onError }: Pro
   useEffect(() => {
     mediaRef.current = media
   }, [media])
+
+  // El optimizador termina en segundos y escribe `ready` en el servidor, pero esta lista es local: sin releerla
+  // el medio se quedaba en "Procesando…" hasta recargar. Mientras haya alguno, se consulta cada 4 s (máx. ~4 min).
+  const waiting = !busy && media.some((m) => m.status === "processing")
+  useEffect(() => {
+    if (!waiting) return
+    let tries = 0
+    const timer = setInterval(async () => {
+      if (++tries > 60) return clearInterval(timer)
+      const fresh = await getActivityForEditAction(activityId).catch(() => null)
+      if (!fresh) return
+      const done = new Map(fresh.media.filter((m) => m.status !== "processing").map((m) => [m.id, m]))
+      const current = mediaRef.current
+      if (current.some((m) => m.status === "processing" && done.has(m.id)))
+        setMedia(current.map((m) => (m.status === "processing" && done.has(m.id) ? { ...done.get(m.id)!, isCover: m.isCover, alt: m.alt } : m)))
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [waiting, activityId, setMedia])
 
   const upload = async (files: File[]) => {
     // Se descartan de a uno con su motivo, contando lo que ya está y lo que se va aceptando.

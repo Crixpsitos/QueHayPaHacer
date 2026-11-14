@@ -41,3 +41,12 @@ test("ids de actividades con promoción vigente: une las cartas y descarta pausa
   assert.equal(r.ok, true)
   assert.deepEqual((await svc.promoActivityIds()).sort(), ["x1", "x2"])
 })
+
+test("sin número propio la carta usa el del sitio; el propio gana", async () => {
+  const saved = new Map<string, SiteCatalog>([["s1", { ...emptyCatalog("s1"), whatsapp: "3001112222" }]])
+  const svc = new SiteCatalogService({ repo: { get: async (id) => saved.get(id) ?? null, save: async () => {}, listWithPromotions: async () => [] }, isOwner: async () => true, clock: () => NOW, siteContact: async () => "3156324143" })
+  const own = await svc.get("s1")
+  assert.deepEqual([own.whatsapp, own.reservePhone], ["3001112222", "3156324143"])
+  const none = await svc.get("s2")
+  assert.deepEqual([none.whatsapp, none.reservePhone], ["3156324143", "3156324143"])
+})

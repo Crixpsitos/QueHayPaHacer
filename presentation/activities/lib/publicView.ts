@@ -4,7 +4,7 @@ import { ACTIVITY_CATEGORIES, type Companion } from "@/domain/entities/activitie
 import { describeSchedule, type ActivitySchedule } from "@/domain/entities/activities/value-objects/ActivitySchedule"
 import { ctaButtonLabel, ctaHref, type CtaKind } from "@/domain/entities/activities/value-objects/Cta"
 import { isPaidActivity } from "@/domain/entities/activities/activityJoin"
-import { allOnRequest, formatCop, isOnRequest, priceFromCop } from "@/domain/entities/activities/value-objects/Price"
+import { onRequestLabel, allOnRequest, formatCop, isOnRequest, priceFromCop } from "@/domain/entities/activities/value-objects/Price"
 import type { SiteSection } from "@/domain/entities/sites/value-objects/SiteSections"
 
 /** Lo que muestra la ficha pública: solo datos públicos, textos ya legibles y nada que no sea serializable (se cachea). */
@@ -93,7 +93,7 @@ export function toPublicView(a: Activity): ActivityPublicView {
     schedule: a.schedule,
     joinEnabled: a.join !== null,
     paid: isPaidActivity(a.priceOptions),
-    priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
+    priceFrom: allOnRequest(a.priceOptions) ? onRequestLabel(a.priceOptions) : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
     prices: a.priceOptions.map((p) => ({ label: p.label, amount: isOnRequest(p) ? "Consultar" : formatCop(p.amountCop), amountCop: p.amountCop, onRequest: isOnRequest(p), unit: p.unit, includes: p.includes, note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: `+${formatCop(x.amountCop)}`, unit: x.unit, note: x.note ?? "" })),
     meeting: { mode, text: a.meetingPoint.text, references: a.meetingPoint.references, note: mode === "fixed" ? null : MEETING_NOTES[mode], confirm: a.meetingPoint.confirm ? { label: CONFIRM_LABELS[a.meetingPoint.confirm.channel], url: a.meetingPoint.confirm.url } : null },
@@ -115,6 +115,8 @@ export interface ActivityCardView {
   hostPhoto: string
   /** Dueño del sitio vinculado (si lo tiene): se muestra al frente, como en la ficha. */
   owner?: { displayName: string; photoURL: string } | null
+  /** Sitio donde ocurre (si lo tiene): la tarjeta dice «{título} en {sitio}» y su dirección. */
+  place?: { name: string; address: string } | null
   categorySlug: string
   categoryName: string
   coverUrl: string | null
@@ -125,6 +127,10 @@ export interface ActivityCardView {
   /** Para "Próxima: …" en el navegador. */
   schedule: ActivitySchedule
 }
+
+/** «Tomar café» + «Deconatural Home» → «Tomar café en Deconatural Home» (si el título ya nombra el sitio, no se repite). */
+export const cardTitle = (title: string, place?: { name: string } | null): string =>
+  place?.name && !title.toLowerCase().includes(place.name.toLowerCase()) ? `${title} en ${place.name}` : title
 
 export function toCardView(a: Activity): ActivityCardView {
   const cover = a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")
@@ -140,7 +146,7 @@ export function toCardView(a: Activity): ActivityCardView {
     categoryName: ACTIVITY_CATEGORIES.find((c) => c.slug === a.category)?.name ?? "",
     coverUrl: cover ? (cover.thumbnailUrl ?? cover.url) : null,
     coverAlt: cover?.alt || a.title,
-    priceFrom: allOnRequest(a.priceOptions) ? "Consultar precio" : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
+    priceFrom: allOnRequest(a.priceOptions) ? onRequestLabel(a.priceOptions) : from === 0 ? "Gratis" : `Desde ${formatCop(from)}`,
     badge: a.kind === "site" ? "En el sitio" : from === 0 && !allOnRequest(a.priceOptions) ? "Gratis" : byAppointment ? "Con cita" : null,
     scheduleText: describeSchedule(a.schedule),
     schedule: a.schedule,

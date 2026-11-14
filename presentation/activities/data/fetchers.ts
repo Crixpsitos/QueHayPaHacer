@@ -16,8 +16,11 @@ type CardSource = Parameters<typeof toCardView>[0]
 async function cardsOf(list: CardSource[]): Promise<ActivityCardView[]> {
   const sitesSvc = createServerContainer().sitesService
   const ids = [...new Set(list.map((a) => a.siteId).filter((x): x is string => !!x))]
-  const owners = new Map(await Promise.all(ids.map(async (id) => [id, (await sitesSvc.getActivityLinkSnapshot(id))?.owner ?? null] as const)))
-  return list.map((a) => ({ ...toCardView(a), owner: a.siteId ? (owners.get(a.siteId) ?? null) : null }))
+  const sites = new Map(await Promise.all(ids.map(async (id) => [id, await sitesSvc.getActivityLinkSnapshot(id)] as const)))
+  return list.map((a) => {
+    const s = a.siteId ? sites.get(a.siteId) : null
+    return { ...toCardView(a), owner: s?.owner ?? null, place: s ? { name: s.name, address: s.address } : null }
+  })
 }
 
 /** Actividades elegidas por alguna promoción vigente de la carta de su sitio (filtro «Promos hoy»). Caché corta; el panel de carta la invalida. */
@@ -215,7 +218,7 @@ export const fetchMoreToDo = async (id: string): Promise<MoreLevelView[]> => {
     geo: a.meetingPoint.geo ? { latitude: a.meetingPoint.geo.lat, longitude: a.meetingPoint.geo.lng } : ((a.siteId && sites.get(a.siteId)?.geo) || null),
   })
   const byId = new Map(pool.map((a) => [a.id, a]))
-  return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => { const a = byId.get(i.id)!; return { ...toCardView(a), owner: (a.siteId && sites.get(a.siteId)?.owner) || null, meters: i.meters } }) }))
+  return moreToDo(item(current), pool.map(item)).map((l) => ({ key: l.key, total: l.total, rows: l.items.map((i) => { const a = byId.get(i.id)!; return { ...toCardView(a), owner: (a.siteId && sites.get(a.siteId)?.owner) || null, place: a.siteId && sites.get(a.siteId) ? { name: sites.get(a.siteId)!.name, address: sites.get(a.siteId)!.address } : null, meters: i.meters } }) }))
 }
 
 export interface MapPin { id: string; slug: string; title: string; categorySlug: string; categoryName: string; priceFrom: string; lat: number; lng: number; hhmm: string | null; durationMinutes: number | null; placeName: string }

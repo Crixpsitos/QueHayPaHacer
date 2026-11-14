@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "@/app/components/ui/navigation/IntentLink"
+import { cardTitle } from "@/presentation/activities/lib/publicView"
 import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { categoryStyle } from "@/presentation/activities/lib/categoryStyle"
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/app/components/ui/avatar"
@@ -20,16 +21,16 @@ export function ActivityCard({ a, priority }: { a: ActivityCardView; priority?: 
           <span className="absolute bottom-3 right-3 rounded-xl bg-primary-dark px-3 py-1.5 text-[0.8125rem] font-semibold text-white shadow-subtle">{price}</span>
         </div>
         <div className="grid flex-1 content-start gap-1 p-4">
-          <h3 className="font-heading text-xl font-bold leading-snug tracking-tight">{a.title}</h3>
+          <h3 className="font-heading text-xl font-bold leading-snug tracking-tight">{cardTitle(a.title, a.place)}</h3>
           {a.owner ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <AvatarGroup>
                 <Avatar className="relative z-10 size-7">{a.owner.photoURL ? <AvatarImage src={a.owner.photoURL} alt="" /> : null}<AvatarFallback>{getInitials(a.owner.displayName)}</AvatarFallback></Avatar>
                 <Avatar className="size-7">{a.hostPhoto ? <AvatarImage src={a.hostPhoto} alt="" /> : null}<AvatarFallback>{getInitials(a.hostName)}</AvatarFallback></Avatar>
               </AvatarGroup>
-              <span className="min-w-0 truncate">{a.owner.displayName}</span>
+              <span className="min-w-0 truncate">{a.place?.address || a.owner.displayName}</span>
             </div>
-          ) : <p className="text-sm text-muted-foreground">{a.hostName}</p>}
+          ) : <p className="text-sm text-muted-foreground">{a.place?.address || a.hostName}</p>}
           <div className="mt-1"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></div>
         </div>
       </Link>
