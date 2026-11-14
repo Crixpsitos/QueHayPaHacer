@@ -36,6 +36,7 @@ export function makeActivity(p: Partial<Activity> = {}): Activity {
     priceOptions: [{ label: "Salida completa", amountCop: 40000, unit: "persona", includes: ["Almuerzo"] }],
     extras: [],
     sections: [],
+    productIds: [],
     spaces: [],
     cta: null,
     join: null,

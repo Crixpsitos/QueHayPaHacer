@@ -68,6 +68,8 @@ export interface Activity {
   priceOptions: PriceOption[]
   extras: Extra[]
   sections: SiteSection[]
+  /** Productos de la carta del sitio que esta actividad destaca. Vacío = se muestra toda la carta. Opcional. */
+  productIds: string[]
   /** Espacios reservables: SOLO actividades de sitio (spec 8.7). El menú y las promociones viven en la carta del sitio. */
   spaces: Space[]
   cta: Cta | null

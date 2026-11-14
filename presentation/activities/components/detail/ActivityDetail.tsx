@@ -131,7 +131,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
           </section>}
 
           <SpacesList items={d.spaces} />
-          {d.siteId ? <Suspense fallback={null}><ActivityCatalogBlock siteId={d.siteId} activity={{ id: d.id, title: d.title, slug: d.slug, category: d.categorySlug as ActivityCategory }} /></Suspense> : null}
+          {d.siteId ? <Suspense fallback={null}><ActivityCatalogBlock siteId={d.siteId} activity={{ id: d.id, title: d.title, slug: d.slug, category: d.categorySlug as ActivityCategory, productIds: d.productIds }} /></Suspense> : null}
 
           <ActivityPlace d={d} compact={sparse} />
 

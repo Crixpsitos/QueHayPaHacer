@@ -29,6 +29,7 @@ export interface FirebaseActivityDto {
   priceOptions: PriceOption[]
   extras?: Extra[]
   sections?: SiteSection[]
+  productIds?: string[]
   spaces?: Space[]
   cta?: Cta | null
   join?: JoinSettings | null

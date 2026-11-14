@@ -62,6 +62,7 @@ const ActivityInputSchema = v.object({
   priceOptions: v.array(v.object({ label: v.string("Nombre inválido."), amountCop: Money, unit: v.picklist(PRICE_UNITS, "Unidad de precio inválida."), includes: v.optional(v.array(v.string()), []), note: v.optional(v.string()) }), "Agrega al menos una opción de precio."),
   extras: v.optional(v.array(v.object({ label: v.string("Nombre inválido."), amountCop: Money, unit: v.picklist(EXTRA_UNITS, "Unidad de extra inválida."), note: v.optional(v.string()) }), "Extras inválidos."), []),
   sections: v.optional(v.array(v.unknown()), []),
+  productIds: v.optional(v.pipe(v.array(v.pipe(v.string("Producto inválido."), v.maxLength(64, "Producto inválido."))), v.maxLength(60, "Máximo 60 productos.")), []),
   spaces: v.optional(v.array(v.object({ name: v.string("Nombre de espacio inválido."), description: v.optional(v.string(), ""), capacity: v.number("La capacidad debe ser un número."), priceCop: Money, unit: v.picklist(SPACE_UNITS, "Unidad de espacio inválida."), rules: v.optional(v.string(), "") }), "Espacios inválidos."), []),
   cta: v.optional(v.nullable(v.object({ kind: v.string(), value: v.string(), label: v.optional(v.string()) })), null),
   join: v.optional(v.nullable(v.object({ capacity: v.nullable(v.pipe(v.number("El cupo debe ser un número."), v.integer("El cupo debe ser un número entero."), v.minValue(1, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`), v.maxValue(JOIN_CAPACITY_MAX, `El cupo debe estar entre 1 y ${JOIN_CAPACITY_MAX}.`))), payInstructions: v.optional(v.string("Cómo se paga debe ser texto."), "") }, "Los datos de inscripción son inválidos.")), null),
@@ -83,6 +84,7 @@ export interface ActivityInput {
   priceOptions: PriceOption[]
   extras: Extra[]
   sections: SiteSection[]
+  productIds: string[]
   spaces: Space[]
   cta: Cta | null
   /** Cupo por salida (null = sin tope). `join: null` = la actividad no recibe inscripciones. */
@@ -137,6 +139,7 @@ export function parseActivityInput(raw: unknown): ParseResult {
       priceOptions,
       extras,
       sections: normalizeSections(d.sections),
+      productIds: [...new Set(d.productIds.map((x) => x.trim()).filter(Boolean))],
       spaces,
       cta,
       join: d.join ? { capacity: d.join.capacity, payInstructions } : null,

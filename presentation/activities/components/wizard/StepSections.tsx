@@ -10,7 +10,7 @@ export function StepSections({ form, patch, context, activityId }: StepProps & {
   return (
     <div className="grid gap-8">
       <SectionsContent value={form.sections} onChange={(sections) => patch({ sections })} />
-      {form.kind === "site" && form.siteId && form.category ? <ActivityCatalogPanel siteId={form.siteId} activityId={activityId} activityTitle={form.title} category={form.category} /> : null}
+      {form.kind === "site" && form.siteId && form.category ? <ActivityCatalogPanel siteId={form.siteId} activityId={activityId} activityTitle={form.title} category={form.category} productIds={form.productIds} onProductIds={(productIds) => patch({ productIds })} /> : null}
       <StepSpaces form={form} patch={patch} context={context} />
     </div>
   )

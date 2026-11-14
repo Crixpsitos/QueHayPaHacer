@@ -81,6 +81,7 @@ export interface ActivityForm {
   joinCapacity: string
   payInstructions: string
   sections: SiteSection[]
+  productIds: string[]
   /** Espacios: solo si la actividad es de un sitio (el menú y las promociones viven en la carta del sitio). */
   spaces: FormSpace[]
 }
@@ -108,7 +109,7 @@ export const emptyForm = (): ActivityForm => ({
   kind: "global", siteId: null, title: "", tagline: "", description: "", category: "", companions: [], difficulty: "", durationMinutes: "", ageNote: "",
   meetingMode: "fixed", meetingText: "", meetingReferences: "", meetingGeo: null, confirmChannel: "whatsapp", confirmUrl: "",
   rules: [blankRule()], validFrom: "", validUntil: "", skipDates: [], requiresReservation: false, scheduleNote: "", holidays: "",
-  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [], spaces: [],
+  priceOptions: [blankPrice()], extras: [], ctaKind: "", ctaValue: "", ctaLabel: "", joinEnabled: false, joinCapacity: "", payInstructions: "", sections: [], productIds: [], spaces: [],
 })
 
 export const addRule = (rules: FormRule[]): FormRule[] => (rules.length >= SCHEDULE_RULES_MAX ? rules : [...rules, blankRule()])
@@ -180,6 +181,7 @@ export function toRawInput(f: ActivityForm): unknown {
     priceOptions: priceFromForm(f),
     extras: extrasFromForm(f),
     sections: f.sections,
+    productIds: f.productIds,
     spaces: f.kind === "site" ? f.spaces.map((x) => ({ name: x.name, description: x.description, capacity: Number(x.capacity), priceCop: parseMoney(x.price), unit: x.unit, rules: x.rules })) : [],
     cta: f.ctaKind && optional(f.ctaValue) ? { kind: f.ctaKind, value: f.ctaValue, ...(optional(f.ctaLabel) ? { label: f.ctaLabel } : {}) } : null,
     join: f.joinEnabled ? { capacity: f.joinCapacity.trim() ? Number(f.joinCapacity) : null, payInstructions: f.payInstructions } : null,
@@ -214,6 +216,7 @@ export function formFromActivity(a: Activity): ActivityForm {
     ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "",
     joinEnabled: a.join !== null, joinCapacity: a.join?.capacity == null ? "" : String(a.join.capacity), payInstructions: a.join?.payInstructions ?? "",
     sections: a.sections.map((s) => ({ ...s })),
+    productIds: [...a.productIds],
     spaces: a.spaces.map((x) => ({ name: x.name, description: x.description, capacity: String(x.capacity), price: moneyToString(x.priceCop), unit: x.unit, rules: x.rules })),
   }
 }
