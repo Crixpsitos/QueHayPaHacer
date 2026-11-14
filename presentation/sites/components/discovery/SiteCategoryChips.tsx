@@ -1,15 +1,11 @@
-"use client";
-
-import Link from "@/app/components/ui/navigation/IntentLink"
 import {
   Utensils, Coffee, Wine, Music, ShoppingBag, TreePine,
   Landmark, Palette, Mountain, BedDouble, Building2,
   Dumbbell, Sparkles, Drama, MapPin, IceCreamCone, type LucideIcon,
 } from "lucide-react";
-import { siteCollectionHref } from "@/presentation/sites/lib/siteCollections";
-import type { SiteCollectionDef } from "@/presentation/sites/lib/siteCollections";
 
-const SITE_ICON_MAP: Record<string, LucideIcon> = {
+/** Icono de cada tipo de sitio (cabecera de las páginas por tipo). */
+export const SITE_ICON_MAP: Record<string, LucideIcon> = {
   restaurant: Utensils,
   cafe: Coffee,
   bar: Wine,
@@ -27,29 +23,3 @@ const SITE_ICON_MAP: Record<string, LucideIcon> = {
   ice_cream: IceCreamCone,
   other: MapPin,
 };
-
-interface SiteCategoryChipsProps {
-  collections: SiteCollectionDef[];
-}
-
-export function SiteCategoryChips({ collections }: SiteCategoryChipsProps) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {collections.map((c) => {
-        const Icon = c.category ? (SITE_ICON_MAP[c.category] ?? MapPin) : MapPin;
-        return (
-          <Link
-            key={c.slug}
-            href={siteCollectionHref(c.slug)}
-            className="group flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[#E4E4E7] bg-white py-2 pl-2 pr-4 text-sm font-semibold text-[#09090B] shadow-subtle transition-[border-color,box-shadow,transform] duration-200 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42F3C] focus-visible:ring-offset-2 hover:border-[#D42F3C] hover:shadow-[0_4px_16px_rgba(230,57,70,0.15)] active:scale-[0.97]"
-          >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#FDF2F4] transition-colors duration-200 group-hover:bg-[#D42F3C]">
-              <Icon className="size-3.5 text-[#D42F3C] transition-colors duration-200 group-hover:text-white" />
-            </span>
-            {c.shortLabel}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}

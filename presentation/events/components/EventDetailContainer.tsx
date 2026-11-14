@@ -45,7 +45,7 @@ export const EventDetailContainer = async ({ eventId }: EventDetailContainerProp
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLdHtml(viewModel, { sessions: sessionVMs }) }} />
         <ViewItem type="event" id={viewModel.id} category={viewModel.categoryInfo?.title} />
         <EventViewTracker eventId={viewModel.id} />
         <MultiDateEventDetailClient event={viewModel} sessions={sessionVMs} />
