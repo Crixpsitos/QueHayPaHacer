@@ -1,3 +1,4 @@
+import { cardSubtitle, cardTitle } from "@/presentation/activities/lib/publicView"
 import Image from "next/image"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import { ArrowRight } from "lucide-react"
@@ -24,8 +25,8 @@ export async function FeaturedPlan() {
           <span className="absolute bottom-4 right-4 rounded-xl bg-[#FFB703] px-3 py-1.5 text-sm font-bold text-[#5C0011] shadow-subtle">{price}</span>
         </div>
         <div className="grid content-center gap-2 p-5 sm:p-7">
-          <h3 className="font-heading text-[1.75rem] font-extrabold leading-[1.1] tracking-tight sm:text-3xl">{a.title}</h3>
-          <p className="text-sm text-muted-foreground">{a.hostName}</p>
+          <h3 className="font-heading text-[1.75rem] font-extrabold leading-[1.1] tracking-tight sm:text-3xl">{cardTitle(a.title, a.place)}</h3>
+          <p className="text-sm text-muted-foreground">{cardSubtitle(a)}</p>
           <div className="text-[0.9375rem] font-medium"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></div>
           <span className="mt-2 inline-flex min-h-12 w-fit items-center gap-2 rounded-full bg-primary-dark px-6 text-[0.9375rem] font-semibold text-white">Ver el plan <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden /></span>
         </div>

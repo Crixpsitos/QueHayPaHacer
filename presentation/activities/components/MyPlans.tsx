@@ -10,7 +10,7 @@ import { addToPlanAction, removeFromPlanAction } from "@/app/actions/activities/
 import { parsePlanKey } from "@/domain/entities/activities/planItem"
 import type { PlanSlot } from "@/domain/entities/activities/weekPlan"
 import { planDateLabel, type MyPlansView } from "@/presentation/activities/lib/plansView"
-import type { ActivityCardView } from "@/presentation/activities/lib/publicView"
+import { cardSubtitle, cardTitle, type ActivityCardView } from "@/presentation/activities/lib/publicView"
 import { NextLine } from "./NextLine"
 import { CoverFallback } from "./CoverFallback"
 import { WeekPlan } from "./WeekPlan"
@@ -34,10 +34,10 @@ function Row({ a, children, aside }: { a: ActivityCardView; children?: React.Rea
       <Thumb a={a} />
       <div className="grid min-w-0 flex-1 content-start gap-0.5">
         <div className="flex items-start justify-between gap-2">
-          <Link href={a.href ?? `/actividades/${a.slug}`} className="font-heading text-base font-semibold leading-snug outline-none hover:underline focus-visible:underline">{a.title}</Link>
+          <Link href={a.href ?? `/actividades/${a.slug}`} className="font-heading text-base font-semibold leading-snug outline-none hover:underline focus-visible:underline">{cardTitle(a.title, a.place)}</Link>
           {aside}
         </div>
-        {children ?? <p className="text-sm text-muted-foreground">{a.hostName}</p>}
+        {children ?? <p className="text-sm text-muted-foreground">{cardSubtitle(a)}</p>}
       </div>
     </li>
   )
@@ -115,7 +115,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
                   return (
                     <Row key={`${u.card.id}-${u.key}`} a={u.card} aside={<span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold", u.status === "pending" ? "bg-accent text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]")}>{u.status === "pending" ? "Por pagar" : "Estás dentro"}</span>}>
                       <p className="text-sm font-medium">{d ? cap(d) : u.card.scheduleText}</p>
-                      <p className="text-sm text-muted-foreground">{u.card.hostName}{u.status === "pending" ? " · te escribirán por WhatsApp" : ""}</p>
+                      <p className="text-sm text-muted-foreground">{cardSubtitle(u.card)}{u.status === "pending" ? " · te escribirán por WhatsApp" : ""}</p>
                     </Row>
                   )
                 })}
@@ -132,13 +132,13 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
                 {saved.map((a) => (
                   <Row key={a.id} a={a}>
                     <div className="text-sm font-medium"><NextLine schedule={a.schedule} scheduleText={a.scheduleText} /></div>
-                    <p className="text-sm text-muted-foreground">{a.hostName} · <button type="button" onClick={() => void unsave(a.id, () => setSavedGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
+                    <p className="text-sm text-muted-foreground">{cardSubtitle(a)} · <button type="button" onClick={() => void unsave(a.id, () => setSavedGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
                   </Row>
                 ))}
                 {extraCards.map((a) => (
                   <Row key={a.id} a={a}>
                     <p className="text-sm font-medium">{a.categoryName}{a.scheduleText ? ` · ${a.scheduleText}` : ""}</p>
-                    <p className="text-sm text-muted-foreground">{a.hostName} · <button type="button" onClick={() => void unsave(a.id, () => setExtraGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
+                    <p className="text-sm text-muted-foreground">{cardSubtitle(a)} · <button type="button" onClick={() => void unsave(a.id, () => setExtraGone((x) => [...x, a.id]))} className="font-semibold text-primary-dark underline-offset-2 hover:underline">Quitar</button></p>
                   </Row>
                 ))}
                 {gone.map((id) => (
@@ -156,7 +156,7 @@ export function MyPlans({ initial }: { initial: MyPlansView }) {
         {tab === "done" ? (
           initial.done.length ? (
             <ul className="grid gap-3">
-              {initial.done.map((a) => <Row key={a.id} a={a}><p className="text-sm text-muted-foreground">{a.hostName}</p><p className="text-sm font-semibold text-[#14532D]">Fuiste</p></Row>)}
+              {initial.done.map((a) => <Row key={a.id} a={a}><p className="text-sm text-muted-foreground">{cardSubtitle(a)}</p><p className="text-sm font-semibold text-[#14532D]">Fuiste</p></Row>)}
             </ul>
           ) : <Empty title="Aún no marcas ninguna como hecha" text="Cuando vayas a una actividad, toca «Yo fui» en su página y quedará aquí." cta={{ href: "/actividades", label: "Ver actividades" }} />
         ) : null}

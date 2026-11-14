@@ -55,35 +55,47 @@ export function ActivityCatalogPanel({ siteId, activityId, activityTitle, catego
       {data === "error" && <p role="alert" className="rounded-2xl bg-[#FFF8E7] p-4 text-sm text-[#7a5200]">No pudimos cargar la carta de este sitio. Revisa que el sitio sea tuyo y esté aprobado, o ábrela desde «Mis sitios».</p>}
       {data && data !== "error" && (
         <>
-          {promosAllowed && (
-            <div role="tablist" aria-label="Carta" className="flex gap-2">
-              <button role="tab" type="button" aria-selected={tab === "products"} className={chip(tab === "products")} onClick={() => setTab("products")}>Carta ({data.catalog.products.length})</button>
-              <button role="tab" type="button" aria-selected={tab === "promos"} className={chip(tab === "promos")} onClick={() => setTab("promos")}>Promociones ({data.catalog.promotions.length})</button>
-            </div>
-          )}
           {data.catalog.products.length > 0 && (
             <fieldset className="grid gap-2 rounded-2xl border border-border bg-card p-4">
               <legend className="px-1 text-sm font-semibold">¿Qué productos muestra esta actividad? <span className="font-normal text-muted-foreground">(opcional)</span></legend>
-              <p className="text-sm text-muted-foreground">{productIds.length ? `Mostrarás ${productIds.length} de ${data.catalog.products.length}.` : "Si no eliges ninguno, se muestra toda tu carta."}</p>
+              <p className="text-sm text-muted-foreground">{productIds.length ? `Mostrarás ${productIds.length} de ${data.catalog.products.length}.` : "Si no eliges ninguno, esta actividad no muestra productos."}</p>
               <ul className="grid gap-1">
                 {data.catalog.products.map((p) => (
                   <li key={p.id}>
                     <label className="flex min-h-11 items-center gap-3 rounded-xl px-2 hover:bg-muted/60">
                       <input type="checkbox" className="size-5 accent-primary-dark" checked={productIds.includes(p.id)} onChange={(e) => onProductIds(e.target.checked ? [...productIds, p.id] : productIds.filter((x) => x !== p.id))} />
+                      <span className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-muted">{p.photoUrl ? <img src={p.photoUrl} alt="" loading="lazy" className="size-full object-cover" /> : null}</span>
                       <span className="min-w-0 flex-1 truncate">{p.name}</span>
                       <span className="text-sm text-muted-foreground">{formatCop(p.priceCop)}</span>
                     </label>
                   </li>
                 ))}
               </ul>
-              {productIds.length > 0 && <button type="button" className="min-h-11 w-fit text-sm font-semibold text-primary-dark underline-offset-4 hover:underline" onClick={() => onProductIds([])}>Mostrar toda la carta</button>}
+              <div className="flex flex-wrap gap-x-4">
+                <button type="button" className="min-h-11 w-fit text-sm font-semibold text-primary-dark underline-offset-4 hover:underline" onClick={() => onProductIds(data.catalog.products.map((p) => p.id))}>Elegir todos</button>
+                {productIds.length > 0 && <button type="button" className="min-h-11 w-fit text-sm font-semibold text-primary-dark underline-offset-4 hover:underline" onClick={() => onProductIds([])}>Quitar todos</button>}
+              </div>
             </fieldset>
+          )}
+          <details className="group rounded-2xl border border-border bg-card p-4">
+            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 text-sm font-semibold marker:content-none">
+              <span>Editar mi carta {promosAllowed ? "y promociones" : ""}<span className="block font-normal text-muted-foreground">Agrega o cambia productos. Para elegir cuáles se ven aquí, usa la lista de arriba.</span></span>
+              <span aria-hidden className="text-lg transition-transform group-open:rotate-45">+</span>
+            </summary>
+            <div className="mt-4 grid gap-4">
+          {promosAllowed && (
+            <div role="tablist" aria-label="Carta" className="flex gap-2">
+              <button role="tab" type="button" aria-selected={tab === "products"} className={chip(tab === "products")} onClick={() => setTab("products")}>Carta ({data.catalog.products.length})</button>
+              <button role="tab" type="button" aria-selected={tab === "promos"} className={chip(tab === "promos")} onClick={() => setTab("promos")}>Promociones ({data.catalog.promotions.length})</button>
+            </div>
           )}
           <div role="tabpanel">
             {tab === "products" || !promosAllowed
               ? <ProductsTab siteId={siteId} catalog={data.catalog} save={save} />
               : <PromotionsTab siteId={siteId} catalog={data.catalog} activities={activities} save={save} focusActivityId={activityId} onNeedProducts={() => setTab("products")} />}
           </div>
+            </div>
+          </details>
         </>
       )}
     </section>

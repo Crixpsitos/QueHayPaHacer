@@ -164,6 +164,14 @@ const priceFromForm = (f: ActivityForm): PriceOption[] =>
 const extrasFromForm = (f: ActivityForm): Extra[] =>
   f.extras.map((x) => ({ label: x.label, amountCop: parseMoney(x.amount), unit: x.unit, ...(x.note.trim() ? { note: x.note.trim() } : {}) }))
 
+/** El botón se guarda normalizado (`https://wa.me/57…`, `+57…`); el formulario pide los 10 dígitos, así que se deshace al editar. */
+export function ctaInputValue(cta: { kind: string; value: string } | null): string {
+  if (!cta) return ""
+  if (cta.kind === "whatsapp") return /^https:\/\/wa\.me\/57(\d{10})$/.exec(cta.value)?.[1] ?? cta.value
+  if (cta.kind === "phone") return /^\+57(\d{10})$/.exec(cta.value)?.[1] ?? cta.value
+  return cta.value
+}
+
 /** Lo que se envía a `saveActivityAction` (el servidor vuelve a validar todo con `parseActivityInput`). */
 export function toRawInput(f: ActivityForm): unknown {
   return {
@@ -213,7 +221,7 @@ export function formFromActivity(a: Activity): ActivityForm {
     requiresReservation: a.schedule.requiresReservation, scheduleNote: a.schedule.note ?? "", holidays: a.schedule.holidays ?? "",
     priceOptions: a.priceOptions.map((p) => ({ label: p.label, amount: moneyToString(p.amountCop), unit: p.unit, includes: [...p.includes], note: p.note ?? "" })),
     extras: a.extras.map((x) => ({ label: x.label, amount: moneyToString(x.amountCop), unit: x.unit, note: x.note ?? "" })),
-    ctaKind: a.cta?.kind ?? "", ctaValue: a.cta?.value ?? "", ctaLabel: a.cta?.label ?? "",
+    ctaKind: a.cta?.kind ?? "", ctaValue: ctaInputValue(a.cta), ctaLabel: a.cta?.label ?? "",
     joinEnabled: a.join !== null, joinCapacity: a.join?.capacity == null ? "" : String(a.join.capacity), payInstructions: a.join?.payInstructions ?? "",
     sections: a.sections.map((s) => ({ ...s })),
     productIds: [...a.productIds],

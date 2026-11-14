@@ -21,6 +21,8 @@ export interface ShareKitProps {
   where?: string;
   /** Portada de la ficha para el afiche (opcional). */
   imageUrl?: string;
+  /** Logo del local (afiches de actividades de un sitio). */
+  placeLogoUrl?: string;
   /** El sitio aún está en revisión: los enlaces funcionarán cuando lo aprueben. */
   pendingReview?: boolean;
   /** Título del diálogo (por defecto «Comparte tu evento/actividad/sitio»). */
@@ -28,7 +30,7 @@ export interface ShareKitProps {
 }
 
 /** Modal "tu kit para compartir": vista previa del afiche, enlaces por canal ya listos, QR y un mensaje escrito. */
-export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, pendingReview, heading }: ShareKitProps) {
+export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, placeLogoUrl, pendingReview, heading }: ShareKitProps) {
   // El QR vive dentro del portal del diálogo (se monta después): se guarda en estado para que los efectos esperen a que exista.
   const [qr, setQr] = useState<HTMLCanvasElement | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl
   const subtitle = [when, where].filter(Boolean).join(" · ");
 
   const make = (format: PosterFormat) =>
-    buildPoster({ qr: qr!, kind, title, subtitle, url: link("qr"), imageUrl, format });
+    buildPoster({ qr: qr!, kind, title, subtitle, url: link("qr"), imageUrl, placeLogoUrl, format });
 
   // Vista previa: el mismo afiche, en pequeño, para que la persona vea cómo queda antes de descargarlo.
   useEffect(() => {
@@ -48,7 +50,7 @@ export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl
     make("feed").then((c) => alive && setPreview(c.toDataURL("image/jpeg", 0.85))).catch(() => {});
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- make() solo lee estas props
-  }, [open, qr, id, title, subtitle, imageUrl]);
+  }, [open, qr, id, title, subtitle, imageUrl, placeLogoUrl]);
 
   const download = async (format: PosterFormat) => {
     if (!qr) return;

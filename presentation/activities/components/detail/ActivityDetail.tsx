@@ -92,7 +92,7 @@ export function ActivityDetail({ data: d, preview }: { data: ActivityPageData; p
 
       <div className="grid gap-10 lg:grid-cols-[1fr_23rem] lg:items-start lg:gap-14">
         <div className="grid gap-10">
-          <div className="grid gap-2 lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} />{preview ? null : <ActivityPosterButton slug={d.slug} title={d.title} when={d.scheduleText} where={d.site?.name || d.meeting.text} coverUrl={d.gallery[0]?.url} />}</div>
+          <div className="grid gap-2 lg:hidden"><NextDeparture schedule={d.schedule} scheduleText={d.scheduleText} requiresReservation={d.requiresReservation} priceLine={free ? "Gratis" : undefined} />{preview ? null : <ActivityPosterButton slug={d.slug} title={d.title} when={d.scheduleText} where={d.site?.name || d.meeting.text} coverUrl={d.gallery[0]?.url} placeLogoUrl={d.site?.owner?.photoURL || undefined} />}</div>
 
           {facts.length && !sparse ? <ul className="grid gap-2.5 sm:grid-cols-2" aria-label="Datos rápidos">{facts.map((f) => <Fact key={f.label} {...f} />)}</ul> : null}
 

@@ -72,7 +72,7 @@ async function loadActivities(now: Date): Promise<ActivityIn[]> {
     .filter((a) => first[a.id])
     .map((a) => {
       const c = toCardView(a)
-      return { id: a.id, slug: a.slug, title: a.title, place: c.hostName, price: c.priceFrom, coverUrl: c.coverUrl, occ: first[a.id] }
+      return { id: a.id, slug: a.slug, title: a.title, place: c.place?.address || c.hostName, price: c.priceFrom, coverUrl: c.coverUrl, occ: first[a.id] }
     })
 }
 

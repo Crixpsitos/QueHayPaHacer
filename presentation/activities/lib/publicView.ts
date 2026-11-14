@@ -134,6 +134,9 @@ export interface ActivityCardView {
 export const cardTitle = (title: string, place?: { name: string } | null): string =>
   place?.name && !title.toLowerCase().includes(place.name.toLowerCase()) ? `${title} en ${place.name}` : title
 
+/** Línea bajo el título: la dirección del sitio; sin sitio, quien la ofrece. */
+export const cardSubtitle = (a: { place?: { address: string } | null; hostName: string }): string => a.place?.address || a.hostName
+
 export function toCardView(a: Activity): ActivityCardView {
   const cover = a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")
   const from = priceFromCop(a.priceOptions)
