@@ -42,6 +42,9 @@
   --color-primary-light: var(--primary-light);
   --color-brand-gold: var(--brand-gold);
   --color-brand-gold-dark: var(--brand-gold-dark);
+  --color-wine: var(--wine);
+  --color-sand: var(--sand);
+  --color-amber-ink: var(--amber-ink);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -101,6 +104,10 @@
   --accent-foreground: #09090B;
   --brand-gold: #FFB703;
   --brand-gold-dark: #E09F00;
+  /* Vinotinto profundo (fondos oscuros de marca, nunca negro) y ámbar legible sobre crema */
+  --wine: #5C0011;
+  --sand: #D9D2CE;
+  --amber-ink: #7A5200;
 
   /* Neutrales */
   --secondary: #F4F4F5;

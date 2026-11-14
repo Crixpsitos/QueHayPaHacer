@@ -20,6 +20,8 @@ interface ExploreSearchBarProps {
   initialPromoted?: boolean;
   initialMultiDate?: boolean;
   initialMaxPrice?: number;
+  /** Solo el campo de búsqueda (portada): sin título, fechas ni filtros; esos viven en /eventos. */
+  compact?: boolean;
 }
 
 export function ExploreSearchBar({
@@ -30,6 +32,7 @@ export function ExploreSearchBar({
   initialPromoted = false,
   initialMultiDate = false,
   initialMaxPrice,
+  compact = false,
 }: ExploreSearchBarProps = {}) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -133,6 +136,25 @@ export function ExploreSearchBar({
         ? "border-transparent bg-[#09090B] text-white shadow-dark-float"
         : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#09090B]/30 hover:text-[#09090B] hover:shadow-subtle",
     );
+
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit} role="search" className="w-full">
+        <label className="flex h-12 items-center gap-2.5 rounded-full border-[1.5px] border-border bg-background px-4 transition-colors focus-within:border-primary-dark focus-within:ring-3 focus-within:ring-ring/30">
+          <Search aria-hidden="true" className="size-4.5 shrink-0 text-muted-foreground" />
+          <input
+            type="search"
+            enterKeyHint="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Buscar un evento, un sitio o un plan"
+            placeholder="Busca eventos, sitios o planes"
+            className="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground"
+          />
+        </label>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="w-full">

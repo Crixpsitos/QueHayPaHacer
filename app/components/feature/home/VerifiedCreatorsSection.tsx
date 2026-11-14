@@ -2,7 +2,6 @@ import Link from "@/app/components/ui/navigation/IntentLink"
 import { BadgeCheck } from "lucide-react";
 import { cacheLife, cacheTag } from "next/cache";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { Section } from "@/app/components/layout/shared/Section";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 
@@ -31,11 +30,10 @@ export async function VerifiedCreatorsSection() {
   if (creators.length === 0) return null;
 
   return (
-    <Section spacing="sm" className="pb-12 sm:pb-16">
-      <div className="border-y border-border py-8 sm:py-10">
+    <section aria-labelledby="creadores-verificados" className="pb-4 sm:pb-8">
+      <div className="border-t border-border pt-8 sm:pt-9">
         <div className="mb-7 max-w-2xl">
-          <p className="text-xs font-semibold uppercase text-primary">Comunidad QHPA</p>
-          <h2 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2 id="creadores-verificados" className="text-2xl font-bold text-foreground sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
             Conoce a nuestros creadores verificados
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -56,11 +54,11 @@ export async function VerifiedCreatorsSection() {
                 <span className="relative">
                   <Avatar className="size-18 border-2 border-background shadow-md ring-2 ring-border transition-transform group-hover:scale-105 sm:size-20">
                     {creator.photoURL ? <AvatarImage src={creator.photoURL} alt={displayName} /> : null}
-                    <AvatarFallback className="bg-primary/10 font-semibold text-primary-dark">
+                    <AvatarFallback className="bg-primary-dark font-semibold text-white">
                       {initials(displayName)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border-2 border-background bg-primary text-white">
+                  <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border-2 border-background bg-brand-gold text-wine">
                     <BadgeCheck className="size-3.5" aria-hidden />
                   </span>
                 </span>
@@ -72,6 +70,6 @@ export async function VerifiedCreatorsSection() {
           })}
         </div>
       </div>
-    </Section>
+    </section>
   );
 }

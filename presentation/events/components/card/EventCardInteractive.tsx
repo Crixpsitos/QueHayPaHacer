@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useRef } from "react";
 import { readLikedIds, saveFreshLikes, setLikedId } from "@/app/lib/clientCache/likedIds";
 import { EventCard } from "./EventCard";
+import { RailEventCard } from "./RailEventCard";
+import { RAIL_CLASS, RAIL_ITEM_CLASS } from "@/app/components/layout/shared/Rail";
 import { cn } from "@/app/lib/utils/cn";
 
 interface EventCardInteractiveProps {
@@ -19,7 +21,9 @@ interface EventCardInteractiveProps {
   likedByEventId?: Record<string, boolean>;
   /** Estado vacío (no es un error: los errores van al error boundary). */
   info: { title: string; description?: string; action?: { href: string; label: string } };
-  variant?: "horizontal" | "vertical";
+  /** «rail»: carril que se desliza hacia el lado con la tarjeta limpia del Home (necesita `railId`). */
+  variant?: "horizontal" | "vertical" | "rail";
+  railId?: string;
   /** Máximo de columnas en modo vertical (default 4). */
   columns?: 2 | 3 | 4;
 }
@@ -39,6 +43,7 @@ export function EventCardInteractive({
   likedByEventId = {},
   info,
   variant = "horizontal",
+  railId,
   columns = 4,
 }: EventCardInteractiveProps) {
   const router = useRouter();
@@ -184,12 +189,19 @@ export function EventCardInteractive({
 
   return (
     <>
-      <div className={cn(
-        variant === "vertical"
+      <div id={variant === "rail" ? railId : undefined} className={cn(
+        variant === "rail" ? RAIL_CLASS : variant === "vertical"
           ? `grid grid-cols-1 sm:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""} gap-6`
           : "flex flex-wrap gap-6"
       )}>
         {events.map((event, index) => {
+          if (variant === "rail") {
+            return (
+              <div key={event.id} className={RAIL_ITEM_CLASS}>
+                <RailEventCard event={event} index={index} initialLiked={effectiveLikes[event.id] ?? false} onLike={handleLike} />
+              </div>
+            );
+          }
           const card = (
             <EventCard
               event={event}
