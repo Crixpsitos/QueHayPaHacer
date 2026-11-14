@@ -162,8 +162,7 @@ export const Navbar = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="dark"
-                    className="hidden! md:inline-flex!"
+                    className="hidden! md:inline-flex! bg-primary-dark text-white hover:bg-wine"
                   >
                     <Plus className="size-4" aria-hidden="true" />
                     {isCreator ? "Crear evento" : "Aportar"}

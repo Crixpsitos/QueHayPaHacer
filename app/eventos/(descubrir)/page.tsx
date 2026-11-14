@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { MapPin } from "lucide-react";
+import Link from "@/app/components/ui/navigation/IntentLink";
 import { Section } from "@/app/components/layout/shared/Section";
-import { ContentSection } from "@/app/components/layout/shared/ContentSection";
-import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsSectionsSkeleton";
-import { EventosRestSections } from "@/presentation/events/components/EventosRestSections";
-import { FeaturedEventsContainer } from "@/presentation/events/components/FeaturedEventsContainer";
-import { EventsCategoryChips } from "@/presentation/events/components/EventsCategoryChips";
-import { ExploreSearchBar } from "@/app/components/feature/home/ExploreSearchBar";
-import { getEventCollections } from "@/presentation/events/lib/eventCollections";
-import { fetchCollectionEvents } from "@/presentation/events/data/collectionFetchers";
+import { HomeSearchBar } from "@/app/components/feature/home/HomeSearchBar";
+import { AdSlot, adsEnabled } from "@/presentation/home/components/AdSlot";
+import { Cartelera } from "@/presentation/events/components/Cartelera";
+import { fetchCartelera } from "@/presentation/events/data/fetchCartelera";
 
 export const metadata: Metadata = {
   title: "Eventos en Ibagué",
@@ -18,56 +13,37 @@ export const metadata: Metadata = {
   alternates: { canonical: "/eventos" },
 };
 
+/** La cartelera: todos los eventos que vienen, en boletas ordenadas por fecha. */
 export default async function EventosIndexPage() {
-  const collections = await getEventCollections();
-  const categoryCollections = collections.filter((c) => c.kind === "category");
-  const featuredDef = collections.find((c) => c.kind === "featured");
-  const featuredEvents = featuredDef ? await fetchCollectionEvents(featuredDef) : [];
+  const { view, cats, jsonLd } = await fetchCartelera();
 
   return (
     <>
-      <Section spacing="sm" className="mt-4">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-[#71717A]">
-          <MapPin className="size-4 text-[#D42F3C]" />
-          <span>Ibagué, Tolima</span>
-        </div>
-
-        <h1
-          className="mt-2 text-4xl font-bold tracking-tight text-[#09090B]"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          Eventos en <span className="text-[#D42F3C]">Ibagué</span>
-        </h1>
-        <p className="mt-2 max-w-xl text-base leading-relaxed text-[#71717A]">
-          Lo más destacado, planes de fin de semana y eventos por categoría.
-        </p>
-
-        <div className="mt-6">
-          <ExploreSearchBar />
-        </div>
-
-        {categoryCollections.length > 0 && (
-          <div className="mt-6">
-            <p className="mb-3 text-sm font-medium text-[#71717A]">
-              Explorar por categoría
+      {jsonLd.map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: html }} />
+      ))}
+      <Section spacing="sm" className="pt-5 sm:pt-7" containerClassName="flex flex-col gap-5 sm:gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <h1 className="font-heading text-[2rem] font-extrabold leading-[1.05] tracking-tight sm:text-[2.875rem]">Eventos en Ibagué</h1>
+            <p className="mt-1.5 text-[0.9375rem] text-muted-foreground sm:text-base">
+              {view.total ? `${view.total} por venir. ${view.nextLabel}` : "La cartelera de la ciudad, por fecha."}
             </p>
-            <EventsCategoryChips collections={categoryCollections} />
           </div>
-        )}
+          <div className="w-full sm:w-85"><HomeSearchBar /></div>
+        </div>
+        <Cartelera view={view} cats={cats} ad={adsEnabled() ? <AdSlot format="rectangle" /> : null} />
       </Section>
 
-      {/* Featured fuera del Suspense: la imagen LCP queda en el HTML inicial con priority */}
-      <ContentSection
-        title="Eventos destacados"
-        action={{ href: "/eventos-destacados-ibague" }}
-      >
-        <FeaturedEventsContainer featuredEvents={featuredEvents} />
-      </ContentSection>
-
-      {/* Fin de semana + todos: streaming cuando estén listos */}
-      <Suspense fallback={<EventsSectionsSkeleton />}>
-        <EventosRestSections />
-      </Suspense>
+      <Section spacing="sm" className="pt-2 sm:pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-7 gap-y-4 rounded-3xl bg-primary-dark px-5 py-6 text-white sm:px-7">
+          <div className="min-w-0 flex-[1_1_18rem]">
+            <h2 className="font-heading text-[1.375rem] font-bold leading-tight sm:text-[1.625rem]">¿Tu evento no está en la cartelera?</h2>
+            <p className="mt-1.5 text-sm text-white/85 sm:text-base">Publícalo gratis y sale aquí, en su día.</p>
+          </div>
+          <Link href="/eventos/create" className="flex min-h-12 w-full items-center justify-center rounded-full bg-brand-gold px-6 font-semibold text-wine outline-none hover:bg-brand-gold/90 focus-visible:ring-3 focus-visible:ring-white/70 sm:w-auto">Publicar un evento</Link>
+        </div>
+      </Section>
     </>
   );
 }

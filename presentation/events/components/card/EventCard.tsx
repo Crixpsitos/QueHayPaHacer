@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "@/app/components/ui/navigation/IntentLink"
 import { useState, useSyncExternalStore } from "react";
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike";
-import { CalendarCheck, Clock, MapPin, Users } from "lucide-react";
+import { CalendarCheck, Clock, Eye, MapPin, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { cn } from "@/app/lib/utils/cn";
 import { CardLikeButton } from "./CardLikeButton";
@@ -235,6 +235,13 @@ export const EventCard = ({
                     {compactCount(registered)}
                   </span>
                 )
+              )}
+              {(event.analytics?.views ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="size-3.5" aria-hidden="true" />
+                  <span className="sr-only">Vistas:</span>
+                  {compactCount(event.analytics!.views!)}
+                </span>
               )}
               {likes > 0 && (
                 <span className="inline-flex items-center gap-1">

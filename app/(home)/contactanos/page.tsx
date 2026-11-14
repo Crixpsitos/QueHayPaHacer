@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const ContactanosPage = () => {
   return (
     <Section spacing="md">
-      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-12">
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
         <div className="mx-auto max-w-xl">
 
           {/* Header */}

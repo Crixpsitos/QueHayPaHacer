@@ -1,16 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "@/app/components/ui/navigation/IntentLink"
-import { ArrowRight, CalendarPlus, MapPin, X } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
-import { Section } from "@/app/components/layout/shared/Section";
+import { CalendarPlus, MapPin, X } from "lucide-react";
 import { useAuth } from "@/app/store/auth/AuthContext";
 import { useModalStore } from "@/app/store/modal/modal.store";
 import { LoginForm } from "@/app/components/feature/auth/LoginForm";
 import { loginModalAction } from "@/app/actions/auth/login-modal.action";
-
-const CONTRIBUTION_IMAGE = "/banners/home-community.jpg";
 
 export function ContributionBanner() {
   const { user, refreshUser, isHydrating } = useAuth();
@@ -46,60 +41,39 @@ export function ContributionBanner() {
   };
 
   return (
-    <Section spacing="sm">
-      <div className="relative isolate min-h-80 overflow-hidden rounded-2xl bg-zinc-950 shadow-card sm:min-h-88">
-        <Image
-          src={CONTRIBUTION_IMAGE}
-          alt="Personas compartiendo una experiencia en la ciudad"
-          fill
-          sizes="(max-width: 1536px) 100vw, 1536px"
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/65 to-black/15" aria-hidden />
-        <div className="absolute inset-0 bg-linear-to-t from-black/45 via-transparent to-transparent" aria-hidden />
-
-        <div className="relative flex min-h-80 max-w-2xl flex-col justify-end px-6 py-8 text-white sm:min-h-88 sm:px-10 sm:py-10 lg:px-12">
-          <span className="mb-4 w-fit rounded-full border border-white/25 bg-black/25 px-3 py-1 text-xs font-semibold uppercase text-white backdrop-blur-sm">
-            Comparte lo que está pasando
-          </span>
-          <h2 className="max-w-xl text-2xl font-bold sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
+    <div className="flex flex-col gap-5 rounded-3xl bg-wine p-5 text-white sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-8">
+        <div className="max-w-xl">
+          <h2 className="font-heading text-[1.375rem] font-bold leading-tight sm:text-3xl">
             ¿Conoces un plan o un lugar que todos deberían descubrir?
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
-            Recuérdalo: puedes crear eventos y proponer sitios para que más personas los encuentren en QHPA.
+          <p className="mt-2 text-sm text-white/85 sm:mt-2.5 sm:text-base">
+            Crea un evento o propón un sitio para que más gente lo encuentre aquí.
           </p>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Button asChild size="lg">
-              {user ? (
-                <Link href="/eventos/create">
-                  <CalendarPlus className="size-4" aria-hidden />
-                  Crear evento
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-              ) : (
-                <button type="button" disabled={isHydrating} onClick={() => openLoginModal("/eventos/create")}>
-                  <CalendarPlus className="size-4" aria-hidden />
-                  Crear evento
-                  <ArrowRight className="size-4" aria-hidden />
-                </button>
-              )}
-            </Button>
-            <Button asChild size="lg" className="border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white">
-              {user ? (
-                <Link href="/sites/create">
-                  <MapPin className="size-4" aria-hidden />
-                  Proponer sitio
-                </Link>
-              ) : (
-                <button type="button" disabled={isHydrating} onClick={() => openLoginModal("/sites/create")}>
-                  <MapPin className="size-4" aria-hidden />
-                  Proponer sitio
-                </button>
-              )}
-            </Button>
-          </div>
         </div>
-      </div>
-    </Section>
+        <div className="flex gap-2 sm:shrink-0 sm:gap-2.5">
+          {user ? (
+            <Link href="/eventos/create" className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-brand-gold px-6 font-semibold text-wine outline-none transition-colors hover:bg-brand-gold-dark focus-visible:ring-3 focus-visible:ring-white/70 sm:flex-none">
+              <CalendarPlus className="size-4" aria-hidden />
+              Crear evento
+            </Link>
+          ) : (
+            <button type="button" disabled={isHydrating} onClick={() => openLoginModal("/eventos/create")} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-brand-gold px-6 font-semibold text-wine outline-none transition-colors hover:bg-brand-gold-dark focus-visible:ring-3 focus-visible:ring-white/70 disabled:opacity-60 sm:flex-none">
+              <CalendarPlus className="size-4" aria-hidden />
+              Crear evento
+            </button>
+          )}
+          {user ? (
+            <Link href="/sites/create" className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border-[1.5px] border-white px-6 font-semibold text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-3 focus-visible:ring-white/70 sm:flex-none">
+              <MapPin className="size-4" aria-hidden />
+              Proponer sitio
+            </Link>
+          ) : (
+            <button type="button" disabled={isHydrating} onClick={() => openLoginModal("/sites/create")} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border-[1.5px] border-white px-6 font-semibold text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-3 focus-visible:ring-white/70 disabled:opacity-60 sm:flex-none">
+              <MapPin className="size-4" aria-hidden />
+              Proponer sitio
+            </button>
+          )}
+        </div>
+    </div>
   );
 }

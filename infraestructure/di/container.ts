@@ -14,6 +14,8 @@ import { CategoriesFirebaseRepository } from "../firebase/repositories/categorie
 import { CategoriesAdapter } from "../adapters/categories/CategoriesAdapter";
 import { CategoriesFirebaseMapper } from "../firebase/mappers/categories/CategoriesFirebaseMapper";
 import { CategoriesService } from "@/application/services/categories/CategoriesService";
+import { EscapadasFirebaseRepository } from "../firebase/repositories/escapadas/EscapadasFirebaseRepository";
+import { EscapadasService } from "@/application/services/escapadas/EscapadasService";
 import { EventsFirebaseRepository } from "../firebase/repositories/events/EventsFirebaseRepository";
 import { EventsAdapter } from "../adapters/events/EventsAdapter";
 import { EventsFirebaseMapper } from "../firebase/mappers/events/EventsFirebaseMapper";
@@ -152,6 +154,9 @@ export const createServerContainer = () => {
   const categoriesFirebaseRepository = new CategoriesFirebaseRepository(getFirebaseFirestore());
   const categoriesRepository = new CategoriesAdapter(categoriesFirebaseRepository, new CategoriesFirebaseMapper());
   const categoriesService = new CategoriesService(categoriesRepository);
+
+  // escapadas (pueblos cercanos que carga el administrador)
+  const escapadasService = new EscapadasService(new EscapadasFirebaseRepository(getFirebaseFirestore()));
 
   // events
   const eventsFirebaseRepository = new EventsFirebaseRepository(getFirebaseFirestore());
@@ -556,6 +561,7 @@ export const createServerContainer = () => {
     userService,
     campaignService,
     categoriesService,
+    escapadasService,
     eventsService,
     eventSessionService,
     eventInteractionsService,

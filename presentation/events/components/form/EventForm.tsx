@@ -678,7 +678,7 @@ export const EventForm = ({
 
       {/* ── HEADER STICKY ──────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white border-b border-[#F4F4F5]">
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           {/* Izquierda: X + título del evento */}
           <div className="flex items-center gap-2.5 min-w-0">
             <button
@@ -758,7 +758,7 @@ export const EventForm = ({
       </header>
 
       {/* ── BODY CON CONTAINER ─────────────────────────────────── */}
-      <div className="mx-auto flex-1 max-w-screen-2xl px-4 py-8 sm:px-6 md:px-8 lg:px-12">
+      <div className="mx-auto flex-1 max-w-screen-2xl px-4 py-8 sm:px-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr_300px]">
 
           {/* ── COL 1: PASOS + BADGES ──────────────────────────── */}
@@ -1042,7 +1042,7 @@ export const EventForm = ({
 
       {/* ── BARRA DE ACCIONES STICKY ────────────────────────────── */}
       <div className="sticky bottom-0 z-40 bg-white border-t border-[#F4F4F5]">
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3 sm:px-6 md:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3 sm:px-6">
           <Button
             type="button"
             variant="ghost"

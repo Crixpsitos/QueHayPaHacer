@@ -132,7 +132,7 @@ function ResultsSkeleton() {
 // depende de la URL va en su <Suspense>. Cambiar un filtro solo repone el esqueleto de la lista.
 export default function ActividadesHubPage({ searchParams }: PageProps) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-0 sm:px-6 sm:pt-6">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pt-0 sm:px-6 sm:pt-6">
       <Header />
       <div className="grid gap-10 py-8">
         <Suspense fallback={null}><Featured searchParams={searchParams} /></Suspense>
