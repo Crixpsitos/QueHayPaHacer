@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { Home, Minus, MousePointerClick, Plus } from "lucide-react"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import "maplibre-gl/dist/maplibre-gl.css"
+import { useRemountOnReveal } from "@/app/lib/hooks/useRemountOnReveal"
 
 import { MapSearch } from "./MapSearch"
 import { PickMarkerPin, BrowseMarkerPin } from "./SiteMarker"
@@ -44,6 +45,7 @@ interface PickProps {
 type SitesMapProps = BrowseProps | PickProps
 
 export function SitesMap(props: SitesMapProps) {
+  const mapKey = useRemountOnReveal() // al volver con «Atrás» los marcadores desaparecían
   const mapRef = useRef<MapRef>(null)
   const [dragging, setDragging] = useState(false)
 
@@ -90,6 +92,7 @@ export function SitesMap(props: SitesMapProps) {
   return (
     <div className="relative size-full overflow-hidden">
       <Map
+        key={mapKey}
         ref={mapRef}
         initialViewState={{ latitude: IBAGUE_CENTER.latitude, longitude: IBAGUE_CENTER.longitude, zoom: DEFAULT_ZOOM }}
         mapStyle="https://tiles.openfreemap.org/styles/bright"
