@@ -47,3 +47,17 @@ test("formato de pesos", () => assert.equal(cop(1234567), "$1.234.567"))
 test("la etiqueta «Para llevar» existe y se puede combinar con las de dieta", () => {
   assert.equal(validateProducts([p({ tags: ["para-llevar", "vegano"] })]), null)
 })
+
+test("producto que no se come: sin etiquetas de dieta ni trazas; etiquetas propias limpias", async () => {
+  const { normalizeProducts, validateProducts, tagsFor, isFood } = await import("./Product")
+  const base = { id: "a", name: "Orquídea", description: "", priceCop: 95000, unit: "unidad" as const, section: "", photoUrl: "", discount: null }
+  const [n] = normalizeProducts([{ ...base, food: false, tags: ["vegano", "organico"], traces: "leche", customTags: [" Interior ", "interior", ""] }])
+  assert.deepEqual(n.tags, ["organico"])
+  assert.equal(n.traces, "")
+  assert.deepEqual(n.customTags, ["Interior", "interior"])
+  assert.equal(isFood({}), true) // guardados antes: comida
+  assert.equal(tagsFor(false).includes("vegano"), false)
+  assert.equal(tagsFor(true).includes("vegano"), true)
+  assert.ok(validateProducts([{ ...base, tags: [], traces: "", customTags: ["www.x.com"] }]))
+  assert.equal(validateProducts([{ ...base, tags: [], traces: "", customTags: ["Para interior"] }]), null)
+})

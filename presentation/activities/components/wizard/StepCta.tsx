@@ -9,19 +9,23 @@ import { parseMoney } from "@/presentation/activities/lib/activityForm"
 import { Field, RadioCard, selectClass } from "./ui"
 import type { StepProps } from "./StepKind"
 
-const KINDS: { value: CtaKind; label: string; placeholder: string; hint: string; defaultLabel: string }[] = [
-  { value: "whatsappGroup", label: "Unirse a un grupo de WhatsApp", placeholder: "https://chat.whatsapp.com/…", hint: "El enlace de invitación de tu grupo. Ahí pueden coordinar el punto de encuentro.", defaultLabel: "Unirme al grupo" },
-  { value: "whatsapp", label: "Escribir por WhatsApp", placeholder: "300 123 4567", hint: "Un celular colombiano de 10 dígitos.", defaultLabel: "Escribir por WhatsApp" },
-  { value: "website", label: "Página web", placeholder: "https://…", hint: "Solo enlaces seguros (https).", defaultLabel: "Ver más" },
-  { value: "reserveLink", label: "Enlace para reservar", placeholder: "https://…", hint: "Donde se hace la reserva.", defaultLabel: "Reservar" },
-  { value: "buyLink", label: "Enlace para comprar", placeholder: "https://…", hint: "Donde se compra o se paga. El pago no ocurre en Qué Hay Pa Hacer.", defaultLabel: "Comprar" },
-  { value: "instagram", label: "Instagram", placeholder: "https://www.instagram.com/tu_cuenta", hint: "El enlace de tu perfil.", defaultLabel: "Ver en Instagram" },
-  { value: "phone", label: "Llamar por teléfono", placeholder: "300 123 4567", hint: "Celular o fijo de 10 dígitos.", defaultLabel: "Llamar" },
+type Kind = { value: CtaKind; group: string; label: string; placeholder: string; hint: string; defaultLabel: string }
+const KINDS: Kind[] = [
+  { value: "whatsapp", group: "Hablar contigo", label: "Preguntar por WhatsApp", placeholder: "300 123 4567", hint: "Un celular colombiano de 10 dígitos.", defaultLabel: "Preguntar por WhatsApp" },
+  { value: "phone", group: "Hablar contigo", label: "Llamar por teléfono", placeholder: "300 123 4567", hint: "Celular o fijo de 10 dígitos.", defaultLabel: "Llamar" },
+  { value: "whatsappGroup", group: "Hablar contigo", label: "Unirse a un grupo de WhatsApp", placeholder: "https://chat.whatsapp.com/…", hint: "El enlace de invitación de tu grupo. Ahí pueden coordinar el punto de encuentro.", defaultLabel: "Unirme al grupo" },
+  { value: "reserveLink", group: "Reservar o comprar en otra página", label: "Reservar en otra página", placeholder: "https://…", hint: "Donde se hace la reserva. Solo si NO usas las reservas de Qué Hay Pa Hacer.", defaultLabel: "Reservar" },
+  { value: "buyLink", group: "Reservar o comprar en otra página", label: "Comprar en otra página", placeholder: "https://…", hint: "Donde se compra o se paga. El pago no ocurre en Qué Hay Pa Hacer.", defaultLabel: "Comprar" },
+  { value: "website", group: "Más información", label: "Página web", placeholder: "https://…", hint: "Solo enlaces seguros (https).", defaultLabel: "Ver más" },
+  { value: "instagram", group: "Más información", label: "Instagram", placeholder: "https://www.instagram.com/tu_cuenta", hint: "El enlace de tu perfil.", defaultLabel: "Ver en Instagram" },
 ]
 
 /** Paso 7: reservas en QHPA (cupo por salida, cómo se paga) y el botón a otro lugar. Las dos son opcionales. */
 export function StepCta({ form, patch }: StepProps) {
   const k = KINDS.find((x) => x.value === form.ctaKind)
+  // Con reservas en QHPA prendidas, un segundo «Reservar» externo confunde: se oculta (si ya estaba elegido, sigue visible para poder quitarlo).
+  const kinds = KINDS.filter((x) => x.value !== "reserveLink" || !form.joinEnabled || form.ctaKind === "reserveLink")
+  const groups = [...new Set(kinds.map((x) => x.group))]
   const paid = isPaidActivity(form.priceOptions.map((p) => ({ amountCop: parseMoney(p.amount) || 0 })))
   // local: al borrar los dígitos el campo no debe desaparecer
   const [capped, setCapped] = useState(form.joinCapacity !== "")
@@ -58,11 +62,11 @@ export function StepCta({ form, patch }: StepProps) {
           </>
         ) : null}
       </section>
-      <Field label="Botón a otro lugar" optional hint="Grupo de WhatsApp, enlace, llamada o reserva externa.">
+      <Field label="Botón a otro lugar" optional hint={form.kind === "site" ? "Si tu sitio tiene carta, ya salen «Preguntar por WhatsApp» y «Reservar» con los números de la carta. Agrega un botón aquí solo si necesitas otro destino." : "Grupo de WhatsApp, enlace, llamada o reserva externa."}>
         {(id) => (
           <select id={id} className={selectClass} value={form.ctaKind} onChange={(e) => patch({ ctaKind: e.target.value as CtaKind | "", ctaValue: "", ctaLabel: "" })}>
             <option value="">Sin botón</option>
-            {KINDS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
+            {groups.map((g) => <optgroup key={g} label={g}>{kinds.filter((x) => x.group === g).map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</optgroup>)}
           </select>
         )}
       </Field>
