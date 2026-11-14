@@ -209,13 +209,14 @@ export class SitesService {
   }
 
   /** Datos mínimos para vincular y mostrar actividades de un sitio: autor, y si el sitio es público y está activo. */
-  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean; owner: { displayName: string; photoURL: string } | null; geo: { latitude: number; longitude: number } | null; address: string } | null> {
+  async getActivityLinkSnapshot(id: string): Promise<{ name: string; slug: string; authorId: string | null; published: boolean; active: boolean; linkable: boolean; owner: { displayName: string; photoURL: string } | null; geo: { latitude: number; longitude: number } | null; address: string; coverUrl: string } | null> {
     const dto = await this.adapter.findRawById(id)
     if (!dto) return null
     const g = dto.location?.geo
     return {
       geo: g && isUsableCoordinates(g) ? { latitude: g.latitude, longitude: g.longitude } : null,
       address: dto.location?.address ?? "",
+      coverUrl: (dto.media as { type?: string; isCover?: boolean; status?: string; url?: string }[] | undefined)?.find((m) => m.type === "image" && m.isCover && m.status !== "error")?.url ?? "",
       name: dto.name,
       slug: dto.slug ?? "",
       authorId: authorIdOf(dto) ?? null,

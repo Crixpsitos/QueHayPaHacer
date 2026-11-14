@@ -8,7 +8,7 @@ import { Button } from "@/app/components/ui/button/button"
 import { ShareKit } from "@/presentation/shared/components/ShareKit"
 
 /** Pantalla final: en revisión (cuenta nueva) o publicada (cuenta de confianza / QHPA). */
-export function Submitted({ id, title, slug, coverUrl, moderationStatus, onAnother }: { id: string; title: string; slug: string; coverUrl?: string; moderationStatus: "pending" | "approved" | "rejected"; onAnother?: () => void }) {
+export function Submitted({ id, title, slug, coverUrl, placeLogoUrl, moderationStatus, onAnother }: { id: string; title: string; slug: string; coverUrl?: string; placeLogoUrl?: string; moderationStatus: "pending" | "approved" | "rejected"; onAnother?: () => void }) {
   const live = moderationStatus === "approved"
   // El kit para compartir se abre al terminar (spec A25); se puede cerrar y reabrir con el botón.
   const [kit, setKit] = useState(true)
@@ -33,7 +33,7 @@ export function Submitted({ id, title, slug, coverUrl, moderationStatus, onAnoth
         {onAnother ? <Button type="button" variant="outline" size="lg" className="h-12 text-base" onClick={onAnother}><Plus aria-hidden /> Otra actividad</Button> : null}
         <Button asChild variant={live ? "outline" : "default"} size="lg" className="h-12 text-base"><Link href="/actividades/mis">Ir a mis actividades</Link></Button>
       </div>
-      {kit ? <ShareKit open kind="activity" id={id} title={title} imageUrl={coverUrl} pendingReview={!live} onClose={() => setKit(false)} /> : null}
+      {kit ? <ShareKit open kind="activity" id={id} title={title} imageUrl={coverUrl} placeLogoUrl={placeLogoUrl} pendingReview={!live} onClose={() => setKit(false)} /> : null}
     </div>
   )
 }

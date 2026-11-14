@@ -163,7 +163,7 @@ export function ActivityWizard({ context, initial }: Props) {
     else setStep((s) => s - 1)
   }
 
-  if (done) return <Submitted id={activityId!} title={form.title} slug={done.slug} coverUrl={media.find((m) => m.type === "image" && m.isCover)?.url} moderationStatus={done.moderationStatus} onAnother={initial ? undefined : reset} />
+  if (done) return <Submitted id={activityId!} title={form.title} slug={done.slug} coverUrl={media.find((m) => m.type === "image" && m.isCover)?.url} placeLogoUrl={context.sites.find((s) => s.id === form.siteId)?.ownerPhoto || undefined} moderationStatus={done.moderationStatus} onAnother={initial ? undefined : reset} />
 
   const head = TITLES[step]
   let body: ReactNode

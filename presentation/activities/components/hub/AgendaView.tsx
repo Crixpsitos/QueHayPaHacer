@@ -1,3 +1,4 @@
+import { cardSubtitle, cardTitle } from "@/presentation/activities/lib/publicView"
 import Image from "next/image"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import type { AgendaDayView } from "@/presentation/activities/data/fetchers"
@@ -31,8 +32,8 @@ export function AgendaView({ days, showDayTitles }: { days: AgendaDayView[]; sho
                     </span>
                     <span className="grid min-w-0 flex-1 content-center gap-1 p-4">
                       <span className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ background: cat.bg, color: cat.ink }}><cat.Icon className="size-3.5" aria-hidden />{e.card.categoryName}</span>
-                      <span className="font-heading text-xl font-bold leading-snug tracking-tight">{e.card.title}</span>
-                      <span className="text-sm text-muted-foreground">{e.card.hostName}</span>
+                      <span className="font-heading text-xl font-bold leading-snug tracking-tight">{cardTitle(e.card.title, e.card.place)}</span>
+                      <span className="text-sm text-muted-foreground">{cardSubtitle(e.card)}</span>
                       <span className="mt-0.5 text-sm font-semibold">{e.card.priceFrom}</span>
                     </span>
                   </Link>

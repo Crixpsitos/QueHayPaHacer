@@ -136,3 +136,11 @@ test("paso 7: cupo entre 1 y 500; si cuesta, 'cómo se paga' es obligatorio", ()
   const free = filled({ joinEnabled: true, joinCapacity: "", priceOptions: [{ label: "Gratis", amount: "0", unit: "persona", includes: [], note: "" }] })
   assert.equal(stepError(7, free), null) // gratis: no hace falta cómo se paga
 })
+
+test("ctaInputValue: deshace la normalización para poder editar y volver a guardar", async () => {
+  const { ctaInputValue } = await import("./activityForm")
+  assert.equal(ctaInputValue({ kind: "whatsapp", value: "https://wa.me/573156324143" }), "3156324143")
+  assert.equal(ctaInputValue({ kind: "phone", value: "+573156324143" }), "3156324143")
+  assert.equal(ctaInputValue({ kind: "website", value: "https://x.co" }), "https://x.co")
+  assert.equal(ctaInputValue(null), "")
+})

@@ -11,6 +11,8 @@ export interface PosterInput {
   url: string
   /** Portada de la ficha (opcional). Si el servidor no permite leerla desde el navegador, se usa un fondo de marca. */
   imageUrl?: string
+  /** Logo del local donde ocurre (opcional): sale arriba a la derecha. */
+  placeLogoUrl?: string
   format?: PosterFormat
 }
 
@@ -51,7 +53,7 @@ export async function buildPoster(i: PosterInput): Promise<HTMLCanvasElement> {
   const story = i.format === "story"
   const H = story ? 1920 : 1350
   const heroH = story ? 1100 : 780
-  const [cover, logo] = await Promise.all([i.imageUrl ? loadImage(sameOrigin(i.imageUrl), false) : Promise.resolve(null), loadImage("/logo.png", false)])
+  const [cover, logo, placeLogo] = await Promise.all([i.imageUrl ? loadImage(sameOrigin(i.imageUrl), false) : Promise.resolve(null), loadImage("/logo.png", false), i.placeLogoUrl ? loadImage(sameOrigin(i.placeLogoUrl), false) : Promise.resolve(null)])
 
   const c = document.createElement("canvas")
   c.width = W
@@ -78,6 +80,16 @@ export async function buildPoster(i: PosterInput): Promise<HTMLCanvasElement> {
   if (logo) g.drawImage(logo, 58, 56, 68, 68)
   g.fillStyle = "#0F172A"; g.font = `700 32px ${FONT}`; g.textBaseline = "middle"
   g.fillText("Que Hay Pa Hacer?", 138, 91)
+
+  // ── logo del local arriba a la derecha: se comparte la actividad, pero también dónde es
+  if (placeLogo) {
+    const d = 120, cx = W - 48 - d / 2, cy = 48 + d / 2
+    g.fillStyle = "rgba(255,255,255,0.96)"
+    g.beginPath(); g.arc(cx, cy, d / 2 + 6, 0, Math.PI * 2); g.fill()
+    g.save(); g.beginPath(); g.arc(cx, cy, d / 2, 0, Math.PI * 2); g.clip()
+    drawCover(g, placeLogo, cx - d / 2, cy - d / 2, d, d)
+    g.restore()
+  }
 
   // ── título y datos, de abajo hacia arriba sobre la foto
   g.textBaseline = "alphabetic"

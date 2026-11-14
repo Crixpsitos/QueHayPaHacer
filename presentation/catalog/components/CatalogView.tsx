@@ -119,7 +119,7 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
               {groups.length > 1 && <h3 className="font-heading text-lg font-bold text-primary-dark">{g.section}</h3>}
               <ul className="grid gap-3">
                 {g.items.map((p) => { const pr = productPrice(p, today); const n = qty[p.id] ?? 0; return (
-                  <li key={p.id} className="flex gap-3 rounded-3xl border border-gray-200 bg-white p-3">
+                  <li key={p.id} className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-3xl border border-gray-200 bg-white p-3 sm:flex">
                     <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl" style={{ background: sectionTone(p.section).bg }}>
                       {p.photoUrl && <img src={p.photoUrl} alt={p.name} loading="lazy" className="h-full w-full object-cover" />}
                       {pr.was && <span className="absolute left-1 top-1 rounded-full bg-primary-dark px-2 py-0.5 text-[11px] font-bold text-white">-{discountPercent(pr.was, pr.now)}%</span>}
@@ -130,8 +130,8 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
                       <span className="flex flex-wrap gap-1">{p.tags.map((t) => <span key={t} className={`${pill} text-[11px] ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}</span>
                       {p.traces && <span className="text-xs text-muted-foreground">Puede contener trazas de {p.traces}.</span>}
                     </div>
-                    <div className="grid content-between justify-items-end gap-2">
-                      <span className="grid justify-items-end"><span className="font-heading text-lg font-bold text-primary-dark">{cop(pr.now)}</span><span className="text-xs text-muted-foreground">{UNIT_LABELS[p.unit]}</span>{pr.was && <span className="text-xs text-muted-foreground line-through">{cop(pr.was)}</span>}</span>
+                    <div className="col-span-2 flex items-center justify-between gap-3 border-t border-gray-100 pt-2 sm:col-span-1 sm:grid sm:content-between sm:justify-items-end sm:border-0 sm:pt-0">
+                      <span className="grid sm:justify-items-end"><span className="font-heading text-lg font-bold text-primary-dark">{cop(pr.now)}</span><span className="text-xs text-muted-foreground">{UNIT_LABELS[p.unit]}</span>{pr.was && <span className="text-xs text-muted-foreground line-through">{cop(pr.was)}</span>}</span>
                       {canAsk && (n === 0 ? <button type="button" onClick={() => step(p.id, 1)} className="min-h-11 rounded-full border-[1.5px] border-primary-dark px-4 text-sm font-semibold text-primary-dark">Me interesa</button> : (
                         <span className="flex items-center gap-1"><button type="button" aria-label={`Menos ${p.name}`} onClick={() => step(p.id, -1)} className="size-11 rounded-full border border-gray-300 text-lg">-</button><span className="min-w-5 text-center font-bold">{n}</span><button type="button" aria-label={`Más ${p.name}`} onClick={() => step(p.id, 1)} className="size-11 rounded-full bg-primary-dark text-lg text-white">+</button></span>
                       ))}
