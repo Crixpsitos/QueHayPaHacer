@@ -2,13 +2,16 @@
 
 import Map, { Marker } from "react-map-gl/maplibre"
 import "maplibre-gl/dist/maplibre-gl.css"
+import { useRemountOnReveal } from "@/app/lib/hooks/useRemountOnReveal"
 import type { CSSProperties } from "react"
 
 /** Mapa de solo lectura con un pin del color de la categoría. Sin arrastre ni zoom con la rueda: es para ubicarse, no para explorar. */
 export default function PlaceMap({ latitude, longitude, bg, ink, label }: { latitude: number; longitude: number; bg: string; ink: string; label: string }) {
+  const mapKey = useRemountOnReveal() // al volver con «Atrás» los marcadores desaparecían
   const pin: CSSProperties = { background: bg, color: ink }
   return (
     <Map
+        key={mapKey}
       initialViewState={{ latitude, longitude, zoom: 15.5 }}
       mapStyle="https://tiles.openfreemap.org/styles/bright"
       scrollZoom={false}

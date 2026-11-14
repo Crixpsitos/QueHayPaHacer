@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import Map, { Marker, NavigationControl } from "react-map-gl/maplibre"
 import "maplibre-gl/dist/maplibre-gl.css"
+import { useRemountOnReveal } from "@/app/lib/hooks/useRemountOnReveal"
 import { cn } from "@/app/lib/utils/cn"
 import { CLOCK_FIRST_HOUR, CLOCK_LAST_HOUR, clampClockHour, hhmmToMinutes, hourlyCounts, isActiveAt } from "@/domain/entities/activities/dayClock"
 import { bogotaDateIso } from "@/domain/entities/activities/value-objects/occurrences"
@@ -19,6 +20,7 @@ const bogotaHour = () => Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digi
  * está pasando a esa hora se encienden y el resto queda en gris. La hora de «ahora» se calcula en el navegador (la página se cachea).
  */
 export function HubMap({ data }: { data: HubMapData }) {
+  const mapKey = useRemountOnReveal() // al volver con «Atrás» los marcadores desaparecían
   const [hour, setHour] = useState<number | null>(null)
   const [selected, setSelected] = useState<MapPin | null>(null)
   const counts = useMemo(() => hourlyCounts(data.hours.map((hhmm) => ({ hhmm }))), [data.hours])
@@ -64,7 +66,7 @@ export function HubMap({ data }: { data: HubMapData }) {
       </div>
 
       <div className="relative h-[26rem] sm:h-[30rem]">
-        <Map initialViewState={{ latitude: IBAGUE_CENTER.latitude, longitude: IBAGUE_CENTER.longitude, zoom: 12.5 }} mapStyle="https://tiles.openfreemap.org/styles/bright" scrollZoom={false} dragRotate={false} attributionControl={{ compact: true }} style={{ width: "100%", height: "100%" }} onClick={() => setSelected(null)}>
+        <Map key={mapKey} initialViewState={{ latitude: IBAGUE_CENTER.latitude, longitude: IBAGUE_CENTER.longitude, zoom: 12.5 }} mapStyle="https://tiles.openfreemap.org/styles/bright" scrollZoom={false} dragRotate={false} attributionControl={{ compact: true }} style={{ width: "100%", height: "100%" }} onClick={() => setSelected(null)}>
           <NavigationControl position="bottom-right" showCompass={false} />
           {data.pins.map((p) => {
             const c = categoryStyle(p.categorySlug)

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react"
 import Map, { AttributionControl, Marker, NavigationControl, type MapRef } from "react-map-gl/maplibre"
 import "maplibre-gl/dist/maplibre-gl.css"
 import { cn } from "@/app/lib/utils/cn"
+import { useRemountOnReveal } from "@/app/lib/hooks/useRemountOnReveal"
 import { DEFAULT_ZOOM, IBAGUE_CENTER } from "../../lib/constants"
 
 export interface GuiaPin { id: string; name: string; lat: number; lng: number; /** Número de la lista; sin número es un punto pequeño. */ n: number | null }
@@ -11,7 +12,14 @@ export interface GuiaPin { id: string; name: string; lat: number; lng: number; /
 const FIT = { padding: 56, maxZoom: 15, duration: 600 }
 
 /** Mapa de la guía: pines numerados que coinciden con la lista. Tocar un pin lo elige (la tarjeta la pinta quien lo usa). */
-export default function GuiaMap({ pins, activeId, onSelect }: { pins: GuiaPin[]; activeId: string | null; onSelect: (id: string | null) => void }) {
+export default function GuiaMap(props: GuiaMapProps) {
+  // Al volver a la página con «Atrás» los marcadores desaparecían: se remonta el mapa cuando la página reaparece.
+  return <GuiaMapInner key={useRemountOnReveal()} {...props} />
+}
+
+interface GuiaMapProps { pins: GuiaPin[]; activeId: string | null; onSelect: (id: string | null) => void }
+
+function GuiaMapInner({ pins, activeId, onSelect }: GuiaMapProps) {
   const ref = useRef<MapRef>(null)
   const bounds = useMemo((): [[number, number], [number, number]] | null => {
     if (!pins.length) return null
