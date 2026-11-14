@@ -88,3 +88,10 @@ test("vista pública: indica si recibe reservas y si cuesta, sin exponer cómo s
   const none = toPublicView(makeActivity({ join: null }))
   assert.deepEqual([none.joinEnabled, none.paid], [false, true])
 })
+
+test("cardTitle: agrega «en {sitio}» solo si el título aún no lo nombra", async () => {
+  const { cardTitle } = await import("./publicView")
+  assert.equal(cardTitle("Tomar café", { name: "Deconatural Home" }), "Tomar café en Deconatural Home")
+  assert.equal(cardTitle("Café en deconatural home", { name: "Deconatural Home" }), "Café en deconatural home")
+  assert.equal(cardTitle("Tomar café", null), "Tomar café")
+})

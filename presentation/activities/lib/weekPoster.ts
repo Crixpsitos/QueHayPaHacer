@@ -16,7 +16,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   })
 }
 /** Las fotos se piden por la ruta de imágenes de la propia web (mismo origen: el canvas no se «mancha» y se puede descargar). */
-const photo = (u: string | null) => (u ? loadImage(/^https?:/.test(u) ? `/_next/image?url=${encodeURIComponent(u)}&w=256&q=70` : u) : Promise.resolve(null))
+const photo = (u: string | null) => (u ? loadImage(/^https?:/.test(u) ? `/_next/image?url=${encodeURIComponent(u)}&w=256&q=75` : u) : Promise.resolve(null))
 
 function fit(g: CanvasRenderingContext2D, text: string, max: number): string {
   if (g.measureText(text).width <= max) return text

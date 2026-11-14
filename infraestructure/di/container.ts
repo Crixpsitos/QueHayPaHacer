@@ -221,7 +221,7 @@ export const createServerContainer = () => {
   const sitesAdapter = new SitesAdapter(sitesFirebaseRepository, new SiteFirebaseMapper());
   const sitesService = new SitesService(sitesAdapter);
   // carta y promociones del sitio (un documento por sitio; edita solo su dueño)
-  const siteCatalogService = new SiteCatalogService({ repo: new SiteCatalogFirebaseRepository(getFirebaseFirestore()), isOwner: (uid, id) => sitesService.isOwner(uid, id), clock: () => new Date() });
+  const siteCatalogService = new SiteCatalogService({ repo: new SiteCatalogFirebaseRepository(getFirebaseFirestore()), isOwner: (uid, id) => sitesService.isOwner(uid, id), clock: () => new Date(), siteContact: (id) => sitesService.getContactWhatsapp(id) });
 
   // actividades (el estado del sitio vinculado decide la visibilidad de las actividades de sitio)
   const activityService = new ActivityService(new ActivityFirebaseRepository(getFirebaseFirestore()), async (siteId) => {

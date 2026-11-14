@@ -14,6 +14,9 @@ export interface PosterInput {
   format?: PosterFormat
 }
 
+/** Portada del bucket → misma ruta de imágenes de la web (mismo origen: sin CORS ni caché sin cabeceras). `q` solo admite 75 o 90 (next.config). */
+const sameOrigin = (u: string) => (/^https?:\/\//.test(u) ? `/_next/image?url=${encodeURIComponent(u)}&w=1200&q=75` : u)
+
 /** Carga una imagen; null si falla o tarda más de 6 s (nunca bloquea el afiche). `cors`: pedirla con CORS para poder dibujarla sin "manchar" el canvas. */
 function loadImage(src: string, cors: boolean): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -48,7 +51,7 @@ export async function buildPoster(i: PosterInput): Promise<HTMLCanvasElement> {
   const story = i.format === "story"
   const H = story ? 1920 : 1350
   const heroH = story ? 1100 : 780
-  const [cover, logo] = await Promise.all([i.imageUrl ? loadImage(i.imageUrl, true) : Promise.resolve(null), loadImage("/logo.png", false)])
+  const [cover, logo] = await Promise.all([i.imageUrl ? loadImage(sameOrigin(i.imageUrl), false) : Promise.resolve(null), loadImage("/logo.png", false)])
 
   const c = document.createElement("canvas")
   c.width = W

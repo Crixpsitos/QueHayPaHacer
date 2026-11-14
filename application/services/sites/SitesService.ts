@@ -226,6 +226,12 @@ export class SitesService {
     }
   }
 
+  /** Celular del botón de pedidos del sitio (`https://wa.me/57XXXXXXXXXX`); "" si no tiene. */
+  async getContactWhatsapp(id: string): Promise<string> {
+    const dto = (await this.adapter.findRawById(id)) as unknown as { bookingUrl?: string } | null
+    return /^https:\/\/wa\.me\/57(3\d{9})(?:[/?#]|$)/.exec(dto?.bookingUrl ?? "")?.[1] ?? ""
+  }
+
   /** Promedio de reseñas del sitio (las suyas y las de sus actividades). null si nadie ha reseñado. */
   async getReviewRating(id: string): Promise<{ count: number; sum: number; avg: number; dist: [number, number, number, number, number] } | null> {
     const dto = (await this.adapter.findRawById(id)) as unknown as { rating?: { count: number; sum: number; avg: number; dist: [number, number, number, number, number] } } | null

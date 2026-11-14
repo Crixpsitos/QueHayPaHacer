@@ -6,6 +6,8 @@ export interface CatalogDeps {
   repo: ISiteCatalogRepository
   isOwner: (uid: string, siteId: string) => Promise<boolean>
   clock: () => Date
+  /** Celular (10 dígitos) que el sitio ya tiene en su botón de pedidos, para no pedirlo dos veces. */
+  siteContact?: (siteId: string) => Promise<string>
 }
 
 export type SaveCatalogResult = { ok: true; catalog: SiteCatalog } | { ok: false; error: string }
@@ -16,7 +18,11 @@ export class SiteCatalogService {
 
   /** Lectura pública (la carta vacía si el sitio no tiene). */
   async get(siteId: string): Promise<SiteCatalog> {
-    return (await this.d.repo.get(siteId)) ?? emptyCatalog(siteId)
+    const c = (await this.d.repo.get(siteId)) ?? emptyCatalog(siteId)
+    if (c.whatsapp && c.reservePhone) return c
+    // Sin número propio en la carta se usa el del sitio; el dueño lo cambia cuando quiera.
+    const fallback = (await this.d.siteContact?.(siteId)) ?? ""
+    return { ...c, whatsapp: c.whatsapp || fallback, reservePhone: c.reservePhone || fallback }
   }
 
   /** Ids de las actividades que alguna promoción vigente (sin pausar y dentro de sus fechas) eligió. */
