@@ -28,17 +28,18 @@ export const fetchSite = async (id: string): Promise<SiteDetail | null> => {
 }
 
 /** Eventos publicados de la cartelera (hasta MAX_PAGES páginas), con su detalle cacheado. Lo comparten la portada y /eventos. */
-export async function loadPublishedEvents(): Promise<Events[]> {
+export async function loadPublishedEvents(maxPages: number = MAX_PAGES): Promise<Events[]> {
   const svc = createServerContainer().eventsService
   const ids: string[] = []
   let cursor: string | null = null
-  for (let i = 0; i < MAX_PAGES; i++) {
+  for (let i = 0; i < maxPages; i++) {
     const page: { ids: string[]; nextCursor: string | null } = await svc.getAllEventsPaginated(PAGE, cursor)
     ids.push(...page.ids)
     cursor = page.nextCursor
     if (!cursor) break
   }
-  return (await Promise.all(ids.map(fetchEvent))).filter((e): e is Events => !!e && e.status === "published")
+  // Solo eventos con fechas: uno sin ellas (dato viejo o a medio crear) tumbaría toda la portada.
+  return (await Promise.all(ids.map(fetchEvent))).filter((e): e is Events => !!e && e.status === "published" && !!e.startDate && !!e.endDate)
 }
 
 async function loadEvents(): Promise<EventIn[]> {

@@ -4,8 +4,8 @@ import { addDays } from "@/domain/entities/home/moments"
 import { clock, clockText } from "@/presentation/home/lib/buildHomeView"
 
 /** Evento ya reducido a datos simples (se cachea y viaja al navegador). */
-export interface CarteleraIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; free: boolean; coverUrl: string | null; category: string; /** «Quedan 3 cupos», «Varias fechas»… lo más útil que haya; si no, la categoría. */ tag: string }
-export interface CarteleraEvent { id: string; href: string; title: string; venue: string; cover: string | null; price: string; free: boolean; tag: string; /** Día en que se muestra (hoy si ya empezó y sigue). */ date: string; endDate: string; time: string; ampm: string; wd: string; day: string; mon: string }
+export interface CarteleraIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; free: boolean; coverUrl: string | null; category: string; /** «Varias fechas» si tiene varias funciones; vacío si es una sola. */ multi: string; /** Lugar y dirección. */ place: string; /** «Inscripción abierta · Quedan 8 cupos». */ info: string; /** Personas que marcaron «Voy a ir». */ going: number; views: number; /** «3 precios» si hay varias categorías de precio. */ tiers: string }
+export interface CarteleraEvent { id: string; href: string; title: string; venue: string; cover: string | null; price: string; free: boolean; category: string; multi: string; place: string; info: string; going: number; views: number; tiers: string; /** Día en que se muestra (hoy si ya empezó y sigue). */ date: string; endDate: string; time: string; ampm: string; wd: string; day: string; mon: string }
 export interface CarteleraView {
   today: string
   tomorrow: string
@@ -19,7 +19,7 @@ export interface CarteleraView {
   /** Hoy y los 13 días siguientes, con cuántos eventos hay cada día. */
   calendar: { date: string; wd: string; day: string; count: number }[]
 }
-export interface CarteleraGroup { key: string; title: string; /** Los meses van con título más grande. */ big: boolean; /** Día suelto: la boleta muestra la hora; si no, la fecha. */ byDay: boolean; items: CarteleraEvent[] }
+export interface CarteleraGroup { key: string; title: string; /** «Ver los 6 de hoy», «…del sábado», «…de diciembre»: cómo termina el botón que abre el resto. */ of: string; /** Los meses van con título más grande. */ big: boolean; /** Día suelto: la boleta muestra la hora; si no, la fecha. */ byDay: boolean; items: CarteleraEvent[] }
 
 const TZ = "America/Bogota"
 const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("es-CO", { timeZone: TZ, ...o })
@@ -40,7 +40,7 @@ export function buildCartelera(input: CarteleraIn[], now: Date): CarteleraView {
       const start = bogotaDateIso(new Date(e.startsAt))
       const date = start < today ? today : start
       return {
-        id: e.id, href: `/eventos/${e.slug || e.id}`, title: e.title, venue: e.venue, cover: e.coverUrl, price: e.price, free: e.free, tag: e.tag || e.category,
+        id: e.id, href: `/eventos/${e.slug || e.id}`, title: e.title, venue: e.venue, cover: e.coverUrl, price: e.price, free: e.free, category: e.category, multi: e.multi, place: e.place || e.venue, info: e.info, going: e.going, views: e.views, tiers: e.tiers,
         date, endDate: bogotaDateIso(new Date(e.endsAt)), ...clock(hhmmOf(e.startsAt)),
         wd: short({ weekday: "short" }, noon(date)), day: fmt({ day: "numeric" }).format(noon(date)), mon: short({ month: "short" }, noon(date)),
       }
@@ -77,10 +77,10 @@ export function groupCartelera(events: CarteleraEvent[], today: string): Cartele
     const long = (o: Intl.DateTimeFormatOptions) => fmt(o).format(noon(d))
     const wdDay = `${long({ weekday: "long" })} ${long({ day: "numeric" })}` // «viernes 13» (Intl mete una coma si se piden juntos)
     const g = d <= weekEnd
-      ? { key: d, big: false, byDay: true, title: d === today ? `Hoy, ${wdDay}` : d === addDays(today, 1) ? `Mañana, ${wdDay}` : cap(wdDay) }
+      ? { key: d, big: false, byDay: true, of: d === today ? "de hoy" : `del ${long({ weekday: "long" })}`, title: d === today ? `Hoy, ${wdDay}` : d === addDays(today, 1) ? `Mañana, ${wdDay}` : cap(wdDay) }
       : month === today.slice(0, 7)
-        ? { key: `resto-${month}`, big: false, byDay: false, title: `Más adelante en ${long({ month: "long" })}` }
-        : { key: month, big: true, byDay: false, title: cap(long(month.slice(0, 4) === today.slice(0, 4) ? { month: "long" } : { month: "long", year: "numeric" })) }
+        ? { key: `resto-${month}`, big: false, byDay: false, of: `que quedan de ${long({ month: "long" })}`, title: `Más adelante en ${long({ month: "long" })}` }
+        : { key: month, big: true, byDay: false, of: `de ${long({ month: "long" })}`, title: cap(long(month.slice(0, 4) === today.slice(0, 4) ? { month: "long" } : { month: "long", year: "numeric" })) }
     if (!groups.has(g.key)) groups.set(g.key, { ...g, items: [] })
     groups.get(g.key)!.items.push(e)
   }

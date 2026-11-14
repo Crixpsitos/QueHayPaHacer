@@ -31,3 +31,8 @@ test("categorías de precio: 'Desde' el menor; con una sola no cuenta", () => {
   assert.equal(priceTiers({ isFree: false, amount: 50000, tiers: [tiers[0]] }).length, 0);
   assert.equal(priceTiers({ isFree: true, amount: 0, tiers }).length, 0);
 });
+
+test("formatPrice sin precio (evento de varias fechas) no revienta y devuelve vacío", () => {
+  assert.equal(formatPrice(undefined), "")
+  assert.equal(formatPrice(null), "")
+})

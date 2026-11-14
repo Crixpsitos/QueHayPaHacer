@@ -11,6 +11,7 @@ import { SITE_NAME, DEFAULT_OG_IMAGE } from "@/app/lib/site";
 import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
 import { CollectionActivitiesSection } from "@/presentation/activities/components/CollectionActivitiesSection";
 import { TodayGuide } from "@/presentation/events/components/TodayGuide";
+import { CategoryCartelera } from "@/presentation/events/components/CategoryCartelera";
 import { MapPin } from "lucide-react";
 import { fetchTodayLabel } from "@/presentation/events/data/collectionFetchers";
 import { ACTIVITY_PREFIX, getActivityCollectionBySlug } from "@/presentation/activities/lib/activityCollections";
@@ -147,6 +148,8 @@ async function CollectionLanding({ params }: PageProps) {
   const def = await getEventCollectionBySlug(coleccion);
   if (!def) notFound();
   // Hoy: el subtítulo lleva el día ("planes para hoy domingo 8 de noviembre"), las palabras de las búsquedas reales.
+  // Categoría: variante de la cartelera (cabecera propia + mismas boletas y filtros que /eventos).
+  if (def.kind === "category") return <CategoryCartelera def={def} />;
   const description = def.kind === "today"
     ? `Planes para hoy ${await fetchTodayLabel()} en ${def.cityLabel}: eventos, conciertos, cultura y gastronomía.`
     : def.description;

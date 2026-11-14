@@ -80,7 +80,9 @@ export function priceTiers(price: PriceLike) {
   return !price.isFree && price.tiers && price.tiers.length > 1 ? price.tiers : [];
 }
 
-export function formatPrice(price: PriceLike) {
+/** Precio para mostrar. Sin precio (eventos de varias fechas: el precio vive en cada función) devuelve "". */
+export function formatPrice(price: PriceLike | null | undefined) {
+  if (!price) return "";
   if (price.isFree || !price.amount) return "Gratis";
   const min = priceTiers(price).length ? Math.min(...price.tiers!.map((t) => t.amount)) : price.amount;
   return `${priceTiers(price).length ? "Desde " : ""}${money(min, price.currency)}`;
