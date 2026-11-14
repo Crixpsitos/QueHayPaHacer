@@ -8,7 +8,6 @@ import { groupSitesByCategory } from "../../lib/groupSitesByCategory";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
-import type { SiteCategory } from "../../view-models/SiteFormViewModel";
 
 const fetchSiteDetailById = async (id: string): Promise<SiteDetail | null> => {
   "use cache";
@@ -30,43 +29,13 @@ const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[
   return sites.filter((s): s is SiteDetail => Boolean(s));
 };
 
-const getSiteCategoryPage = async (
-  category: SiteCategory,
-  cursor: string | null,
-  limit = 12,
-): Promise<{ sites: SiteDetail[]; nextCursor: string | null }> => {
-  "use cache";
-  cacheLife("days");
-  cacheTag("site-list", `site-type-${category}`);
-  const { sitesService } = createServerContainer();
-  const { ids, nextCursor } = await sitesService.getSitesByCategory(category as string, limit, cursor);
-  const sites = (await Promise.all(ids.map(fetchSiteDetailById))).filter(
-    (s): s is SiteDetail => Boolean(s),
-  );
-  return { sites, nextCursor };
-};
-
 /**
- * Contenido de una landing de sitios. Va dentro de un <Suspense> para que la ruta
+ * Contenido de las landings «Destacados» y «Todos» (las de un tipo de sitio usan SiteTypeGuia). Va dentro de un <Suspense> para que la ruta
  * sea PPR (dinámica-capaz): así los slugs desconocidos se renderizan on-demand y
  * caen en notFound() en vez de romper (una ruta 100% estática no puede). El
  * contenido se streamea en la misma respuesta → crawlable.
  */
 export async function SiteCollectionContent({ def }: { def: SiteCollectionDef }) {
-  // Tipo → infinite scroll (primera página por cursor).
-  if (def.kind === "type" && def.category) {
-    const { sites, nextCursor } = await getSiteCategoryPage(def.category, null);
-    return (
-      <Section spacing="sm" className="mt-4">
-        <InfiniteSiteList
-          category={def.category}
-          initialSites={sites}
-          initialCursor={nextCursor}
-        />
-      </Section>
-    );
-  }
-
   // Todos → misma lista paginada que el índice (se puede ver todo sin cambiar de página).
   if (def.kind === "all") {
     const { sites, nextCursor } = await fetchAllSitesPage();

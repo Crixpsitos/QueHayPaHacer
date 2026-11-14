@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { MapPin } from "lucide-react";
+import Link from "@/app/components/ui/navigation/IntentLink";
 import { Section } from "@/app/components/layout/shared/Section";
-import { ContentSection } from "@/app/components/layout/shared/ContentSection";
-import { Separator } from "@/app/components/ui/separator";
-import { SiteDiscoveryGrid } from "@/presentation/sites/components/discovery/SiteDiscovery";
-import { SiteCategoryChips } from "@/presentation/sites/components/discovery/SiteCategoryChips";
-import { getSiteCollections } from "@/presentation/sites/lib/siteCollections";
-import { InfiniteSiteList } from "@/presentation/sites/components/discovery/InfiniteSiteList";
-import { fetchAllSitesPage, fetchFeaturedSites } from "@/presentation/sites/data/siteListFetchers";
+import { AdRow, AdSlot } from "@/presentation/home/components/AdSlot";
+import { Guia } from "@/presentation/sites/components/guia/Guia";
+import { fetchGuia, guiaJsonLdHtml } from "@/presentation/sites/data/fetchGuia";
 
 export const metadata: Metadata = {
   title: "¿Dónde ir en Ibagué?",
@@ -16,60 +12,25 @@ export const metadata: Metadata = {
   alternates: { canonical: "/donde-ir" },
 };
 
-// Los destacados (8) salen de los primeros: se pide de más para que "Todos" empiece con una tanda completa.
-const FIRST_PAGE = 20;
-
+/** La guía de sitios: entrada por plan, mapa con pines numerados, lo que pasa esta semana en cada sitio y todos en lista compacta. */
 export default async function DondeIrIndexPage() {
-  const typeCollections = getSiteCollections().filter((c) => c.kind === "type");
-
-  const [featured, allPage] = await Promise.all([fetchFeaturedSites(), fetchAllSitesPage(FIRST_PAGE)]);
-  const featuredIds = featured.map((s) => s.id);
-
+  const { view } = await fetchGuia();
   return (
     <>
-      <Section spacing="sm" className="mt-4">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-[#71717A]">
-          <MapPin className="size-4 text-[#D42F3C]" />
-          <span>Ibagué, Tolima</span>
-        </div>
-
-        <h1
-          className="mt-2 text-4xl font-bold tracking-tight text-[#09090B]"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          ¿Dónde ir en <span className="text-[#D42F3C]">Ibagué</span>?
-        </h1>
-        <p className="mt-2 max-w-xl text-base leading-relaxed text-[#71717A]">
-          Los mejores lugares de la ciudad: cafeterías, restaurantes, bares, parques y más.
-        </p>
-
-        {typeCollections.length > 0 && (
-          <div className="mt-6">
-            <p className="mb-3 text-sm font-medium text-[#52525B]">
-              Explorar por tipo de lugar
-            </p>
-            <SiteCategoryChips collections={typeCollections} />
-          </div>
-        )}
+      {view.sites.length ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: guiaJsonLdHtml(view) }} /> : null}
+      <Section spacing="sm" className="pt-5 sm:pt-7">
+        <Guia view={view} variant="index" adTop={<AdRow />} adMid={<AdSlot format="rectangle" className="lg:hidden" />} />
       </Section>
 
-      {featured.length > 0 && (
-        <ContentSection title="Destacados">
-          <SiteDiscoveryGrid sites={featured} />
-        </ContentSection>
-      )}
-
-      {featured.length > 0 && <Separator className="my-6" />}
-
-      {/* Todos los sitios, con "Cargar más" aquí mismo (sin mandar a otra página). */}
-      <ContentSection title="Todos los sitios">
-        <InfiniteSiteList
-          category="all"
-          initialSites={allPage.sites}
-          initialCursor={allPage.nextCursor}
-          excludeIds={featuredIds}
-        />
-      </ContentSection>
+      <Section spacing="sm" className="pt-2 sm:pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-7 gap-y-4 rounded-3xl bg-primary-dark px-5 py-6 text-white sm:px-7">
+          <div className="min-w-0 flex-[1_1_18rem]">
+            <h2 className="font-heading text-[1.375rem] font-bold leading-tight sm:text-[1.625rem]">¿Tu sitio no está en la guía?</h2>
+            <p className="mt-1.5 text-sm text-white/85 sm:text-base">Agrégalo gratis: sale en el mapa y en su plan.</p>
+          </div>
+          <Link href="/sites/create" className="flex min-h-12 w-full items-center justify-center rounded-full bg-brand-gold px-6 font-semibold text-wine outline-none hover:bg-brand-gold/90 focus-visible:ring-3 focus-visible:ring-white/70 sm:w-auto">Agregar un sitio</Link>
+        </div>
+      </Section>
     </>
   );
 }

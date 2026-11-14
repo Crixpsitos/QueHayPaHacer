@@ -119,12 +119,7 @@ export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn
     total: events.filter((e) => e.endsAt >= now.getTime()).length,
   }
 
-  const siteLive = new Map<string, string>()
-  for (const e of [...events].sort((a, b) => a.startsAt - b.startsAt)) {
-    if (!e.siteId || siteLive.has(e.siteId) || e.endsAt < now.getTime() || bogotaDateIso(new Date(e.startsAt)) > ranges.semana.to) continue
-    const date = bogotaDateIso(new Date(e.startsAt))
-    siteLive.set(e.siteId, `${date === today ? "Hoy" : cap(fmt({ weekday: "short", day: "numeric" }).format(e.startsAt).replace(".", ""))} ${clockText(hhmmOfMs(e.startsAt))}: ${e.title}`)
-  }
+  const siteLive = liveBySite(events, now)
   const sitesView = sites
     .filter((s) => s.isOpen || s.at)
     .sort((a, b) => Number(siteLive.has(b.id)) - Number(siteLive.has(a.id)) || Number(b.isOpen) - Number(a.isOpen))
@@ -148,6 +143,19 @@ export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn
     activitiesTitle: todayActs.length ? "Actividades de hoy" : "Actividades de esta semana",
     activities: actList.sort((a, b) => (a.occ[actKey]!.hhmm ?? "99").localeCompare(b.occ[actKey]!.hhmm ?? "99")).map((a) => ({ key: a.id, href: `/actividades/${a.slug}`, time: a.occ[actKey]!.hhmm ? clockText(a.occ[actKey]!.hhmm!) : "Todo el día", title: a.title, meta: [a.place, a.price].filter(Boolean).join(" · ") })),
   }
+}
+
+/** Sitio → «Hoy 9:00 pm: título» de su próximo evento de esta semana (lo comparten la portada y la guía de sitios). */
+export function liveBySite(events: Pick<EventIn, "siteId" | "startsAt" | "endsAt" | "title">[], now: Date): Map<string, string> {
+  const today = bogotaDateIso(now)
+  const weekEnd = momentRanges(now).semana.to
+  const out = new Map<string, string>()
+  for (const e of [...events].sort((a, b) => a.startsAt - b.startsAt)) {
+    const date = bogotaDateIso(new Date(e.startsAt))
+    if (!e.siteId || out.has(e.siteId) || e.endsAt < now.getTime() || date > weekEnd) continue
+    out.set(e.siteId, `${date === today ? "Hoy" : cap(fmt({ weekday: "short", day: "numeric" }).format(e.startsAt).replace(".", ""))} ${clockText(hhmmOfMs(e.startsAt))}: ${e.title}`)
+  }
+  return out
 }
 
 /** «Hoy, 7:00 pm» o «Sáb 14»: cuándo es, para los afiches destacados. */

@@ -52,10 +52,29 @@ test("cancelado y aplazado se reflejan", () => {
   assert.equal((buildEventJsonLd({ ...base, status: "draft" } as unknown as EventViewModel) as any).eventStatus, "https://schema.org/EventPostponed")
 })
 
-test("multi-fecha: sin ubicación ni oferta (viven en las sesiones)", () => {
-  const ld = buildEventJsonLd({ ...base, eventType: "multi-date" } as unknown as EventViewModel) as any
+test("multi-fecha sin funciones (listados): lugar = la ciudad, sin oferta", () => {
+  const ld = buildEventJsonLd({ ...base, eventType: "multi-date", location: undefined, price: undefined } as unknown as EventViewModel) as any
   assert.equal(ld.offers, undefined)
-  assert.equal(ld.location, undefined)
+  assert.equal(ld.location.name, "Ibagué")
+  assert.equal(ld.location.address.addressLocality, "Ibagué")
+})
+
+test("multi-fecha con funciones: lugar de la próxima función y oferta con el precio más bajo", () => {
+  const s = (venue: string, amount: number, start: string) => ({ location: { ...base.location, venue }, price: { isFree: amount === 0, amount, currency: "COP" }, startDate: start, endDate: start })
+  const ld = buildEventJsonLd({ ...base, eventType: "multi-date", location: undefined, price: undefined } as unknown as EventViewModel, {
+    sessions: [s("Ya pasó", 90000, "2020-01-01T00:00:00.000Z"), s("Teatro Tolima", 40000, "2999-01-01T00:00:00.000Z"), s("Otro", 60000, "2999-01-02T00:00:00.000Z")] as any,
+  }) as any
+  assert.equal(ld.location.name, "Teatro Tolima")
+  assert.equal(ld.offers.price, "40000")
+})
+
+test("organizador con url de perfil; oferta con validFrom; evento sin precio no revienta", () => {
+  const ld = buildEventJsonLd({ ...base, publishedAt: "2026-11-01T00:00:00.000Z" } as unknown as EventViewModel) as any
+  assert.match(ld.organizer.url, /\/profile\/u1$/)
+  assert.equal(ld.offers.validFrom, "2026-11-01T00:00:00.000Z")
+  const noPrice = buildEventJsonLd({ ...base, price: undefined } as unknown as EventViewModel) as any
+  assert.equal(noPrice.offers, undefined)
+  assert.ok(noPrice.location)
 })
 
 test("el HTML del script no puede cerrarse con </script> del título (XSS)", () => {

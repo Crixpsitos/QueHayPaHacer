@@ -6,6 +6,7 @@ import { EventsSectionsSkeleton } from "@/presentation/events/components/EventsS
 import { CollectionEventsSection } from "@/presentation/events/components/CollectionEventsSection";
 import { SiteCollectionContent } from "@/presentation/sites/components/discovery/SiteCollectionContent";
 import { getEventCollectionBySlug } from "@/presentation/events/lib/eventCollections";
+import { SiteTypeGuia } from "@/presentation/sites/components/guia/SiteTypeGuia";
 import { getSiteCollectionBySlug } from "@/presentation/sites/lib/siteCollections";
 import { SITE_NAME, DEFAULT_OG_IMAGE } from "@/app/lib/site";
 import type { CollectionKind } from "@/presentation/events/lib/eventCollections";
@@ -131,6 +132,8 @@ async function CollectionLanding({ params }: PageProps) {
     const siteSlug = coleccion.slice(DONDE_IR_PREFIX.length);
     const def = getSiteCollectionBySlug(siteSlug);
     if (!def) notFound();
+    // Tipo de sitio: variante de la guía (cabecera propia + mapa y lista numerada, como /donde-ir).
+    if (def!.kind === "type") return <SiteTypeGuia def={def!} />;
     return (
       <>
         <Section spacing="sm" className="mt-4">

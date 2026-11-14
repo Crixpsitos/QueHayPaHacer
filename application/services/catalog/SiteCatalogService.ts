@@ -27,6 +27,17 @@ export class SiteCatalogService {
     return [...ids]
   }
 
+  /** Sitio → título de su primera promoción vigente (sin pausar y dentro de sus fechas). Para la guía de sitios. */
+  async currentPromoBySite(): Promise<Record<string, string>> {
+    const now = this.d.clock()
+    const out: Record<string, string> = {}
+    for (const c of await this.d.repo.listWithPromotions()) {
+      const x = c.promotions.find((p) => isCatalogPromoCurrent(p, now))
+      if (x) out[c.siteId] = x.title
+    }
+    return out
+  }
+
   /** Para el panel del dueño. null si no es suyo. */
   async getForOwner(uid: string, siteId: string): Promise<SiteCatalog | null> {
     if (!(await this.d.isOwner(uid, siteId))) return null
