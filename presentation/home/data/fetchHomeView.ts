@@ -4,7 +4,7 @@ import type { Events } from "@/domain/entities/events/Events"
 import type { SiteDetail } from "@/presentation/sites/view-models/SiteFormViewModel"
 import { buildAgenda } from "@/domain/entities/activities/agenda"
 import { MOMENT_KEYS, momentRanges } from "@/domain/entities/home/moments"
-import { toCardView } from "@/presentation/activities/lib/publicView"
+import { cardTitle, toCardView } from "@/presentation/activities/lib/publicView"
 import { formatPrice } from "@/presentation/events/components/detail/format"
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus"
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants"
@@ -58,7 +58,10 @@ async function loadEvents(): Promise<EventIn[]> {
 }
 
 async function loadActivities(now: Date): Promise<ActivityIn[]> {
-  const all = await createServerContainer().activityService.listPublic(500)
+  const container = createServerContainer()
+  const all = await container.activityService.listPublic(500)
+  // Nombre y dirección del sitio: «Tomar café en Deconatural Home», con la dirección debajo.
+  const sites = new Map(await Promise.all([...new Set(all.map((a) => a.siteId).filter((x): x is string => !!x))].map(async (id) => [id, await container.sitesService.getActivityLinkSnapshot(id)] as const)))
   const ranges = momentRanges(now)
   const input = all.map((a) => ({ id: a.id, schedule: a.schedule }))
   // primera salida de cada actividad en cada momento (la agenda ya viene ordenada por día y hora)
@@ -72,7 +75,8 @@ async function loadActivities(now: Date): Promise<ActivityIn[]> {
     .filter((a) => first[a.id])
     .map((a) => {
       const c = toCardView(a)
-      return { id: a.id, slug: a.slug, title: a.title, place: c.place?.address || c.hostName, price: c.priceFrom, coverUrl: c.coverUrl, occ: first[a.id] }
+      const s = a.siteId ? sites.get(a.siteId) : null
+      return { id: a.id, slug: a.slug, title: cardTitle(a.title, s), place: s?.address || c.hostName, price: c.priceFrom, coverUrl: c.coverUrl, occ: first[a.id] }
     })
 }
 

@@ -1,4 +1,5 @@
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
+import { SITE_URL } from "@/app/lib/site";
 
 import { UserAdapter } from "@/infraestructure/adapters/user/UserAdapter";
 import { UserFirebaseRepository } from "@/infraestructure/firebase/repositories/user/UserFirebaseRepository";
@@ -294,7 +295,7 @@ export const createServerContainer = () => {
     },
     hostProfile: async (uid) => {
       const u = await userService.getUserById(uid);
-      return { displayName: u?.displayName ?? "", photoURL: u?.photoURL ?? "" };
+      return { displayName: u?.displayName ?? "", photoURL: u?.photoURL || (isQhpaAdmin(uid) ? `${SITE_URL}/logo.png` : "") };
     },
     clock: () => new Date(),
     log: (entry) => console.log(JSON.stringify(entry)),

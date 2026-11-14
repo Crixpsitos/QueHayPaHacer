@@ -127,7 +127,7 @@ export function CatalogView({ title, products, promotions, whatsapp, reservePhon
                     <div className="grid min-w-0 flex-1 content-start gap-1">
                       <strong className="font-heading text-base">{p.name}</strong>
                       {p.description && <span className="text-sm leading-snug text-muted-foreground">{p.description}</span>}
-                      <span className="flex flex-wrap gap-1">{p.tags.map((t) => <span key={t} className={`${pill} text-[11px] ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}</span>
+                      <span className="flex flex-wrap gap-1">{p.tags.map((t) => <span key={t} className={`${pill} text-[11px] ${WARNING_TAGS.includes(t) ? "bg-[#FFF8E7] text-[#7a5200]" : "bg-[#E4F5E8] text-[#14532D]"}`}>{TAG_LABELS[t]}</span>)}{(p.customTags ?? []).map((t) => <span key={`c-${t}`} className={`${pill} text-[11px] bg-[#E4F5E8] text-[#14532D]`}>{t}</span>)}</span>
                       {p.traces && <span className="text-xs text-muted-foreground">Puede contener trazas de {p.traces}.</span>}
                     </div>
                     <div className="col-span-2 flex items-center justify-between gap-3 border-t border-gray-100 pt-2 sm:col-span-1 sm:grid sm:content-between sm:justify-items-end sm:border-0 sm:pt-0">

@@ -5,12 +5,12 @@ import { Camera, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { prepareUpload, putToStorage } from "@/presentation/events/lib/upload/uploadToGoogleStorage";
 import { resizeToJpeg } from "@/presentation/catalog/lib/resizeImage";
-import { cop, discountPercent, PRODUCT_DESC_MAX, PRODUCT_NAME_MAX, PRODUCT_TAGS, PRODUCT_UNITS, TAG_LABELS, validateProducts, WARNING_TAGS, type Product, type ProductTag, type ProductUnit } from "@/domain/entities/catalog/Product";
+import { cop, CUSTOM_TAG_MAX, CUSTOM_TAGS_MAX, discountPercent, FOOD_ONLY_TAGS, isFood, PRODUCT_DESC_MAX, PRODUCT_NAME_MAX, PRODUCT_UNITS, TAG_LABELS, tagsFor, validateProducts, WARNING_TAGS, type Product, type ProductTag, type ProductUnit } from "@/domain/entities/catalog/Product";
 import { chip, field, hint, label, outlineBtn, primaryBtn } from "./ui";
 
 const UNIT_NAMES: Record<ProductUnit, string> = { unidad: "Unidad", porcion: "Porción", kilo: "Kilo", libra: "Libra", docena: "Docena", bulto: "Bulto", litro: "Litro" };
 
-export const newProduct = (section = ""): Product => ({ id: crypto.randomUUID().slice(0, 12), name: "", description: "", priceCop: 0, unit: "unidad", section, photoUrl: "", tags: [], traces: "", discount: null });
+export const newProduct = (section = ""): Product => ({ id: crypto.randomUUID().slice(0, 12), name: "", description: "", priceCop: 0, unit: "unidad", section, photoUrl: "", tags: [], traces: "", food: true, customTags: [], discount: null });
 
 interface Props {
   siteId: string;
@@ -30,6 +30,7 @@ export function ProductEditor({ siteId, product, isNew, sections, onSave, onDele
   const [dPrice, setDPrice] = useState(product.discount ? String(product.discount.priceCop) : "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [draftTag, setDraftTag] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +43,15 @@ export function ProductEditor({ siteId, product, isNew, sections, onSave, onDele
     if (!has && t === "toxica-mascotas") tags = tags.filter((y) => y !== "segura-mascotas");
     return { ...x, tags };
   });
+
+  const food = isFood(p);
+  const setFood = (v: boolean) => setP((x) => ({ ...x, food: v, ...(v ? {} : { tags: x.tags.filter((t) => !FOOD_ONLY_TAGS.includes(t)), traces: "" }) }));
+  const addCustom = () => {
+    const t = draftTag.trim().slice(0, CUSTOM_TAG_MAX);
+    if (!t) return;
+    setP((x) => ((x.customTags ?? []).length >= CUSTOM_TAGS_MAX || (x.customTags ?? []).includes(t) ? x : { ...x, customTags: [...(x.customTags ?? []), t] }));
+    setDraftTag("");
+  };
 
   const upload = async (file: File) => {
     setUploading(true);
@@ -120,14 +130,28 @@ export function ProductEditor({ siteId, product, isNew, sections, onSave, onDele
           </div>
 
           <div className="grid gap-3">
-            <div className="grid gap-1"><span className="text-lg font-bold font-heading">Para quién es</span><span className={hint}>Marca solo lo que de verdad cumple. Ayuda a quien tiene una dieta, una alergia o una mascota a decidir rápido.</span></div>
+            <div role="radiogroup" aria-label="Tipo de producto" className="inline-flex w-fit rounded-full bg-muted p-1">
+              {([[true, "Comida o bebida"], [false, "Otro producto"]] as const).map(([v, text]) => (
+                <button key={text} type="button" role="radio" aria-checked={food === v} onClick={() => setFood(v)} className={`min-h-9 rounded-full px-4 text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40 ${food === v ? "bg-primary-dark text-white shadow-subtle" : "text-muted-foreground hover:text-foreground"}`}>{text}</button>
+              ))}
+            </div>
+            <div className="grid gap-1"><span className="text-lg font-bold font-heading">Etiquetas</span><span className={hint}>{food ? "Marca solo lo que de verdad cumple. Ayuda a quien tiene una dieta, una alergia o una mascota a decidir rápido." : "Marca lo que aplique a tu producto, o escribe las tuyas."}</span></div>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Etiquetas">
-              {PRODUCT_TAGS.map((t) => { const on = p.tags.includes(t); const warn = WARNING_TAGS.includes(t); return (
+              {tagsFor(food).map((t) => { const on = p.tags.includes(t); const warn = WARNING_TAGS.includes(t); return (
                 <button key={t} type="button" aria-pressed={on} onClick={() => toggleTag(t)} className={`${chip(false)} ${on ? (warn ? "!border-amber-600 !bg-[#FFF8E7] !text-[#7a5200]" : "!border-[#14532D] !bg-[#E4F5E8] !text-[#14532D]") : ""}`}>{TAG_LABELS[t]}</button>
               ); })}
+              {(p.customTags ?? []).map((t) => (
+                <button key={t} type="button" aria-label={`Quitar la etiqueta ${t}`} onClick={() => setP((x) => ({ ...x, customTags: (x.customTags ?? []).filter((y) => y !== t) }))} className={`${chip(false)} !border-[#14532D] !bg-[#E4F5E8] !text-[#14532D]`}>{t} ×</button>
+              ))}
             </div>
-            <label className={label}>Puede contener trazas de <span className={hint}>(opcional)</span><input className={field} value={p.traces} maxLength={80} onChange={(e) => set("traces", e.target.value)} placeholder="leche y huevo" /></label>
-            <p className="rounded-xl bg-[#FFF8E7] px-3 py-2 text-xs leading-relaxed text-[#7a5200]">Estas etiquetas las declaras tú: la plataforma no las certifica. Con alergias graves, la gente confirma con el lugar.</p>
+            {(p.customTags ?? []).length < CUSTOM_TAGS_MAX ? (
+              <div className="flex gap-2">
+                <input className={field} value={draftTag} maxLength={CUSTOM_TAG_MAX} placeholder="Tu propia etiqueta (Ej: Para interior)" aria-label="Agregar etiqueta propia" onChange={(e) => setDraftTag(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }} />
+                <button type="button" className={outlineBtn} disabled={!draftTag.trim()} onClick={addCustom}>Agregar</button>
+              </div>
+            ) : null}
+            {food ? <label className={label}>Puede contener trazas de <span className={hint}>(opcional)</span><input className={field} value={p.traces} maxLength={80} onChange={(e) => set("traces", e.target.value)} placeholder="leche y huevo" /></label> : null}
+            <p className="rounded-xl bg-[#FFF8E7] px-3 py-2 text-xs leading-relaxed text-[#7a5200]">{food ? "Estas etiquetas las declaras tú: la plataforma no las certifica. Con alergias graves, la gente confirma con el lugar." : "Las etiquetas las declaras tú: la plataforma no las certifica."}</p>
           </div>
 
 

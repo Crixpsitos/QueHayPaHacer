@@ -10,6 +10,8 @@ export const PRODUCT_DESC_MAX = 200
 export const PRODUCT_SECTION_MAX = 40
 export const PRODUCT_TRACES_MAX = 80
 export const PRODUCT_TAGS_MAX = 8
+export const CUSTOM_TAGS_MAX = 6
+export const CUSTOM_TAG_MAX = 24
 
 export const PRODUCT_UNITS = ["unidad", "porcion", "kilo", "libra", "docena", "bulto", "litro"] as const
 export type ProductUnit = (typeof PRODUCT_UNITS)[number]
@@ -22,6 +24,13 @@ export const TAG_LABELS: Record<ProductTag, string> = {
   "sin-frutos-secos": "Sin frutos secos", "contiene-nueces": "Contiene nueces", picante: "Picante", "para-compartir": "Para compartir", "para-llevar": "Para llevar", organico: "Orgánico",
   "hecho-a-mano": "Hecho a mano", "segura-mascotas": "Segura para mascotas", "toxica-mascotas": "Tóxica para mascotas",
 }
+/** Etiquetas que solo tienen sentido en comida y bebida (dieta, alérgenos, formato). El resto vale para cualquier producto. */
+export const FOOD_ONLY_TAGS: readonly ProductTag[] = ["vegano", "vegetariano", "sin-gluten", "sin-lacteos", "sin-lactosa", "sin-azucar", "sin-frutos-secos", "contiene-nueces", "picante", "para-compartir", "para-llevar"]
+/** Etiquetas disponibles según el tipo de producto. */
+export const tagsFor = (food: boolean): readonly ProductTag[] => (food ? PRODUCT_TAGS : PRODUCT_TAGS.filter((t) => !FOOD_ONLY_TAGS.includes(t)))
+/** Productos guardados antes de este campo son comida/bebida (como se diseñó la carta). */
+export const isFood = (p: { food?: boolean }): boolean => p.food !== false
+
 /** Etiquetas que avisan de un riesgo (se pintan en ámbar, no en verde). */
 export const WARNING_TAGS: readonly ProductTag[] = ["contiene-nueces", "picante", "toxica-mascotas"]
 
@@ -37,8 +46,12 @@ export interface Product {
   /** https de nuestro almacenamiento; vacío = sin foto (sale con el color de su sección). */
   photoUrl: string
   tags: ProductTag[]
-  /** «Puede contener trazas de…» */
+  /** «Puede contener trazas de…» (solo comida y bebida). */
   traces: string
+  /** false = producto que no se come (plantas, libros, artesanías): sin etiquetas de dieta ni trazas. Sin dato = comida. */
+  food?: boolean
+  /** Etiquetas propias del dueño (texto corto), además de las del catálogo. */
+  customTags?: string[]
   discount: ProductDiscount | null
 }
 
@@ -65,6 +78,11 @@ export function validateProducts(list: Product[]): string | null {
     if (!(PRODUCT_UNITS as readonly string[]).includes(p.unit)) return "Unidad de venta inválida."
     if (p.photoUrl && !p.photoUrl.startsWith("https://")) return "La foto debe ser un enlace seguro (https)."
     if (!Array.isArray(p.tags) || p.tags.length > PRODUCT_TAGS_MAX || new Set(p.tags).size !== p.tags.length || !p.tags.every((t) => (PRODUCT_TAGS as readonly string[]).includes(t))) return "Etiquetas inválidas."
+    if (p.customTags !== undefined) {
+      if (!Array.isArray(p.customTags) || p.customTags.length > CUSTOM_TAGS_MAX || p.customTags.some((t) => typeof t !== "string" || !t.trim() || t.length > CUSTOM_TAG_MAX)) return `Hasta ${CUSTOM_TAGS_MAX} etiquetas propias de máximo ${CUSTOM_TAG_MAX} caracteres.`
+      const badTag = plain("Las etiquetas", p.customTags.join(" "))
+      if (badTag) return badTag
+    }
     if (p.tags.includes("segura-mascotas") && p.tags.includes("toxica-mascotas")) return "Un producto no puede ser segura y tóxica para mascotas a la vez."
     if (p.discount) {
       if (!money(p.discount.priceCop) || p.discount.priceCop >= p.priceCop) return "El precio con descuento debe ser menor al precio normal."
@@ -75,7 +93,17 @@ export function validateProducts(list: Product[]): string | null {
 }
 
 export const normalizeProducts = (list: Product[]): Product[] =>
-  list.map((p) => ({ ...p, name: p.name.trim(), description: p.description.trim(), section: p.section.trim(), traces: p.traces.trim(), photoUrl: p.photoUrl.trim() })).filter((p) => p.name).slice(0, PRODUCTS_MAX)
+  list.map((p) => {
+    const food = isFood(p)
+    const custom = [...new Set((p.customTags ?? []).map((t) => t.trim().slice(0, CUSTOM_TAG_MAX).trim()).filter(Boolean))].slice(0, CUSTOM_TAGS_MAX)
+    return {
+      ...p, name: p.name.trim(), description: p.description.trim(), section: p.section.trim(), photoUrl: p.photoUrl.trim(),
+      food, customTags: custom,
+      // Un producto que no se come no lleva etiquetas de dieta ni trazas, aunque vengan de antes.
+      tags: food ? p.tags : p.tags.filter((t) => !FOOD_ONLY_TAGS.includes(t)),
+      traces: food ? p.traces.trim() : "",
+    }
+  }).filter((p) => p.name).slice(0, PRODUCTS_MAX)
 
 const BOGOTA = 5 * 3_600_000
 /** Hoy en Bogotá, YYYY-MM-DD. */
