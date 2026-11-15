@@ -72,7 +72,16 @@ export const getAdminApp = () => {
 // getFirestore(app, dbId) ya cachea la instancia internamente en firebase-admin.
 // No usar .settings() aquí: en HMR la instancia interna sobrevive y settings() truena.
 // Los undefined se limpian en cada repo (ver EventSessionFirebaseRepository.clean).
-export const getFirebaseFirestore = () => getFirestore(getAdminApp(), 'quehaypahacer-db');
+let readCounterInstalled = false;
+export const getFirebaseFirestore = () => {
+  const db = getFirestore(getAdminApp(), 'quehaypahacer-db');
+  // Medición de lecturas por colección (apagada por defecto): ver readCounter.ts.
+  if (!readCounterInstalled && process.env.FIRESTORE_READ_COUNTER === "1") {
+    readCounterInstalled = true;
+    void import("./readCounter").then((m) => m.installReadCounter(db));
+  }
+  return db;
+};
 
 export const getEnterpriseFirestore = (): EnterpriseFirestore => {
   if (enterpriseFirestoreInstance) {
