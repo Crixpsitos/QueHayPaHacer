@@ -2,6 +2,12 @@ import type { TrafficSource } from "@/domain/entities/analytics/trafficSource"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 
+/** Página de sitios completos + cursor opaco (null = no hay más). */
+export interface PaginatedSiteDocs {
+  sites: FirebaseSiteDto[]
+  nextCursor: string | null
+}
+
 /** Página de IDs de sitios + cursor opaco (null = no hay más). */
 export interface PaginatedSiteIds {
   ids: string[]
@@ -20,6 +26,10 @@ export interface ISitesFirebaseRepository {
   findAllSiteIds(): Promise<string[]>
   /** Sitios públicos para el sitemap (slug + última edición). */
   findSitemapEntries(limit: number): Promise<{ id: string; slug: string; updatedAt: Date | null }[]>
+  /** Igual que las de ids pero con los documentos completos (una lectura por sitio). */
+  findAllSitesPage(limit: number, cursor: string | null): Promise<PaginatedSiteDocs>
+  findSitesByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteDocs>
+  findFeaturedSites(): Promise<FirebaseSiteDto[]>
   /** Paginación por cursor de TODOS los sitios públicos (score desc, tiebreaker documentId). */
   findAllSiteIdsPage(limit: number, cursor: string | null): Promise<PaginatedSiteIds>
   /** Paginación por cursor de un tipo de sitio (category). Tiebreaker documentId. */

@@ -92,6 +92,21 @@ export class SitesAdapter implements ISiteRepository {
     return this.repo.findSiteIdsByCategory(category, limit, cursor)
   }
 
+  /** Listas con el detalle ya armado: una lectura por sitio (las de ids leían cada sitio dos veces). */
+  async findFeaturedSiteDetails(): Promise<SiteDetail[]> {
+    return (await this.repo.findFeaturedSites()).map((d) => this.mapper.toSiteDetail(d))
+  }
+
+  async findAllSiteDetailsPage(limit: number, cursor: string | null) {
+    const { sites, nextCursor } = await this.repo.findAllSitesPage(limit, cursor)
+    return { sites: sites.map((d) => this.mapper.toSiteDetail(d)), nextCursor }
+  }
+
+  async findSiteDetailsByCategory(category: string, limit: number, cursor: string | null) {
+    const { sites, nextCursor } = await this.repo.findSitesByCategory(category, limit, cursor)
+    return { sites: sites.map((d) => this.mapper.toSiteDetail(d)), nextCursor }
+  }
+
   /** Detalle público de un sitio (read-model SiteDetail). */
   async getSiteDetailById(id: string): Promise<SiteDetail | null> {
     const dto = await this.repo.findById(id)

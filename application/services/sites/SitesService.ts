@@ -273,6 +273,18 @@ export class SitesService {
     return pickDiscoverIds(await this.adapter.findAllSiteIds(), limit, excludeIds)
   }
 
+  getFeaturedSiteDetails() {
+    return this.adapter.findFeaturedSiteDetails()
+  }
+
+  getAllSiteDetailsPage(limit: number, cursor: string | null) {
+    return this.adapter.findAllSiteDetailsPage(limit, cursor)
+  }
+
+  getSiteDetailsByCategory(category: string, limit: number, cursor: string | null) {
+    return this.adapter.findSiteDetailsByCategory(category, limit, cursor)
+  }
+
   getAllSitesPage(limit: number, cursor: string | null) {
     return this.adapter.findAllSiteIdsPage(limit, cursor)
   }

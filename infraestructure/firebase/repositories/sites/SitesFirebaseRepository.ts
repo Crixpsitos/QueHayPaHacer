@@ -1,6 +1,6 @@
 import { FieldPath, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 import { FirebaseBaseRepository } from "../FirebaseBaseRepository"
-import type { ISitesFirebaseRepository, PaginatedSiteIds } from "./ISitesFirebaseRepository"
+import type { ISitesFirebaseRepository, PaginatedSiteDocs, PaginatedSiteIds } from "./ISitesFirebaseRepository"
 import type { FirebaseSiteDto } from "../../dto/sites/FirebaseSiteDto"
 import type { SiteTrackType } from "@/domain/entities/sites/siteStats"
 import { sourceKey, type TrafficSource } from "@/domain/entities/analytics/trafficSource"
@@ -113,6 +113,33 @@ export class SitesFirebaseRepository
   }
 
   /** Página por cursor `score|id` de una consulta ya filtrada (publicados + lo que se agregue). */
+  /** Misma consulta que `pageByScore` pero trae los documentos completos: una lectura por sitio en vez de dos (ids + detalle). */
+  private async pageByScoreFull(base: FirebaseFirestore.Query, limit: number, cursor: string | null): Promise<PaginatedSiteDocs> {
+    let query = base.orderBy("analytics.score", "desc").orderBy(FieldPath.documentId(), "desc")
+    if (cursor) {
+      const sep = cursor.indexOf("|")
+      query = query.startAfter(Number(cursor.slice(0, sep)), cursor.slice(sep + 1))
+    }
+    const docs = (await query.limit(limit + 1).get()).docs
+    const page = docs.slice(0, limit)
+    const last = page[page.length - 1]
+    const nextCursor = docs.length > limit && last ? `${(last.data() as { analytics?: { score?: number } }).analytics?.score ?? 0}|${last.id}` : null
+    return { sites: page.map((d) => ({ id: d.id, ...d.data() }) as FirebaseSiteDto), nextCursor }
+  }
+
+  findAllSitesPage(limit: number, cursor: string | null): Promise<PaginatedSiteDocs> {
+    return this.pageByScoreFull(this.publishedSites, limit, cursor)
+  }
+
+  findSitesByCategory(category: string, limit: number, cursor: string | null): Promise<PaginatedSiteDocs> {
+    return this.pageByScoreFull(this.publishedSites.where("category", "==", category), limit, cursor)
+  }
+
+  async findFeaturedSites(): Promise<FirebaseSiteDto[]> {
+    const snap = await this.publishedSites.orderBy("analytics.score", "desc").limit(FEATURED_LIMIT).get()
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as FirebaseSiteDto)
+  }
+
   private async pageByScore(
     base: FirebaseFirestore.Query,
     limit: number,
