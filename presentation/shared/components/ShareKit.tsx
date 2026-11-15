@@ -25,12 +25,14 @@ export interface ShareKitProps {
   placeLogoUrl?: string;
   /** El sitio aún está en revisión: los enlaces funcionarán cuando lo aprueben. */
   pendingReview?: boolean;
+  /** Recién publicado: avisa que los listados tardan hasta 5 min (caché del CDN). */
+  justPublished?: boolean;
   /** Título del diálogo (por defecto «Comparte tu evento/actividad/sitio»). */
   heading?: string;
 }
 
 /** Modal "tu kit para compartir": vista previa del afiche, enlaces por canal ya listos, QR y un mensaje escrito. */
-export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, placeLogoUrl, pendingReview, heading }: ShareKitProps) {
+export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl, placeLogoUrl, pendingReview, justPublished, heading }: ShareKitProps) {
   // El QR vive dentro del portal del diálogo (se monta después): se guarda en estado para que los efectos esperen a que exista.
   const [qr, setQr] = useState<HTMLCanvasElement | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -73,6 +75,7 @@ export function ShareKit({ open, onClose, kind, id, title, when, where, imageUrl
                 ? "Estos enlaces funcionarán en cuanto lo aprueben. Ya puedes ir preparando el afiche."
                 : "Cada enlace es distinto, así sabrás cuánta gente trae cada uno."}
             </DialogDescription>
+            {justPublished && <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[13px] text-amber-900">Tu {noun} ya está {kind === "activity" ? "publicada" : "publicado"}. Puede tardar hasta 5 minutos en verse en el inicio y en los listados; con su enlace ya lo puedes compartir.</p>}
           </div>
         </div>
 

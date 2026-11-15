@@ -20,7 +20,7 @@ export function Submitted({ id, title, slug, coverUrl, placeLogoUrl, moderationS
       <div className="grid gap-2">
         <h1 className="font-heading text-2xl font-bold sm:text-3xl">{live ? "Tu actividad ya está publicada" : "Tu actividad está en revisión"}</h1>
         <p className="text-muted-foreground">
-          {live ? `"${title}" ya aparece en Qué Hay Pa Hacer.` : "La revisamos y te avisamos por la campanita cuando salga publicada. Mientras tanto solo la ves tú."}
+          {live ? `"${title}" ya está publicada. Puede tardar hasta 5 minutos en verse en el inicio y en los listados.` : "La revisamos y te avisamos por la campanita cuando salga publicada. Mientras tanto solo la ves tú."}
         </p>
       </div>
       <ul className="mx-auto grid gap-2 text-left text-sm">
@@ -33,7 +33,7 @@ export function Submitted({ id, title, slug, coverUrl, placeLogoUrl, moderationS
         {onAnother ? <Button type="button" variant="outline" size="lg" className="h-12 text-base" onClick={onAnother}><Plus aria-hidden /> Otra actividad</Button> : null}
         <Button asChild variant={live ? "outline" : "default"} size="lg" className="h-12 text-base"><Link href="/actividades/mis">Ir a mis actividades</Link></Button>
       </div>
-      {kit ? <ShareKit open kind="activity" id={id} title={title} imageUrl={coverUrl} placeLogoUrl={placeLogoUrl} pendingReview={!live} onClose={() => setKit(false)} /> : null}
+      {kit ? <ShareKit open kind="activity" id={id} title={title} imageUrl={coverUrl} placeLogoUrl={placeLogoUrl} pendingReview={!live} justPublished={live} onClose={() => setKit(false)} /> : null}
     </div>
   )
 }
