@@ -71,7 +71,9 @@ export class SiteSuggestionService {
   }
 
   async countPendingForOwner(uid: string): Promise<number> {
-    return (await this.listForOwner(uid)).filter((s) => s.status === "pending").length;
+    const sites = (await this.sitesService.getMySites(uid)).slice(0, MAX_SITES_SCANNED);
+    // Antes leía TODO el historial de cada sitio (una consulta por sitio) solo para contar las pendientes: ahora un count().
+    return sites.length ? this.repository.countPendingBySites(sites.map((s) => s.id)) : 0;
   }
 
   /** Aprobar = "la acepto y la voy a reflejar": solo marca estado, no edita el sitio. */

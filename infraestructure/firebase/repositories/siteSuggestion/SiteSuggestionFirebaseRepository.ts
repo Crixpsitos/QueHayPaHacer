@@ -52,6 +52,16 @@ export class SiteSuggestionFirebaseRepository extends FirebaseBaseRepository imp
     }));
   }
 
+  async countPendingBySites(siteIds: string[]): Promise<number> {
+    let total = 0
+    // `in` admite hasta 30 valores por consulta.
+    for (let i = 0; i < siteIds.length; i += 30) {
+      const snap = await this.collection.where("siteId", "in", siteIds.slice(i, i + 30)).where("status", "==", "pending").count().get()
+      total += snap.data().count
+    }
+    return total
+  }
+
   async getSiteIdAndStatus(id: string) {
     const snap = await this.collection.doc(id).get();
     return snap.exists

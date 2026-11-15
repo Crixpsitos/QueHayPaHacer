@@ -10,6 +10,8 @@ export interface ISiteSuggestionRepository {
   create(suggestion: SiteSuggestion): Promise<string>;
   /** Sugerencias de un sitio (todas las del estado), sin orden. */
   listBySite(siteId: string): Promise<SiteSuggestionItem[]>;
+  /** Cuántas sugerencias pendientes hay sobre estos sitios (agregación `count()`: no lee los documentos). */
+  countPendingBySites(siteIds: string[]): Promise<number>;
   getSiteIdAndStatus(id: string): Promise<{ siteId: string; status: string; authorUid: string; siteName: string; field: string } | null>;
   /** Resuelve solo si sigue pendiente (transacción). */
   resolve(id: string, r: { status: "applied" | "rejected"; resolvedBy: string; note?: string }): Promise<"ok" | "not_pending">;
