@@ -297,6 +297,7 @@ export const EventClientWrapper = ({
         <ShareKit
           open
           kind="event"
+          justPublished
           id={share.id}
           title={share.title}
           when={share.when}

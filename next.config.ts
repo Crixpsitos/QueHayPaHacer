@@ -98,19 +98,20 @@ const nextConfig: NextConfig = {
       // Fichas y landings públicas: HTML igual para todos (el estado de cada persona —me gusta, inscripción, dueño— se pide
       // aparte desde el cliente), así que el CDN lo guarda. Next las marca `private, no-store` por ser renders por petición
       // (params en Suspense, ver E22); aquí se declara explícito. Sin invalidación on-demand en el CDN: el TTL manda
-      // (2 min fichas, 5 min listados) y stale-while-revalidate sirve al instante mientras se refresca.
+      // (5 min en fichas y listados) y stale-while-revalidate sirve al instante mientras se refresca.
       // `/eventos/create` queda fuera (privado); el editor `/eventos/:id/edit` tiene más segmentos y tampoco coincide.
-      { source: "/eventos/:id((?!create$)[^/]+)", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/eventos/:id/sessions/:sessionId", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/donde-ir/:id", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
+      { source: "/eventos/:id((?!create$)[^/]+)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/eventos/:id/sessions/:sessionId", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/donde-ir/:id", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/actividades/:slug((?!crear$|mis$)[^/]+)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
       { source: "/:coleccion(eventos-.*-ibague|donde-ir-.*-ibague|que-hay-hoy-ibague)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
       // Inicio y listados públicos (sin sesión en el servidor: lo de cada persona se pide aparte desde el cliente). Antes salían
       // `private, no-store` y cada visita y cada prefetch (_rsc) llegaba a Cloud Run y a Firestore. TTL corto porque no hay purga del CDN:
-      // un evento o actividad nuevo aparece en estos listados en ~2 min. Los filtros (?cuando=…) son otra clave del CDN.
-      { source: "/", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/actividades", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/donde-ir", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
-      { source: "/eventos", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
+      // un evento o actividad nuevo aparece en estos listados en hasta 5 min. Los filtros (?cuando=…) son otra clave del CDN.
+      { source: "/", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/actividades", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/donde-ir", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      { source: "/eventos", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
       {
         source: "/sw.js",
         headers: [
