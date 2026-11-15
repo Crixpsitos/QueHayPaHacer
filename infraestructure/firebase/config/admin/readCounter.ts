@@ -32,7 +32,7 @@ export class ReadCounter {
 type AnyProto = Record<string, unknown>
 const colOfPath = (p: unknown) => String(p ?? "").split("/")[0] || "?"
 
-/** Envuelve `Query.get`, `DocumentReference.get` y `Firestore.getAll` de la instancia dada. Idempotente. */
+/** Envuelve `Query.get` y `Firestore.getAll` (cubre también `doc.get()`) de la instancia dada. Idempotente. */
 export function installReadCounter(db: unknown, counter = new ReadCounter()): ReadCounter {
   const d = db as { collection: (p: string) => object; doc: (p: string) => object }
   const wrap = (proto: AnyProto, method: string, after: (self: unknown, args: unknown[], res: unknown) => void) => {
@@ -46,10 +46,9 @@ export function installReadCounter(db: unknown, counter = new ReadCounter()): Re
     proto[`__qhpaRC_${method}`] = true
   }
   const query = Object.getPrototypeOf(Object.getPrototypeOf(d.collection("_"))) as AnyProto
-  const docRef = Object.getPrototypeOf(d.doc("_/_")) as AnyProto
   const firestore = Object.getPrototypeOf(db) as AnyProto
   wrap(query, "get", (self, _a, res) => counter.record(String((self as { _queryOptions?: { collectionId?: string } })._queryOptions?.collectionId ?? "query"), "query", (res as { size?: number }).size ?? 0))
-  wrap(docRef, "get", (self) => counter.record(colOfPath((self as { path?: string }).path), "doc", 1))
+  // DocumentReference.get() llama a Firestore.getAll() por dentro: envolver los dos contaría cada lectura de documento dos veces.
   wrap(firestore, "getAll", (_s, args) => {
     for (const r of args as { path?: string }[]) if (r && typeof r === "object" && "path" in r) counter.record(colOfPath(r.path), "getAll", 1)
   })
