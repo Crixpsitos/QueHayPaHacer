@@ -19,8 +19,7 @@ export const fetchFeaturedSites = async (): Promise<SiteDetail[]> => {
   "use cache"
   cacheLife("days")
   cacheTag("site-list", "site-collection-featured")
-  const ids = await createServerContainer().sitesService.getFeaturedSites()
-  return present(await Promise.all(ids.map(fetchSiteDetailById)))
+  return present(await createServerContainer().sitesService.getFeaturedSiteDetails())
 }
 
 /**
@@ -31,8 +30,8 @@ export const fetchAllSitesPage = async (size: number = SITES_PAGE_SIZE): Promise
   "use cache"
   cacheLife("days")
   cacheTag("site-list", "site-collection-all")
-  const { ids, nextCursor } = await createServerContainer().sitesService.getAllSitesPage(size, null)
-  return { sites: present(await Promise.all(ids.map(fetchSiteDetailById))), nextCursor }
+  const { sites, nextCursor } = await createServerContainer().sitesService.getAllSiteDetailsPage(size, null)
+  return { sites: present(sites), nextCursor }
 }
 
 /**
@@ -45,6 +44,6 @@ export const fetchSitesMore = async (category: string, cursor: string | null, si
   cacheLife("days")
   cacheTag("site-list")
   const { sitesService } = createServerContainer()
-  const { ids, nextCursor } = category === "all" ? await sitesService.getAllSitesPage(size, cursor) : await sitesService.getSitesByCategory(category, size, cursor)
-  return { sites: present(await Promise.all(ids.map(fetchSiteDetailById))), nextCursor }
+  const { sites, nextCursor } = category === "all" ? await sitesService.getAllSiteDetailsPage(size, cursor) : await sitesService.getSiteDetailsByCategory(category, size, cursor)
+  return { sites: present(sites), nextCursor }
 }

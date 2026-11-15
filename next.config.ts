@@ -104,6 +104,13 @@ const nextConfig: NextConfig = {
       { source: "/eventos/:id/sessions/:sessionId", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
       { source: "/donde-ir/:id", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
       { source: "/:coleccion(eventos-.*-ibague|donde-ir-.*-ibague|que-hay-hoy-ibague)", headers: edge("public, max-age=0, s-maxage=300, stale-while-revalidate=900") },
+      // Inicio y listados públicos (sin sesión en el servidor: lo de cada persona se pide aparte desde el cliente). Antes salían
+      // `private, no-store` y cada visita y cada prefetch (_rsc) llegaba a Cloud Run y a Firestore. TTL corto porque no hay purga del CDN:
+      // un evento o actividad nuevo aparece en estos listados en ~2 min. Los filtros (?cuando=…) son otra clave del CDN.
+      { source: "/", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
+      { source: "/actividades", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
+      { source: "/donde-ir", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
+      { source: "/eventos", headers: edge("public, max-age=0, s-maxage=120, stale-while-revalidate=600") },
       {
         source: "/sw.js",
         headers: [
