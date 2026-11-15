@@ -102,7 +102,7 @@ export const Navbar = () => {
   return (
     <header className="border-b border-border bg-background/95 text-foreground backdrop-blur">
       <Container as="nav" aria-label="Principal" className="text-sm font-medium">
-        <div className="flex h-16 items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr]">
+        <div className="flex h-16 items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr]">
           <div className="justify-self-start">
             <Link prefetch={false}
               href="/"
@@ -114,7 +114,7 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          <ul className="hidden items-center justify-self-center gap-1 md:flex" role="list">
+          <ul className="hidden items-center justify-self-center gap-1 lg:flex" role="list">
             {routes.map((route) => (
               <li key={route.name}>
                 <NavLink
@@ -134,13 +134,13 @@ export const Navbar = () => {
                 <Button
                   variant="outline"
                   size="icon-sm"
-                  className="md:hidden"
+                  className="lg:hidden"
                   aria-label="Abrir menu de navegacion"
                 >
                   <Menu className="size-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={10} className="w-56 md:hidden">
+              <DropdownMenuContent align="end" sideOffset={10} className="w-56 lg:hidden">
                 {routes.map((route) => (
                   <DropdownMenuItem asChild key={route.name}>
                     <Link prefetch={false} href={route.href}>{route.name}</Link>
@@ -157,12 +157,12 @@ export const Navbar = () => {
             </DropdownMenu>
 
             {isHydrating ? (
-              <Skeleton className="hidden h-10 w-36 md:inline-flex rounded-xl" />
+              <Skeleton className="hidden h-10 w-36 lg:inline-flex rounded-xl" />
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    className="hidden! md:inline-flex! bg-primary-dark text-white hover:bg-wine"
+                    className="hidden! lg:inline-flex! bg-primary-dark text-white hover:bg-wine"
                   >
                     <Plus className="size-4" aria-hidden="true" />
                     {isCreator ? "Crear evento" : "Aportar"}
