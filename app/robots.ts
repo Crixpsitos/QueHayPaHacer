@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Áreas privadas/funcionales fuera del índice.
-      disallow: ["/studio/", "/api/", "/r/"],
+      // Las combinaciones de filtros (?categoria=…&con=…) son infinitas: un rastreador las recorrió y generó ~1 M de lecturas.
+      disallow: ["/studio/", "/api/", "/r/", "/actividades?*", "/donde-ir?*", "/eventos?*"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

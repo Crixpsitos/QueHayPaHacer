@@ -156,6 +156,18 @@ test("lecturas: varias búsquedas seguidas comparten UNA lectura de la lista (y 
   await s.search({}, 0, 12)
   assert.equal(listReads, 2, "a los 20 s se vuelve a leer")
 })
+test("lecturas: servicios distintos con el mismo caché compartido leen UNA vez", async () => {
+  let listReads = 0
+  const repo = new FakeRepo([makeActivity({ id: "1", slug: "a" })])
+  const orig = repo.findListable.bind(repo)
+  repo.findListable = async (n: number) => { listReads++; return orig(n) }
+  const shared = { entry: null }
+  const make = () => new ActivityService(repo, async () => okSite, () => NOW, shared, 300_000)
+  await make().search({}, 0, 12)
+  await make().search({ category: "otros" }, 0, 12)
+  await make().listPublic(500)
+  assert.equal(listReads, 1)
+})
 test("lecturas: un fallo al leer no se queda guardado", async () => {
   const repo = new FakeRepo([makeActivity({ id: "1", slug: "a" })])
   let fail = true

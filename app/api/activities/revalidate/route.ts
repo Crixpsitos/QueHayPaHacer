@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 import * as v from "valibot"
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth"
+import { clearActivityListable } from "@/infraestructure/di/container"
 
 const Id = v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]{1,128}$/))
 const Body = v.object({
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
   if (slug) tags.add(`activity-slug-${slug}`)
   if (siteId) { tags.add(`site-${siteId}-activities`); tags.add(`site-catalog-${siteId}`) }
   for (const uid of ownerIds) tags.add(`activities-${uid}`)
+  clearActivityListable()
   for (const tag of tags) revalidateTag(tag, { expire: 0 })
   return NextResponse.json({ success: true, tags: tags.size })
 }

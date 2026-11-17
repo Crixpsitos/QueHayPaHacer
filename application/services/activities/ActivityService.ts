@@ -23,23 +23,28 @@ const LISTABLE_CAP = 500
  */
 const LISTABLE_TTL_MS = 15_000
 
+/** Lista ya leída y su hora. Quien crea el servicio puede compartirla entre instancias del servicio (ver `ttlMs`). */
+export interface ListableCache { entry: { at: number; items: Promise<Activity[]> } | null }
+
 export class ActivityService {
   constructor(
     private readonly repo: IActivityRepository,
     private readonly siteLookup: SiteLookup,
     private readonly clock: () => Date = () => new Date(),
+    /** `createServerContainer()` crea un servicio nuevo en cada llamada: sin un caché compartido cada consulta releía todo. */
+    private readonly shared: ListableCache = { entry: null },
+    private readonly ttlMs: number = LISTABLE_TTL_MS,
   ) {}
-
-  private listable: { at: number; items: Promise<Activity[]> } | null = null
 
   /** La lista pública visible, sin ordenar, compartida por quienes la piden en el mismo instante. Un fallo no se guarda. */
   private visibleListable(): Promise<Activity[]> {
     const nowMs = this.clock().getTime()
-    if (this.listable && nowMs - this.listable.at < LISTABLE_TTL_MS) return this.listable.items
+    const hit = this.shared.entry
+    if (hit && nowMs - hit.at < this.ttlMs) return hit.items
     const items = this.repo.findListable(LISTABLE_CAP).then((list) => this.keepVisible(list))
     const entry = { at: nowMs, items }
-    this.listable = entry
-    items.catch(() => { if (this.listable === entry) this.listable = null })
+    this.shared.entry = entry
+    items.catch(() => { if (this.shared.entry === entry) this.shared.entry = null })
     return items
   }
 

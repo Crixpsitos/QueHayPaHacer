@@ -6,7 +6,7 @@ runConfig:
   maxInstances: 5
   concurrency: 80
   cpu: 2
-  memoryMiB: 1024
+  memoryMiB: 2048
 
 env:
   # Medición temporal de lecturas de Firestore por colección (línea JSON "firestore-reads" cada ~60 s por instancia).
