@@ -11,8 +11,8 @@ import { DateChip } from "./DateChip"
 const TAG_COLOR: Record<RowView["kind"], string> = { Evento: "text-primary-dark", Actividad: "text-amber-ink", Sitio: "text-muted-foreground" }
 const FALLBACKS = ["bg-wine", "bg-primary-dark", "bg-brand-gold", "bg-primary", "bg-sand"]
 
-function Cover({ src, i, sizes, priority, className }: { src: string | null; i: number; sizes: string; priority?: boolean; className?: string }) {
-  return src ? <Image src={src} alt="" fill sizes={sizes} priority={priority} className={cn("object-cover", className)} /> : <span aria-hidden className={cn("absolute inset-0", FALLBACKS[i % FALLBACKS.length])} />
+function Cover({ src, i, sizes, priority, className, quality }: { src: string | null; i: number; sizes: string; priority?: boolean; className?: string; quality?: 75 | 90 }) {
+  return src ? <Image src={src} alt="" fill sizes={sizes} quality={quality} priority={priority} className={cn("object-cover", className)} /> : <span aria-hidden className={cn("absolute inset-0", FALLBACKS[i % FALLBACKS.length])} />
 }
 
 function Lead({ lead }: { lead: LeadView }) {
@@ -39,7 +39,7 @@ function Row({ r, i }: { r: RowView; i: number }) {
           <span className="block font-heading text-lg font-bold">{r.time}</span>
           <span className="block text-[0.8125rem] text-muted-foreground">{r.ampm}</span>
         </span>
-        <span className="relative block size-14 overflow-hidden rounded-2xl sm:size-15"><Cover src={r.cover} i={i + 1} sizes="60px" /></span>
+        <span className="relative block size-14 overflow-hidden rounded-2xl sm:size-15"><Cover src={r.cover} i={i + 1} sizes="120px" quality={90} /></span>
         <span className="min-w-0">
           <span className={cn("block text-[0.8125rem] font-semibold", TAG_COLOR[r.kind])}>{r.kind}</span>
           <span className="block text-[0.9375rem] font-semibold leading-snug">{r.title}</span>

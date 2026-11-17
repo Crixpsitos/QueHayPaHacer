@@ -23,7 +23,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 function Thumb({ a }: { a: ActivityCardView }) {
   return (
     <div className="relative size-21 shrink-0 overflow-hidden rounded-xl bg-muted">
-      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="84px" className="object-cover" /> : <CoverFallback categorySlug={a.categorySlug} />}
+      {a.coverUrl ? <Image src={a.coverUrl} alt="" fill sizes="168px" className="object-cover" /> : <CoverFallback categorySlug={a.categorySlug} />}
     </div>
   )
 }

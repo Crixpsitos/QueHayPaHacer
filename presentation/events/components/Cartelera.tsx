@@ -33,7 +33,7 @@ function Ticket({ e, i, byDay, liked, onLike }: { e: CarteleraEvent; i: number; 
   const line = stats(like.count, e.views)
   return (
     <li className="group relative grid min-h-37 grid-cols-[4.875rem_minmax(0,1fr)_6rem] overflow-hidden rounded-[1.25rem] border border-border bg-card transition-shadow focus-within:ring-3 focus-within:ring-ring/50 hover:shadow-card sm:min-h-38 sm:grid-cols-[6.5rem_minmax(0,1fr)_7.5rem]">
-      <span className="relative block overflow-hidden"><Cover src={e.cover} i={i} sizes="104px" /></span>
+      <span className="relative block overflow-hidden"><Cover src={e.cover} i={i} sizes="208px" /></span>
       <span className="flex min-w-0 flex-col justify-center gap-0.5 py-3 pl-3 pr-2.5 sm:pl-3.5">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {e.category ? <span className="text-xs font-semibold text-primary">{e.category}</span> : null}

@@ -16,7 +16,7 @@ export async function CampaignStrip() {
         const body = (
           <>
             <span className="relative block size-18 shrink-0 overflow-hidden rounded-2xl bg-brand-gold sm:size-26">
-              <Image src={c.images.mobile.url} alt="" fill sizes="104px" className="object-cover" />
+              <Image src={c.images.mobile.url} alt="" fill sizes="208px" className="object-cover" />
             </span>
             <span className="min-w-0 flex-1">
               {c.isSponsored ? <span className="mb-1 block text-[0.8125rem] font-semibold text-amber-ink">Promocionado</span> : null}

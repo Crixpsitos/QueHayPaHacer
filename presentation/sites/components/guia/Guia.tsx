@@ -35,7 +35,7 @@ function Card({ s, n, st, what, quiet, onHover }: { s: GuiaSite; n: number; st: 
   return (
     <li onMouseEnter={() => onHover(s.id)} onMouseLeave={() => onHover(null)} className="group relative grid min-h-26 grid-cols-[6rem_minmax(0,1fr)] overflow-hidden rounded-[1.25rem] border border-border bg-card transition-shadow focus-within:ring-3 focus-within:ring-ring/50 hover:shadow-card sm:grid-cols-[6.75rem_minmax(0,1fr)]">
       <span className="relative block overflow-hidden">
-        <Cover s={s} sizes="108px" />
+        <Cover s={s} sizes="216px" />
         <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full border-2 border-white bg-primary-dark font-heading text-sm font-bold text-white">{n}</span>
       </span>
       <span className="min-w-0 px-3.5 py-3">
@@ -55,7 +55,7 @@ function Card({ s, n, st, what, quiet, onHover }: { s: GuiaSite; n: number; st: 
 function Row({ s, st }: { s: GuiaSite; st: Status }) {
   return (
     <li className="group relative grid min-h-20 grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border lg:min-h-21">
-      <span className="relative block size-15 overflow-hidden rounded-[0.875rem]"><Cover s={s} sizes="60px" /></span>
+      <span className="relative block size-15 overflow-hidden rounded-[0.875rem]"><Cover s={s} sizes="120px" /></span>
       <span className="min-w-0">
         <Link href={s.href} className="block font-semibold leading-tight outline-none after:absolute after:inset-0 group-hover:underline group-focus-within:underline">{s.name}</Link>
         <span className="mt-0.5 block truncate text-[0.8125rem] text-muted-foreground">{s.kind}</span>
