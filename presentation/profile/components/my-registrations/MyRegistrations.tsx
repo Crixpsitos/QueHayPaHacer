@@ -254,7 +254,7 @@ function RegistrationRow({
 
         <div className="relative hidden size-16 shrink-0 self-center overflow-hidden rounded-xl bg-[#F4F4F5] sm:block">
           {r.image && (
-            <Image src={r.image} alt="" fill priority={priority} sizes="64px" className={cn("object-cover", muted && "opacity-60")} />
+            <Image src={r.image} alt="" fill priority={priority} sizes="128px" className={cn("object-cover", muted && "opacity-60")} />
           )}
         </div>
       </div>

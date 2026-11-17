@@ -31,7 +31,7 @@ export function ActivityPlace({ d, compact }: { d: ActivityPageData; compact?: b
       <div className={compact ? "grid content-start gap-3" : "contents"}>
       {d.kind === "site" && d.site ? (
         <Link href={`/donde-ir/${d.site.slug}`} className="flex items-center gap-3 rounded-3xl border border-border bg-card p-3 outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/40">
-          {d.site.coverUrl ? <Image src={d.site.coverUrl} alt="" width={96} height={96} sizes="48px" className="size-12 shrink-0 rounded-2xl object-cover" /> : <span className="grid size-12 shrink-0 place-items-center rounded-2xl" style={{ background: cat.bg, color: cat.ink }}><MapPin className="size-5" aria-hidden /></span>}
+          {d.site.coverUrl ? <Image src={d.site.coverUrl} alt="" width={96} height={96} sizes="96px" className="size-12 shrink-0 rounded-2xl object-cover" /> : <span className="grid size-12 shrink-0 place-items-center rounded-2xl" style={{ background: cat.bg, color: cat.ink }}><MapPin className="size-5" aria-hidden /></span>}
           <span className="grid min-w-0 leading-tight"><span className="truncate font-heading text-base font-bold">{d.site.name}</span>{d.site.address ? <span className="truncate text-sm text-muted-foreground">{d.site.address}</span> : null}</span>
           <span className="ml-auto shrink-0 text-sm font-semibold text-primary-dark">Ver el sitio</span>
         </Link>

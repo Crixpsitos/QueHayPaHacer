@@ -38,7 +38,7 @@ function Thumb({ src, alt, icon: Icon }: { src?: string; alt: string; icon: type
   return (
     <div className="relative size-24 shrink-0 overflow-hidden rounded-md bg-muted">
       {src ? (
-        <Image src={src} alt={alt} fill sizes="96px" className="object-cover" />
+        <Image src={src} alt={alt} fill sizes="192px" className="object-cover" />
       ) : (
         <div className="flex size-full items-center justify-center">
           <Icon className="size-6 text-muted-foreground/50" aria-hidden />

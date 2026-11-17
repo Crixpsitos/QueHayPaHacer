@@ -23,7 +23,7 @@ function Row({ r }: { r: MoreRow }) {
     <li className="border-t border-border/60 first:border-t-0">
       <Link href={`/actividades/${r.slug}`} className="flex h-18 items-center gap-3 px-3.5 outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/40">
         <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-[0.875rem]" style={{ background: cat.bg, color: cat.ink }}>
-          {r.coverUrl ? <Image src={r.coverUrl} alt="" fill sizes="48px" className="object-cover" /> : <cat.Icon className="size-5" aria-hidden />}
+          {r.coverUrl ? <Image src={r.coverUrl} alt="" fill sizes="96px" className="object-cover" /> : <cat.Icon className="size-5" aria-hidden />}
         </span>
         <span className="grid min-w-0 flex-1 leading-tight">
           <span className="truncate font-heading text-[0.9375rem] font-semibold">{r.title}</span>

@@ -623,7 +623,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
           <ProfileAvatar
             src={editedUser.avatarUrl}
             alt={editedUser.firstName || "Usuario"}
-            sizes="48px"
+            sizes="96px"
             firstName={editedUser.firstName}
             lastName={editedUser.lastName}
             className="h-12 w-12 border border-border"
@@ -796,7 +796,7 @@ export const SettingsCenter = ({ hideTrigger = false }: { hideTrigger?: boolean 
               <ProfileAvatar
                 src={editedUser.avatarUrl}
                 alt="Foto de perfil"
-                sizes="96px"
+                sizes="192px"
                 firstName={editedUser.firstName}
                 lastName={editedUser.lastName}
                 loading="eager"
