@@ -52,7 +52,7 @@ import { SitesFirebaseRepository } from "../firebase/repositories/sites/SitesFir
 import { SitesAdapter } from "../adapters/sites/SitesAdapter";
 import { SiteFirebaseMapper } from "../firebase/mappers/sites/SiteFirebaseMapper";
 import { SitesService } from "@/application/services/sites/SitesService";
-import { ActivityService } from "@/application/services/activities/ActivityService";
+import { ActivityService, type ListableCache } from "@/application/services/activities/ActivityService";
 import { HostIdentityService } from "@/application/services/activities/HostIdentityService";
 import { ActivityPublishService } from "@/application/services/activities/ActivityPublishService";
 import { ActivityReminderService } from "@/application/services/activities/ActivityReminderService";
@@ -137,6 +137,13 @@ import { SiteInteractionService } from "@/application/services/sites/SiteInterac
 
 /** Consultas de datos de oferentes para quejas: 5 por minuto por persona, en memoria de la instancia. */
 const complaintLimiter = createIpLimiter(5);
+
+/**
+ * Lista pública de actividades compartida por todas las llamadas de la instancia (el contenedor se crea en cada llamada, y su
+ * servicio con él). 5 min como el CDN; las escrituras la vacían con `clearActivityListable` (solo en la instancia que escribe).
+ */
+const activityListable: ListableCache = { entry: null };
+export const clearActivityListable = () => { activityListable.entry = null };
 
 export const createServerContainer = () => {
 
@@ -228,7 +235,7 @@ export const createServerContainer = () => {
   const activityService = new ActivityService(new ActivityFirebaseRepository(getFirebaseFirestore()), async (siteId) => {
     const s = await sitesService.getActivityLinkSnapshot(siteId);
     return s ? { published: s.published, active: s.active } : null;
-  });
+  }, () => new Date(), activityListable, 5 * 60_000);
 
   // registro de oferentes (Ley 1480 art. 53); el límite vive a nivel de módulo (createServerContainer se ejecuta en cada llamada)
   const hostIdentityService = new HostIdentityService(new HostIdentityFirebaseRepository(getFirebaseFirestore()), () => new Date(), complaintLimiter);
