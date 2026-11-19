@@ -22,3 +22,21 @@ test("el correo de valor lista los planes con sus enlaces", async () => {
   assert.ok(html.includes("Mercado campesino"))
   assert.ok(html.includes("https://x.co/actividades/mercado?ch=em"))
 })
+
+test("«Para ti» muestra foto, lugar y precio, el botón «Ver más planes» y «Cambiar mis avisos»", async () => {
+  const e = valueEmail("forYou", [{ title: "Trote en el parque", when: "Hoy · 5:30 p. m.", path: "/actividades/trote", place: "Parque Centenario", price: "Desde $20.000", imageUrl: "https://img.test/a.jpg" }], ctx)
+  const html = await renderEmailHtml(e.model)
+  assert.ok(html.includes("Parque Centenario"))
+  assert.ok(html.includes("$20.000"))
+  assert.ok(html.includes("_next/image?url=https%3A%2F%2Fimg.test%2Fa.jpg"))
+  assert.ok(html.includes("Ver más planes"))
+  assert.ok(html.includes("https://x.co/avisos"))
+})
+
+test("correo de bienvenida: botón «Ver qué hay hoy», «Cambiar mis avisos» y baja", async () => {
+  const e = transactionalEmailFor({ type: "welcome", title: "Te damos la bienvenida", body: "Hola", href: "/" }, ctx)!
+  const html = await renderEmailHtml(e.model)
+  assert.ok(html.includes("Ver qué hay hoy"))
+  assert.ok(html.includes("https://x.co/avisos"))
+  assert.ok(html.includes("Dejar de recibir correos"))
+})

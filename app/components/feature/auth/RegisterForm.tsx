@@ -44,6 +44,7 @@ const registerSchema = v.pipe(
     ),
     acceptTerms: v.literal(true, "Acepta los términos y confirma que eres mayor de 18 años para continuar"),
     acceptPersonalData: v.literal(true, "Autoriza el tratamiento de tus datos personales para crear la cuenta"),
+    acceptMarketing: v.optional(v.boolean()),
   }),
   v.forward(
     v.partialCheck(
@@ -70,6 +71,7 @@ interface RegisterFormProps {
     password: string,
     acceptedTerms: boolean,
     acceptedDataPolicy: boolean,
+    acceptedMarketing?: boolean,
   ) => Promise<RegisterActionResult | void>;
 }
 
@@ -93,6 +95,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
       confirmPassword: "",
       acceptTerms: undefined,
       acceptPersonalData: undefined,
+      acceptMarketing: false,
     },
   });
 
@@ -108,6 +111,7 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
         data.password,
         data.acceptTerms,
         data.acceptPersonalData,
+        data.acceptMarketing === true,
       );
       if (result?.error) {
         setSubmitError(result.error);
@@ -210,6 +214,14 @@ export const RegisterForm = ({ registerAction }: RegisterFormProps) => {
           </p>
         )}
       </div>
+
+      {/* Opcional y sin marcar: es una autorización aparte (se puede cambiar o quitar en «Mis avisos») */}
+      <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+        <input {...register("acceptMarketing")} type="checkbox" id="acceptMarketing" className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary" />
+        <span>
+          <span className="font-medium text-foreground">Quiero recibir los planes de Ibagué por correo</span> (opcional): sugerencias según lo que te gusta y un resumen cada semana. Puedes darte de baja con un clic.
+        </span>
+      </label>
 
       {submitError && (
         <p role="alert" className="rounded-xl border border-primary/20 bg-primary-light px-3 py-2 text-sm text-primary">

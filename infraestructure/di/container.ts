@@ -589,6 +589,8 @@ export const createServerContainer = () => {
     activityJoinService,
     activityRequestService,
     notifyUser: notifyAndEmail,
+    /** Correo de bienvenida (una sola vez por cuenta: el id es fijo). No rompe el registro si falla. */
+    sendWelcomeEmail: (uid: string) => transactionalEmailBridge.fromNotification(uid, { type: "welcome", title: "Te damos la bienvenida a Qué Hay Pa Hacer", body: "Aquí encuentras los eventos, actividades y sitios de Ibagué. Guarda lo que te guste y vuelve cuando no sepas qué hacer. Si quieres recibir cada semana los planes elegidos para ti, actívalo con «Cambiar mis avisos», al final de este correo.", href: "/" }, "welcome"),
     siteCatalogService,
     activityPlansService,
     activityReminderService,

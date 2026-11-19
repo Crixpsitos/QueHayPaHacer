@@ -23,7 +23,8 @@ export async function expressInterestAction(eventId: string, tier?: string): Pro
   try {
     const { eventRegistrationService, eventsService, eventInteractionsService } = createServerContainer();
     const event = await eventsService.getEventById(id);
-    if (!event || event.registrationType !== "external" || event.author?.id === uid) return { recorded: false };
+    // Solo si quien organiza activó «Confirmar asistencia»: si no, el botón solo lleva al enlace.
+    if (!event || event.registrationType !== "external" || !event.requiresAttendance || event.author?.id === uid) return { recorded: false };
     if (new Date(event.endDate).getTime() < Date.now()) return { recorded: false };
     const chosen = tier && payTiers(event.price).some((t) => t.name === tier) ? tier : undefined;
     const r = await eventRegistrationService.registerExternalInterest({ userId: uid, eventId: id, name: name ?? "Usuario", email: email ?? "", registrationType: "internal", formData: { origen: "enlace externo", ...(chosen ? { categoria: chosen } : {}) } });

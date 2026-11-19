@@ -16,7 +16,8 @@ export function UpcomingDays({ up }: { up: UpcomingView }) {
         {up.days.map((d) => (
           <li key={d.date} className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-3 border-t border-border py-3">
             <DateChip wd={d.wd} day={d.day} mon={d.mon} solid className="self-start" />
-            <div className="flex flex-col gap-1">
+            {/* Varios eventos el mismo día: una barra los agrupa y se lee que comparten la fecha del chip */}
+            <div className={`flex flex-col gap-1${d.items.length > 1 ? " border-l-2 border-primary-dark/40 pl-3" : ""}`}>
               {d.items.map((e) => (
                 <Link key={e.key} href={e.href} className="block min-h-11 py-0.5 outline-none lg:min-h-0 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
                   <span className="block text-[0.9375rem] font-semibold leading-snug">{e.title}</span>

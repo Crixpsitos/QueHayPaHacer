@@ -183,6 +183,13 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
               )}
             />
             <ExternalLinkCustomization form={form} />
+            <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-[#F4F4F5] bg-[#FAFAFC] px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-[#09090B]">Confirmar asistencia</p>
+                <p className="mt-0.5 max-w-sm text-xs text-[#71717A]">Si lo activas, veremos quién se interesa al pulsar el botón y podrás ver la lista de interesados y confirmar quién fue. Si no, el botón solo lleva al enlace.</p>
+              </div>
+              <Switch aria-label="Confirmar asistencia" checked={requiresAttendance} onCheckedChange={(checked) => form.setValue("requiresAttendance", checked, { shouldValidate: true, shouldDirty: true })} />
+            </div>
           </div>
         )}
 

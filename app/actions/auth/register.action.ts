@@ -28,6 +28,7 @@ export async function registerAction(
     password: string,
     acceptedTerms: boolean,
     acceptedDataPolicy: boolean,
+    acceptedMarketing = false,
 ): Promise<RegisterActionResult | void> {
     if (!hasValidAcceptance(acceptedTerms, acceptedDataPolicy)) {
         return { error: ACCEPTANCE_REQUIRED_ERROR }
@@ -35,7 +36,7 @@ export async function registerAction(
 
     try {
         const { authService } = createClientContainer()
-        const { userService, badgeService } = createServerContainer()
+        const { userService, badgeService, notificationPrefsService, sendWelcomeEmail } = createServerContainer()
 
         const credentials = await authService.register(email, password)
         const uid = credentials.user.uid
@@ -69,6 +70,16 @@ export async function registerAction(
                 displayName: createdUser.displayName,
             })
             
+            // Casilla opcional del registro: autoriza los correos «Para ti» y semanal (queda con fecha y versión legal).
+            if (acceptedMarketing === true) {
+                try {
+                    await notificationPrefsService.save(uid, { email: { forYou: true, weekly: true } }, true)
+                } catch (prefsError) {
+                    console.warn("No se pudo guardar la autorización de avisos:", prefsError)
+                }
+            }
+            await sendWelcomeEmail(uid)
+
             // Asignar insignia "Usuario Nuevo" al registro
             try {
                 await badgeService.awardBadgeToUser(

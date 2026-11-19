@@ -127,6 +127,11 @@ export const Step4Location = ({ form }: Step4Props) => {
                 disabled={field.disabled}
                 cityName={IBAGUE_CITY.name}
                 countryIsoCode={IBAGUE_COUNTRY.isoCode}
+                onFreeText={(text) => field.onChange(text)}
+                onMapsCoords={(lat, lng) => {
+                  form.setValue("location.coordinates", { lat, lng }, { shouldValidate: true });
+                  void fillAddressFromPin(lat, lng);
+                }}
                 onChange={(value, coords, address) => {
                   field.onChange(value);
                   form.setValue("location.address", address, { shouldValidate: true });

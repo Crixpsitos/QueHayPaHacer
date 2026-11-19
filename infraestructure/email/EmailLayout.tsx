@@ -29,10 +29,12 @@ export function EmailLayout({ m }: { m: EmailModel }) {
               ))}
             </Section>
           ) : null}
+          {m.cards?.length ? <Section style={{ margin: "4px 0 0" }}>{m.cards.map((c) => <WeeklyRow key={c.href + c.when} c={c} />)}</Section> : null}
           {m.cta ? <Section style={{ margin: "20px 0" }}><Button href={m.cta.href} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "12px 22px", borderRadius: 999, fontWeight: 700, textDecoration: "none" }}>{m.cta.label}</Button></Section> : null}
           <Hr style={{ borderColor: "#E4E4E7", margin: "24px 0" }} />
           <Text style={{ margin: 0, fontSize: 12, lineHeight: "1.5", color: MUTED }}>
             {m.reason}<br />
+            {m.settingsUrl ? <><Link href={m.settingsUrl} style={{ color: WINE }}>Cambiar mis avisos</Link>{"  ·  "}</> : null}
             <Link href={m.unsubscribeUrl} style={{ color: WINE }}>Dejar de recibir correos</Link>
           </Text>
         </Container>

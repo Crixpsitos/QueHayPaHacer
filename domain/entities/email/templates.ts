@@ -8,6 +8,9 @@ export interface WeeklyCard { title: string; when: string; place: string; price:
 export interface WeeklyBlock { range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; anytime: { title: string; href: string }[]; sites: { title: string; href: string; place: string; imageUrl: string | null }[]; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
 export interface EmailModel {
   weekly?: WeeklyBlock
+  /** «Para ti»: filas con foto, lugar y precio (si no, la lista simple de `items`) */
+  cards?: WeeklyCard[]
+  settingsUrl?: string
   heading: string
   paragraphs: string[]
   items: { title: string; when: string; href: string }[]
@@ -25,6 +28,7 @@ export function withEmailAttribution(url: string, medium: string): string {
 }
 
 const REASON: Record<string, string> = {
+  welcome: "Recibes este correo porque creaste una cuenta en Qué Hay Pa Hacer.",
   activity_join: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   activity_request: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   event_registration: "Recibes este correo porque organizas este evento en Qué Hay Pa Hacer.",
@@ -41,7 +45,7 @@ export function transactionalEmailFor(n: { type: string; title: string; body?: s
   const link = n.href ? withEmailAttribution(`${c.siteUrl}${n.href}`, "transactional") : c.siteUrl
   const body = n.body ?? ""
   const text = `${n.title}\n\n${body ? `${body}\n\n` : ""}Míralo aquí: ${link}\n\n—\n${reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: n.type.startsWith("event_") ? "Ver el evento" : "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl } }
+  return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: n.type === "welcome" ? "Ver qué hay hoy" : n.type.startsWith("event_") ? "Ver el evento" : "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl, ...(n.type === "welcome" ? { settingsUrl: `${c.siteUrl}/avisos` } : {}) } }
 }
 
 export interface ValueItem { title: string; when: string; path: string; day?: string; time?: string; place?: string; price?: string; imageUrl?: string; /** el plan destacado del correo (si no, el primero con foto) */ star?: boolean }
@@ -56,7 +60,12 @@ export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: Ema
   const link = (p: string) => withEmailAttribution(`${c.siteUrl}${p}`, kind)
   const list = items.length ? items.map((i) => `• ${i.when} · ${i.title}\n  ${link(i.path)}`).join("\n") : v.empty
   const text = `${v.heading}\n\n${list}\n\n—\n${v.reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  const base: EmailModel = { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl }
+  const rich = kind === "forYou" && items.length > 0
+  const base: EmailModel = {
+    heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: rich ? [] : items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })),
+    ...(rich ? { cards: items.map((i) => ({ title: i.title, when: i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })), settingsUrl: `${c.siteUrl}/avisos` } : {}),
+    cta: rich ? { label: "Ver más planes", href: link("/actividades") } : null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl,
+  }
   const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link, extra.anytime ?? [], extra.sites ?? []) : null
   return { subject: v.subject, text, model: weekly ? { ...base, items: [], weekly } : base }
 }
