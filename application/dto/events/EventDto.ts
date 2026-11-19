@@ -372,11 +372,6 @@ export const publishEventSchema = v.pipe(
     updatedAt: v.optional(v.string()),
     publishedAt: v.string(),
   }),
-  // Los eventos pagados solo se pueden publicar con registro externo.
-  v.check(
-    (data) => data.price.isFree || data.registrationType === "external",
-    "Los eventos pagados requieren registro externo. Configura el tipo de registro en el paso anterior.",
-  ),
   // Las `entries` de un step no arrastran su pipe: re-validar con los schemas
   // completos para que el servidor aplique fechas, URL externa y monto > 0.
   v.rawCheck(({ dataset, addIssue }) => {

@@ -36,15 +36,14 @@ test("a free multi-date session supports internal registration", () => {
   assert.equal(result.success, true);
 });
 
-test("a paid multi-date session rejects internal registration", () => {
+test("a paid multi-date session accepts non-external registration (cover paid at the door)", () => {
   const result = safeParse(SessionSchema, {
     ...baseSession,
     registrationType: "internal",
     price: { isFree: false, amount: 50_000, currency: "COP" },
   });
 
-  assert.equal(result.success, false);
-  assert.match(result.issues?.map((issue) => issue.message).join(" ") ?? "", /registro externo/i);
+  assert.equal(result.success, true);
 });
 
 test("a paid multi-date session requires an external URL", () => {

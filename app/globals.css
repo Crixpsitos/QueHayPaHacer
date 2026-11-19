@@ -239,6 +239,8 @@
 .tiptap {
   outline: none;
   color: var(--foreground);
+  overflow-wrap: anywhere; /* una palabra o enlace larguísimo no debe ensanchar el formulario */
+  min-width: 0;
 }
 
 .tiptap p.is-editor-empty:first-child::before {

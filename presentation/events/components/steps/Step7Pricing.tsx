@@ -50,8 +50,6 @@ export function Step7Pricing({ form }: Step7PricingProps) {
     const initial = form.getValues("price.amount");
     return initial ? formatWithDots(initial) : "";
   });
-  // Controla si mostramos el modal de advertencia (solo cuando pagado + no externo)
-  const [showPaymentWarning, setShowPaymentWarning] = useState(false);
 
   const startTiers = () =>
     setTiers([
@@ -72,71 +70,10 @@ export function Step7Pricing({ form }: Step7PricingProps) {
     // No cambiamos registrationType: gratis admite cualquier tipo de registro
   };
 
-  const handleSelectPaid = () => {
-    if (isExternal) {
-      // Ya tiene registro externo: solo marcamos como pagado
-      form.setValue("price.isFree", false, { shouldValidate: true });
-    } else {
-      // Registro no externo: mostrar modal explicativo SIN cambiar aún el estado
-      setShowPaymentWarning(true);
-    }
-  };
-
-  // Acción "Usar registro externo" en el modal
-  const handleUseExternal = () => {
-    form.setValue("registrationType", "external", { shouldValidate: true });
-    form.setValue("price.isFree", false, { shouldValidate: true });
-    setShowPaymentWarning(false);
-  };
-
-  // Cancelar modal: no cambia nada (isFree permanece true)
-  const handleCancelWarning = () => {
-    setShowPaymentWarning(false);
-  };
+  const handleSelectPaid = () => form.setValue("price.isFree", false, { shouldValidate: true });
 
   return (
     <div className="space-y-4">
-
-      {/* ── Modal: Pagado seleccionado pero registro ≠ externo ── */}
-      {showPaymentWarning && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-          onClick={handleCancelWarning}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl bg-white shadow-card overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start gap-3 px-6 pt-6 pb-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FFF8E7]">
-                <Info className="size-5 text-[#E09F00]" />
-              </span>
-              <div>
-                <p className="text-base font-bold text-[#09090B]">Los eventos pagados requieren registro externo</p>
-                <p className="mt-1.5 text-sm text-[#71717A] leading-relaxed">
-                  QueHayPaHacer no tiene pasarela de pagos integrada. Si tu evento es pagado, necesitas usar registro externo y gestionar por tu cuenta el cobro de las entradas.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 px-6 pb-6">
-              <button
-                type="button"
-                onClick={handleUseExternal}
-                className="w-full rounded-xl bg-[#D42F3C] hover:bg-[#9B0A26] px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-primary-glow"
-              >
-                Usar registro externo
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelWarning}
-                className="w-full rounded-xl border border-[#E4E4E7] bg-white px-4 py-2.5 text-sm font-medium text-[#09090B] hover:bg-[#FAFAFC] transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Card: opciones Gratis / Pagado ── */}
       <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
@@ -310,26 +247,21 @@ export function Step7Pricing({ form }: Step7PricingProps) {
             </button>
           )}
 
-          {/* Nota informativa: pagado + externo (combinación válida) */}
+          {/* Sin pasarela: externo → cobra el sitio externo; si no, el cobro es en la puerta */}
+          {!isExternal && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-[#E4E4E7] bg-[#FAFAFC] px-4 py-3">
+              <Info className="size-4 shrink-0 mt-0.5 text-[#71717A]" />
+              <p className="text-xs text-[#71717A] leading-relaxed">
+                QueHayPaHacer no cobra: mostrará el precio y el pago lo gestionas tú, por ejemplo en la puerta del lugar.
+              </p>
+            </div>
+          )}
           {isExternal && (
             <div className="flex items-start gap-2.5 rounded-xl border border-[#E4E4E7] bg-[#FAFAFC] px-4 py-3">
               <ExternalLink className="size-4 shrink-0 mt-0.5 text-[#71717A]" />
               <p className="text-xs text-[#71717A] leading-relaxed">
                 Como elegiste registro externo, tú gestionas por tu cuenta el registro y el cobro de los asistentes. QueHayPaHacer solo mostrará el precio y llevará a las personas al sitio que indiques.
               </p>
-            </div>
-          )}
-
-          {/* Alerta: pagado + no externo (combinación inválida para publicar) */}
-          {!isExternal && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-[#FFF8E7] px-4 py-3">
-              <Info className="size-4 shrink-0 mt-0.5 text-[#E09F00]" />
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-[#92400E]">Se requiere registro externo para publicar</p>
-                <p className="mt-0.5 text-xs text-[#92400E] leading-relaxed">
-                  Los eventos pagados deben usar registro externo. Ve al paso de registro para configurarlo.
-                </p>
-              </div>
             </div>
           )}
         </div>
