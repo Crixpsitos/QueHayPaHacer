@@ -8,6 +8,7 @@ import { groupSitesByCategory } from "../../lib/groupSitesByCategory";
 import { createServerContainer } from "@/infraestructure/di/container";
 import { cacheLife, cacheTag } from "next/cache";
 import type { SiteDetail } from "../../view-models/SiteFormViewModel";
+import { fetchAllSiteIds } from "@/presentation/sites/data/fetchAllSiteIds"
 
 const fetchSiteDetailById = async (id: string): Promise<SiteDetail | null> => {
   "use cache";
@@ -24,7 +25,7 @@ const fetchCollectionSites = async (def: SiteCollectionDef): Promise<SiteDetail[
   const { sitesService } = createServerContainer();
   const ids = def.kind === "featured"
     ? await sitesService.getFeaturedSites()
-    : await sitesService.getAllSites();
+    : await fetchAllSiteIds();
   const sites = await Promise.all(ids.map(fetchSiteDetailById));
   return sites.filter((s): s is SiteDetail => Boolean(s));
 };

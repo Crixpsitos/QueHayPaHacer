@@ -23,7 +23,16 @@ function loginRedirect(request: NextRequest) {
   return NextResponse.redirect(new URL(`/login?redirect_to=${redirectTo}`, request.url));
 }
 
+/** Parámetros de filtro del hub de actividades. Una persona combina 2 o 3; un rastreador recorría combinaciones de 6 o 7. */
+const FILTER_PARAMS = ["categoria", "tipo", "sitio", "cuando", "dia", "presupuesto", "con", "promos"];
+
 export async function proxy(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname === "/actividades" && FILTER_PARAMS.filter((k) => searchParams.has(k)).length >= 5) {
+    // Aquí sí se ve la IP real (x-forwarded-for): el log de Cloud Run solo trae las de Google.
+    console.warn(JSON.stringify({ message: "facet-crawl-blocked", ip: request.headers.get("x-forwarded-for"), ua: request.headers.get("user-agent"), url: request.nextUrl.search.slice(0, 200) }));
+    return new NextResponse("Demasiados filtros", { status: 403, headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } });
+  }
   return authMiddleware(request, {
     loginPath: "/api/login",
     logoutPath: "/api/logout",

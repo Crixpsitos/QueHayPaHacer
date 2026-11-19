@@ -9,6 +9,7 @@ import { formatPrice } from "@/presentation/events/components/detail/format"
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus"
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants"
 import { buildHomeView, clockText, type ActivityIn, type EscapadaIn, type EventIn, type HomeView, type SiteIn } from "../lib/buildHomeView"
+import { fetchAllSiteIds } from "@/presentation/sites/data/fetchAllSiteIds"
 
 const PAGE = 30
 const MAX_PAGES = 4 // ponytail: tope de 120 eventos próximos en el Home; si la cartelera crece, sube MAX_PAGES
@@ -90,7 +91,7 @@ async function loadEscapadas(): Promise<EscapadaIn[]> {
 }
 
 async function loadSites(now: Date): Promise<SiteIn[]> {
-  const ids = await createServerContainer().sitesService.getAllSites()
+  const ids = await fetchAllSiteIds()
   const sites = (await Promise.all(ids.map(fetchSite))).filter((s): s is SiteDetail => !!s)
   const nowMins = Number(now.toLocaleString("en-GB", { timeZone: "America/Bogota", hour: "2-digit", hourCycle: "h23" })) * 60 + Number(now.toLocaleString("en-GB", { timeZone: "America/Bogota", minute: "2-digit" }))
   const toMins = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0) }
