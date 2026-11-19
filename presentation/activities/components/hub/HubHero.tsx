@@ -1,8 +1,8 @@
-import Link from "@/app/components/ui/navigation/IntentLink"
 import type { UrlFilters } from "@/domain/entities/activities/filters"
 import type { HubMeta } from "@/presentation/activities/data/fetchers"
 import { filterHref } from "@/presentation/activities/lib/filterHref"
 import { cn } from "@/app/lib/utils/cn"
+import { FilterLink } from "@/presentation/activities/components/FilterLink"
 
 const WD = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"]
 const dayParts = (iso: string) => ({ wd: WD[new Date(`${iso}T12:00:00Z`).getUTCDay()], n: Number(iso.slice(8)) })
@@ -30,19 +30,19 @@ export function HubHero({ current, meta }: { current: UrlFilters; meta: HubMeta 
             const { wd, n } = dayParts(d.date)
             const on = selected === d.date
             return (
-              <Link prefetch={false} key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} scroll={false} aria-current={on ? "date" : undefined} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
+              <FilterLink key={d.date} href={on ? filterHref(current, { day: undefined, when: undefined }) : filterHref(current, { day: d.date })} aria-pressed={on} aria-label={`${i === 0 ? "Hoy, " : ""}${wd} ${n}: ${d.count} ${d.count === 1 ? "actividad" : "actividades"}`}
                 className={cn("flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-[1.25rem] border-[1.5px] px-1 pb-3 pt-2.5 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-[#FFB703]/70 sm:w-20", on ? "border-[#FFB703] bg-[#FFB703] text-[#5C0011]" : "border-white/15 bg-white/6 text-white hover:bg-white/12")}>
                 <span className={cn("text-xs font-medium", on ? "text-foreground/80" : "text-white/70")}>{i === 0 ? "Hoy" : wd}</span>
                 <span className="font-heading text-[1.75rem] font-bold leading-none">{n}</span>
                 <span className={cn("mt-1.5 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold", on ? "bg-primary-dark text-[#FFB703]" : "bg-white/15")}>{d.count}</span>
-              </Link>
+              </FilterLink>
             )
           })}
         </nav>
         <div className="flex flex-wrap gap-2">
-          <Link prefetch={false} href={toggle("when", "este-fin-de-semana")} scroll={false} aria-current={current.when === "este-fin-de-semana" ? "true" : undefined} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</Link>
-          <Link prefetch={false} href={toggle("when", "esta-semana")} scroll={false} aria-current={current.when === "esta-semana" ? "true" : undefined} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</Link>
-          <Link prefetch={false} href={promoHref} scroll={false} aria-current={current.promo ? "true" : undefined} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</Link>
+          <FilterLink href={toggle("when", "este-fin-de-semana")} aria-pressed={Boolean(current.when === "este-fin-de-semana")} className={cn(ghost, current.when === "este-fin-de-semana" && ghostOn)}>Este fin de semana</FilterLink>
+          <FilterLink href={toggle("when", "esta-semana")} aria-pressed={Boolean(current.when === "esta-semana")} className={cn(ghost, current.when === "esta-semana" && ghostOn)}>Toda la semana</FilterLink>
+          <FilterLink href={promoHref} aria-pressed={Boolean(current.promo)} className={cn(ghost, current.promo && ghostOn)}>Promos hoy</FilterLink>
         </div>
       </div>
     </header>

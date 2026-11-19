@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "@/app/components/ui/navigation/IntentLink"
 import { Suspense } from "react"
 import { Button } from "@/app/components/ui/button/button"
+import { FilterLink } from "@/presentation/activities/components/FilterLink"
 import { filterHref } from "@/presentation/activities/lib/filterHref"
 import { parseFilters, type ActivityFilters as Filters } from "@/domain/entities/activities/filters"
 import { WHEN_LABELS, ActivityFilters } from "@/presentation/activities/components/ActivityFilters"
@@ -102,7 +103,7 @@ async function Results({ searchParams }: { searchParams: Params }) {
           <h2 className="font-heading text-xl font-bold">No hay actividades con esa combinación</h2>
           <p className="text-sm text-muted-foreground">Prueba otro día o quita un filtro{f.when === "hoy" || f.day ? ", o mira lo que sí hay esta semana" : ""}.</p>
           <div className="flex flex-wrap gap-2">
-            {f.when === "hoy" || f.day ? <Button asChild variant="outline" className="h-11 border-primary text-primary-dark"><Link prefetch={false} href={filterHref(f, { when: "esta-semana" })}>Ver toda la semana</Link></Button> : null}
+            {f.when === "hoy" || f.day ? <Button asChild variant="outline" className="h-11 border-primary text-primary-dark"><FilterLink href={filterHref(f, { when: "esta-semana" })}>Ver toda la semana</FilterLink></Button> : null}
             <Button asChild variant="outline" className="h-11"><Link prefetch={false} href="/actividades">Quitar filtros</Link></Button>
           </div>
         </div>
