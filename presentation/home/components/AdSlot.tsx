@@ -1,8 +1,9 @@
 import { cn } from "@/app/lib/utils/cn"
+import { AdUnit } from "./AdUnit"
 
 /**
  * Espacio de publicidad adaptable (Google Ads). Apagado por defecto: no dibuja nada hasta que `NEXT_PUBLIC_ADS_ENABLED=true`.
- * Reserva el alto desde el inicio para que la página no salte. Cuando exista la configuración real, aquí va el anuncio.
+ * «rectangle» = dentro de un listado → bloque In-feed; «banner» = franja de página → bloque Display; si Google no tiene anuncio, el espacio se oculta entero (globals.css).
  * Reglas: nunca en el primer pantallazo ni junto a Premium, verificación o botones de pagar; un solo formato por espacio.
  */
 export const adsEnabled = () => process.env.NEXT_PUBLIC_ADS_ENABLED === "true"
@@ -10,9 +11,9 @@ export const adsEnabled = () => process.env.NEXT_PUBLIC_ADS_ENABLED === "true"
 export function AdSlot({ format = "banner", className }: { format?: "banner" | "rectangle"; className?: string }) {
   if (!adsEnabled()) return null
   return (
-    <aside aria-label="Publicidad" className={cn("flex flex-col justify-between rounded-2xl border border-dashed border-muted-foreground/50 bg-muted p-2.5 text-muted-foreground", format === "banner" ? "h-25" : "h-62.5", className)}>
-      <span className="text-xs font-semibold">Publicidad</span>
-      <span className="text-[0.8125rem]">Anuncio adaptable: ocupa todo el ancho</span>
+    <aside data-ad aria-label="Publicidad" className={cn("overflow-hidden rounded-2xl border border-border bg-card p-2.5", className)}>
+      <span className="mb-1 block text-xs font-semibold text-muted-foreground">Publicidad</span>
+      <AdUnit kind={format === "rectangle" ? "feed" : "display"} />
     </aside>
   )
 }
