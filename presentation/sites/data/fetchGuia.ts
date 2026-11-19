@@ -8,6 +8,7 @@ import { liveBySite } from "@/presentation/home/lib/buildHomeView"
 import { buildGuia, type GuiaView } from "../lib/buildGuia"
 import type { SiteDetail } from "../view-models/SiteFormViewModel"
 import { fetchFeaturedSites, fetchSiteDetailById } from "./siteListFetchers"
+import { fetchAllSiteIds } from "./fetchAllSiteIds"
 
 export interface GuiaData { view: GuiaView; /** Eventos de la ciudad que quedan esta semana (para el cruce con /eventos). */ weekEvents: number }
 
@@ -23,7 +24,7 @@ export const fetchGuia = async (): Promise<GuiaData> => {
   const now = new Date()
   const c = createServerContainer()
   const [ids, events, featured, promos] = await Promise.all([
-    c.sitesService.getAllSites(),
+    fetchAllSiteIds(),
     loadPublishedEvents(),
     fetchFeaturedSites(),
     // Sin promociones la guía sigue sirviendo: un fallo aquí no debe tumbar la página.
