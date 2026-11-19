@@ -116,6 +116,10 @@ export function EventDetailClient({
   const goExternal = async (tier?: string) => {
     const out = eventOutHref(event.id, "register");
     // /r/e/[id] cuenta el clic en el servidor (contador del estudio + stats diarias) y redirige al externalUrl guardado.
+    if (!event.requiresAttendance) {
+      window.open(out, "_blank", "noopener,noreferrer"); // sin «Confirmar asistencia»: solo el enlace, sin registrar interés
+      return;
+    }
     if (!(event.capacity && event.capacity > 0)) {
       void expressInterestAction(event.id, tier); // sin cupos: queda como «interesado» sin bloquear el enlace
       window.open(out, "_blank", "noopener,noreferrer");
@@ -175,7 +179,7 @@ export function EventDetailClient({
               <LayoutDashboard className="size-4" aria-hidden="true" />
               Ir a estudio
             </Link>
-          ) : event.registrationType !== "none" ? (
+          ) : event.registrationType !== "none" && (event.registrationType !== "external" || event.requiresAttendance) ? (
             // Cuenta normal → lista de inscritos o interesados, y confirmar con el código a mano (el escáner QR es Premium).
             <EventAttendeesDialog
               eventId={event.id}

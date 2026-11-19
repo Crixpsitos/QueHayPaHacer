@@ -1,5 +1,5 @@
 export const FOR_YOU_MAX = 5
-export interface PoolItem { id: string; title: string; path: string; category: string; /** «Hoy · 5:30 p. m.» */ when: string }
+export interface PoolItem { id: string; title: string; path: string; category: string; /** «Hoy · 5:30 p. m.» */ when: string; place?: string; price?: string; imageUrl?: string }
 
 /**
  * «Para ti»: de lo que hay vigente, primero lo de las categorías que la persona más guarda o marca «Yo fui» (y sus gustos),
@@ -14,6 +14,8 @@ export function selectForYou(pool: PoolItem[], s: { categories: string[]; exclud
   return [...open.entries()].sort(([ai, a], [bi, b]) => (weight.get(b.category) ?? 0) - (weight.get(a.category) ?? 0) || ai - bi).map(([, i]) => i).slice(0, FOR_YOU_MAX)
 }
 
+import type { Activity } from "@/domain/entities/activities/Activity"
+import { onRequestLabel, allOnRequest, priceFromCop, formatCop } from "@/domain/entities/activities/value-objects/Price"
 import { occurrencesBetween } from "@/domain/entities/activities/value-objects/occurrences"
 import type { ActivitySchedule } from "@/domain/entities/activities/value-objects/ActivitySchedule"
 
@@ -23,7 +25,7 @@ const hour = (m: number) => { const h = Math.floor(m / 60); return `${h % 12 ===
 const WD = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 
 /** Lo vigente de hoy y los 2 días siguientes que aún no terminó: la primera salida de cada actividad, con su día y hora. */
-export function buildPool(acts: { id: string; title: string; slug: string; category: string; schedule: ActivitySchedule }[], now: Date): PoolItem[] {
+export function buildPool(acts: { id: string; title: string; slug: string; category: string; schedule: ActivitySchedule; priceOptions?: Activity["priceOptions"]; media?: Activity["media"]; meetingPoint?: { text: string } }[], now: Date): PoolItem[] {
   const from = day(now), to = day(new Date(now.getTime() + 2 * 86_400_000))
   const out: PoolItem[] = []
   for (const a of acts) {
@@ -31,7 +33,13 @@ export function buildPool(acts: { id: string; title: string; slug: string; categ
     if (!o) continue
     const when = o.date === from ? "Hoy" : o.date === day(new Date(now.getTime() + 86_400_000)) ? "Mañana" : WD[new Date(`${o.date}T12:00:00Z`).getUTCDay()]
     const t = o.startsAt ? new Date(o.startsAt.getTime() - OFFSET) : null
-    out.push({ id: a.id, title: a.title, path: `/actividades/${a.slug}`, category: a.category, when: t ? `${when} · ${hour(t.getUTCHours() * 60 + t.getUTCMinutes())}` : when })
+    const from_ = a.priceOptions ? priceFromCop(a.priceOptions) : null
+    out.push({
+      id: a.id, title: a.title, path: `/actividades/${a.slug}`, category: a.category, when: t ? `${when} · ${hour(t.getUTCHours() * 60 + t.getUTCMinutes())}` : when,
+      ...(a.meetingPoint?.text ? { place: a.meetingPoint.text } : {}),
+      ...(a.priceOptions && from_ !== null ? { price: allOnRequest(a.priceOptions) ? onRequestLabel(a.priceOptions) : from_ === 0 ? "Gratis" : `Desde ${formatCop(from_)}` } : {}),
+      ...(a.media?.find((m) => m.type === "image" && m.isCover && m.status !== "error") ? { imageUrl: a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")!.url } : {}),
+    })
   }
   return out
 }

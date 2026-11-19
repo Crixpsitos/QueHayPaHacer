@@ -5,6 +5,10 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/app/components/ui/pop
 import { useCallback, useState, useRef, useEffect } from "react";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { cn } from "@/app/lib/utils/cn";
+import { resolveMapsLinkAction } from "@/app/actions/places/resolve-maps-link.action";
+
+/** Enlace de Google Maps o «lat, lng» pegado en el buscador: se usa como ubicación, no como texto a buscar. */
+const MAPS_REF = /^(https?:\/\/\S*(google\.[a-z.]+\/maps|goo\.gl|maps\.app)\S*|-?\d{1,3}\.\d+\s*,\s*-?\d{1,3}\.\d+)$/i;
 
 interface LocationOption {
   id: string;
@@ -20,6 +24,10 @@ interface SearchLocationInputProps {
   value?: string;
   disabled?: boolean;
   onChange: (value: string, coords: [number, number], address: string) => void;
+  /** La persona escribió su propio nombre de lugar (no estaba en la lista). */
+  onFreeText?: (value: string) => void;
+  /** Pegó un enlace de Google Maps o coordenadas: llegan ya resueltas. */
+  onMapsCoords?: (lat: number, lng: number) => void;
 }
 
 export interface Root {
@@ -64,6 +72,8 @@ export const SearchLocationInput = ({
   value,
   disabled,
   onChange,
+  onFreeText,
+  onMapsCoords,
 }: SearchLocationInputProps) => {
   const [search, setSearch] = useState(value || "");
   const [options, setOptions] = useState<LocationOption[]>([]);
@@ -71,6 +81,7 @@ export const SearchLocationInput = ({
   const [open, setOpen] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [linkMsg, setLinkMsg] = useState<{ ok: boolean; text: string } | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -89,6 +100,20 @@ export const SearchLocationInput = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setSearch(value);
+
+      if (onMapsCoords && MAPS_REF.test(value.trim())) {
+        if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+        setOpen(false); setOptions([]); setHasSearched(false); setLoading(true); setLinkMsg(null);
+        void resolveMapsLinkAction(value.trim()).then((r) => {
+          setLoading(false);
+          if (!r.ok) return setLinkMsg({ ok: false, text: r.error });
+          onMapsCoords(r.coords.lat, r.coords.lng);
+          setSearch("");
+          setLinkMsg({ ok: true, text: "Listo: pusimos el punto en el mapa. Escribe el nombre del lugar si quieres." });
+        });
+        return;
+      }
+      setLinkMsg(null);
 
       if (value.trim().length < 3) {
         if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
@@ -172,7 +197,7 @@ export const SearchLocationInput = ({
         }
       }, 400);
     },
-    [cityName, cityCoords?.latitude, cityCoords?.longitude, countryIsoCode],
+    [cityName, cityCoords?.latitude, cityCoords?.longitude, countryIsoCode, onMapsCoords],
   );
 
   const handleSelectOption = (option: LocationOption) => {
@@ -195,6 +220,7 @@ export const SearchLocationInput = ({
               disabled={disabled}
               onChange={handleSearchChange}
               onFocus={() => search.trim().length >= 3 && setOpen(true)}
+              onBlur={() => { const t = search.trim(); if (onFreeText && t && t !== (value ?? "")) onFreeText(t); }}
               className={cn(
                 "pl-9 pr-10 h-12 w-full rounded-lg border-[#E4E4E7] bg-white text-[#09090B] placeholder:text-[#A1A1AA] shadow-none",
                 "focus-visible:ring-1 focus-visible:ring-[#D42F3C]/20 focus-visible:border-[#D42F3C]",
@@ -246,6 +272,18 @@ export const SearchLocationInput = ({
               </button>
             ))}
 
+            {/* ¿No está tu lugar? Se queda con lo que escribiste */}
+            {!loading && onFreeText && search.trim().length >= 3 && (
+              <button
+                type="button"
+                onClick={() => { onFreeText(search.trim()); setOpen(false); }}
+                className="w-full flex items-start gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-[#FDF2F4] focus:bg-[#FDF2F4] outline-none"
+              >
+                <Search className="size-4 text-[#D42F3C] shrink-0 mt-0.5" />
+                <span className="text-sm text-[#09090B]">¿No encuentras tu lugar? Usar <span className="font-semibold">«{search.trim()}»</span> y marcarlo tú en el mapa</span>
+              </button>
+            )}
+
             {/* Sin resultados */}
             {!loading && hasSearched && !hasError && options.length === 0 && (
               <div className="px-4 py-4 text-center">
@@ -264,6 +302,7 @@ export const SearchLocationInput = ({
           </div>
         </PopoverContent>
       </Popover>
+      {linkMsg ? <p role={linkMsg.ok ? "status" : "alert"} className={linkMsg.ok ? "mt-1.5 text-xs font-medium text-[#14532D]" : "mt-1.5 text-xs font-medium text-destructive"}>{linkMsg.text}</p> : null}
     </div>
   );
 };

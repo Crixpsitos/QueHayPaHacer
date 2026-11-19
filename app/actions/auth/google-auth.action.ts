@@ -25,7 +25,7 @@ export async function googleAuthAction(
     acceptedTerms?: boolean,
 ): Promise<GoogleAuthActionResult | void> {
     try {
-        const { userService } = createServerContainer()
+        const { userService, sendWelcomeEmail } = createServerContainer()
 
         // googleUser llega del cliente: el uid debe ser el del token verificado.
         const { uid } = await getFirebaseAdminAuth().verifyIdToken(idToken)
@@ -66,6 +66,8 @@ export async function googleAuthAction(
                 await userService.deleteUser(googleUser.uid)
                 throw error
             }
+
+            await sendWelcomeEmail(googleUser.uid)
         }
 
         await refreshCookiesWithIdToken(

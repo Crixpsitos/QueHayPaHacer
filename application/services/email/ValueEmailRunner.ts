@@ -36,7 +36,7 @@ export class ValueEmailRunner {
       if (!(await this.d.allows(uid, "forYou"))) continue
       const items = selectForYou(pool, await this.d.signals(uid))
       if (!items.length) continue
-      if (await this.queue(uid, "forYou", `fy_${uid}_${day}`, items.map((i) => ({ title: i.title, when: i.when, path: i.path })), now)) forYou++
+      if (await this.queue(uid, "forYou", `fy_${uid}_${day}`, items.map((i) => ({ title: i.title, when: i.when, path: i.path, place: i.place, price: i.price, imageUrl: i.imageUrl })), now)) forYou++
     }
     if (local.getUTCDay() === 4) { // jueves: el fin de semana ya se ve
       const digest = await weekendDigest()

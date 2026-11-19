@@ -125,7 +125,8 @@ type PlanGatedFields = Partial<Pick<Events, "requiresAttendance" | "registration
  */
 export function enforcePlanFeatures<T extends PlanGatedFields>(event: T, author: Pick<User, "plan"> | null | undefined): T {
   if (author?.plan === "premium") return event;
-  const out: T = { ...event, requiresAttendance: false };
+  // «Confirmar asistencia» en enlaces externos (ver interesados) es gratis; el check-in de inscritos propios sigue siendo Premium.
+  const out: T = { ...event, requiresAttendance: event.registrationType === "external" ? event.requiresAttendance === true : false };
   if (out.registrationType === "form") {
     out.registrationType = "internal";
     delete out.registrationEventForm;

@@ -758,7 +758,7 @@ export const EventForm = ({
       </header>
 
       {/* ── BODY CON CONTAINER ─────────────────────────────────── */}
-      <div className="mx-auto flex-1 max-w-screen-2xl px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full flex-1 max-w-screen-2xl px-4 py-8 sm:px-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
 
           {/* ── COL 1: PASOS + BADGES ──────────────────────────── */}

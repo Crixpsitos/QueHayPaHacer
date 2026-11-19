@@ -66,6 +66,7 @@ const SITE_JSONLD = [
 import { cn } from "@/app/lib/utils/cn";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import Script from "next/script";
 import { NewVersionNotice } from "@/app/components/feature/NewVersionNotice";
 import { IdlePrefetch } from "@/app/components/feature/IdlePrefetch";
 import { InstallBanner } from "@/app/components/pwa/InstallPrompt";
@@ -105,6 +106,7 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
+        <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7393386666374848" crossOrigin="anonymous" strategy="afterInteractive" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
