@@ -3,7 +3,8 @@ import { SITE_URL } from "@/app/lib/site";
 
 // Áreas privadas/funcionales fuera del índice.
 // Las combinaciones de filtros (?categoria=…&con=…) son infinitas: un rastreador (IPs de Meta, 57.141.0.0/16) las recorrió y generó ~1 M de lecturas.
-const DISALLOW = ["/studio/", "/api/", "/r/", "/actividades?*", "/donde-ir?*", "/eventos?*"];
+// `/*?*`: ninguna URL con parámetros (filtros, utm…); los rastreadores siguen viendo las páginas limpias y las fichas.
+const DISALLOW = ["/studio/", "/api/", "/r/", "/*?*"];
 
 export default function robots(): MetadataRoute.Robots {
   return {

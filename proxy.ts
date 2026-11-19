@@ -25,13 +25,22 @@ function loginRedirect(request: NextRequest) {
 
 /** Parámetros de filtro del hub de actividades. Una persona combina 2 o 3; un rastreador recorría combinaciones de 6 o 7. */
 const FILTER_PARAMS = ["categoria", "tipo", "sitio", "cuando", "dia", "presupuesto", "con", "promos"];
+/** Listados con filtros por URL. En los demás distintos de actividades se cuenta cualquier parámetro que no sea de seguimiento. */
+const LISTINGS = ["/eventos", "/donde-ir", "/explorar"];
+const TRACKING = /^(utm_|ch$|fbclid$|gclid$)/;
+
+function tooManyFilters(pathname: string, params: URLSearchParams) {
+  if (pathname === "/actividades") return FILTER_PARAMS.filter((k) => params.has(k)).length >= 5;
+  if (!LISTINGS.includes(pathname)) return false;
+  return new Set([...params.keys()].filter((k) => !TRACKING.test(k))).size >= 4;
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  if (pathname === "/actividades" && FILTER_PARAMS.filter((k) => searchParams.has(k)).length >= 5) {
+  if (tooManyFilters(pathname, searchParams)) {
     // Aquí sí se ve la IP real (x-forwarded-for): el log de Cloud Run solo trae las de Google.
     const h = request.headers;
-    console.warn(JSON.stringify({ message: "facet-crawl-blocked", ip: h.get("x-forwarded-for"), ua: h.get("user-agent"), referer: h.get("referer"), accept: h.get("accept"), from: h.get("from"), via: h.get("via"), headerNames: [...h.keys()].join(","), url: request.nextUrl.search.slice(0, 200) }));
+    console.warn(JSON.stringify({ message: "facet-crawl-blocked", path: pathname, ip: h.get("x-forwarded-for"), ua: h.get("user-agent"), referer: h.get("referer"), accept: h.get("accept"), from: h.get("from"), via: h.get("via"), headerNames: [...h.keys()].join(","), url: request.nextUrl.search.slice(0, 200) }));
     return new NextResponse("Demasiados filtros", { status: 403, headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } });
   }
   return authMiddleware(request, {
