@@ -30,7 +30,8 @@ export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   if (pathname === "/actividades" && FILTER_PARAMS.filter((k) => searchParams.has(k)).length >= 5) {
     // Aquí sí se ve la IP real (x-forwarded-for): el log de Cloud Run solo trae las de Google.
-    console.warn(JSON.stringify({ message: "facet-crawl-blocked", ip: request.headers.get("x-forwarded-for"), ua: request.headers.get("user-agent"), url: request.nextUrl.search.slice(0, 200) }));
+    const h = request.headers;
+    console.warn(JSON.stringify({ message: "facet-crawl-blocked", ip: h.get("x-forwarded-for"), ua: h.get("user-agent"), referer: h.get("referer"), accept: h.get("accept"), from: h.get("from"), via: h.get("via"), headerNames: [...h.keys()].join(","), url: request.nextUrl.search.slice(0, 200) }));
     return new NextResponse("Demasiados filtros", { status: 403, headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } });
   }
   return authMiddleware(request, {
