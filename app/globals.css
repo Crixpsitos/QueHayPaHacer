@@ -327,3 +327,7 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* AdSense: sin anuncio disponible no queda un hueco con la etiqueta «Publicidad» */
+ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
+aside[data-ad]:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }

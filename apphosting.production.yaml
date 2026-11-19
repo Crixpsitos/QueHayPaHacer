@@ -15,6 +15,12 @@ env:
     value: "1"
     availability:
       - RUNTIME
+  # Publicidad (AdSense): enciende los espacios de AdSlot. Sin anuncio disponible, el espacio se oculta solo.
+  - variable: NEXT_PUBLIC_ADS_ENABLED
+    value: "true"
+    availability:
+      - BUILD
+
   # Dominio propio de producción (sitemap, robots, canónicas y vistas previas).
   - variable: NEXT_PUBLIC_SITE_URL
     value: https://yquehaypahacer.com
