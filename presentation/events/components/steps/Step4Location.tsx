@@ -188,7 +188,10 @@ export const Step4Location = ({ form }: Step4Props) => {
           <p className="text-sm font-semibold text-[#09090B]">Ubicación exacta en el mapa</p>
           <p className="text-xs text-[#71717A] mt-0.5">Toca el mapa, arrastra el marcador o pega un enlace de Google Maps. Si no has escrito tu dirección, se completa sola; la tuya nunca se reemplaza. {findingAddress ? <span className="font-medium text-[#9B0A26]">Buscando dirección…</span> : null}</p>
         </div>
-        <MapsLinkInput className="mb-3 grid gap-1.5" onCoords={(lat, lng) => form.setValue("location.coordinates", { lat, lng }, { shouldValidate: true })} />
+        <MapsLinkInput className="mb-3 grid gap-1.5" onCoords={(lat, lng) => {
+          form.setValue("location.coordinates", { lat, lng }, { shouldValidate: true });
+          void fillAddressFromPin(lat, lng);
+        }} />
         <Controller
           name="location.coordinates"
           control={form.control}

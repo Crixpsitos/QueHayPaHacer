@@ -759,7 +759,7 @@ export const EventForm = ({
 
       {/* ── BODY CON CONTAINER ─────────────────────────────────── */}
       <div className="mx-auto flex-1 max-w-screen-2xl px-4 py-8 sm:px-6">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr_300px]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
 
           {/* ── COL 1: PASOS + BADGES ──────────────────────────── */}
           <aside className="hidden lg:block">
@@ -874,7 +874,7 @@ export const EventForm = ({
           </main>
 
           {/* ── COL 3: VISTA PREVIA ───────────────────────────── */}
-          <aside className="hidden lg:block">
+          <aside className="hidden min-w-0 lg:block">
             <div className="sticky top-16">
               <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#A1A1AA]">Vista previa en vivo</p>
 
@@ -909,13 +909,13 @@ export const EventForm = ({
                 </div>
                 <div className="p-3 space-y-2">
                   {/* Título */}
-                  <h3 className="text-base font-bold text-[#09090B] leading-snug">
+                  <h3 className="text-base font-bold text-[#09090B] leading-snug break-words [overflow-wrap:anywhere]">
                     {previewTitle || <span className="text-[#A1A1AA] font-normal">Título del evento</span>}
                   </h3>
 
                   {/* Gancho — 2 líneas con height mínimo para el placeholder */}
                   <p className={cn(
-                    "text-xs leading-relaxed line-clamp-2 min-h-10",
+                    "text-xs leading-relaxed line-clamp-2 min-h-10 break-words [overflow-wrap:anywhere]",
                     previewShortDesc ? "text-[#71717A]" : "text-[#A1A1AA] italic",
                   )}>
                     {previewShortDesc || "El gancho corto es lo primero que la gente lee en el listado. Cuéntales por qué no se lo pueden perder."}

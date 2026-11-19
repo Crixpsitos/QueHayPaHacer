@@ -81,10 +81,6 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                     form.setValue("externalButtonLabel", "");
                     form.setValue("externalButtonColor", "");
                     form.setValue("externalNotice", "");
-                    if (!form.getValues("price.isFree")) {
-                      form.setValue("price.isFree", true, { shouldValidate: true });
-                      form.setValue("price.amount", 0, { shouldValidate: true });
-                    }
                   }
                 }}
                 value={field.value}
