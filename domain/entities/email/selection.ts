@@ -1,5 +1,5 @@
 export const FOR_YOU_MAX = 5
-export interface PoolItem { id: string; title: string; path: string; category: string; /** «Hoy · 5:30 p. m.» */ when: string; place?: string; price?: string; imageUrl?: string }
+export interface PoolItem { id: string; title: string; path: string; category: string; /** «Hoy · 5:30 p. m.» */ when: string; place?: string; price?: string; imageUrl?: string; /** el sitio donde ocurre (su nombre es el lugar que se muestra) */ siteId?: string }
 
 /**
  * «Para ti»: de lo que hay vigente, primero lo de las categorías que la persona más guarda o marca «Yo fui» (y sus gustos),
@@ -24,8 +24,11 @@ const day = (n: Date) => new Date(n.getTime() - OFFSET).toISOString().slice(0, 1
 const hour = (m: number) => { const h = Math.floor(m / 60); return `${h % 12 === 0 ? 12 : h % 12}:${String(m % 60).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}` }
 const WD = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 
+/** La portada si la hay; si no, la primera imagen sana (igual que la ficha pública). */
+const coverOf = (media?: Activity["media"]) => { const imgs = (media ?? []).filter((m) => m.type === "image" && m.status !== "error"); return imgs.find((m) => m.isCover) ?? imgs[0] }
+
 /** Lo vigente de hoy y los 2 días siguientes que aún no terminó: la primera salida de cada actividad, con su día y hora. */
-export function buildPool(acts: { id: string; title: string; slug: string; category: string; schedule: ActivitySchedule; priceOptions?: Activity["priceOptions"]; media?: Activity["media"]; meetingPoint?: { text: string } }[], now: Date): PoolItem[] {
+export function buildPool(acts: { id: string; title: string; slug: string; category: string; schedule: ActivitySchedule; priceOptions?: Activity["priceOptions"]; media?: Activity["media"]; meetingPoint?: { text: string }; siteId?: string | null }[], now: Date): PoolItem[] {
   const from = day(now), to = day(new Date(now.getTime() + 2 * 86_400_000))
   const out: PoolItem[] = []
   for (const a of acts) {
@@ -37,8 +40,9 @@ export function buildPool(acts: { id: string; title: string; slug: string; categ
     out.push({
       id: a.id, title: a.title, path: `/actividades/${a.slug}`, category: a.category, when: t ? `${when} · ${hour(t.getUTCHours() * 60 + t.getUTCMinutes())}` : when,
       ...(a.meetingPoint?.text ? { place: a.meetingPoint.text } : {}),
+      ...(a.siteId ? { siteId: a.siteId } : {}),
       ...(a.priceOptions && from_ !== null ? { price: allOnRequest(a.priceOptions) ? onRequestLabel(a.priceOptions) : from_ === 0 ? "Gratis" : `Desde ${formatCop(from_)}` } : {}),
-      ...(a.media?.find((m) => m.type === "image" && m.isCover && m.status !== "error") ? { imageUrl: a.media.find((m) => m.type === "image" && m.isCover && m.status !== "error")!.url } : {}),
+      ...(coverOf(a.media) ? { imageUrl: coverOf(a.media)!.url } : {}),
     })
   }
   return out

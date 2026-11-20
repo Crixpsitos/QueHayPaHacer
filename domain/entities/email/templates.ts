@@ -5,16 +5,16 @@
 export interface EmailCtx { siteUrl: string; unsubscribeUrl: string }
 export interface WeeklyCard { title: string; when: string; place: string; price: string; imageUrl: string | null; href: string }
 /** Correo semanal con portada: tira de días, plan destacado con foto y filas por día. */
-export interface WeeklyBlock { range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; anytime: { title: string; href: string }[]; sites: { title: string; href: string; place: string; imageUrl: string | null }[]; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
+export interface WeeklyBlock { /** textos propios del «Para ti» (el semanal usa los suyos) */ featuredTitle?: string; ctaLabel?: string; range: string; total: number; days: { label: string; count: number }[]; featured: WeeklyCard | null; anytime: { title: string; href: string }[]; sites: { title: string; href: string; place: string; imageUrl: string | null }[]; groups: { title: string; items: WeeklyCard[] }[]; allHref: string }
 export interface EmailModel {
   weekly?: WeeklyBlock
-  /** «Para ti»: filas con foto, lugar y precio (si no, la lista simple de `items`) */
-  cards?: WeeklyCard[]
   settingsUrl?: string
   heading: string
   paragraphs: string[]
   items: { title: string; when: string; href: string }[]
   cta: { label: string; href: string } | null
+  /** segundo botón, de contorno (la bienvenida lo usa para «Elegir mis avisos») */
+  cta2?: { label: string; href: string }
   reason: string
   unsubscribeUrl: string
 }
@@ -28,7 +28,7 @@ export function withEmailAttribution(url: string, medium: string): string {
 }
 
 const REASON: Record<string, string> = {
-  welcome: "Recibes este correo porque creaste una cuenta en Qué Hay Pa Hacer.",
+  welcome: "Recibes este correo porque creaste una cuenta en Qué Hay Pa Hacer. Es un correo del servicio: no te hemos apuntado a ningún aviso de planes.",
   activity_join: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   activity_request: "Recibes este correo porque organizas esta actividad en Qué Hay Pa Hacer.",
   event_registration: "Recibes este correo porque organizas este evento en Qué Hay Pa Hacer.",
@@ -43,9 +43,22 @@ export function transactionalEmailFor(n: { type: string; title: string; body?: s
   const reason = REASON[n.type]
   if (!reason) return null
   const link = n.href ? withEmailAttribution(`${c.siteUrl}${n.href}`, "transactional") : c.siteUrl
+  if (n.type === "welcome") return welcomeEmail(n.title, link, reason, c)
   const body = n.body ?? ""
   const text = `${n.title}\n\n${body ? `${body}\n\n` : ""}Míralo aquí: ${link}\n\n—\n${reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
   return { subject: n.title.replace(/["“”]/g, ""), text, model: { heading: n.title, paragraphs: body ? [body] : [], items: [], cta: { label: n.type === "welcome" ? "Ver qué hay hoy" : n.type.startsWith("event_") ? "Ver el evento" : "Ver la actividad", href: link }, reason, unsubscribeUrl: c.unsubscribeUrl, ...(n.type === "welcome" ? { settingsUrl: `${c.siteUrl}/avisos` } : {}) } }
+}
+
+/** Bienvenida: solo del servicio (la cuenta y cómo usarla). Cuenta qué son los avisos y deja la decisión a la persona; no lista planes ni ofertas. */
+function welcomeEmail(title: string, link: string, reason: string, c: EmailCtx): BuiltEmail {
+  const avisos = `${c.siteUrl}/avisos`
+  const paragraphs = [
+    "Ya tienes tu cuenta. Con ella puedes guardar los planes que te gusten, marcar los que ya hiciste, inscribirte a eventos y publicar los tuyos.",
+    "Sobre los avisos: por ahora solo te escribimos por cosas de tu cuenta, como la confirmación de una inscripción o el recordatorio de un plan que reservaste.",
+    "Si quieres más información, puedes activar dos avisos opcionales: «Para ti», con sugerencias según lo que guardas (martes y viernes), y un resumen cada jueves con qué hacer el fin de semana en Ibagué. Solo se activan si tú los eliges, y puedes cambiarlos o quitarlos cuando quieras.",
+  ]
+  const text = `${title}\n\n${paragraphs.join("\n\n")}\n\nVer qué hay hoy: ${link}\nElegir mis avisos: ${avisos}\n\n—\n${reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
+  return { subject: title, text, model: { heading: title, paragraphs, items: [], cta: { label: "Ver qué hay hoy", href: link }, cta2: { label: "Elegir mis avisos", href: avisos }, reason, unsubscribeUrl: c.unsubscribeUrl, settingsUrl: avisos } }
 }
 
 export interface ValueItem { title: string; when: string; path: string; day?: string; time?: string; place?: string; price?: string; imageUrl?: string; /** el plan destacado del correo (si no, el primero con foto) */ star?: boolean }
@@ -60,18 +73,26 @@ export function valueEmail(kind: "forYou" | "weekly", items: ValueItem[], c: Ema
   const link = (p: string) => withEmailAttribution(`${c.siteUrl}${p}`, kind)
   const list = items.length ? items.map((i) => `• ${i.when} · ${i.title}\n  ${link(i.path)}`).join("\n") : v.empty
   const text = `${v.heading}\n\n${list}\n\n—\n${v.reason}\nDejar de recibir correos: ${c.unsubscribeUrl}\n`
-  const rich = kind === "forYou" && items.length > 0
-  const base: EmailModel = {
-    heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: rich ? [] : items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })),
-    ...(rich ? { cards: items.map((i) => ({ title: i.title, when: i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })), settingsUrl: `${c.siteUrl}/avisos` } : {}),
-    cta: rich ? { label: "Ver más planes", href: link("/actividades") } : null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl,
-  }
-  const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link, extra.anytime ?? [], extra.sites ?? []) : null
+  const base: EmailModel = { heading: v.heading, paragraphs: items.length ? [] : [v.empty], items: items.map((i) => ({ title: i.title, when: i.when, href: link(i.path) })), cta: null, reason: v.reason, unsubscribeUrl: c.unsubscribeUrl }
+  const weekly = kind === "weekly" && items.length && items.every((i) => i.day) ? weeklyBlock(items, c, link, extra.anytime ?? [], extra.sites ?? []) : kind === "forYou" && items.length ? forYouBlock(items, c, link, extra.sites ?? []) : null
   return { subject: v.subject, text, model: weekly ? { ...base, items: [], weekly } : base }
 }
 
 /** Foto optimizada para correo: la misma ruta de imágenes de la web, a 640 px. */
 const emailImage = (siteUrl: string, url?: string) => (url ? `${siteUrl}/_next/image?url=${encodeURIComponent(url)}&w=640&q=75` : null)
+
+/** «Para ti» con la misma portada del semanal: plan destacado con foto grande, el resto en filas y los sitios para ir cuando quieras. */
+function forYouBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => string, sites: { title: string; path: string; place: string; imageUrl?: string }[]): WeeklyBlock {
+  const card = (i: ValueItem): WeeklyCard => ({ title: i.title, when: i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })
+  const star = items.find((i) => i.star) ?? items.find((i) => i.imageUrl) ?? items[0]
+  return {
+    featuredTitle: "Lo primero que te recomendamos", ctaLabel: "Ver más planes", range: "Hoy y los próximos días", total: items.length, days: [],
+    featured: card(star), anytime: [],
+    sites: sites.map((s) => ({ title: s.title, href: link(s.path), place: s.place, imageUrl: emailImage(c.siteUrl, s.imageUrl) })),
+    groups: [{ title: "Más para ti", items: items.filter((i) => i !== star).map(card) }].filter((g) => g.items.length),
+    allHref: link("/actividades"),
+  }
+}
 
 function weeklyBlock(items: ValueItem[], c: EmailCtx, link: (p: string) => string, anytime: { title: string; path: string }[], sites: { title: string; path: string; place: string; imageUrl?: string }[]): WeeklyBlock {
   const card = (i: ValueItem): WeeklyCard => ({ title: i.title, when: i.time ?? i.when, place: i.place ?? "", price: i.price ?? "", imageUrl: emailImage(c.siteUrl, i.imageUrl), href: link(i.path) })

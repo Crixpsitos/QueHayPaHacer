@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasValidBearer } from "@/app/api/_lib/bearerAuth";
 import { createServerContainer } from "@/infraestructure/di/container";
-import { fetchWeekendDigest } from "@/presentation/activities/data/digest";
+import { fetchWeekendDigest, fetchUpcomingEventsForEmail } from "@/presentation/activities/data/digest";
 
 /**
  * Corrida diaria del correo: arma los envíos programados y vacía la cola respetando el tope diario. La llama la Cloud
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const c = createServerContainer();
   if (!c.emailService.enabled) return NextResponse.json({ skipped: "El correo no está configurado (RESEND_API_KEY y EMAIL_FROM)." });
   try {
-    const enqueued = await c.valueEmailRunner.run(() => fetchWeekendDigest());
+    const enqueued = await c.valueEmailRunner.run(() => fetchWeekendDigest(), () => fetchUpcomingEventsForEmail());
     const organizers = await c.organizerEmailRunner.run();
     return NextResponse.json({ enqueued, organizers, drained: await c.emailQueueService.drain() });
   } catch (error) {

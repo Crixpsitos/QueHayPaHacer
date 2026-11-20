@@ -29,8 +29,7 @@ export function EmailLayout({ m }: { m: EmailModel }) {
               ))}
             </Section>
           ) : null}
-          {m.cards?.length ? <Section style={{ margin: "4px 0 0" }}>{m.cards.map((c) => <WeeklyRow key={c.href + c.when} c={c} />)}</Section> : null}
-          {m.cta ? <Section style={{ margin: "20px 0" }}><Button href={m.cta.href} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "12px 22px", borderRadius: 999, fontWeight: 700, textDecoration: "none" }}>{m.cta.label}</Button></Section> : null}
+          {m.cta ? <Section style={{ margin: "20px 0" }}><Button href={m.cta.href} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "12px 22px", borderRadius: 999, fontWeight: 700, textDecoration: "none" }}>{m.cta.label}</Button>{m.cta2 ? <Button href={m.cta2.href} style={{ color: WINE, border: `2px solid ${WINE}`, padding: "10px 20px", borderRadius: 999, fontWeight: 700, textDecoration: "none", marginLeft: 8 }}>{m.cta2.label}</Button> : null}</Section> : null}
           <Hr style={{ borderColor: "#E4E4E7", margin: "24px 0" }} />
           <Text style={{ margin: 0, fontSize: 12, lineHeight: "1.5", color: MUTED }}>
             {m.reason}<br />
@@ -73,7 +72,7 @@ function WeeklyLayout({ m, w }: { m: EmailModel; w: WeeklyBlock }) {
               <Text style={{ margin: 0, color: "#FFFFFF", fontWeight: 700, fontSize: 15 }}>Qué Hay Pa Hacer</Text>
               <Heading as="h1" style={{ margin: "22px 0 8px", color: "#FFFFFF", fontSize: 34, lineHeight: "1.08", fontWeight: 800 }}>{m.heading}</Heading>
               <Text style={{ margin: 0, color: "#FDE7EB", fontSize: 15, lineHeight: "1.5" }}>{w.range} · {w.total} planes elegidos para ti</Text>
-              <Row style={{ marginTop: 20 }}>
+              {w.days.length ? <Row style={{ marginTop: 20 }}>
                 {w.days.map((d, i) => (
                   <Column key={d.label} style={{ paddingRight: i < w.days.length - 1 ? 8 : 0 }}>
                     <div style={{ backgroundColor: i === 0 ? GOLD : "rgba(255,255,255,0.16)", color: i === 0 ? INK : "#FFFFFF", borderRadius: 16, textAlign: "center", padding: "8px 4px", fontSize: 12, fontWeight: 600 }}>
@@ -81,12 +80,12 @@ function WeeklyLayout({ m, w }: { m: EmailModel; w: WeeklyBlock }) {
                     </div>
                   </Column>
                 ))}
-              </Row>
+              </Row> : null}
             </Section>
             <Section style={{ padding: "26px 32px 4px" }}>
               {w.featured ? (
                 <>
-                  <Text style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 700, color: INK }}>El plan que no te puedes perder</Text>
+                  <Text style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 700, color: INK }}>{w.featuredTitle ?? "El plan que no te puedes perder"}</Text>
                   <Section style={{ border: "1px solid #F1E3E6", borderRadius: 20, overflow: "hidden" }}>
                     {w.featured.imageUrl ? <Img src={w.featured.imageUrl} width="536" alt={w.featured.title} style={{ width: "100%", height: "auto", display: "block" }} /> : null}
                     <Section style={{ padding: "16px 18px" }}>
@@ -118,7 +117,7 @@ function WeeklyLayout({ m, w }: { m: EmailModel; w: WeeklyBlock }) {
                 </Section>
               ) : null}
               <Section style={{ textAlign: "center", margin: "26px 0 10px" }}>
-                <Button href={w.allHref} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "15px 30px", borderRadius: 999, fontWeight: 700, fontSize: 16, textDecoration: "none" }}>Ver los {w.total} planes</Button>
+                <Button href={w.allHref} style={{ backgroundColor: WINE, color: "#FFFFFF", padding: "15px 30px", borderRadius: 999, fontWeight: 700, fontSize: 16, textDecoration: "none" }}>{w.ctaLabel ?? `Ver los ${w.total} planes`}</Button>
               </Section>
             </Section>
             <Section style={{ backgroundColor: "#FBF6F7", padding: "20px 32px 26px", marginTop: 14 }}>

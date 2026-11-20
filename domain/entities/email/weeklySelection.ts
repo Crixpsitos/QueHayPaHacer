@@ -29,7 +29,10 @@ export function selectWeeklyItems(digest: Digest, seed: string): ValueItem[] {
   const flat = [...byUrl.values()].map((xs) => xs[0])
   if (!flat.length) return []
   const rank = (x: (typeof flat)[number]) => hash(`${seed}|${x.i.url}|${x.date}`)
-  const pool = flat.filter((x) => x.i.imageUrl).sort((a, b) => (b.i.score ?? 0) - (a.i.score ?? 0) || rank(a) - rank(b)).slice(0, STAR_POOL)
+  const withPhoto = flat.filter((x) => x.i.imageUrl).sort((a, b) => (b.i.score ?? 0) - (a.i.score ?? 0) || rank(a) - rank(b))
+  // el plan destacado es de alto impacto: un evento con foto si lo hay (varía entre los mejores según la persona y la fecha)
+  const eventsWithPhoto = withPhoto.filter((x) => x.i.kind === "event")
+  const pool = (eventsWithPhoto.length ? eventsWithPhoto : withPhoto).slice(0, STAR_POOL)
   const star = pool.length ? pool[hash(seed) % pool.length] : null
   const picked = new Set<(typeof flat)[number]>(star ? [star] : [])
   const perDay = new Map<string, number>(star ? [[star.date, 1]] : [])

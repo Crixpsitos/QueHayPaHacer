@@ -489,7 +489,13 @@ export const createServerContainer = () => {
       const byId = new Map((await activityService.listPublic(500)).map((a) => [a.id, a.category]));
       return { categories: ids.map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => !!c), excludeIds: ids };
     },
-    pool: async () => buildPool(await activityService.listPublic(300), new Date()),
+    pool: async () => {
+      const items = buildPool(await activityService.listPublic(300), new Date());
+      // el lugar de una actividad en un sitio es el nombre del sitio (como en el inicio); un sitio se lee una sola vez por corrida
+      const names = new Map<string, string>();
+      for (const id of new Set(items.map((i) => i.siteId).filter((x): x is string => !!x))) names.set(id, (await sitesService.getActivityLinkSnapshot(id).catch(() => null))?.name ?? "");
+      return items.map((i) => ({ ...i, place: (i.siteId && names.get(i.siteId)) || i.place }));
+    },
     enqueue: (item) => emailQueueService.enqueue(item),
     siteUrl: siteUrlForEmail,
     secret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
@@ -590,7 +596,7 @@ export const createServerContainer = () => {
     activityRequestService,
     notifyUser: notifyAndEmail,
     /** Correo de bienvenida (una sola vez por cuenta: el id es fijo). No rompe el registro si falla. */
-    sendWelcomeEmail: (uid: string) => transactionalEmailBridge.fromNotification(uid, { type: "welcome", title: "Te damos la bienvenida a Qué Hay Pa Hacer", body: "Aquí encuentras los eventos, actividades y sitios de Ibagué. Guarda lo que te guste y vuelve cuando no sepas qué hacer. Si quieres recibir cada semana los planes elegidos para ti, actívalo con «Cambiar mis avisos», al final de este correo.", href: "/" }, "welcome"),
+    sendWelcomeEmail: (uid: string) => transactionalEmailBridge.fromNotification(uid, { type: "welcome", title: "Te damos la bienvenida a Qué Hay Pa Hacer", href: "/" }, "welcome"),
     siteCatalogService,
     activityPlansService,
     activityReminderService,

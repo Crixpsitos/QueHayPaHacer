@@ -5,7 +5,8 @@
  */
 export interface NotificationPrefs {
   email: { transactional: boolean; forYou: boolean; weekly: boolean }
-  push: { enabled: boolean }
+  /** `enabled`: avisos de promoción en el celular (exige la autorización de arriba). `service`: solo avisos de MIS inscripciones y reservas; se acepta con el permiso del navegador, sin casilla aparte. */
+  push: { enabled: boolean; service?: boolean }
   consent: { at: Date; version: string } | null
   unsubscribedAt: Date | null
 }
@@ -16,7 +17,7 @@ export const defaultPrefs = (): NotificationPrefs => ({ email: { transactional: 
 
 /** ¿Se puede enviar este tipo de aviso por este canal? Sin permiso no hay envío. */
 export function canSend(p: NotificationPrefs, channel: PrefChannel, kind: PrefKind): boolean {
-  if (channel === "push") return p.consent !== null && p.push.enabled
+  if (channel === "push") return (kind === "transactional" && p.push.service === true) || (p.consent !== null && p.push.enabled)
   if (kind === "transactional") return p.email.transactional
   return p.consent !== null && p.unsubscribedAt === null && p.email[kind]
 }

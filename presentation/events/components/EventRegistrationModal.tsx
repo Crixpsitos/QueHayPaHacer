@@ -1,5 +1,6 @@
 "use client";
 
+import { ServicePushAsk } from "@/presentation/notificationPrefs/components/ServicePushAsk";
 import { useEffect, useState, useTransition, lazy, Suspense } from "react";
 import Link from "@/app/components/ui/navigation/IntentLink"
 import { motion, useReducedMotion } from "motion/react";
@@ -111,6 +112,7 @@ export function EventRegistrationModal({
         <p className="font-heading text-xl font-bold text-gray-900">{heading}</p>
         <p className="mx-auto max-w-xs text-sm leading-relaxed text-gray-600">{body}</p>
       </div>
+      <ServicePushAsk className="w-full max-w-xs" />
       <div className="flex w-full max-w-xs flex-col gap-2 pt-1">
         <Button asChild>
           <Link href="/mis-inscripciones">Ver mis inscripciones</Link>
