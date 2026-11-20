@@ -48,3 +48,18 @@ test("volver a activar tras una baja pide la casilla otra vez y limpia la baja",
   const back = applyPrefsInput(u, { email: { weekly: true } }, { authorized: true, version: V, now: NOW })
   assert.equal(back.ok && back.prefs.unsubscribedAt, null)
 })
+
+test("push de servicio: se activa sin casilla de marketing y solo habilita avisos de mis inscripciones", () => {
+  const r = applyPrefsInput(defaultPrefs(), { push: { service: true } }, { authorized: false, version: V, now: NOW })
+  assert.equal(r.ok, true)
+  if (!r.ok) return
+  assert.equal(canSend(r.prefs, "push", "transactional"), true)
+  assert.equal(canSend(r.prefs, "push", "forYou"), false) // promoción: sigue pidiendo autorización
+  assert.equal(canSend(r.prefs, "email", "weekly"), false)
+  assert.equal(r.prefs.consent, null) // no inventa un consentimiento de marketing
+})
+test("push de promoción sigue exigiendo la casilla aunque el de servicio esté activo", () => {
+  const base = applyPrefsInput(defaultPrefs(), { push: { service: true } }, { authorized: false, version: V, now: NOW })
+  if (!base.ok) throw new Error("setup")
+  assert.equal(applyPrefsInput(base.prefs, { push: { enabled: true } }, { authorized: false, version: V, now: NOW }).ok, false)
+})

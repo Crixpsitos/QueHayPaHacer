@@ -20,23 +20,36 @@ export interface RunnerDeps {
   render: (m: EmailModel) => Promise<string>
 }
 
+/** «Para ti»: hasta 2 eventos de alto impacto al frente, y 6 planes en total. */
+const FOR_YOU_EVENTS = 2
+const FOR_YOU_TOTAL = 6
 const bogota = (d: Date) => new Date(d.getTime() - 5 * 3_600_000)
 
 /** Arma los correos de valor: «Para ti» (martes y viernes) y «Qué hacer esta semana» (jueves, uno por semana). Solo a quien lo autorizó. */
 export class ValueEmailRunner {
   constructor(private readonly d: RunnerDeps) {}
 
-  async run(weekendDigest: () => Promise<Digest>): Promise<{ forYou: number; weekly: number }> {
+  async run(weekendDigest: () => Promise<Digest>, upcomingEvents: () => Promise<ValueItem[]> = async () => []): Promise<{ forYou: number; weekly: number }> {
     if (!this.d.secret) return { forYou: 0, weekly: 0 }
     const now = this.d.clock(), local = bogota(now), day = local.toISOString().slice(0, 10)
     let forYou = 0, weekly = 0
     const pool = await this.d.pool()
     const forYouDay = [2, 5].includes(local.getUTCDay()) // martes y viernes: con pocos usuarios, 1 al día cansa
+    let digestOnce: Promise<Digest | null> | null = null
+    const digest = () => (digestOnce ??= weekendDigest().catch(() => null))
+    let eventsOnce: Promise<ValueItem[]> | null = null
+    const events = () => (eventsOnce ??= upcomingEvents().catch(() => []))
     if (forYouDay) for (const uid of await this.d.optIns("forYou")) {
       if (!(await this.d.allows(uid, "forYou"))) continue
-      const items = selectForYou(pool, await this.d.signals(uid))
+      const acts: ValueItem[] = selectForYou(pool, await this.d.signals(uid)).map((i) => ({ title: i.title, when: i.when, path: i.path, place: i.place, price: i.price, imageUrl: i.imageUrl }))
+      // lo de más impacto va primero: hasta 2 eventos (los mejor puntuados), y el primero con foto es el destacado
+      const top = (await events()).filter((e) => !acts.some((a) => a.path === e.path)).slice(0, FOR_YOU_EVENTS)
+      const star = top.find((e) => e.imageUrl)
+      const items: ValueItem[] = [...top.map((e) => (e === star ? { ...e, star: true } : e)), ...acts].slice(0, FOR_YOU_TOTAL)
       if (!items.length) continue
-      if (await this.queue(uid, "forYou", `fy_${uid}_${day}`, items.map((i) => ({ title: i.title, when: i.when, path: i.path, place: i.place, price: i.price, imageUrl: i.imageUrl })), now)) forYou++
+      const d = await digest()
+      const sites = d ? selectWeeklySites(d, `${uid}|${day}`).slice(0, 2).map((s) => ({ title: s.title, path: s.url, place: s.place, imageUrl: s.imageUrl })) : []
+      if (await this.queue(uid, "forYou", `fy_${uid}_${day}`, items, now, { sites })) forYou++
     }
     if (local.getUTCDay() === 4) { // jueves: el fin de semana ya se ve
       const digest = await weekendDigest()

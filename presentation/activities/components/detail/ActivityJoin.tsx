@@ -1,5 +1,6 @@
 "use client"
 
+import { ServicePushAsk } from "@/presentation/notificationPrefs/components/ServicePushAsk"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Check, Clock } from "lucide-react"
 import { Button } from "@/app/components/ui/button/button"
@@ -29,6 +30,7 @@ function pill(o: OccurrenceStatus): { text: string; cls: string } | null {
  */
 export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: string; hostName: string; priceFrom: string }) {
   const [status, setStatus] = useState<JoinStatus | null>(null)
+  const [justJoined, setJustJoined] = useState(false)
   const [picked, setPicked] = useState<string[]>([])
   const [asking, setAsking] = useState(false)
   const [extrasStep, setExtrasStep] = useState(false)
@@ -67,7 +69,7 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
     }
     await load()
     setPicked((p) => p.filter((k) => !done.includes(k)))
-    if (done.length) { setAsking(false); setConsent(false); setExtrasStep(false); setPicks([]) }
+    if (done.length) { setJustJoined(true); setAsking(false); setConsent(false); setExtrasStep(false); setPicks([]) }
     setBusy(false)
     lock.current = false
   }
@@ -131,6 +133,8 @@ export function ActivityJoin({ activityId, hostName, priceFrom }: { activityId: 
           )}
         </div>
       ))}
+
+      {justJoined && mine.length ? <ServicePushAsk /> : null}
 
       {status.closed && !mine.length ? (
         <div className="grid gap-1 rounded-2xl bg-muted p-4"><div className="font-semibold">Las reservas están cerradas</div><p className="text-sm text-muted-foreground">Quien organiza cerró los cupos.</p></div>

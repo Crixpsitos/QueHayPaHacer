@@ -50,3 +50,13 @@ test("«Para ti» solo martes y viernes: el jueves y el lunes no sale", async ()
     assert.equal(s.q.filter((i) => i.kind === "forYou").length, expected, now.toISOString())
   }
 })
+
+test("«Para ti»: los eventos de más impacto van primero y el que tiene foto es el destacado", async () => {
+  const s = setup({ now: TUE, kinds: { forYou: ["u1"] } })
+  const ev = [{ title: "Concierto grande", when: "vie 19 dic · 7:00 p. m.", path: "/eventos/grande", place: "Teatro", price: "$65.000", imageUrl: "https://img.test/e.jpg" }, { title: "Evento sin foto", when: "sáb 20 dic · 8:00 p. m.", path: "/eventos/b", place: "Bar", price: "Gratis" }, { title: "Tercero", when: "dom 21 dic", path: "/eventos/c", place: "X", price: "Gratis" }]
+  await s.runner.run(async () => digest, async () => ev)
+  const t = s.q[0].text
+  assert.ok(t.indexOf("Concierto grande") > -1 && t.indexOf("Concierto grande") < t.indexOf("Trote"))
+  assert.ok(!t.includes("Tercero")) // solo 2 eventos al frente
+  assert.ok(t.includes("vie 19 dic")) // fecha con día, número y mes
+})

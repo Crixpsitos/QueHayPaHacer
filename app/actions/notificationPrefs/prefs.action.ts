@@ -21,10 +21,11 @@ export async function saveMyPrefsAction(input: PrefsInput, authorized: boolean):
   const b = (v: unknown) => (typeof v === "boolean" ? v : undefined)
   const clean: PrefsInput = {
     email: { transactional: b(input?.email?.transactional), forYou: b(input?.email?.forYou), weekly: b(input?.email?.weekly) },
-    push: { enabled: b(input?.push?.enabled) },
+    push: { enabled: b(input?.push?.enabled), service: b(input?.push?.service) },
   }
   for (const k of Object.keys(clean.email!) as (keyof NonNullable<PrefsInput["email"]>)[]) if (clean.email![k] === undefined) delete clean.email![k]
   if (clean.push!.enabled === undefined) delete clean.push!.enabled
+  if (clean.push!.service === undefined) delete clean.push!.service
   try {
     return { success: true, prefs: view(await createServerContainer().notificationPrefsService.save(uid, clean, authorized === true)) }
   } catch (e) {
