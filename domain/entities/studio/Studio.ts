@@ -368,6 +368,8 @@ export interface SupportTicketDetail extends SupportTicket {
   attachments: string[];
   /** Motivo por el que se cerró el ticket (si aplica). */
   closeReason?: string;
+  /** Respuestas de soporte de QHPA (las escribe el panel de administración). */
+  replies: { text: string; at: Date }[];
 }
 
 export interface CreateSupportTicketInput {

@@ -28,6 +28,7 @@ export interface FirebaseSupportTicketDetailDto {
   description?: string;
   attachments?: string[];
   closeReason?: string;
+  replies?: { text?: string; at?: unknown }[];
   createdAt?: unknown;
 }
 

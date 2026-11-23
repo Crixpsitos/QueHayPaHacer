@@ -399,6 +399,19 @@ export function SupportView({ uid, tickets: initialTickets }: SupportViewProps) 
                 {/* Lo que escribió el usuario (recortado si es largo) */}
                 <ExpandableDescription text={detail.description} />
 
+                {/* Respuestas de soporte de QHPA */}
+                {detail.replies.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold text-slate-400">Respuesta de soporte</p>
+                    {detail.replies.map((r, i) => (
+                      <div key={i} className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                        <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">{r.text}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">Qué Hay Pa Hacer · {formatDate(r.at)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Evidencias */}
                 {detail.attachments.length > 0 && (
                   <div>

@@ -16,6 +16,7 @@ export class ReportService {
     /** Actividades y reseñas (opcional: sin esto solo se reportan eventos y sitios). `review` recibe `{actividad}_{clave}`. */
     private readonly more?: {
       activity: (id: string) => Promise<{ title: string; authorId: string | null } | null>;
+      user?: (uid: string) => Promise<{ title: string; authorId: string | null } | null>;
       review: (compoundId: string) => Promise<{ title: string; authorId: string | null; reviewId: string } | null>;
       hideReview: (reviewId: string) => Promise<void>;
       clock?: () => Date;
@@ -26,7 +27,7 @@ export class ReportService {
     const parsed = parseReportInput(input);
     if (!parsed.success) return parsed;
     const { targetType, targetId, sessionId, reason, details } = parsed.output;
-    const noun = { event: "este evento", site: "este sitio", activity: "esta actividad", review: "esta reseña" }[targetType];
+    const noun = { event: "este evento", site: "este sitio", activity: "esta actividad", review: "esta reseña", user: "este perfil" }[targetType];
 
     const target = await this.snapshot(targetType, targetId, sessionId);
     if (!target) return { success: false, error: `No encontramos ${noun}.` };
@@ -53,10 +54,11 @@ export class ReportService {
   }
 
   private async snapshot(
-    targetType: "event" | "site" | "activity" | "review",
+    targetType: "event" | "site" | "activity" | "review" | "user",
     targetId: string,
     sessionId?: string,
   ): Promise<{ title: string; authorId: string | null; reviewId?: string } | null> {
+    if (targetType === "user") return (await this.more?.user?.(targetId)) ?? null;
     if (targetType === "site") return this.sitesService.getTitleAndAuthor(targetId);
     if (targetType === "activity") return (await this.more?.activity(targetId)) ?? null;
     if (targetType === "review") return (await this.more?.review(targetId)) ?? null;

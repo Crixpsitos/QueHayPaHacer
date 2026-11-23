@@ -32,3 +32,9 @@ test("rechaza ids con caracteres de ruta y descarta sessionId en sitios", () => 
   const r = parseReportInput({ ...base, targetType: "site", reason: "closed", sessionId: "s1" });
   assert.equal(r.success && r.output.sessionId, undefined);
 });
+
+test("reportar un perfil: acepta sus motivos y rechaza los de otros tipos", () => {
+  const user = { targetType: "user", targetId: "uid123" };
+  assert.equal(parseReportInput({ ...user, reason: "harassment" }).success, true);
+  assert.equal(parseReportInput({ ...user, reason: "closed" }).success, false);
+});

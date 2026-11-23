@@ -272,6 +272,7 @@ export const createServerContainer = () => {
     eventSessionService,
     sitesService,
     {
+      user: async (uid) => { const u = await userService.getUserById(uid); return u ? { title: `Perfil de ${u.displayName}`, authorId: u.uid } : null; },
       activity: async (id) => { const a = await activityService.getPublicById(id); return a ? { title: a.title, authorId: a.ownerUid } : null; },
       review: async (compound) => {
         const i = compound.lastIndexOf("_");
