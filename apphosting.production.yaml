@@ -9,12 +9,6 @@ runConfig:
   memoryMiB: 2048
 
 env:
-  # Medición temporal de lecturas de Firestore por colección (línea JSON "firestore-reads" cada ~60 s por instancia).
-  # Quitar esta variable cuando termine el análisis. Ver infraestructure/firebase/config/admin/readCounter.ts.
-  - variable: FIRESTORE_READ_COUNTER
-    value: "1"
-    availability:
-      - RUNTIME
   # Publicidad (AdSense): enciende los espacios de AdSlot. Sin anuncio disponible, el espacio se oculta solo.
   - variable: NEXT_PUBLIC_ADS_ENABLED
     value: "true"
