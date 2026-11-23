@@ -6,12 +6,21 @@ rules_version = '2';
 // develop tiene además `match /public/{allPaths=**} { allow read: if true; }` (ver qhpa-admin/README).
 service firebase.storage {
   match /b/{bucket}/o {
-    // Panel de administración (repo qhpa-admin): solo cuentas con el claim `admin` suben fotos de escapadas y campañas,
-    // únicamente imágenes de hasta 8 MB y solo dentro de `public/admin/`. Se leen por su URL con token.
-    match /public/admin/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.token.admin == true
+    // Panel de administración (repo qhpa-admin): solo cuentas con el claim `admin` suben imágenes (hasta 8 MB) a
+    // `public/admin/` y a las carpetas de sitios y actividades que ya usa la app. Se leen por su URL con token.
+    function adminImage() {
+      return request.auth != null && request.auth.token.admin == true
         && request.resource.size < 8 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+    }
+    match /public/admin/{allPaths=**} {
+      allow write: if adminImage();
+    }
+    match /public/sites/{siteId}/images/{file} {
+      allow write: if adminImage();
+    }
+    match /public/activities/{activityId}/images/{file} {
+      allow write: if adminImage();
     }
 
     match /{allPaths=**} {
