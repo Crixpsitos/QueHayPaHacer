@@ -1,5 +1,6 @@
 import { PriceTierSchema } from "./EventDto";
 import * as v from "valibot";
+import { normalizeHttpUrl, normalizeHttpUrlOrKeep } from "@/domain/entities/shared/normalizeHttpUrl";
 import { getTiptapPlainText } from "./EventDto";
 
 /**
@@ -89,7 +90,7 @@ const sessionBodyObject = v.object({
     "external",
     "form",
   ] as const),
-  externalUrl: v.optional(v.string()),
+  externalUrl: v.optional(v.pipe(v.string(), v.transform(normalizeHttpUrlOrKeep))),
   capacity: v.optional(v.number()),
   requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(
@@ -124,6 +125,13 @@ export const SessionSchema = v.pipe(
         data.registrationType !== "external" ||
         (!!data.externalUrl && data.externalUrl.trim().length > 0),
       "La URL externa es obligatoria cuando el tipo de registro es externo.",
+    ),
+    ["externalUrl"],
+  ),
+  v.forward(
+    v.check(
+      (data) => data.registrationType !== "external" || !data.externalUrl?.trim() || normalizeHttpUrl(data.externalUrl) !== null,
+      "Ingresa una URL válida.",
     ),
     ["externalUrl"],
   ),
@@ -175,7 +183,7 @@ export const FormSessionSchema = v.pipe(
   registrationType: v.optional(
     v.picklist(["none", "internal", "external", "form"] as const),
   ),
-  externalUrl: v.optional(v.string()),
+  externalUrl: v.optional(v.pipe(v.string(), v.transform(normalizeHttpUrlOrKeep))),
   capacity: v.optional(v.number()),
   requiresAttendance: v.optional(v.boolean()),
   registrationEventForm: v.optional(

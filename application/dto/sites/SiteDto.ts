@@ -1,3 +1,4 @@
+import { normalizeHttpUrl, normalizeHttpUrlOrKeep } from "@/domain/entities/shared/normalizeHttpUrl"
 import { SITE_KINDS, SITE_PUBLISHED_AS_FORM } from "@/domain/entities/sites/value-objects/SiteListing"
 import * as v from "valibot"
 import { SITE_TIP_IDS, TIP_NOTE_MAX } from "@/domain/entities/sites/value-objects/SiteRecommendations"
@@ -23,14 +24,8 @@ const text = (max: number, label: string) =>
 const OptionalHttpUrl = v.pipe(
   v.string(),
   v.maxLength(500, "Enlace demasiado largo"),
-  v.check((value) => {
-    if (value === "") return true
-    try {
-      return ["http:", "https:"].includes(new URL(value).protocol)
-    } catch {
-      return false
-    }
-  }, "Los enlaces deben empezar por http:// o https://"),
+  v.transform(normalizeHttpUrlOrKeep), // acepta «ejemplo.com» y guarda el enlace completo con https://
+  v.check((value) => value === "" || normalizeHttpUrl(value) !== null, "Escribe un enlace válido (por ejemplo ejemplo.com o https://ejemplo.com)"),
 )
 
 const Coordinates = (msg: string) =>

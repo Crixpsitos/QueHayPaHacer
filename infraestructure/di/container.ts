@@ -100,6 +100,8 @@ import { ActivityAppealFirebaseRepository } from "../firebase/repositories/activ
 import { ActivityEngagementService } from "@/application/services/activities/ActivityEngagementService";
 import { ActivityEngagementFirebaseRepository } from "../firebase/repositories/activities/ActivityEngagementFirebaseRepository";
 import { ActivityAccountFirebaseRepository } from "../firebase/repositories/activities/ActivityAccountFirebaseRepository";
+import { TrustFirebaseRepository } from "../firebase/repositories/trust/TrustFirebaseRepository";
+import { TrustService } from "@/application/services/trust/TrustService";
 import { HostIdentityFirebaseRepository } from "../firebase/repositories/activities/HostIdentityFirebaseRepository";
 import { createIpLimiter } from "@/app/api/_lib/ipRateLimit";
 import { ActivityFirebaseRepository } from "../firebase/repositories/activities/ActivityFirebaseRepository";
@@ -263,6 +265,9 @@ export const createServerContainer = () => {
   const contactFirebaseRepository = new ContactFirebaseRepository(getFirebaseFirestore());
   const contactAdapter = new ContactAdapter(contactFirebaseRepository, new ContactFirebaseMapper());
   const contactService = new ContactService(contactAdapter);
+
+  // confianza de las cuentas (moderación posterior)
+  const trustService = new TrustService(new TrustFirebaseRepository(getFirebaseFirestore()));
 
   // reports (moderación de contenido)
   const reviewRepoEarly = new ActivityReviewFirebaseRepository(getFirebaseFirestore());
@@ -609,6 +614,7 @@ export const createServerContainer = () => {
     studioService,
     contactService,
     reportService,
+    trustService,
     contentDeclarationService,
     siteClaimService,
     siteSuggestionService,

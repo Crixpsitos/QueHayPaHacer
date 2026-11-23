@@ -29,7 +29,7 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
   if (invalid) return { success: false, error: invalid }
 
   const uid = tokens.decodedToken.uid
-  const { sitesService, userService, contentDeclarationService } = createServerContainer()
+  const { sitesService, userService, contentDeclarationService, trustService } = createServerContainer()
   const input = await withTransit(buildSiteInput(uid, tokens.decodedToken, form, "published"), form, siteId)
 
   const evidence = { variant: input.publishedAs as "owner" | "proposer" | "qhpa", siteKind: input.kind }
@@ -44,19 +44,22 @@ export async function publishSiteAction(form: SiteFormViewModel, siteId: string 
       }
     }
 
+    // Cuenta de confianza: se publica de una vez y QHPA audita después (la restricción la quita).
+    const trusted = isQhpaAdmin(uid) ? false : (await trustService.evaluate(uid)).trusted
+
     // siteId present → a draft already exists (created during upload). Convert it in place, don't duplicate.
     if (siteId) {
       // Evidencia ANTES de publicar (si falla, no se publica) y solo si el sitio es del autor:
       // si no, un tercero podría pisar la evidencia de otro.
       if (!(await sitesService.isOwner(uid, siteId))) return { success: false, error: "No se pudo publicar el sitio" }
       await contentDeclarationService.record(uid, "site", siteId, evidence)
-      await sitesService.publishExisting(uid, siteId, input, isQhpaAdmin(uid) ? uid : undefined)
+      await sitesService.publishExisting(uid, siteId, input, isQhpaAdmin(uid) ? uid : undefined, trusted)
       await markContribution()
       revalidateSite(uid, siteId)
       return { success: true, siteId }
     }
     // Sin id previo el sitio se crea al publicar: evidencia después; si falla, se borra el sitio recién creado.
-    const newId = await sitesService.publish(input, isQhpaAdmin(uid) ? uid : undefined)
+    const newId = await sitesService.publish(input, isQhpaAdmin(uid) ? uid : undefined, trusted)
     try {
       await contentDeclarationService.record(uid, "site", newId, evidence)
     } catch (e) {

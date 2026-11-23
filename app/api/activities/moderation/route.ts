@@ -41,7 +41,11 @@ export async function POST(request: Request) {
     clock: () => new Date(),
   })
 
-  const result = decision === "approved" ? await svc.approve(activityId, reviewer) : await svc.reject(activityId, reviewer, reason ?? "")
+  const current = await repo.findById(activityId)
+  // Rechazar una pendiente es la revisión normal; rechazar una ya aprobada es una baja (auditoría posterior).
+  const result = decision === "approved"
+    ? await svc.approve(activityId, reviewer)
+    : current?.moderationStatus === "approved" ? await svc.takedown(activityId, reviewer, reason ?? "") : await svc.reject(activityId, reviewer, reason ?? "")
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 409 })
 
   const a = await repo.findById(activityId)

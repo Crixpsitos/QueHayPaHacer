@@ -62,3 +62,19 @@ test("rechazar exige motivo, guarda el motivo y avisa", async () => {
   assert.equal(state.notified[0].n.body, "Fotos de otra persona")
   assert.equal(state.approved.length, 0)
 })
+
+test("dar de baja una aprobada: queda rechazada con motivo, avisa al dueño y no toca el contador", async () => {
+  const { svc, state } = setup([makeActivity({ id: "ap", slug: "act-ap", title: "Senderismo", ownerUid: "u1", moderationStatus: "approved" })])
+  assert.deepEqual(await svc.takedown("ap", "admin1", "Incumple las reglas"), { ok: true })
+  const a = state.items[0]
+  assert.deepEqual([a.moderationStatus, a.reviewedBy, a.rejectionReason], ["rejected", "admin1", "Incumple las reglas"])
+  assert.deepEqual(state.approved, [])
+  assert.equal(state.notified[0].uid, "u1")
+})
+
+test("dar de baja exige motivo y que esté aprobada", async () => {
+  const { svc } = setup([pending("p1"), makeActivity({ id: "ap", moderationStatus: "approved" })])
+  assert.equal((await svc.takedown("ap", "a", "no")).ok, false)
+  assert.equal((await svc.takedown("p1", "a", "motivo suficiente")).ok, false)
+  assert.equal((await svc.takedown("nada", "a", "motivo suficiente")).ok, false)
+})

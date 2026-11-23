@@ -139,19 +139,22 @@ export class SitesService {
     return { bookingUrl: dto.bookingUrl, socialMedia: dto.socialMedia }
   }
 
-  /** `approveAs` = uid de la cuenta admin de QHPA: lo que publica queda aprobado y activo, sin esperar moderación. */
-  async publish(data: SiteInput, approveAs?: string): Promise<string> {
-    return this.adapter.createRaw({ ...data, publicationStatus: "published", ...this.moderationFor(approveAs) })
+  /**
+   * `approveAs` = uid de la cuenta admin de QHPA: lo que publica queda aprobado y activo, sin esperar moderación.
+   * `trusted` = cuenta de confianza (domain/entities/trust): se publica de una vez y QHPA audita después (`reviewedBy: "auto"`).
+   */
+  async publish(data: SiteInput, approveAs?: string, trusted = false): Promise<string> {
+    return this.adapter.createRaw({ ...data, publicationStatus: "published", ...this.moderationFor(approveAs, trusted) })
   }
 
-  private moderationFor(approveAs?: string) {
-    return approveAs
-      ? { moderationStatus: "approved" as const, isActive: true, reviewedBy: approveAs }
-      : { moderationStatus: "pending" as const }
+  moderationFor(approveAs?: string, trusted = false) {
+    if (approveAs) return { moderationStatus: "approved" as const, isActive: true, reviewedBy: approveAs }
+    if (trusted) return { moderationStatus: "approved" as const, isActive: true, reviewedBy: "auto" }
+    return { moderationStatus: "pending" as const }
   }
 
   /** Convert an existing (draft) doc into a published one — reuses its id, no new doc. */
-  async publishExisting(uid: string, id: string, data: SiteInput, approveAs?: string): Promise<void> {
+  async publishExisting(uid: string, id: string, data: SiteInput, approveAs?: string, trusted = false): Promise<void> {
     const current = await this.assertOwner(uid, id)
     // el borrador nace con nombre vacío → slug "-xxxx"; se regenera al publicar
     const regenerateSlug = current.publicationStatus === "draft" || !current.slug || current.slug.startsWith("-")
@@ -160,7 +163,7 @@ export class SitesService {
       ...contentFields(data),
       ...(regenerateSlug ? { slug: data.slug } : {}),
       publicationStatus: "published",
-      ...this.moderationFor(approveAs),
+      ...this.moderationFor(approveAs, trusted),
       rejectionReason: null,
       rejectedAt: null,
     } as FirebaseSiteDto)
