@@ -1,4 +1,4 @@
-export type ReportTargetType = "event" | "site" | "activity" | "review";
+export type ReportTargetType = "event" | "site" | "activity" | "review" | "user";
 export type ReportStatus = "open" | "resolved";
 
 /** Motivos por tipo de contenido (valor → etiqueta). Compartido por la UI y la validación del servidor. */
@@ -30,6 +30,14 @@ export const REPORT_REASONS = {
     { value: "false_info", label: "Información falsa o engañosa" },
     { value: "personal_data", label: "Muestra datos personales" },
     { value: "copyright", label: "Usa imágenes o contenido sin permiso" },
+    { value: "other", label: "Otro motivo" },
+  ],
+  user: [
+    { value: "harassment", label: "Acoso o comportamiento abusivo" },
+    { value: "fake_profile", label: "Perfil falso o suplanta a alguien" },
+    { value: "inappropriate", label: "Contenido inapropiado u ofensivo" },
+    { value: "scam", label: "Posible estafa o fraude" },
+    { value: "spam", label: "Spam o publicidad no relacionada" },
     { value: "other", label: "Otro motivo" },
   ],
   review: [

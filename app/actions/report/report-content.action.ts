@@ -5,7 +5,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import type { ReportResult } from "@/application/services/report/ReportService";
 
 export interface ReportContentInput {
-  targetType: "event" | "site" | "activity" | "review";
+  targetType: "event" | "site" | "activity" | "review" | "user";
   targetId: string;
   sessionId?: string;
   reason: string;

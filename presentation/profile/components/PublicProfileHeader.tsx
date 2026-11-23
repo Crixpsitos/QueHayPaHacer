@@ -3,6 +3,7 @@ import { Award, BadgeCheck, CalendarDays, ExternalLink } from "lucide-react";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { PublicProfileStats } from "./PublicProfileStats";
 import { ShareProfileButton } from "./ShareProfileButton";
+import { ReportButton } from "@/presentation/shared/components/ReportButton";
 import { ProfileBanner } from "./ProfileBanner";
 import type { PublicProfileViewModel } from "../view-models/PublicProfileViewModel";
 import { normalizeExternalUrl } from "../lib/normalizeExternalUrl";
@@ -101,6 +102,10 @@ export function PublicProfileHeader({ profile, statsPromise }: PublicProfileHead
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <ReportButton targetType="user" targetId={profile.uid} authorId={profile.uid} />
           </div>
 
           {showDetails && statsPromise && (

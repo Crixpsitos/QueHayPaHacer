@@ -1,11 +1,19 @@
 rules_version = '2';
 
-// PROPUESTA versionada (P0-C). NO desplegada.
-// El cliente no usa el SDK de Storage: sube con URLs firmadas V4
-// (generateUploadUrl, requiere sesión) y lee por URL pública/firmada.
-// Ninguna de las dos pasa por estas reglas, así que el SDK cliente queda cerrado.
+// Reglas de prod (coinciden con las activas al 2026-11-21, salvo el bloque de admin).
+// La app no usa el SDK de Storage: sube con URLs firmadas V4 (generateUploadUrl, requiere sesión) y lee por URL
+// pública/firmada. Ninguna de las dos pasa por estas reglas, así que para el resto el SDK cliente queda cerrado.
+// develop tiene además `match /public/{allPaths=**} { allow read: if true; }` (ver qhpa-admin/README).
 service firebase.storage {
   match /b/{bucket}/o {
+    // Panel de administración (repo qhpa-admin): solo cuentas con el claim `admin` suben fotos de escapadas y campañas,
+    // únicamente imágenes de hasta 8 MB y solo dentro de `public/admin/`. Se leen por su URL con token.
+    match /public/admin/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.token.admin == true
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

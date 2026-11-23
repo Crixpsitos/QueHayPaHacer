@@ -96,6 +96,9 @@ export class StudioFirebaseMapper {
       description: dto.description ?? "",
       attachments: Array.isArray(dto.attachments) ? dto.attachments : [],
       closeReason: dto.closeReason || undefined,
+      replies: (Array.isArray(dto.replies) ? dto.replies : [])
+        .filter((r) => typeof r?.text === "string" && r.text.trim())
+        .map((r) => ({ text: r.text as string, at: this.toDateOrNull(r.at) ?? new Date(0) })),
       createdAt: this.toDateOrNull(dto.createdAt) ?? new Date(0),
     };
   }

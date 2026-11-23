@@ -29,6 +29,8 @@ export const NOTIFICATION_TYPES = [
   "activity_request",
   "event_registration",
   "event_registration_confirmed",
+  "admin_notice", // aviso de QHPA enviado desde el panel de administración
+  "support_reply", // respuesta de soporte a un ticket
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

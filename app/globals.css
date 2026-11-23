@@ -331,3 +331,8 @@
 /* AdSense: sin anuncio disponible no queda un hueco con la etiqueta «Publicidad» */
 ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
 aside[data-ad]:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
+/* Hasta que Google llene el espacio (y mientras el sitio no esté aprobado) no se ve nada. Se colapsa sin display:none:
+   con ancho 0 AdSense no puede pedir el anuncio, así que conserva el ancho y solo pierde alto, marco y relleno. */
+aside[data-ad]:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+  height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border-width: 0 !important; opacity: 0; pointer-events: none;
+}

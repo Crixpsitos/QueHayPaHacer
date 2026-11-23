@@ -40,6 +40,7 @@ export async function getSupportTicketDetailAction(
         description: d.description,
         attachments: d.attachments,
         closeReason: d.closeReason,
+        replies: d.replies.map((r) => ({ text: r.text, at: r.at.toISOString() })),
       },
     };
   } catch (error) {

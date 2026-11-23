@@ -19,6 +19,7 @@ export interface SupportTicketDetailVM extends SupportTicketVM {
   description: string;
   attachments: string[];
   closeReason?: string;
+  replies: { text: string; at: string }[]; // at: ISO
 }
 
 export const SUPPORT_CATEGORIES = [
