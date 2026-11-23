@@ -135,7 +135,8 @@ export async function updateEventAction(
   const updatedEvent = enforcePlanFeatures(withTeam, author);
 
   if (existingEvent.status === "published") {
-    Object.assign(updatedEvent, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid)));
+    const trust = isQhpaAdmin(author.uid) ? undefined : await createServerContainer().trustService.evaluate(author.uid);
+    Object.assign(updatedEvent, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid), trust));
   }
 
   try {

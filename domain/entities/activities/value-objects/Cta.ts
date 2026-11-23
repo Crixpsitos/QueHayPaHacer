@@ -57,7 +57,7 @@ export function normalizeCta(input: { kind: unknown; value: unknown; label?: unk
     if (!n || (k === "whatsapp" && !n.startsWith("3"))) return fail(k === "whatsapp" ? "Escribe un celular colombiano de 10 dígitos (empieza por 3)." : "Escribe un teléfono colombiano de 10 dígitos.")
     return withLabel(k, k === "whatsapp" ? `https://wa.me/57${n}` : `+57${n}`)
   }
-  const u = safeHttps(v)
+  const u = safeHttps(/^[a-z][a-z0-9+.-]*:\/\//i.test(v) || v.startsWith("/") ? v : `https://${v}`) // «ejemplo.com» → https://ejemplo.com
   if (!u) return fail("Escribe un enlace seguro que empiece por https://")
   if (k === "whatsappGroup" && (u.hostname !== "chat.whatsapp.com" || u.pathname.length < 2)) return fail("El enlace debe ser de un grupo de WhatsApp (chat.whatsapp.com/…).")
   if (k === "instagram" && !(u.hostname === "instagram.com" || u.hostname.endsWith(".instagram.com"))) return fail("El enlace debe ser de instagram.com.")

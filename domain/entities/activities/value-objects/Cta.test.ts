@@ -41,7 +41,10 @@ test("enlaces web: solo https, sin credenciales ni IP ni localhost", () => {
   assert.equal(ok("website", "https://ejemplo.com/reserva?x=1").value, "https://ejemplo.com/reserva?x=1")
   assert.equal(ok("reserveLink", "https://wa.me/573001234567").kind, "reserveLink")
   assert.equal(ok("buyLink", "https://tienda.co").kind, "buyLink")
-  for (const bad of ["http://ejemplo.com", "javascript:alert(1)", "data:text/html,hola", "//evil.com", "https://user:pass@evil.com", "https://127.0.0.1/x", "https://localhost/x", "https://intranet/x", "ftp://x.com", "ejemplo.com"]) err("website", bad)
+  for (const bad of ["http://ejemplo.com", "javascript:alert(1)", "data:text/html,hola", "//evil.com", "https://user:pass@evil.com", "https://127.0.0.1/x", "https://localhost/x", "https://intranet/x", "ftp://x.com"]) err("website", bad)
+  // sin «https://»: se completa
+  assert.equal(ok("website", "ejemplo.com/reserva").value, "https://ejemplo.com/reserva")
+  assert.equal(ok("buyLink", " tienda.co ").value, "https://tienda.co/")
 })
 
 test("instagram solo del dominio instagram.com", () => {

@@ -1,5 +1,6 @@
 import type { Events } from "@/domain/entities/events/Events";
 import type { User } from "@/domain/entities/user/User";
+import type { TrustResult } from "@/domain/entities/trust/trust";
 
 type EventModerationFields = Pick<
   Events,
@@ -17,6 +18,8 @@ export function moderationFieldsForSubmission(
   author: User,
   submittedAt = new Date(),
   isAdmin = false,
+  /** Confianza ya evaluada (domain/entities/trust). Sin ella manda solo `creatorVerified`, como antes. */
+  trust?: Pick<TrustResult, "trusted">,
 ): EventModerationFields {
   // El admin de QHPA es quien audita: publica ya aprobado, sin auditoría posterior.
   if (isAdmin) {
@@ -32,7 +35,8 @@ export function moderationFieldsForSubmission(
     };
   }
 
-  if (author.creatorVerified) {
+  // Moderación posterior: creador verificado, o cuenta de confianza (ganada o dada por QHPA). Una restricción la quita.
+  if (trust ? trust.trusted : author.creatorVerified) {
     return {
       status: "published",
       moderationStatus: "pending_audit",

@@ -28,6 +28,8 @@ export interface PublishCtx {
   isAdmin: boolean
   /** ms epoch de creación de la cuenta (Firebase Auth); ausente = no se comprueba la antigüedad. */
   accountCreatedAt?: number
+  /** Confianza unificada de la cuenta (domain/entities/trust): suma a la de actividades; una restricción la quita. */
+  trust?: { trusted: boolean; restricted: boolean }
 }
 
 export interface SaveRequest {
@@ -83,7 +85,8 @@ export class ActivityPublishService {
     }
 
     const history = ctx.isAdmin ? null : await this.d.accounts.get(ctx.uid)
-    const trusted = ctx.isAdmin || (history !== null && isTrustedHost(history, now.getTime()))
+    const historyTrusted = history !== null && isTrustedHost(history, now.getTime())
+    const trusted = ctx.isAdmin || (!ctx.trust?.restricted && (ctx.trust?.trusted === true || historyTrusted))
 
     if (!existing && !ctx.isAdmin) {
       const mine = await this.d.repo.findByOwner(ctx.uid)

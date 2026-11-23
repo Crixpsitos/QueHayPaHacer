@@ -172,8 +172,10 @@ export const Step6Registration = ({ form }: Step6RegistrationProps) => {
                 <Field data-invalid={fieldState.invalid.toString()}>
                   <FieldLabel className="text-sm font-semibold text-[#09090B] mb-1.5 block">URL de registro externo</FieldLabel>
                   <Input
-                    type="url"
-                    placeholder="https://ejemplo.com/registro"
+                    type="text"
+                    inputMode="url"
+                    autoCapitalize="none"
+                    placeholder="ejemplo.com/registro"
                     aria-label="URL de registro externo"
                     className="rounded-lg border-[#E4E4E7] h-11 focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
                     {...field}

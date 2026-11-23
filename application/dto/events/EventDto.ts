@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { normalizeHttpUrl, normalizeHttpUrlOrKeep } from "@/domain/entities/shared/normalizeHttpUrl";
 import { EXTERNAL_BUTTON_LABEL_MAX, EXTERNAL_NOTICE_MAX } from "@/app/lib/events/externalLink";
 
 const ImageSchema = v.object({
@@ -185,7 +186,7 @@ const step6Object = v.object({
     "external",
     "form",
   ] as const),
-  externalUrl: v.optional(v.string()),
+  externalUrl: v.optional(v.pipe(v.string(), v.transform(normalizeHttpUrlOrKeep))),
   externalButtonLabel: v.optional(
     v.pipe(v.string(), v.maxLength(EXTERNAL_BUTTON_LABEL_MAX, `Máximo ${EXTERNAL_BUTTON_LABEL_MAX} caracteres.`)),
   ),
@@ -231,7 +232,7 @@ export const step6Schema = v.pipe(
     v.check(
       (data) => {
         if (data.registrationType !== "external" || !data.externalUrl?.trim()) return true;
-        try { new URL(data.externalUrl.trim()); return true; } catch { return false; }
+        return normalizeHttpUrl(data.externalUrl) !== null;
       },
       "Ingresa una URL válida.",
     ),
@@ -456,7 +457,7 @@ export const FormEventSchema = v.object({
   registrationType: v.optional(
     v.picklist(["none", "internal", "external", "form"] as const),
   ),
-  externalUrl: v.optional(v.string()),
+  externalUrl: v.optional(v.pipe(v.string(), v.transform(normalizeHttpUrlOrKeep))),
   externalButtonLabel: v.optional(v.pipe(v.string(), v.maxLength(EXTERNAL_BUTTON_LABEL_MAX))),
   externalButtonColor: v.optional(v.pipe(v.string(), v.maxLength(7))),
   externalNotice: v.optional(v.pipe(v.string(), v.maxLength(EXTERNAL_NOTICE_MAX))),

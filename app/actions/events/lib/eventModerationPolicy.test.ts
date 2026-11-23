@@ -35,6 +35,19 @@ test("verified creators publish while awaiting a later audit", () => {
     publishedAt: submittedAt,
   });
 });
+test("cuenta de confianza (ganada o dada por QHPA) publica con auditoría posterior aunque no sea creador verificado", () => {
+  const f = moderationFieldsForSubmission(author(false), submittedAt, false, { trusted: true });
+  assert.equal(f.status, "published");
+  assert.equal(f.moderationStatus, "pending_audit");
+  assert.equal(f.moderationMode, "post_publication");
+});
+
+test("una restricción vuelve a moderación previa incluso a un creador verificado", () => {
+  const f = moderationFieldsForSubmission(author(true), submittedAt, false, { trusted: false });
+  assert.equal(f.status, "pending");
+  assert.equal(f.moderationMode, "pre_publication");
+});
+
 test("QHPA admins publish as already approved, with no pending audit", () => {
   const admin = { uid: "admin1", creatorVerified: true } as User;
   assert.deepEqual(moderationFieldsForSubmission(admin, submittedAt, true), {

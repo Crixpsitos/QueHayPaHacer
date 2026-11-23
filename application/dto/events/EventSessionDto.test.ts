@@ -73,3 +73,12 @@ test("SessionSchema conserva las categorías de precio", () => {
   assert.equal(r.success, true, JSON.stringify(r.issues));
   assert.deepEqual((r.output as { price: { tiers: unknown } }).price.tiers, tiers);
 });
+
+test("sesión con registro externo: el enlace sin https:// se completa y uno inválido se rechaza", () => {
+  const ext = { ...baseSession, registrationType: "external" as const }
+  const ok = safeParse(SessionSchema, { ...ext, externalUrl: "ejemplo.com/registro" })
+  assert.equal(ok.success, true)
+  assert.equal(ok.success && ok.output.externalUrl, "https://ejemplo.com/registro")
+  assert.equal(safeParse(SessionSchema, { ...ext, externalUrl: "javascript:alert(1)" }).success, false)
+  assert.equal(safeParse(SessionSchema, { ...ext, externalUrl: "no es un enlace" }).success, false)
+})

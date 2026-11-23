@@ -131,6 +131,19 @@ test("una sanción vigente quita la autoaprobación", async () => {
   assert.equal(((await draftThenPublish(s, user)) as { moderationStatus: string }).moderationStatus, "pending")
 })
 
+test("confianza unificada: una cuenta nueva pero de confianza (QHPA o ganada en eventos y sitios) se autoaprueba", async () => {
+  const s = setup()
+  const r = await draftThenPublish(s, { ...user, trust: { trusted: true, restricted: false } } as typeof user)
+  assert.equal((r as { moderationStatus: string }).moderationStatus, "approved")
+  assert.equal((s.repo.items[0] as { reviewedBy?: string }).reviewedBy, "auto")
+})
+
+test("confianza unificada: una restricción de QHPA manda a revisión previa aunque su historial de actividades sea bueno", async () => {
+  const s = setup({ history: { approvedCount: 9, activeSanctions: 0, suspendedUntil: null } })
+  const r = await draftThenPublish(s, { ...user, trust: { trusted: false, restricted: true } } as typeof user)
+  assert.equal((r as { moderationStatus: string }).moderationStatus, "pending")
+})
+
 test("QHPA se autoaprueba y se salta el registro de oferente y el antispam", async () => {
   const s = setup({ gateOk: false })
   for (let i = 0; i < 5; i++) {

@@ -680,7 +680,9 @@ function SocialMediaContent({
           <label className="text-xs font-medium text-foreground" htmlFor={`social-${key}`}>{label}</label>
           <Input
             id={`social-${key}`}
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
             value={socialMedia[key] ?? ""}
             onChange={(e) => onChange({ ...socialMedia, [key]: e.target.value })}
             placeholder={placeholder}
@@ -792,7 +794,9 @@ function BookingContent({
         <label className="text-xs font-medium text-foreground" htmlFor="booking-url">Enlace de reserva</label>
         <Input
           id="booking-url"
-          type="url"
+          type="text"
+          inputMode="url"
+          autoCapitalize="none"
           value={bookingUrl}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://wa.me/573001234567"

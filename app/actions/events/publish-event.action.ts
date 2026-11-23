@@ -187,7 +187,8 @@ export async function publishEventAction(
   const parsedData = enforcePlanFeatures(withTeam, author);
   // userId = dueño (tags de perfil, "primer evento"); el actor solo firma la declaración.
   const userId = ownerId;
-  Object.assign(parsedData, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid)));
+  const trust = isQhpaAdmin(author.uid) ? undefined : await createServerContainer().trustService.evaluate(author.uid);
+  Object.assign(parsedData, moderationFieldsForSubmission(author, new Date(), isQhpaAdmin(author.uid), trust));
 
   try {
     // Detectar primer evento ANTES de publicar para setear metadata.isFirstEvent

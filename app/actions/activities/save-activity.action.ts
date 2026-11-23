@@ -27,7 +27,7 @@ export async function saveActivityAction(raw: unknown, media: unknown, opts: { i
 
   try {
     const r = await createServerContainer().activityPublishService.save(
-      { uid, isAdmin: isQhpaAdmin(uid), accountCreatedAt: await getAccountCreatedAt(uid) },
+      { uid, isAdmin: isQhpaAdmin(uid), accountCreatedAt: await getAccountCreatedAt(uid), trust: isQhpaAdmin(uid) ? undefined : await createServerContainer().trustService.evaluate(uid) },
       { id, input: parsed.value, media: parseMediaInput(media), publish: opts.publish === true, declaration: opts.declaration === true },
     )
     if (!r.ok) return { success: false, error: r.error }

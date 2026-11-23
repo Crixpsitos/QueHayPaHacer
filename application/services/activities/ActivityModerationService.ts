@@ -60,4 +60,21 @@ export class ActivityModerationService {
     await this.d.notify(a.ownerUid, activityModerationNotification({ title: a.title, slug: a.slug, approved: false, reason: why.slice(0, 300) }))
     return { ok: true }
   }
+
+  /**
+   * Baja de una actividad YA aprobada (auditoría posterior de una cuenta de confianza, o un problema detectado después):
+   * pasa a rechazada con motivo y se avisa al dueño. No resta de `approvedCount` (la cuenta ya cobró esa aprobación;
+   * si debe perder la confianza, QHPA la restringe a mano).
+   */
+  async takedown(id: string, adminUid: string, reason: string): Promise<Result> {
+    const why = (reason ?? "").trim()
+    if (why.length < 5) return { ok: false, error: "Escribe el motivo de la baja (mínimo 5 caracteres)." }
+    const a = await this.d.repo.findById(id)
+    if (!a) return { ok: false, error: "No existe la actividad." }
+    if (a.publicationStatus !== "published" || a.moderationStatus !== "approved") return { ok: false, error: "Esta actividad no está aprobada." }
+    const now = this.d.clock()
+    await this.d.repo.save({ ...a, moderationStatus: "rejected", reviewedAt: now, reviewedBy: adminUid, rejectedAt: now, rejectionReason: why.slice(0, 300), updatedAt: now })
+    await this.d.notify(a.ownerUid, activityModerationNotification({ title: a.title, slug: a.slug, approved: false, reason: why.slice(0, 300) }))
+    return { ok: true }
+  }
 }
