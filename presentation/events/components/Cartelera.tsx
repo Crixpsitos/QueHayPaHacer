@@ -9,7 +9,7 @@ import { DateChip } from "@/presentation/home/components/DateChip"
 import { useOptimisticLike } from "@/presentation/shared/hooks/useOptimisticLike"
 import { compactCount, goingLabel } from "./card/cardMeta"
 import { useEventLikes } from "../hooks/useEventLikes"
-import { groupCartelera, inDays, type CarteleraEvent, type CarteleraView } from "../lib/buildCartelera"
+import { collapseByEvent, groupCartelera, inDays, type CarteleraEvent, type CarteleraView } from "../lib/buildCartelera"
 
 type When = "todos" | "hoy" | "manana" | "finde" | "mes" | "gratis"
 type OnLike = (eventId: string, liked: boolean) => Promise<boolean>
@@ -44,6 +44,7 @@ function Ticket({ e, i, byDay, liked, onLike }: { e: CarteleraEvent; i: number; 
         {e.place ? <span className="truncate text-[0.8125rem] text-muted-foreground">{e.place}</span> : null}
         {e.info ? <span className="truncate text-xs font-semibold text-amber-ink">{e.info}</span> : null}
         {line ? <span className="truncate text-xs text-muted-foreground">{line}</span> : null}
+        {e.parentHref ? <Link href={e.parentHref} className="relative z-10 w-fit text-xs font-semibold text-primary-dark underline-offset-2 hover:underline">Ver el evento completo ›</Link> : null}
       </span>
       <span className="flex flex-col items-center justify-center gap-px border-l-2 border-dashed border-border px-1.5 py-2.5 text-center">
         {byDay ? null : <span className="text-xs font-medium text-muted-foreground">{e.wd}</span>}
@@ -106,13 +107,15 @@ export function Cartelera({ view, cats, allLabel = "Todos los que vienen", catsT
   const [day, setDay] = useState<string | null>(null)
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [allMonths, setAllMonths] = useState(false)
-  const likeIds = useMemo(() => view.events.slice(0, LIKES_MAX).map((e) => e.id), [view])
+  const likeIds = useMemo(() => [...new Set(view.events.slice(0, LIKES_MAX).map((e) => e.id))], [view])
   const { likes, onLike, overlays } = useEventLikes(likeIds)
 
   const match = useMemo(() => {
     const ranges: Record<Exclude<When, "todos" | "gratis">, [string, string]> = { hoy: [view.today, view.today], manana: [view.tomorrow, view.tomorrow], finde: [view.weekend.from, view.weekend.to], mes: [view.today, view.monthEnd] }
     return (w: When) => (e: CarteleraEvent) => (w === "todos" ? true : w === "gratis" ? e.free : inDays(e, ...ranges[w]))
   }, [view])
+  // Cuántas boletas da cada filtro: «Este fin de semana» junta las funciones de un evento en una sola.
+  const countOf = (w: When) => { const l = view.events.filter(match(w)); return (w === "finde" ? collapseByEvent(l) : l).length }
 
   const whens: { key: When; label: string; short: string }[] = [
     { key: "todos", label: allLabel, short: "Todos" },
@@ -124,7 +127,7 @@ export function Cartelera({ view, cats, allLabel = "Todos los que vienen", catsT
   ]
   const filtering = !!day || when !== "todos"
   const groups = useMemo(() => {
-    const list = day ? view.events.filter((e) => inDays(e, day, day)) : view.events.filter(match(when))
+    const list = day ? view.events.filter((e) => inDays(e, day, day)) : when === "finde" ? collapseByEvent(view.events.filter(match(when))) : view.events.filter(match(when))
     // Con un día o un rango elegido, lo que ya empezó se muestra dentro de ese día (no en «hoy»).
     const from = day ?? (when === "manana" ? view.tomorrow : when === "finde" ? view.weekend.from : null)
     return groupCartelera(from ? list.map((e) => (e.date < from ? { ...e, date: from } : e)) : list, view.today)
@@ -147,7 +150,7 @@ export function Cartelera({ view, cats, allLabel = "Todos los que vienen", catsT
               <button key={w.key} type="button" aria-pressed={on} onClick={() => pick(w.key)}
                 className={cn("flex min-h-11 shrink-0 items-center justify-between gap-2 rounded-full border-[1.5px] px-4 text-sm font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 lg:rounded-xl lg:border-0 lg:px-3", on ? "border-primary-dark bg-primary-dark text-white" : "border-border bg-card hover:bg-muted")}>
                 <span className="lg:hidden">{w.short}</span><span className="hidden lg:inline">{w.label}</span>
-                <span className={cn("text-[0.8125rem]", on ? "text-brand-gold" : "text-primary-dark")}>{view.events.filter(match(w.key)).length}</span>
+                <span className={cn("text-[0.8125rem]", on ? "text-brand-gold" : "text-primary-dark")}>{countOf(w.key)}</span>
               </button>
             )
           })}
@@ -202,7 +205,7 @@ export function Cartelera({ view, cats, allLabel = "Todos los que vienen", catsT
                       <span className="shrink-0 text-[0.8125rem] font-semibold text-primary-dark sm:text-sm">{g.items.length} {g.items.length === 1 ? "evento" : "eventos"}</span>
                     </div>
                     <ul className="grid gap-2.5 sm:gap-3.5 md:grid-cols-[repeat(auto-fill,minmax(25rem,1fr))]">
-                      {(all ? g.items : g.items.slice(0, PER_GROUP)).map((e) => <Ticket key={e.id} e={e} i={e.id.charCodeAt(0) + e.id.charCodeAt(e.id.length - 1)} byDay={g.byDay} liked={likes[e.id] ?? false} onLike={onLike} />)}
+                      {(all ? g.items : g.items.slice(0, PER_GROUP)).map((e) => <Ticket key={e.key} e={e} i={e.id.charCodeAt(0) + e.id.charCodeAt(e.id.length - 1)} byDay={g.byDay} liked={likes[e.id] ?? false} onLike={onLike} />)}
                     </ul>
                     {all ? null : (
                       <button type="button" onClick={() => setOpen((s) => new Set(s).add(g.key))} className="mt-3 flex min-h-11.5 w-full items-center justify-center rounded-2xl border-[1.5px] border-dashed border-primary-dark bg-card text-sm font-semibold text-primary-dark outline-none transition-colors hover:bg-primary-light focus-visible:ring-3 focus-visible:ring-ring/50">Ver los {g.items.length} {g.of}</button>

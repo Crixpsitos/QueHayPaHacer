@@ -3,7 +3,7 @@ import { farLabel } from "@/domain/entities/escapadas/Escapada"
 import { MOMENT_KEYS, addDays, inRange, momentMode, momentRanges, monthBuckets, upcomingByDay, type MomentKey } from "@/domain/entities/home/moments"
 
 /** Lo que el servidor lee y entrega ya reducido a datos simples (se cachea; nada de clases ni fechas). */
-export interface EventIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; coverUrl: string | null; siteId: string | null }
+export interface EventIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; coverUrl: string | null; siteId: string | null; /** Función de un evento de varias fechas: su id, su ruta y la del evento completo. */ sid?: string; href?: string; parentHref?: string }
 export interface ActivityIn { id: string; slug: string; title: string; place: string; price: string; coverUrl: string | null; occ: Partial<Record<MomentKey, { date: string; hhmm: string | null }>> }
 export interface SiteIn { id: string; slug: string; name: string; kind: string; coverUrl: string | null; isOpen: boolean; /** "21:00" si hoy cierra, "17:00" si hoy abre más tarde. */ at: string | null; /** Para la tarjeta completa del carril (todo opcional: las filas del momento no lo usan). */ address?: string; /** "Hoy 10:00 am – 9:00 pm" */ hours?: string; likes?: number; eventCount?: number; photos?: number }
 
@@ -53,7 +53,14 @@ const LONG_LABELS: Record<MomentKey, string> = { hoy: "Hoy", manana: "Mañana", 
 const WORDS: Record<MomentKey, string> = { hoy: "hoy", manana: "mañana", finde: "este fin de semana", semana: "esta semana" }
 const MORE_HREF: Record<MomentKey, string> = { hoy: "/que-hay-hoy-ibague", manana: "/eventos", finde: "/eventos-este-fin-de-semana-ibague", semana: "/eventos" }
 
-const eventHref = (e: { slug: string; id: string }) => `/eventos/${e.slug || e.id}`
+const eventHref = (e: { slug: string; id: string; href?: string }) => e.href ?? `/eventos/${e.slug || e.id}`
+const evKey = (e: { id: string; sid?: string }) => (e.sid ? `${e.id}:${e.sid}` : e.id)
+/** Una entrada por evento: las funciones del mismo evento se juntan en la primera, que lleva al evento completo (para «Este fin de semana»). */
+const oneByEvent = (list: EventIn[]): EventIn[] => {
+  const seen = new Set<string>()
+  return list.flatMap((e) => (e.sid ? (seen.has(e.id) ? [] : (seen.add(e.id), [{ ...e, sid: undefined, href: e.parentHref }])) : [e]))
+}
+const uniqueIds = (list: { id: string }[]) => [...new Set(list.map((e) => e.id))]
 const preOf = (date: string, today: string) => (date === today ? "Hoy" : cap(fmt({ weekday: "short" }).format(dateMs(date)).replace(".", "")))
 
 export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn[]; sites: SiteIn[]; escapadas?: EscapadaIn[]; now: Date }): HomeView {
@@ -63,14 +70,14 @@ export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn
 
   const moments = MOMENT_KEYS.map((key): MomentView => {
     const range = ranges[key]
-    const evs = inRange(events, range)
+    const evs = key === "finde" ? oneByEvent(inRange(events, range)) : inRange(events, range)
     const acts = activities.filter((a) => a.occ[key]).sort((a, b) => (a.occ[key]!.hhmm ?? "99").localeCompare(b.occ[key]!.hhmm ?? "99"))
     const mode = momentMode(evs.length)
 
     const eventRow = (e: EventIn): RowView => {
       const start = bogotaDateIso(new Date(e.startsAt))
       const date = start < range.from ? range.from : start
-      return { kind: "Evento", key: `e-${e.id}`, href: eventHref(e), title: e.title, place: e.venue, price: e.price, cover: e.coverUrl, pre: preOf(date, today), ...clock(hhmmOfMs(e.startsAt)) }
+      return { kind: "Evento", key: `e-${evKey(e)}`, href: eventHref(e), title: e.title, place: e.venue, price: e.price, cover: e.coverUrl, pre: preOf(date, today), ...clock(hhmmOfMs(e.startsAt)) }
     }
     const actRow = (a: ActivityIn): RowView => {
       const o = a.occ[key]!
@@ -111,7 +118,7 @@ export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn
       const p = dayParts(dateMs(d.date))
       return {
         date: d.date, ...p,
-        items: d.items.slice(0, 2).map((e) => ({ key: e.id, href: eventHref(e), title: e.title, meta: [clockText(hhmmOfMs(e.startsAt)), e.venue, e.price].filter(Boolean).join(" · ") })),
+        items: d.items.slice(0, 2).map((e) => ({ key: evKey(e), href: eventHref(e), title: e.title, meta: [clockText(hhmmOfMs(e.startsAt)), e.venue, e.price].filter(Boolean).join(" · ") })),
         more: d.items.length > 2 ? `y ${d.items.length - 2} más el ${fmt({ weekday: "long" }).format(dateMs(d.date))}` : null,
       }
     }),
@@ -132,7 +139,7 @@ export function buildHomeView(input: { events: EventIn[]; activities: ActivityIn
   return {
     dateLabel: cap(fmt({ weekday: "long", day: "numeric", month: "long" }).format(now)),
     moments, upcoming, sites: sitesView, sitesOpenCount: sites.filter((s) => s.isOpen).length,
-    upcomingIds: events.filter((e) => e.endsAt >= now.getTime()).sort((a, b) => a.startsAt - b.startsAt).slice(0, 8).map((e) => e.id),
+    upcomingIds: uniqueIds(events.filter((e) => e.endsAt >= now.getTime()).sort((a, b) => a.startsAt - b.startsAt)).slice(0, 8),
     escapadas: escapadas.flatMap((x): EscapadaView[] => {
       const plans = x.plans.filter((p) => p.endsAt >= now.getTime()).sort((a, b) => a.startsAt - b.startsAt)
       if (!plans.length) return [] // un pueblo sin planes próximos no se dibuja

@@ -67,3 +67,14 @@ test("escapaditas: cuenta los planes que siguen, muestra el próximo y oculta pu
   assert.equal(v.escapadas.length, 1)
   assert.deepEqual(v.escapadas[0], { id: "j", href: "/eventos/mercado", name: "Juntas", far: "A 40 min", plans: "2 planes", next: "Sáb 14: mercado", cover: null })
 })
+
+test("un evento de varias fechas cuenta solo el día de cada función; en el finde sale completo y una sola vez", async () => {
+  const fn = (sid: string, day: string): EventIn => ({ id: "fest", slug: "fest", title: "Fest", startsAt: Date.parse(`${day}T21:00:00-05:00`), endsAt: Date.parse(`${day}T23:00:00-05:00`), venue: "Brewing", price: "$15.000", coverUrl: null, siteId: null, sid, href: `/eventos/fest/sessions/${sid}`, parentHref: "/eventos/fest" })
+  const now = new Date("2026-11-12T20:00:00Z") // jueves 12, 3 pm
+  const v = buildHomeView({ events: [fn("a", "2026-11-14"), fn("b", "2026-11-21")], activities: [], sites: [], now })
+  const m = (k: string) => v.moments.find((x) => x.key === k)!
+  assert.equal(m("hoy").lead, null) // hoy no hay función (la app antes lo contaba por estar entre el 14 y el 21)
+  assert.equal(m("finde").lead?.href, "/eventos/fest") // evento completo
+  assert.equal(m("finde").rows.filter((r) => r.kind === "Evento").length, 0) // sin repetirlo
+  assert.deepEqual(v.upcomingIds, ["fest"])
+})
