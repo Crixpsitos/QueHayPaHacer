@@ -25,6 +25,7 @@ import { requireEventPermission } from "@/app/actions/_session";
 import { applyTeamPolicy, invalidateTeamAccess } from "./lib/teamPolicy";
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
+import { withDefaultEnd } from "./lib/withDefaultEnd";
 
 type PublishEventActionResult =
   | {
@@ -141,7 +142,7 @@ export async function publishEventAction(
       : publishEventSchema;
 
   const resultParse = safeParse(schema, {
-    ...event,
+    ...withDefaultEnd(event),
     id: event.id,
     // slug/promoción/fechas de sistema no se aceptan del cliente.
     slug: existingEvent?.slug ||

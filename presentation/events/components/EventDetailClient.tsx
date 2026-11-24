@@ -340,11 +340,14 @@ export function EventDetailClient({
                     <p className="text-sm text-[#71717A]">Entrada</p>
                     <p className="font-heading text-3xl font-bold tracking-tight text-[#09090B] tabular-nums">{price}</p>
                     {priceTiers(event.price).length > 0 && (
-                      <ul className="mt-2 space-y-1 text-sm text-[#09090B]">
+                      <ul className="mt-3 space-y-2 text-sm text-[#09090B]">
                         {priceTiers(event.price).map((t) => (
-                          <li key={t.name} className="flex justify-between gap-6">
-                            <span>{t.name}</span>
-                            <span className="font-semibold tabular-nums">{formatTierAmount(event.price, t.amount)}</span>
+                          <li key={t.name} className="flex items-start justify-between gap-6">
+                            <span className="min-w-0">
+                              <span className="block font-medium">{t.name}</span>
+                              {t.description ? <span className="block text-xs text-[#71717A]">{t.description}</span> : null}
+                            </span>
+                            <span className={cn("shrink-0 font-semibold tabular-nums", t.amount === 0 && "rounded-full bg-brand-gold px-2.5 py-0.5 text-wine")}>{formatTierAmount(event.price, t.amount)}</span>
                           </li>
                         ))}
                       </ul>

@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache"
 import { loadPublishedEvents } from "@/presentation/home/data/fetchHomeView"
-import { formatPrice } from "@/presentation/events/components/detail/format"
+import { formatPrice, hasFreePart, tiersLabel } from "@/presentation/events/components/detail/format"
 import { registrationLabel, spotsInfo } from "@/presentation/events/components/card/cardMeta"
 import { EventViewModelMapper } from "@/presentation/events/mapper/EventViewModelMapper"
 import { eventJsonLdHtml } from "@/presentation/events/lib/eventJsonLd"
@@ -33,12 +33,11 @@ export const fetchCartelera = async (categorySlug: string | null = null): Promis
   const view = buildCartelera((await Promise.all(upcoming.map(async (e): Promise<CarteleraIn[]> => {
     const spots = spotsInfo(e.capacity, e.analytics?.registrations ?? 0)
     const multi = e.eventType === "multi-date"
-    const tiers = e.price?.tiers?.length ?? 0
     const base = {
       id: e.id, slug: e.slug, title: e.title, startsAt: e.startDate.getTime(), endsAt: e.endDate.getTime(), venue: e.location?.venue ?? "",
       place: [e.location?.venue, e.location?.address].filter(Boolean).join(" · "),
-      price: multi || !e.price ? "Ver precios" : formatPrice(e.price), free: !multi && !!e.price && (e.price.isFree || !e.price.amount),
-      tiers: !multi && tiers > 1 ? `${tiers} precios` : "",
+      price: multi || !e.price ? "Ver precios" : formatPrice(e.price), free: !multi && hasFreePart(e.price),
+      tiers: multi ? "" : tiersLabel(e.price),
       coverUrl: e.mainImage?.status === "error" ? null : (e.mainImage?.url ?? null),
       category: e.categoryInfo?.title ?? "", multi: multi ? "Varias fechas" : "",
       info: [registrationLabel(e.registrationType), spots?.label].filter(Boolean).join(" · "),
@@ -46,7 +45,7 @@ export const fetchCartelera = async (categorySlug: string | null = null): Promis
     }
     if (!multi) return [base]
     // Un evento de varias fechas sale una vez por función, en su propio día, con su hora, lugar y precio.
-    const slots = eventSlots((await fetchEventSessions(e.id)).map((s) => ({ id: s.id, slug: s.slug, status: s.status, startDate: s.startDate, endDate: s.endDate, venue: s.location?.venue ?? "", address: s.location?.address ?? "", price: formatPrice(s.price), free: !!s.price && (s.price.isFree || !s.price.amount), tiers: (s.price?.tiers?.length ?? 0) > 1 ? `${s.price.tiers!.length} precios` : "" })), now.getTime())
+    const slots = eventSlots((await fetchEventSessions(e.id)).map((s) => ({ id: s.id, slug: s.slug, status: s.status, startDate: s.startDate, endDate: s.endDate, venue: s.location?.venue ?? "", address: s.location?.address ?? "", price: formatPrice(s.price), free: hasFreePart(s.price), tiers: tiersLabel(s.price) })), now.getTime())
     if (!slots.length) return [base]
     return slots.map((x) => ({
       ...base, key: `${e.id}:${x.sessionId}`, href: `/eventos/${e.slug || e.id}/sessions/${x.ref}`, parentHref: `/eventos/${e.slug || e.id}`,

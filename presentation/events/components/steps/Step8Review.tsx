@@ -294,7 +294,7 @@ export const Step8Review = ({ form, onGoToStep, isMultiDate = false, declared, o
                 formData.price?.isFree
                   ? "Gratis"
                   : (formData.price?.tiers?.length ?? 0) > 1
-                    ? formData.price!.tiers!.map((t) => `${t.name}: $${t.amount.toLocaleString("es-CO")}`).join(" · ")
+                    ? formData.price!.tiers!.map((t) => `${t.name}: ${t.amount === 0 ? "Gratis" : "$" + t.amount.toLocaleString("es-CO")}`).join(" · ")
                   : formData.price?.amount && formData.price.amount > 0
                     ? `$${formData.price.amount.toLocaleString("es-CO")} COP por persona`
                     : undefined

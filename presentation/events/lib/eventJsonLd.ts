@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/app/lib/site";
+import { isOpenEnded } from "@/domain/entities/events/openEnd";
 import { priceTiers } from "../components/detail/format";
 import { buildProfileHref } from "@/presentation/profile/lib/profileHref";
 import type { Location } from "@/domain/entities/events/value-objects/Location";
@@ -76,7 +77,7 @@ export function buildEventJsonLd(event: EventViewModel, opts: EventJsonLdOpts = 
     description: event.shortDescription,
     url,
     ...(event.startDate ? { startDate: event.startDate } : {}),
-    ...(event.endDate ? { endDate: event.endDate } : {}),
+    ...(event.endDate && !(event.startDate && event.eventType !== "multi-date" && isOpenEnded(event.startDate, event.endDate)) ? { endDate: event.endDate } : {}), // sin hora de fin: se omite (es opcional en schema.org)
     eventStatus:
       event.status === "published" || event.status === "ended"
         ? "https://schema.org/EventScheduled"

@@ -22,6 +22,7 @@ import { siteLinkError } from "./lib/siteLink";
 import { linkedSiteIds } from "@/app/lib/sites/siteEvents";
 import { isQhpaAdmin } from "@/app/lib/sites/qhpaAdmin";
 import { enforcePlanFeatures, moderationFieldsForSubmission, withServerOwnedFields } from "./lib/eventModerationPolicy";
+import { withDefaultEnd } from "./lib/withDefaultEnd";
 
 interface UpdateEventActionResult {
   success?: boolean;
@@ -78,7 +79,7 @@ export async function updateEventAction(
 
   // author/slug/promotion/status son del servidor (withServerOwnedFields abajo).
   const input = {
-    ...event,
+    ...withDefaultEnd(event),
     id: eventId,
     slug: undefined,
     // Solo para pasar el schema: withServerOwnedFields conserva el author guardado.

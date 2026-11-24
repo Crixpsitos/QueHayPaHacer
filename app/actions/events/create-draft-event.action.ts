@@ -17,6 +17,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { toSlug } from "@/app/lib/utils/slug";
 import { safeParse } from "valibot";
+import { withDefaultEnd } from "./lib/withDefaultEnd";
 
 interface CreateDraftEventActionResult {
   success?: boolean;
@@ -54,7 +55,7 @@ export async function createDraftEventAction(
   if (linkError) return { success: false, error: linkError };
 
   const resultParse = safeParse(FormEventSchema, {
-    ...event,
+    ...withDefaultEnd(event),
     slug: event.title
       ? `${toSlug(event.title)}-${Date.now().toString(36)}`
       : undefined,

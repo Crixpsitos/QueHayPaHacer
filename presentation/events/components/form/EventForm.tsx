@@ -116,10 +116,11 @@ function computeCompletedSteps(
       case "dates":
         ok =
           Boolean(values.startDate?.trim()) &&
-          Boolean(values.endDate?.trim()) &&
           !isNaN(new Date(values.startDate!).getTime()) &&
-          !isNaN(new Date(values.endDate!).getTime()) &&
-          new Date(values.endDate!) >= new Date(values.startDate!);
+          // El fin es opcional: sin él, dura hasta el final del día de inicio.
+          (!values.endDate?.trim() ||
+            (!isNaN(new Date(values.endDate).getTime()) &&
+              new Date(values.endDate) >= new Date(values.startDate!)));
         break;
       case "registration":
         ok =

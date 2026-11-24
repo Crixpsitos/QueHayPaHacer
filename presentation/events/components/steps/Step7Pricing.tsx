@@ -26,7 +26,7 @@ const parseDots = (formatted: string): number => {
 const PRICE_PRESETS = [10_000, 25_000, 50_000];
 const MAX_TIERS = 6;
 
-type Tier = { name: string; amount: number };
+type Tier = { name: string; amount: number; description?: string };
 
 export function Step7Pricing({ form }: Step7PricingProps) {
   const isFree = form.watch("price.isFree");
@@ -136,7 +136,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
             <div className="space-y-3">
               <div>
                 <p className="text-sm font-semibold text-[#09090B]">Categorías de entrada</p>
-                <p className="mt-0.5 text-xs text-[#71717A]">Valor por persona de cada una. En el evento se mostrará "Desde" el más bajo.</p>
+                <p className="mt-0.5 text-xs text-[#71717A]">Valor por persona de cada una; pon 0 si es gratis. Si mezclas gratis y de pago, el evento dice "Gratis y $X". Puedes explicar qué incluye cada una.</p>
               </div>
               {tiers.map((t, i) => (
                 <div key={i} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
@@ -153,7 +153,7 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                     <input
                       aria-label={`Valor de la categoría ${i + 1}`}
                       inputMode="numeric"
-                      placeholder="0"
+                      placeholder="0 = gratis"
                       value={t.amount ? formatWithDots(t.amount) : ""}
                       onChange={(e) => patchTier(i, { amount: parseDots(e.target.value) })}
                       className="min-w-0 flex-1 bg-transparent text-sm font-semibold tabular-nums text-[#09090B] outline-none placeholder:text-[#A1A1AA]"
@@ -167,12 +167,20 @@ export function Step7Pricing({ form }: Step7PricingProps) {
                   >
                     <Trash2 className="size-4" />
                   </button>
+                  <input
+                    aria-label={`Qué incluye la categoría ${i + 1} (opcional)`}
+                    maxLength={120}
+                    placeholder="Qué incluye (opcional). Ej. Consolas y torneos de 2 a 8 pm"
+                    value={t.description ?? ""}
+                    onChange={(e) => patchTier(i, { description: e.target.value })}
+                    className="h-11 min-w-0 basis-full rounded-lg border border-[#E4E4E7] bg-white px-3 text-sm text-[#09090B] outline-none placeholder:text-[#A1A1AA] focus:border-[#D42F3C] focus:ring-1 focus:ring-[#D42F3C]/20"
+                  />
                 </div>
               ))}
               <input type="hidden" name="price.currency" value="COP" />
               {tiersError && (
                 <p role="alert" className="text-xs text-[#D42F3C]">
-                  Cada categoría necesita un nombre y un valor mayor a 0.
+                  Cada categoría necesita un nombre y un valor (0 si es gratis); al menos una debe ser de pago.
                 </p>
               )}
             </div>
