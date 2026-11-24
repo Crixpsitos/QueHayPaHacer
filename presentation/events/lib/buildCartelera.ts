@@ -4,8 +4,8 @@ import { addDays } from "@/domain/entities/home/moments"
 import { clock, clockText } from "@/presentation/home/lib/buildHomeView"
 
 /** Evento ya reducido a datos simples (se cachea y viaja al navegador). */
-export interface CarteleraIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; free: boolean; coverUrl: string | null; category: string; /** «Varias fechas» si tiene varias funciones; vacío si es una sola. */ multi: string; /** Lugar y dirección. */ place: string; /** «Inscripción abierta · Quedan 8 cupos». */ info: string; /** Personas que marcaron «Voy a ir». */ going: number; views: number; /** «3 precios» si hay varias categorías de precio. */ tiers: string }
-export interface CarteleraEvent { id: string; href: string; title: string; venue: string; cover: string | null; price: string; free: boolean; category: string; multi: string; place: string; info: string; going: number; views: number; tiers: string; /** Día en que se muestra (hoy si ya empezó y sigue). */ date: string; endDate: string; time: string; ampm: string; wd: string; day: string; mon: string }
+export interface CarteleraIn { id: string; slug: string; title: string; startsAt: number; endsAt: number; venue: string; price: string; free: boolean; coverUrl: string | null; category: string; /** «Varias fechas» si tiene varias funciones; vacío si es una sola. */ multi: string; /** Lugar y dirección. */ place: string; /** «Inscripción abierta · Quedan 8 cupos». */ info: string; /** Personas que marcaron «Voy a ir». */ going: number; views: number; /** «3 precios» si hay varias categorías de precio. */ tiers: string; /** Función de un evento de varias fechas: id único por función (el `id` sigue siendo el del evento, para «Voy a ir»). */ key?: string; /** Ruta propia de la función (si no, la del evento). */ href?: string; /** Ruta del evento completo (solo funciones). */ parentHref?: string }
+export interface CarteleraEvent { id: string; href: string; title: string; venue: string; cover: string | null; price: string; free: boolean; category: string; multi: string; place: string; info: string; going: number; views: number; tiers: string; /** Clave única de la boleta (el evento, o una de sus funciones). */ key: string; /** Ruta del evento completo cuando la boleta es una función suelta. */ parentHref: string; /** Día en que se muestra (hoy si ya empezó y sigue). */ date: string; endDate: string; time: string; ampm: string; wd: string; day: string; mon: string }
 export interface CarteleraView {
   today: string
   tomorrow: string
@@ -28,6 +28,20 @@ const noon = (iso: string) => Date.parse(`${iso}T12:00:00-05:00`)
 const short = (o: Intl.DateTimeFormatOptions, ms: number) => fmt(o).format(ms).replace(".", "")
 const hhmmOf = (ms: number) => new Date(ms - 5 * 3_600_000).toISOString().slice(11, 16)
 
+/** Una boleta por evento: las funciones del mismo evento se juntan en la primera, que lleva al evento completo («3 funciones»). Para «Este fin de semana», donde se ve el evento entero y no cada función. */
+export function collapseByEvent(events: CarteleraEvent[]): CarteleraEvent[] {
+  const count = new Map<string, number>()
+  for (const e of events) if (e.parentHref) count.set(e.id, (count.get(e.id) ?? 0) + 1)
+  const seen = new Set<string>()
+  return events.flatMap((e) => {
+    if (!e.parentHref) return [e]
+    if (seen.has(e.id)) return []
+    seen.add(e.id)
+    const n = count.get(e.id)!
+    return [{ ...e, key: e.id, href: e.parentHref, parentHref: "", multi: n > 1 ? `${n} funciones` : e.multi }]
+  })
+}
+
 /** ¿Pasa algo de este evento entre `from` y `to`? */
 export const inDays = (e: Pick<CarteleraEvent, "date" | "endDate">, from: string, to: string) => e.date <= to && e.endDate >= from
 
@@ -40,7 +54,7 @@ export function buildCartelera(input: CarteleraIn[], now: Date): CarteleraView {
       const start = bogotaDateIso(new Date(e.startsAt))
       const date = start < today ? today : start
       return {
-        id: e.id, href: `/eventos/${e.slug || e.id}`, title: e.title, venue: e.venue, cover: e.coverUrl, price: e.price, free: e.free, category: e.category, multi: e.multi, place: e.place || e.venue, info: e.info, going: e.going, views: e.views, tiers: e.tiers,
+        id: e.id, key: e.key ?? e.id, parentHref: e.parentHref ?? "", href: e.href ?? `/eventos/${e.slug || e.id}`, title: e.title, venue: e.venue, cover: e.coverUrl, price: e.price, free: e.free, category: e.category, multi: e.multi, place: e.place || e.venue, info: e.info, going: e.going, views: e.views, tiers: e.tiers,
         date, endDate: bogotaDateIso(new Date(e.endsAt)), ...clock(hhmmOf(e.startsAt)),
         wd: short({ weekday: "short" }, noon(date)), day: fmt({ day: "numeric" }).format(noon(date)), mon: short({ month: "short" }, noon(date)),
       }

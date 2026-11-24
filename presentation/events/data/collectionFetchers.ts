@@ -3,6 +3,7 @@ import { createServerContainer } from "@/infraestructure/di/container";
 import { fetchEventDetailById, fetchEventSessions } from "./eventDetailFetchers";
 import { bogotaDayLabel, bogotaDayRange, overlapsWindow } from "../lib/bogotaDay";
 import type { CollectionDef } from "../lib/eventCollections";
+import { whenRange } from "@/domain/entities/activities/when";
 import type { Events } from "@/domain/entities/events/Events";
 
 /**
@@ -23,7 +24,22 @@ const fetchCollectionEventIds = async (
 
   const { eventFeed } = createServerContainer();
   if (kind === "featured") return eventFeed.getFeatured();
-  if (kind === "weekend") return eventFeed.getWeekend();
+  if (kind === "weekend") {
+    // Un multi-fecha cuyo rango cruza el fin de semana sale solo si una de sus funciones cae en él (el evento sale completo).
+    const { from, to } = whenRange("este-fin-de-semana", new Date());
+    const [wStart, wEnd] = [new Date(`${from}T00:00:00-05:00`), new Date(`${to}T23:59:59.999-05:00`)];
+    const ids = await eventFeed.getWeekend();
+    const checked = await Promise.all(
+      ids.map(async (id) => {
+        const e = await fetchEventDetailById(id);
+        if (!e) return null;
+        if (e.eventType !== "multi-date") return id;
+        const sessions = await fetchEventSessions(id);
+        return sessions.some((x) => x.status === "published" && overlapsWindow(x.startDate, x.endDate, wStart, wEnd)) ? id : null;
+      }),
+    );
+    return checked.filter((id): id is string => id !== null);
+  }
   if (kind === "all") return eventFeed.getAll();
   // Filtra por id O slug: `categoryInfo.id` en los eventos es inconsistente.
   const catValues = [categoryId, categorySlug].filter((v): v is string => Boolean(v));

@@ -38,3 +38,14 @@ test("sin eventos no hay destacado ni texto del próximo", () => {
   assert.equal(v.spotlight, null)
   assert.equal(v.nextLabel, "")
 })
+
+test("un evento de varias fechas sale una vez por función, en su día; «finde» las junta en una", async () => {
+  const { collapseByEvent } = await import("./buildCartelera")
+  const fn = (n: number, day: string) => ev("fest", day, 21, { key: `fest:${n}`, href: `/eventos/fest/sessions/${n}`, parentHref: "/eventos/fest", multi: `Función ${n} de 2` })
+  const v = buildCartelera([fn(1, "2026-11-14"), fn(2, "2026-11-21"), ev("otro", "2026-11-14", 19)], NOW)
+  assert.deepEqual(v.events.map((e) => e.key), ["otro", "fest:1", "fest:2"])
+  assert.equal(v.calendar[1].count, 2) // sábado 14: «otro» y la función 1
+  assert.equal(v.calendar[8].count, 1) // sábado 21: la función 2
+  const one = collapseByEvent(v.events)
+  assert.deepEqual(one.map((e) => [e.key, e.href, e.multi]), [["otro", "/eventos/otro", ""], ["fest", "/eventos/fest", "2 funciones"]])
+})

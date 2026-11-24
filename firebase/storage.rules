@@ -14,12 +14,15 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
     match /public/admin/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.token.admin == true;
       allow write: if adminImage();
     }
     match /public/sites/{siteId}/images/{file} {
+      allow read: if request.auth != null && request.auth.token.admin == true;
       allow write: if adminImage();
     }
     match /public/activities/{activityId}/images/{file} {
+      allow read: if request.auth != null && request.auth.token.admin == true;
       allow write: if adminImage();
     }
 

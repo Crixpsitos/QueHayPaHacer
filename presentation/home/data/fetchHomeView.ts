@@ -9,6 +9,8 @@ import { formatPrice } from "@/presentation/events/components/detail/format"
 import { getSiteOpenStatus } from "@/presentation/sites/lib/openStatus"
 import { siteCategoryLabel } from "@/presentation/sites/lib/constants"
 import { buildHomeView, clockText, type ActivityIn, type EscapadaIn, type EventIn, type HomeView, type SiteIn } from "../lib/buildHomeView"
+import { fetchEventSessions } from "@/presentation/events/data/eventDetailFetchers"
+import { eventSlots } from "@/presentation/events/lib/sessionSlots"
 import { fetchAllSiteIds } from "@/presentation/sites/data/fetchAllSiteIds"
 
 const PAGE = 30
@@ -43,19 +45,27 @@ export async function loadPublishedEvents(maxPages: number = MAX_PAGES): Promise
   return (await Promise.all(ids.map(fetchEvent))).filter((e): e is Events => !!e && e.status === "published" && !!e.startDate && !!e.endDate)
 }
 
-async function loadEvents(): Promise<EventIn[]> {
+async function loadEvents(now: Date): Promise<EventIn[]> {
   const list = await loadPublishedEvents()
-  return list.map((e) => ({
-    id: e.id,
-    slug: e.slug,
-    title: e.title,
-    startsAt: e.startDate.getTime(),
-    endsAt: e.endDate.getTime(),
-    venue: e.location?.venue ?? "",
-    price: formatPrice(e.price),
-    coverUrl: e.mainImage?.status === "error" ? null : (e.mainImage?.url ?? null),
-    siteId: e.location?.siteId ?? null,
-  }))
+  return (await Promise.all(list.map(async (e): Promise<EventIn[]> => {
+    const base: EventIn = {
+      id: e.id,
+      slug: e.slug,
+      title: e.title,
+      startsAt: e.startDate.getTime(),
+      endsAt: e.endDate.getTime(),
+      venue: e.location?.venue ?? "",
+      price: formatPrice(e.price),
+      coverUrl: e.mainImage?.status === "error" ? null : (e.mainImage?.url ?? null),
+      siteId: e.location?.siteId ?? null,
+    }
+    if (e.eventType !== "multi-date") return [base]
+    // Un evento de varias fechas cuenta una vez por función, en su propio día (no entre la primera y la última).
+    const slots = eventSlots((await fetchEventSessions(e.id)).map((s) => ({ id: s.id, slug: s.slug, status: s.status, startDate: s.startDate, endDate: s.endDate, venue: s.location?.venue ?? "", address: s.location?.address ?? "", price: formatPrice(s.price), free: !!s.price && (s.price.isFree || !s.price.amount), tiers: "" })), now.getTime())
+    if (!slots.length) return [base]
+    const parent = `/eventos/${e.slug || e.id}`
+    return slots.map((x) => ({ ...base, sid: x.sessionId, href: `${parent}/sessions/${x.ref}`, parentHref: parent, startsAt: x.startsAt, endsAt: x.endsAt, venue: x.venue || base.venue, price: x.price || base.price }))
+  }))).flat()
 }
 
 async function loadActivities(now: Date): Promise<ActivityIn[]> {
@@ -118,6 +128,6 @@ export const fetchHomeView = async (): Promise<HomeView> => {
   cacheLife("hub")
   cacheTag("event-list", "activity-list", "site-list", "escapadas", "home-view")
   const now = new Date()
-  const [events, activities, sites, escapadas] = await Promise.all([loadEvents(), loadActivities(now), loadSites(now), loadEscapadas()])
+  const [events, activities, sites, escapadas] = await Promise.all([loadEvents(now), loadActivities(now), loadSites(now), loadEscapadas()])
   return buildHomeView({ events, activities, sites, escapadas, now })
 }
