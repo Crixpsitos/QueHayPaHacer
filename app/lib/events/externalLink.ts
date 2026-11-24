@@ -2,7 +2,7 @@ export const EXTERNAL_BUTTON_LABEL_MAX = 30;
 export const EXTERNAL_NOTICE_MAX = 400;
 export const DEFAULT_EXTERNAL_BUTTON_LABEL = "Inscribirme";
 export const DEFAULT_EXTERNAL_NOTICE =
-  "Este evento lo organiza un tercero y lo publicamos solo para informar. Qué Hay Pa Hacer no es socio ni responsable del evento: la inscripción, el pago y cualquier reclamo se atienden directamente en el sitio del organizador.";
+  "Evento organizado por un tercero. Qué Hay Pa Hacer solo informa: la inscripción, el pago y los reclamos se atienden con el organizador.";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
