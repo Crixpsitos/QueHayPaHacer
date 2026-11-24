@@ -2,6 +2,8 @@
  * Formato de fechas y precios del detalle de evento. Todo en hora de Colombia:
  * servidor (UTC) y navegador deben producir el mismo texto o la hidratación falla.
  */
+import { isOpenEnded } from "@/domain/entities/events/openEnd";
+
 const TZ = "America/Bogota";
 
 const fmt = (opts: Intl.DateTimeFormatOptions) =>
@@ -45,8 +47,9 @@ export function dateParts(v: DateInput) {
   };
 }
 
-/** "19:00 – 23:00" mismo día o noche que termina antes de 24 h; si no, incluye la fecha de cierre. */
+/** "19:00 – 23:00" (o solo "19:00" si no tiene hora de fin), mismo día o noche que termina antes de 24 h; si no, incluye la fecha de cierre. */
 export function formatTimeRange(start: DateInput, end: DateInput) {
+  if (isOpenEnded(d(start), d(end))) return formatTime(start); // sin hora de fin: solo cuándo empieza
   const overnight = d(end).getTime() - d(start).getTime() < 24 * 3_600_000;
   return sameDay(start, end) || overnight
     ? `${formatTime(start)} – ${formatTime(end)}`
@@ -64,7 +67,7 @@ interface PriceLike {
   isFree: boolean;
   amount: number;
   currency?: string;
-  tiers?: { name: string; amount: number }[];
+  tiers?: { name: string; amount: number; description?: string }[];
 }
 
 function money(amount: number, currency?: string) {
@@ -83,13 +86,32 @@ export function priceTiers(price: PriceLike) {
 /** Precio para mostrar. Sin precio (eventos de varias fechas: el precio vive en cada función) devuelve "". */
 export function formatPrice(price: PriceLike | null | undefined) {
   if (!price) return "";
+  const tiers = priceTiers(price);
+  if (tiers.length) {
+    const paid = tiers.map((t) => t.amount).filter((a) => a > 0);
+    if (!paid.length) return "Gratis";
+    // Con una categoría gratis y otras de pago: «Gratis y $15.000».
+    return `${paid.length < tiers.length ? "Gratis y " : "Desde "}${money(Math.min(...paid), price.currency)}`;
+  }
   if (price.isFree || !price.amount) return "Gratis";
-  const min = priceTiers(price).length ? Math.min(...price.tiers!.map((t) => t.amount)) : price.amount;
-  return `${priceTiers(price).length ? "Desde " : ""}${money(min, price.currency)}`;
+  return money(price.amount, price.currency);
+}
+
+/** ¿Alguna categoría (o todo el evento) es gratis? Para el filtro «Gratis» y para avisar «y una parte gratis». */
+export function hasFreePart(price: PriceLike | null | undefined): boolean {
+  if (!price) return false;
+  if (price.isFree || (!price.tiers?.length && !price.amount)) return true;
+  return (price.tiers ?? []).some((t) => t.amount === 0);
+}
+
+/** «2 categorías» cuando hay varias; vacío si no. */
+export function tiersLabel(price: PriceLike | null | undefined): string {
+  const n = price ? priceTiers(price).length : 0;
+  return n > 1 ? `${n} categorías` : "";
 }
 
 export function formatTierAmount(price: PriceLike, amount: number) {
-  return money(amount, price.currency);
+  return amount === 0 ? "Gratis" : money(amount, price.currency);
 }
 
 /** Resumen de precio para varias fechas: "Gratis", "$ 20.000" o "Desde $ 15.000". */

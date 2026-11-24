@@ -169,7 +169,20 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
       <div className="rounded-2xl border border-[#F4F4F5] bg-white p-5 shadow-card">
         {/* Header con atajos */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <p className="text-sm font-bold text-[#09090B] mr-2">Cierre</p>
+          <p className="text-sm font-bold text-[#09090B] mr-2">Cierre <span className="font-normal text-[#71717A]">(opcional)</span></p>
+          <button
+            type="button"
+            aria-pressed={!endDate}
+            onClick={() => { setActiveShortcut(null); form.setValue("endDate", "", { shouldValidate: true }); }}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all",
+              !endDate
+                ? "border-[#D42F3C] bg-[#FDF2F4] text-[#D42F3C]"
+                : "border-[#E4E4E7] bg-white text-[#71717A] hover:border-[#A1A1AA] hover:text-[#09090B]",
+            )}
+          >
+            Sin hora de fin
+          </button>
           {SHORTCUTS.map(({ key, label }) => {
             const isActive = currentShortcut === key;
             return (
@@ -283,7 +296,7 @@ export const Step5Dates = ({ form, maxDurationMs }: Step5DatesProps) => {
         {/* Texto de ayuda */}
         <p className="mt-3 flex items-center gap-1.5 text-xs text-[#71717A]">
           <Clock className="size-3.5 shrink-0" />
-          Los atajos calculan el cierre a partir del inicio.
+          Sin hora de fin, solo se muestra cuándo empieza y el evento sigue vigente hasta el final de ese día. Los atajos calculan el cierre a partir del inicio.
         </p>
       </div>
 

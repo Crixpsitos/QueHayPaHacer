@@ -164,7 +164,8 @@ export const step4Schema = v.object({
 
 const step5Object = v.object({
   startDate: v.string(),
-  endDate: v.string(),
+  /** Opcional: sin fin, el evento dura hasta el final del día de inicio (ver `resolveEnd`). */
+  endDate: v.optional(v.string()),
   status: v.picklist(["draft", "pending", "published", "rejected", "cancelled", "ended"] as const),
 });
 
@@ -172,7 +173,7 @@ export const step5Schema = v.pipe(
   step5Object,
   v.forward(
     v.check(
-      (data) => new Date(data.endDate) >= new Date(data.startDate),
+      (data) => !data.endDate || new Date(data.endDate) >= new Date(data.startDate),
       "La fecha de fin no puede ser anterior a la fecha de inicio.",
     ),
     ["endDate"],
@@ -253,7 +254,10 @@ export const step6Schema = v.pipe(
 );
 export const PriceTierSchema = v.object({
   name: v.pipe(v.string(), v.trim(), v.nonEmpty("Ponle nombre a la categoría."), v.maxLength(40, "Máximo 40 caracteres.")),
-  amount: v.pipe(v.number("El precio debe ser un número válido"), v.minValue(1, "El valor debe ser mayor a 0")),
+  /** 0 = categoría gratis. */
+  amount: v.pipe(v.number("El precio debe ser un número válido"), v.minValue(0, "El valor no puede ser negativo")),
+  /** Qué incluye (opcional). */
+  description: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(120, "Máximo 120 caracteres."))),
 });
 
 const step7Object = v.object({
@@ -474,7 +478,7 @@ export const FormEventSchema = v.object({
       isFree: v.optional(v.boolean()),
       amount: v.optional(v.number()),
       currency: v.optional(v.string()),
-      tiers: v.optional(v.array(v.object({ name: v.string(), amount: v.number() }))),
+      tiers: v.optional(v.array(v.object({ name: v.string(), amount: v.number(), description: v.optional(v.string()) }))),
     }),
   ),
   eventType: v.optional(v.picklist(["standard", "multi-date"] as const)),

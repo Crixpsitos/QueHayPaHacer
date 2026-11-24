@@ -1,6 +1,7 @@
 "use client";
 
 import { meetsMinResolution, minResolutionText } from "../../lib/image/imageLimits";
+import { resolveEnd } from "@/domain/entities/events/openEnd";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { useForm, useWatch } from "react-hook-form";
@@ -491,9 +492,12 @@ export function SessionForm({
         media: values.media ?? [],
         location: values.location as EventSession["location"],
         startDate: values.startDate ? new Date(values.startDate) : new Date(),
+        // Sin fin: hasta el final del día de inicio (borrador sin fechas: +1 h).
         endDate: values.endDate
           ? new Date(values.endDate)
-          : new Date(Date.now() + 3_600_000),
+          : values.startDate
+            ? resolveEnd(values.startDate)
+            : new Date(Date.now() + 3_600_000),
         registrationType: values.registrationType ?? "none",
         externalUrl: values.externalUrl,
         capacity: values.capacity,

@@ -1,4 +1,5 @@
 import { PriceTierSchema } from "./EventDto";
+import { resolveEnd } from "@/domain/entities/events/openEnd";
 import * as v from "valibot";
 import { normalizeHttpUrl, normalizeHttpUrlOrKeep } from "@/domain/entities/shared/normalizeHttpUrl";
 import { getTiptapPlainText } from "./EventDto";
@@ -83,7 +84,8 @@ const sessionBodyObject = v.object({
   media: v.optional(v.array(v.any())),
   location: SessionLocationSchema,
   startDate: v.pipe(v.string(), v.nonEmpty("La fecha de inicio es requerida")),
-  endDate: v.pipe(v.string(), v.nonEmpty("La fecha de fin es requerida")),
+  /** Opcional: sin fin, la sesión dura hasta el final del día de inicio (ver `resolveEnd`). */
+  endDate: v.optional(v.string()),
   registrationType: v.picklist([
     "none",
     "internal",
@@ -103,6 +105,7 @@ const sessionBodyObject = v.object({
 
 export const SessionSchema = v.pipe(
   sessionBodyObject,
+  v.transform((data) => ({ ...data, endDate: data.endDate || resolveEnd(data.startDate).toISOString() })),
   v.forward(
     v.check(
       (data) => new Date(data.endDate) >= new Date(data.startDate),
